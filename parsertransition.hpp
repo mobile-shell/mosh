@@ -5,29 +5,24 @@
 
 #include "parseraction.hpp"
 
-class State;
-
 namespace Parser {
+  class State;
+
   class Transition
   {
   public:
     Action action;
     State *next_state;
 
-    Transition();
-    Transition( const Transition & );
+    Transition( const Transition &x )
+      : action( x.action ),
+	next_state( x.next_state ) {}
     bool operator=( const Transition & );
-    virtual ~Transition();
-  };
+    virtual ~Transition() {}
 
-  class IgnoreTransition : public Transition
-  {
-  public:
-    IgnoreTransition()
-    {
-      action = Ignore();
-      next_state = NULL;
-    }
+    Transition( Action s_action, State *s_next_state )
+      : action( s_action ), next_state( s_next_state )
+    {}
   };
 }
 

@@ -6,23 +6,23 @@
 namespace Parser {
   class State
   {
+  protected:
+    virtual Transition input_state_rule( wchar_t ch ) { ch = ch; return Transition( Ignore(), NULL ); }
+
   private:
     virtual Action enter( void ) { return Ignore(); };
     virtual Action leave( void ) { return Ignore(); };
 
-    virtual Transition input( wchar_t ch __attribute__ ((unused)) ) {
-      return IgnoreTransition();
-    }
-
-    static Transition anywhere( wchar_t ch );
+    Transition input( wchar_t ch );
+    Transition anywhere_rule( wchar_t ch );
 
   public:
-    virtual ~State();
+    virtual ~State() {};
   };
 
   class Ground : public State {};
-  class Esc : public State {};
-  class Esc_Intermediate : public State {};
+  class Escape : public State {};
+  class Escape_Intermediate : public State {};
 
   class CSI_Entry : public State {};
   class CSI_Param : public State {};
@@ -35,7 +35,7 @@ namespace Parser {
   class DCS_Passthrough : public State {};
   class DCS_Ignore : public State {};
 
-  class OCS_String : public State {};
+  class OSC_String : public State {};
   class SOS_PM_APC_String : public State {};
 }
 

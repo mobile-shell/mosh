@@ -5,7 +5,7 @@ namespace Parser {
   class Action
   {
   public:
-    virtual ~Action();
+    virtual ~Action() {}
   };
 
   class Ignore : public Action {};
