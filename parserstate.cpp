@@ -2,7 +2,7 @@
 
 using namespace Parser;
 
-Transition State::anywhere_rule( wchar_t ch )
+const Transition State::anywhere_rule( wchar_t ch )
 {
   if ( (ch == 0x18) || (ch == 0x1A)
        || ((0x80 <= ch) && (ch <= 0x8F))
@@ -26,7 +26,7 @@ Transition State::anywhere_rule( wchar_t ch )
   return Transition( Ignore(), NULL );
 }
 
-Transition State::input( wchar_t ch )
+const Transition State::input( wchar_t ch )
 {
   Transition any = anywhere_rule( ch );
   if ( any.next_state ) {

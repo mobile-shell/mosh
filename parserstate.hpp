@@ -7,14 +7,14 @@ namespace Parser {
   class State
   {
   protected:
-    virtual Transition input_state_rule( wchar_t ch ) { ch = ch; return Transition( Ignore(), NULL ); }
+    const virtual Transition input_state_rule( wchar_t ch ) { ch = ch; return Transition( Ignore(), NULL ); }
 
   private:
-    virtual Action enter( void ) { return Ignore(); };
-    virtual Action leave( void ) { return Ignore(); };
+    const virtual Action enter( void ) { return Ignore(); };
+    const virtual Action leave( void ) { return Ignore(); };
 
-    Transition input( wchar_t ch );
-    Transition anywhere_rule( wchar_t ch );
+    const Transition input( wchar_t ch );
+    const static Transition anywhere_rule( wchar_t ch );
 
   public:
     virtual ~State() {};
