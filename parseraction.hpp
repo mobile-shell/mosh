@@ -14,7 +14,7 @@ namespace Parser {
   class Clear : public Action {};
   class Collect : public Action {};
   class Param : public Action {};
-  class ESC_Dispatch : public Action {};
+  class Esc_Dispatch : public Action {};
   class CSI_Dispatch : public Action {};
   class Hook : public Action {};
   class Put : public Action {};
