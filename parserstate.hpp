@@ -13,14 +13,13 @@ namespace Parser {
     StateFamily *family;
 
   private:
-    virtual Action enter( void ) { return Ignore(); };
-    virtual Action exit( void ) { return Ignore(); };
-
-    Transition input( wchar_t ch );
     Transition anywhere_rule( wchar_t ch );
 
   public:
     void setfamily( StateFamily *s_family ) { family = s_family; }
+    Transition input( wchar_t ch );
+    virtual Action enter( void ) { return Ignore(); };
+    virtual Action exit( void ) { return Ignore(); };
 
     State() : family( NULL ) {};
     virtual ~State() {};

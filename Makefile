@@ -1,5 +1,5 @@
-source = parse.cpp parserstate.cpp
-objects = parserstate.o
+source = parse.cpp parserstate.cpp parser.cpp templates.cpp
+objects = parserstate.o parser.o templates.o
 executables = parse
 
 CPP = g++
@@ -10,6 +10,9 @@ all: $(executables)
 
 parse: parse.o $(objects)
 	$(CPP) $(CPPFLAGS) -o $@ $+ $(LIBS)
+
+templates.o: templates.cpp
+	$(CPP) $(CPPFLAGS) -frepo -c -o $@ $<
 
 %.o: %.cpp
 	$(CPP) $(CPPFLAGS) -c -o $@ $<

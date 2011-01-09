@@ -2,6 +2,7 @@
 #define PARSE_HPP
 
 #include <wchar.h>
+#include <vector>
 
 #include "parsertransition.hpp"
 #include "parseraction.hpp"
@@ -15,11 +16,13 @@ namespace Parser {
     State *state;
 
   public:
-    Parser() : family(), state( NULL ) {}
+    Parser() : family(), state( &family.s_Ground ) {}
+
     Parser( const Parser & );
     bool operator=( const Parser & );
-    void input( wchar_t c ); /* should return list of actions */
     ~Parser() {}
+
+    std::vector<Action> input( wchar_t c );
   };
 }
 
