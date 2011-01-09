@@ -4,10 +4,13 @@
 #include "parsertransition.hpp"
 
 namespace Parser {
+  class StateFamily;
+
   class State
   {
   protected:
     virtual Transition input_state_rule( wchar_t ch ) = 0;
+    StateFamily *family;
 
   private:
     virtual Action enter( void ) { return Ignore(); };
@@ -17,7 +20,13 @@ namespace Parser {
     Transition anywhere_rule( wchar_t ch );
 
   public:
+    void setfamily( StateFamily *s_family ) { family = s_family; }
+
+    State() : family( NULL ) {};
     virtual ~State() {};
+
+    State( const State & );
+    bool operator=( const State & );
   };
 
   class Ground : public State {

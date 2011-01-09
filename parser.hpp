@@ -6,14 +6,16 @@
 #include "parsertransition.hpp"
 #include "parseraction.hpp"
 #include "parserstate.hpp"
+#include "parserstatefamily.hpp"
 
 namespace Parser {
   class Parser {
   private:
+    StateFamily family;
     State *state;
 
   public:
-    Parser() : state( NULL ) {}
+    Parser() : family(), state( NULL ) {}
     Parser( const Parser & );
     bool operator=( const Parser & );
     void input( wchar_t c ); /* should return list of actions */
