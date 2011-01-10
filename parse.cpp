@@ -256,7 +256,7 @@ int vt_parser( struct stripstate *state )
 	  j++ ) {
 
       if ( j->char_present ) {
-	printf( "%s(0x%02d=%lc) ", j->name.c_str(), j->ch, j->ch );
+	printf( "%s(0x%02x=%lc) ", j->name.c_str(), j->ch, j->ch );
       } else {
 	printf( "[%s] ", j->name.c_str() );
       }
