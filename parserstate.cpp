@@ -29,17 +29,13 @@ Transition State::anywhere_rule( wchar_t ch )
 
 Transition State::input( wchar_t ch )
 {
-  Transition any = anywhere_rule( ch );
-  if ( any.next_state ) {
-    return any;
-  }
-
-  Transition ret;
-
-  if ( ch >= 0xA0 ) {
-    ret = this->input_state_rule( 0x41 );
-  } else {
-    ret = this->input_state_rule( ch );
+  Transition ret = anywhere_rule( ch );
+  if ( !ret.next_state ) {
+    if ( ch >= 0xA0 ) {
+      ret = this->input_state_rule( 0x41 );
+    } else {
+      ret = this->input_state_rule( ch );
+    }
   }
 
   ret.action.char_present = true;
