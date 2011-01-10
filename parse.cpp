@@ -16,6 +16,10 @@
 
 #include "parser.hpp"
 
+#ifndef __STDC_ISO_10646__
+#error "Must have __STDC_ISO_10646__"
+#endif
+
 const size_t buf_size = 1024;
 
 class stripstate {
