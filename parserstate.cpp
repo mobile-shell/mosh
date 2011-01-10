@@ -339,7 +339,7 @@ Transition OSC_String::input_state_rule( wchar_t ch )
     return Transition( OSC_Put(), NULL );
   }
 
-  if ( ch == 0x9C ) {
+  if ( (ch == 0x9C) || (ch == 0x07) ) { /* 0x07 is xterm non-ANSI variant */
     return Transition( Ignore(), &family->s_Ground );
   }
 

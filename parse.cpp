@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <wctype.h>
 #include <iostream>
+#include <typeinfo>
 
 #include "parser.hpp"
 
@@ -253,8 +254,9 @@ int vt_parser( struct stripstate *state )
     for ( std::vector<Parser::Action>::iterator j = actions.begin();
 	  j != actions.end();
 	  j++ ) {
+
       if ( j->char_present ) {
-	printf( "%s(%lc) ", j->name.c_str(), j->ch );
+	printf( "%s(0x%02d=%lc) ", j->name.c_str(), j->ch, j->ch );
       } else {
 	printf( "[%s] ", j->name.c_str() );
       }
