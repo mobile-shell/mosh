@@ -1,5 +1,8 @@
-#ifndef PARSE_HPP
-#define PARSE_HPP
+#ifndef PARSER_HPP
+#define PARSER_HPP
+
+/* Based on Paul Williams's parser,
+   http://www.vt100.net/emu/dec_ansi_parser */
 
 #include <wchar.h>
 #include <vector>
