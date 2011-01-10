@@ -17,10 +17,16 @@ namespace Parser {
     Transition( const Transition &x )
       : action( x.action ),
 	next_state( x.next_state ) {}
-    bool operator=( const Transition & );
+    Transition & operator=( const Transition &t )
+    {
+      action = t.action;
+      next_state = t.next_state;
+
+      return *this;
+    }
     virtual ~Transition() {}
 
-    Transition( Action s_action, State *s_next_state )
+    Transition( Action s_action=Ignore(), State *s_next_state=NULL )
       : action( s_action ), next_state( s_next_state )
     {}
   };

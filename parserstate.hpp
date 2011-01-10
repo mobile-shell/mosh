@@ -25,7 +25,7 @@ namespace Parser {
     virtual ~State() {};
 
     State( const State & );
-    bool operator=( const State & );
+    State & operator=( const State & );
   };
 
   class Ground : public State {

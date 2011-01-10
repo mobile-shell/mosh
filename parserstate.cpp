@@ -34,11 +34,16 @@ Transition State::input( wchar_t ch )
     return any;
   }
 
+  Transition ret;
+
   if ( ch >= 0xA0 ) {
-    return this->input_state_rule( 0x41 );
+    ret = this->input_state_rule( 0x41 );
+  } else {
+    ret = this->input_state_rule( ch );
   }
 
-  return this->input_state_rule( ch );
+  ret.action.ch = ch;
+  return ret;
 }
 
 static bool C0_prime( wchar_t ch )
