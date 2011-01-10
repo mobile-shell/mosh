@@ -42,6 +42,7 @@ Transition State::input( wchar_t ch )
     ret = this->input_state_rule( ch );
   }
 
+  ret.action.char_present = true;
   ret.action.ch = ch;
   return ret;
 }
