@@ -11,7 +11,7 @@ namespace Parser {
   class Transition
   {
   public:
-    Action action;
+    Action *action;
     State *next_state;
 
     Transition( const Transition &x )
@@ -26,7 +26,7 @@ namespace Parser {
     }
     virtual ~Transition() {}
 
-    Transition( Action s_action=Ignore(), State *s_next_state=NULL )
+    Transition( Action *s_action=NULL, State *s_next_state=NULL )
       : action( s_action ), next_state( s_next_state )
     {}
   };

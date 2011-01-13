@@ -254,16 +254,21 @@ int vt_parser( struct stripstate *state )
 
   /* feed to vtparse */
   for ( size_t i = 0; i < out_index; i++ ) {
-    std::vector<Parser::Action> actions = state->parser.input( out_buffer[ i ] );
-    for ( std::vector<Parser::Action>::iterator j = actions.begin();
+    std::vector<Parser::Action *> actions = state->parser.input( out_buffer[ i ] );
+    for ( std::vector<Parser::Action *>::iterator j = actions.begin();
 	  j != actions.end();
 	  j++ ) {
 
-      if ( j->char_present ) {
-	printf( "%s(0x%02x=%lc) ", j->name.c_str(), j->ch, j->ch );
+      Parser::Action *act = *j;
+      assert( act );
+
+      if ( act->char_present ) {
+	printf( "%s(0x%02x=%lc) ", act->name.c_str(), act->ch, act->ch );
       } else {
-	printf( "[%s] ", j->name.c_str() );
+	printf( "[%s] ", act->name.c_str() );
       }
+
+      delete act;
 
       fflush( stdout );
     }

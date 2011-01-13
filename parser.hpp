@@ -25,7 +25,7 @@ namespace Parser {
     bool operator=( const Parser & );
     ~Parser() {}
 
-    std::vector<Action> input( wchar_t c );
+    std::vector<Action *> input( wchar_t c );
   };
 }
 
