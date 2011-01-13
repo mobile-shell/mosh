@@ -10,53 +10,53 @@ namespace Parser {
     bool char_present;
     wchar_t ch;
 
-    std::string name;
+    virtual std::string name( void ) = 0;
 
-    Action() : char_present( false ), ch( -1 ), name( "" ) {}
+    Action() : char_present( false ), ch( -1 ) {};
     virtual ~Action() {};
   };
 
   class Ignore : public Action {
-  public: Ignore() { name = "Ignore"; }
+  public: std::string name( void ) { return std::string( "Ignore" ); }
   };
   class Print : public Action {
-  public: Print() { name = "Print"; }
+  public: std::string name( void ) { return std::string( "Print" ); }
   };
   class Execute : public Action {
-  public: Execute() { name = "Execute"; }
+  public: std::string name( void ) { return std::string( "Execute" ); }
   };
   class Clear : public Action {
-  public: Clear() { name = "Clear"; }
+  public: std::string name( void ) { return std::string( "Clear" ); }
   };
   class Collect : public Action {
-  public: Collect() { name = "Collect"; }
+  public: std::string name( void ) { return std::string( "Collect" ); }
   };
   class Param : public Action {
-  public: Param() { name = "Param"; }
+  public: std::string name( void ) { return std::string( "Param" ); }
   };
   class Esc_Dispatch : public Action {
-  public: Esc_Dispatch() { name = "Esc_Dispatch"; }
+  public: std::string name( void ) { return std::string( "Esc_Dispatch" ); }
   };
   class CSI_Dispatch : public Action {
-  public: CSI_Dispatch() { name = "CSI_Dispatch"; }
+  public: std::string name( void ) { return std::string( "CSI_Dispatch" ); }
   };
   class Hook : public Action {
-  public: Hook() { name = "Hook"; }
+  public: std::string name( void ) { return std::string( "Hook" ); }
   };
   class Put : public Action {
-  public: Put() { name = "Put"; }
+  public: std::string name( void ) { return std::string( "Put" ); }
   };
   class Unhook : public Action {
-  public: Unhook() { name = "Unhook"; }
+  public: std::string name( void ) { return std::string( "Unhook" ); }
   };
   class OSC_Start : public Action {
-  public: OSC_Start() { name = "OSC_Start"; }
+  public: std::string name( void ) { return std::string( "OSC_Start" ); }
   };
   class OSC_Put : public Action {
-  public: OSC_Put() { name = "OSC_Put"; }
+  public: std::string name( void ) { return std::string( "OSC_Put" ); }
   };
   class OSC_End : public Action {
-  public: OSC_End() { name = "OSC_End"; }
+  public: std::string name( void ) { return std::string( "OSC_End" ); }
   };
 }
 

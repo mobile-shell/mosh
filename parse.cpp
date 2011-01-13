@@ -263,9 +263,9 @@ int vt_parser( struct stripstate *state )
       assert( act );
 
       if ( act->char_present ) {
-	printf( "%s(0x%02x=%lc) ", act->name.c_str(), act->ch, act->ch );
+	printf( "%s(0x%02x=%lc) ", act->name().c_str(), act->ch, act->ch );
       } else {
-	printf( "[%s] ", act->name.c_str() );
+	printf( "[%s] ", act->name().c_str() );
       }
 
       delete act;
