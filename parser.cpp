@@ -1,4 +1,19 @@
+#include <assert.h>
+#include <typeinfo>
+
 #include "parser.hpp"
+
+static void append_or_delete( Parser::Action *act,
+			      std::vector<Parser::Action *>&vec )
+{
+  assert( act );
+
+  if ( typeid( *act ) != typeid( Parser::Ignore ) ) {
+    vec.push_back( act );
+  } else {
+    delete act;
+  }
+}
 
 std::vector<Parser::Action *> Parser::Parser::input( wchar_t ch )
 {
@@ -7,21 +22,13 @@ std::vector<Parser::Action *> Parser::Parser::input( wchar_t ch )
   Transition tx = state->input( ch );
 
   if ( tx.next_state != NULL ) {
-    Action *exitact = state->exit();
-    if ( exitact ) {
-      ret.push_back( exitact );
-    }
+    append_or_delete( state->exit(), ret );
   }
 
-  if ( tx.action ) {
-    ret.push_back( tx.action );
-  }
+  append_or_delete( tx.action, ret );
 
   if ( tx.next_state != NULL ) {
-    Action *enteract = tx.next_state->enter();
-    if ( enteract ) {
-      ret.push_back( enteract );
-    }
+    append_or_delete( tx.next_state->enter(), ret );
     state = tx.next_state;
   }
 

@@ -18,8 +18,8 @@ namespace Parser {
   public:
     void setfamily( StateFamily *s_family ) { family = s_family; }
     Transition input( wchar_t ch );
-    virtual Action *enter( void ) { return NULL; }
-    virtual Action *exit( void ) { return NULL; }
+    virtual Action *enter( void ) { return new Ignore; }
+    virtual Action *exit( void ) { return new Ignore; }
 
     State() : family( NULL ) {};
     virtual ~State() {};

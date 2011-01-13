@@ -26,12 +26,12 @@ namespace Parser {
     }
     virtual ~Transition() {}
 
-    Transition( Action *s_action=new Ignore(), State *s_next_state=NULL )
+    Transition( Action *s_action=new Ignore, State *s_next_state=NULL )
       : action( s_action ), next_state( s_next_state )
     {}
 
     Transition( State *s_next_state )
-      : action( new Ignore() ), next_state( s_next_state )
+      : action( new Ignore ), next_state( s_next_state )
     {}
   };
 }
