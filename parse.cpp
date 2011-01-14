@@ -22,21 +22,9 @@
 
 const size_t buf_size = 1024;
 
-class stripstate {
-public:
-  int src_fd, dest_fd;
-  mbstate_t ps;
-  char buf[ buf_size ];
-  size_t buf_len;
-  Parser::Parser parser;
-
-  stripstate() : src_fd(-1), dest_fd(-1), ps(),
-		 buf(), buf_len(0), parser() {}
-};
-
 void emulate_terminal( int fd );
 int copy( int src, int dest );
-int vt_parser( struct stripstate *state );
+int vt_parser( int fd, Parser::UTF8Parser *parser );
 
 int main( int argc __attribute__((unused)),
 	  char *argv[] __attribute__((unused)),
@@ -87,13 +75,6 @@ int main( int argc __attribute__((unused)),
 
     my_argv[ 1 ] = NULL;
 
-    /*
-    if ( setenv( "TERM", "vt220", true ) < 0 ) {
-      perror( "setenv" );
-      exit( 1 );
-    }
-    */
-
     if ( execve( "/bin/bash", my_argv, envp ) < 0 ) {
       perror( "execve" );
       exit( 1 );
@@ -123,7 +104,7 @@ int main( int argc __attribute__((unused)),
 
 void emulate_terminal( int fd )
 {
-  struct stripstate output_stripstate;
+  Parser::UTF8Parser parser;
   struct pollfd pollfds[ 2 ];
 
   pollfds[ 0 ].fd = STDIN_FILENO;
@@ -131,11 +112,6 @@ void emulate_terminal( int fd )
 
   pollfds[ 1 ].fd = fd;
   pollfds[ 1 ].events = POLLIN;
-
-  output_stripstate.src_fd = fd;
-  output_stripstate.dest_fd = STDOUT_FILENO;
-  output_stripstate.buf_len = 0;
-  memset( &output_stripstate.ps, 0, sizeof( output_stripstate.ps ) );
 
   while ( 1 ) {
     int active_fds = poll( pollfds, 2, -1 );
@@ -149,7 +125,7 @@ void emulate_terminal( int fd )
 	return;
       }
     } else if ( pollfds[ 1 ].revents & POLLIN ) {
-      if ( vt_parser( &output_stripstate ) < 0 ) {
+      if ( vt_parser( fd, &parser ) < 0 ) {
 	return;
       }
     } else if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
@@ -188,11 +164,12 @@ int copy( int src, int dest )
   return 0;
 }
 
-int vt_parser( struct stripstate *state )
+int vt_parser( int fd, Parser::UTF8Parser *parser )
 {
+  char buf[ buf_size ];
+
   /* fill buffer if possible */
-  ssize_t bytes_read = read( state->src_fd, state->buf + state->buf_len,
-			     buf_size - state->buf_len );
+  ssize_t bytes_read = read( fd, buf, buf_size );
   if ( bytes_read == 0 ) { /* EOF */
     return -1;
   } else if ( bytes_read < 0 ) {
@@ -200,61 +177,9 @@ int vt_parser( struct stripstate *state )
     return -1;
   }
 
-  state->buf_len += bytes_read;
-
-  /* translate buffer from UTF-8 to wide characters */
-  wchar_t out_buffer[ buf_size ];
-  size_t in_index = 0, out_index = 0;
-
-  while ( 1 ) {
-    assert( in_index <= state->buf_len );
-    if ( in_index == state->buf_len ) {
-      state->buf_len = 0;
-      break;
-    }
-
-    wchar_t pwc;
-    size_t bytes_parsed = mbrtowc( &pwc, state->buf + in_index,
-				   state->buf_len - in_index,
-				   &state->ps );
-    /* this returns 0 when n = 0! */
-
-    /* This function annoying returns a size_t so we have to check
-       the negative values first before the "> 0" branch */
-
-    if ( bytes_parsed == 0 ) {
-      /* character was NUL */
-      in_index++; /* this relies on knowing UTF-8 NUL is one byte! */
-      assert( out_index < buf_size );
-      out_buffer[ out_index++ ] = L'\0';
-    } else if ( bytes_parsed == (size_t) -1 ) {
-      /* invalid sequence */
-      assert( errno == EILSEQ );
-      in_index++;
-      assert( out_index < buf_size );
-      out_buffer[ out_index++ ] = (wchar_t) 0xFFFD;
-      memset( &state->ps, 0, sizeof( state->ps ) );
-    } else if ( bytes_parsed == (size_t) -2 ) {
-      /* can't parse complete multibyte character */
-      memmove( state->buf, state->buf + in_index,
-	       state->buf_len - in_index );
-      state->buf_len = state->buf_len - in_index;
-      break;
-    } else if ( bytes_parsed > 0 ) {
-      /* parsed something */
-      in_index += bytes_parsed;
-      assert( out_index < buf_size );
-      out_buffer[ out_index++ ] = pwc;
-    } else {
-      fprintf( stderr, "Unknown return value %d from mbrtowc\n",
-	       bytes_parsed );
-      exit( 1 );
-    }
-  }
-
-  /* feed to vtparse */
-  for ( size_t i = 0; i < out_index; i++ ) {
-    std::vector<Parser::Action *> actions = state->parser.input( out_buffer[ i ] );
+  /* feed to parser */
+  for ( int i = 0; i < bytes_read; i++ ) {
+    std::vector<Parser::Action *> actions = parser->input( buf[ i ] );
     for ( std::vector<Parser::Action *>::iterator j = actions.begin();
 	  j != actions.end();
 	  j++ ) {
@@ -263,7 +188,7 @@ int vt_parser( struct stripstate *state )
       assert( act );
 
       if ( act->char_present ) {
-	printf( "%s(0x%02x) ", act->name().c_str(), act->ch );
+	printf( "%s(0x%02x=%lc) ", act->name().c_str(), act->ch, act->ch );
       } else {
 	printf( "[%s] ", act->name().c_str() );
       }

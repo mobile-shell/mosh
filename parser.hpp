@@ -6,6 +6,7 @@
 
 #include <wchar.h>
 #include <vector>
+#include <string.h>
 
 #include "parsertransition.hpp"
 #include "parseraction.hpp"
@@ -25,7 +26,22 @@ namespace Parser {
     bool operator=( const Parser & );
     ~Parser() {}
 
-    std::vector<Action *> input( wchar_t c );
+    std::vector<Action *> input( wchar_t ch );
+  };
+
+  static const size_t BUF_SIZE = 8;
+
+  class UTF8Parser {
+  private:
+    Parser parser;
+
+    char buf[ BUF_SIZE ];
+    size_t buf_len;
+
+  public:
+    UTF8Parser();
+
+    std::vector<Action *> input( char c );
   };
 }
 
