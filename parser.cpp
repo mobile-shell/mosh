@@ -43,6 +43,8 @@ Parser::UTF8Parser::UTF8Parser()
     fprintf( stderr, "rtm requires a UTF-8 locale.\n" );
     throw std::string( "rtm requires a UTF-8 locale." );
   }
+
+  assert( BUF_SIZE >= MB_CUR_MAX );
 }
 
 std::vector<Parser::Action *> Parser::UTF8Parser::input( char c )

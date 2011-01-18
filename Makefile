@@ -1,5 +1,5 @@
-source = parse.cpp parserstate.cpp parser.cpp templates.cpp
-objects = parserstate.o parser.o templates.o
+source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp
+objects = parserstate.o parser.o templates.o terminal.o
 executables = parse
 
 CXX = g++
