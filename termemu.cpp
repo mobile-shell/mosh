@@ -182,5 +182,7 @@ int termemu( int fd, Terminal::Emulator *terminal )
     terminal->input( buf[ i ] );
   }
 
+  terminal->debug_printout( stdout );
+
   return 0;
 }

@@ -2,6 +2,10 @@
 #define TERMINAL_CPP
 
 #include <wchar.h>
+#include <stdio.h>
+#include <vector>
+#include <deque>
+
 #include "parser.hpp"
 
 namespace Terminal {
@@ -34,9 +38,13 @@ namespace Terminal {
     size_t cursor_col, cursor_row;
     size_t combining_char_col, combining_char_row;
 
-    std::vector<Row> rows;
+    std::deque<Row> rows;
 
     void print( Parser::Print *act );
+
+    void scroll( int N );
+
+    void newgrapheme( void );
 
   public:
     Emulator( size_t s_width, size_t s_height );
@@ -48,6 +56,8 @@ namespace Terminal {
 
     size_t get_width( void ) { return width; }
     size_t get_height( void ) { return height; }
+
+    void debug_printout( FILE *f );
   };
 }
 
