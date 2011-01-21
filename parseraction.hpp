@@ -3,6 +3,10 @@
 
 #include <string>
 
+namespace Terminal {
+  class Emulator;
+}
+
 namespace Parser {
   class Action
   {
@@ -12,6 +16,8 @@ namespace Parser {
 
     virtual std::string name( void ) = 0;
 
+    virtual void act_on_terminal( Terminal::Emulator * ) {};
+
     Action() : char_present( false ), ch( -1 ) {};
     virtual ~Action() {};
   };
@@ -20,7 +26,9 @@ namespace Parser {
   public: std::string name( void ) { return std::string( "Ignore" ); }
   };
   class Print : public Action {
-  public: std::string name( void ) { return std::string( "Print" ); }
+  public:
+    std::string name( void ) { return std::string( "Print" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
   class Execute : public Action {
   public: std::string name( void ) { return std::string( "Execute" ); }

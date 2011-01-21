@@ -23,7 +23,7 @@ namespace Parser {
     Parser() : family(), state( &family.s_Ground ) {}
 
     Parser( const Parser & );
-    bool operator=( const Parser & );
+    Parser & operator=( const Parser & );
     ~Parser() {}
 
     std::vector<Action *> input( wchar_t ch );
