@@ -30,6 +30,7 @@ namespace Terminal {
 
   class Emulator {
     friend void Parser::Print::act_on_terminal( Emulator * );
+    friend void Parser::Execute::act_on_terminal( Emulator * );
 
   private:
     Parser::UTF8Parser parser;
@@ -41,8 +42,10 @@ namespace Terminal {
     std::deque<Row> rows;
 
     void print( Parser::Print *act );
+    void execute( Parser::Execute *act );
 
     void scroll( int N );
+    void autoscroll( void );
 
     void newgrapheme( void );
 

@@ -68,6 +68,7 @@ void Emulator::scroll( int N )
       rows.pop_front();
       rows.push_back( Row( width ) );
       cursor_row--;
+      combining_char_row--;
     }
   }
 }
@@ -76,6 +77,36 @@ void Emulator::newgrapheme( void )
 {
   combining_char_col = cursor_col;
   combining_char_row = cursor_row;  
+}
+
+void Emulator::autoscroll( void )
+{
+  if ( cursor_row >= height ) { /* scroll */
+    scroll( cursor_row - height + 1 );
+  }
+}
+
+void Emulator::execute( Parser::Execute *act )
+{
+  assert( act->char_present );
+
+  switch ( act->ch ) {
+  case 0x0a: /* LF */
+    cursor_row++;
+    autoscroll();
+    break;
+
+  case 0x0d: /* CR */
+    cursor_col = 0;
+    break;
+    
+  case 0x08: /* BS */
+    if ( cursor_col > 0 ) {
+      cursor_col--;
+      rows[ cursor_row ].cells[ cursor_col ].contents.clear();
+    }
+    break;
+  }
 }
 
 void Emulator::print( Parser::Print *act )
@@ -99,14 +130,15 @@ void Emulator::print( Parser::Print *act )
       cursor_row++;
     }
 
-    if ( cursor_row >= height ) { /* scroll */
-      scroll( cursor_row - height + 1 );
-    }
+    autoscroll();
 
     rows[ cursor_row ].cells[ cursor_col ].contents.clear();
     rows[ cursor_row ].cells[ cursor_col ].contents.push_back( act->ch );
     newgrapheme();
     cursor_col++;
+    break;
+  default:
+    break;
   }
 }
 
@@ -125,6 +157,8 @@ void Emulator::debug_printout( FILE *f )
       }
     }
   }
+
+  fprintf( f, "\033[%d;%dH", cursor_row + 1, cursor_col + 1 );
 
   fflush( NULL );
 }

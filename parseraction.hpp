@@ -32,6 +32,7 @@ namespace Parser {
   };
   class Execute : public Action {
   public: std::string name( void ) { return std::string( "Execute" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
   class Clear : public Action {
   public: std::string name( void ) { return std::string( "Clear" ); }
