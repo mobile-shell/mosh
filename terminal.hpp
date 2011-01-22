@@ -35,7 +35,9 @@ namespace Terminal {
     friend void Parser::Execute::act_on_terminal( Emulator * );
     friend void Parser::Clear::act_on_terminal( Emulator * );
     friend void Parser::Param::act_on_terminal( Emulator * );
+    friend void Parser::Collect::act_on_terminal( Emulator * );
     friend void Parser::CSI_Dispatch::act_on_terminal( Emulator * );
+    friend void Parser::Esc_Dispatch::act_on_terminal( Emulator * );
 
   private:
     Parser::UTF8Parser parser;
@@ -56,8 +58,9 @@ namespace Terminal {
     void execute( Parser::Execute *act );
     void param( Parser::Param *act );
     void collect( Parser::Collect *act );
-    void clear( void );
+    void clear( Parser::Clear *act );
     void CSI_dispatch( Parser::CSI_Dispatch *act );
+    void Esc_dispatch( Parser::Esc_Dispatch *act );
 
     void scroll( int N );
     void autoscroll( void );
@@ -67,11 +70,12 @@ namespace Terminal {
     std::vector<int> parsed_params;
     int getparam( size_t N, int defaultval );
 
-    /* CSI methods */
+    /* CSI and Escape methods */
     void CSI_EL( void );
     void CSI_ED( void );
     void CSI_cursormove( void );
     void CSI_DA( void );
+    void Esc_DECALN( void );
 
   public:
     Emulator( size_t s_width, size_t s_height );

@@ -13,12 +13,13 @@ namespace Parser {
   public:
     bool char_present;
     wchar_t ch;
+    bool handled;
 
     virtual std::string name( void ) = 0;
 
     virtual void act_on_terminal( Terminal::Emulator * ) {};
 
-    Action() : char_present( false ), ch( -1 ) {};
+    Action() : char_present( false ), ch( -1 ), handled( false ) {};
     virtual ~Action() {};
   };
 
@@ -41,7 +42,9 @@ namespace Parser {
     void act_on_terminal( Terminal::Emulator *emu );
   };
   class Collect : public Action {
-  public: std::string name( void ) { return std::string( "Collect" ); }
+  public:
+    std::string name( void ) { return std::string( "Collect" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
   class Param : public Action {
   public:
@@ -49,7 +52,9 @@ namespace Parser {
     void act_on_terminal( Terminal::Emulator *emu );
   };
   class Esc_Dispatch : public Action {
-  public: std::string name( void ) { return std::string( "Esc_Dispatch" ); }
+  public:
+    std::string name( void ) { return std::string( "Esc_Dispatch" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
   class CSI_Dispatch : public Action {
   public:

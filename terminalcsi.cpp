@@ -70,6 +70,7 @@ void Emulator::CSI_cursormove( void )
     cursor_col -= num;
     break;
   case 'H':
+  case 'f':
     int x = getparam( 0, 1 );
     int y = getparam( 1, 1 );
     cursor_row = x - 1;
@@ -87,4 +88,14 @@ void Emulator::CSI_cursormove( void )
 void Emulator::CSI_DA( void )
 {
   terminal_to_host.append( "\033[?1;0c" );
+}
+
+void Emulator::Esc_DECALN( void )
+{
+  for ( int y = 0; y < height; y++ ) {
+    for ( int x = 0; x < width; x++ ) {
+      rows[ y ].cells[ x ].reset();
+      rows[ y ].cells[ x ].contents.push_back( L'E' );
+    }
+  }
 }

@@ -63,7 +63,9 @@ std::string Emulator::input( char c, int actfd )
 	i++ ) {
     Parser::Action *act = *i;
 
-    if ( (actfd > 0) && (typeid(*act) != typeid(Parser::Print)) ) {
+    act->act_on_terminal( this );
+
+    if ( (actfd > 0) && ( !act->handled ) ) {
       char actsum[ 32 ];
       if ( act->char_present ) {
 	if ( isprint( act->ch ) ) {
@@ -80,8 +82,6 @@ std::string Emulator::input( char c, int actfd )
 
       swrite( actfd, actsum );
     }
-
-    act->act_on_terminal( this );
 
     delete act;
   }
@@ -124,16 +124,19 @@ void Emulator::execute( Parser::Execute *act )
   case 0x0a: /* LF */
     cursor_row++;
     autoscroll();
+    act->handled = true;
     break;
 
   case 0x0d: /* CR */
     cursor_col = 0;
+    act->handled = true;
     break;
     
   case 0x08: /* BS */
     if ( cursor_col > 0 ) {
       cursor_col--;
       newgrapheme(); /* this is not xterm's behavior */
+      act->handled = true;
     }
     break;
   }
@@ -177,11 +180,14 @@ void Emulator::print( Parser::Print *act )
     }
 
     cursor_col += chwidth;
+    act->handled = true;
     break;
   case 0: /* combining character */
     if ( rows[ combining_char_row ].cells[ combining_char_col ].contents.size() < 16 ) { /* seems like a reasonable limit on combining character */
       rows[ combining_char_row ].cells[ combining_char_col ].contents.push_back( act->ch );
     }
+    act->handled = true;
+    break;
   case -1: /* unprintable character */
     break;
   default:
@@ -240,6 +246,7 @@ void Emulator::param( Parser::Param *act )
   if ( params.length() < 100 ) {
     /* enough for 16 five-char params plus 15 semicolons */
     params.push_back( act->ch );
+    act->handled = true;
   }
 }
 
@@ -247,15 +254,17 @@ void Emulator::collect( Parser::Collect *act )
 {
   assert( act->char_present );
   if ( ( dispatch_chars.length() < 8 ) /* never should need more than 2 */
-       && ( act->ch <= 255 ) ) {  /* ignore non-8-bit */
+       && ( act->ch <= 255 ) ) {  /* ignore non-8-bit */    
     dispatch_chars.push_back( act->ch );
+    act->handled = true;
   }
 }
 
-void Emulator::clear( void )
+void Emulator::clear( Parser::Clear *act )
 {
   params.clear();
   dispatch_chars.clear();
+  act->handled = true;
 }
 
 void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
@@ -269,16 +278,36 @@ void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
 
   if ( dispatch_chars == "K" ) {
     CSI_EL();
+    act->handled = true;
   } else if ( dispatch_chars == "J" ) {
     CSI_ED();
+    act->handled = true;
   } else if ( (dispatch_chars == "A")
 	      || (dispatch_chars == "B")
 	      || (dispatch_chars == "C")
 	      || (dispatch_chars == "D")
-	      || (dispatch_chars == "H") ) {
+	      || (dispatch_chars == "H") 
+	      || (dispatch_chars == "f") ) {
     CSI_cursormove();
+    act->handled = true;
   } else if ( dispatch_chars == "c" ) {
     CSI_DA();
+    act->handled = true;
+  }
+}
+
+void Emulator::Esc_dispatch( Parser::Esc_Dispatch *act )
+{
+  /* add final char to dispatch key */
+  assert( act->char_present );
+  Parser::Collect act2;
+  act2.char_present = true;
+  act2.ch = act->ch;
+  collect( &act2 ); 
+  
+  if ( dispatch_chars == "#8" ) {
+    Esc_DECALN();
+    act->handled = true;
   }
 }
 
