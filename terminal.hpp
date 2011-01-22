@@ -46,6 +46,8 @@ namespace Terminal {
     std::string params;
     std::string dispatch_chars;
 
+    std::string errors;
+
     /* action methods */
     void print( Parser::Print *act );
     void execute( Parser::Execute *act );

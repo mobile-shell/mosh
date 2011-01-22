@@ -64,11 +64,6 @@ int main( int argc __attribute__((unused)),
 
   if ( child == 0 ) {
     /* child */
-    if ( chdir( "/" ) < 0 ) {
-      perror( "chdir" );
-      exit( 1 );
-    }
-
     char *my_argv[ 2 ];
     my_argv[ 0 ] = strdup( "/bin/bash" );
     assert( my_argv[ 0 ] );

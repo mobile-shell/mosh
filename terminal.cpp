@@ -38,7 +38,7 @@ Emulator::Emulator( size_t s_width, size_t s_height )
     cursor_col( 0 ), cursor_row( 0 ),
     combining_char_col( 0 ), combining_char_row( 0 ),
     rows( height, Row( width ) ),
-    params(), dispatch_chars(), parsed_params()
+    params(), dispatch_chars(), errors(), parsed_params()
 {
 
 }
@@ -126,6 +126,8 @@ void Emulator::print( Parser::Print *act )
 
   int chwidth = act->ch == L'\0' ? -1 : wcwidth( act->ch );
 
+  Cell *this_cell;
+
   switch ( chwidth ) {
   case 1: /* normal character */
   case 2: /* wide character */
@@ -136,13 +138,39 @@ void Emulator::print( Parser::Print *act )
 
     autoscroll();
 
-    rows[ cursor_row ].cells[ cursor_col ].contents.clear();
-    rows[ cursor_row ].cells[ cursor_col ].contents.push_back( act->ch );
+    this_cell =  &rows[ cursor_row ].cells[ cursor_col ];
+    this_cell->contents.clear();
+    this_cell->contents.push_back( act->ch );
+    for ( std::vector<Cell *>::iterator i
+	    = this_cell->overlapped_cells.begin();
+	  i != this_cell->overlapped_cells.end();
+	  i++ ) {
+      **i = Cell();
+    }
+    this_cell->overlapped_cells.clear();
+
     newgrapheme();
-    cursor_col++;
+
+    if ( cursor_col < width - 1 ) {
+      Cell *next_cell = &rows[ cursor_row ].cells[ cursor_col + 1 ];
+      if ( chwidth == 2 ) {
+	this_cell->overlapped_cells.push_back( next_cell );
+	next_cell->overlapping_cell = this_cell;
+      } else {
+	next_cell->overlapping_cell = NULL;
+      }
+    }
+
+    cursor_col += chwidth;
+    break;
+  case 0: /* combining character */
+    if ( rows[ combining_char_row ].cells[ combining_char_col ].contents.size() < 16 ) { /* seems like a reasonable limit on combining character */
+      rows[ combining_char_row ].cells[ combining_char_col ].contents.push_back( act->ch );
+    }
+  case -1: /* unprintable character */
     break;
   default:
-    break;
+    assert( false );
   }
 }
 
@@ -154,6 +182,7 @@ void Emulator::debug_printout( FILE *f )
     for ( int x = 0; x < width; x++ ) {
       fprintf( f, "\033[%d;%dH", y + 1, x + 1 );
       Cell *cell = &rows[ y ].cells[ x ];
+      if ( cell->overlapping_cell ) continue;
       for ( std::vector<wchar_t>::iterator i = cell->contents.begin();
 	    i != cell->contents.end();
 	    i++ ) {

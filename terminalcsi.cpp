@@ -45,7 +45,7 @@ void Emulator::CSI_cursormove( void )
   if ( cursor_row < 0 ) cursor_row = 0;
   if ( cursor_row >= height ) cursor_row = height - 1;
   if ( cursor_col < 0 ) cursor_col = 0;
-  if ( cursor_col >= width ) cursor_col = width;
+  if ( cursor_col >= width ) cursor_col = width - 1;
 
   newgrapheme();
 }
