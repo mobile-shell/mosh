@@ -149,7 +149,7 @@ Transition CSI_Entry::input_state_rule( wchar_t ch )
     return Transition( new Param, &family->s_CSI_Param );
   }
 
-  if ( (ch <= 0x3C) && (ch <= 0x3F) ) {
+  if ( (0x3C <= ch) && (ch <= 0x3F) ) {
     return Transition( new Collect, &family->s_CSI_Param );
   }
 
