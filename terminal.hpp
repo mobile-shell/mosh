@@ -19,6 +19,8 @@ namespace Terminal {
   
     Cell( const Cell & );
     Cell & operator=( const Cell & );
+
+    void reset( void );
 };
 
   class Row {
@@ -66,6 +68,7 @@ namespace Terminal {
 
     /* CSI methods */
     void CSI_EL( void );
+    void CSI_ED( void );
     void CSI_cursormove( void );
 
   public:

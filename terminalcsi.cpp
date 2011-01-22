@@ -8,13 +8,45 @@ void Emulator::CSI_EL( void )
 {
   if ( params == "1" ) { /* start of screen to active position, inclusive */
     for ( int x = 0; x <= cursor_col; x++ ) {
-      rows[ cursor_row ].cells[ x ].contents.clear();
+      if ( x < width ) {
+	rows[ cursor_row ].cells[ x ].reset();
+      }
     }
   } else if ( params == "2" ) { /* all of line */
     rows[ cursor_row ] = Row( width );
   } else { /* active position to end of line, inclusive */
     for ( int x = cursor_col; x < width; x++ ) {
-      rows[ cursor_row ].cells[ x ].contents.clear();
+      rows[ cursor_row ].cells[ x ].reset();
+    }
+  }
+}
+
+void Emulator::CSI_ED( void ) {
+  if ( params == "1" ) { /* start of screen to active position, inclusive */
+    for ( int y = 0; y < cursor_row; y++ ) {
+      for ( int x = 0; x < width; x++ ) {
+	rows[ y ].cells[ x ].reset();
+      }
+    }
+    for ( int x = 0; x <= cursor_col; x++ ) {
+      if ( x < width ) {
+	rows[ cursor_row ].cells[ x ].reset();
+      }
+    }
+  } else if ( params == "2" ) { /* entire screen */
+    for ( int y = 0; y < height; y++ ) {
+      for ( int x = 0; x < width; x++ ) {
+	rows[ y ].cells[ x ].reset();
+      }
+    }
+  } else { /* active position to end of screen, inclusive */
+    for ( int x = cursor_col; x < width; x++ ) {
+      rows[ cursor_row ].cells[ x ].reset();
+    }
+    for ( int y = cursor_row + 1; y < height; y++ ) {
+      for ( int x = 0; x < width; x++ ) {
+	rows[ y ].cells[ x ].reset();
+      }
     }
   }
 }

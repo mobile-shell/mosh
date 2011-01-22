@@ -138,27 +138,16 @@ void Emulator::print( Parser::Print *act )
 
     autoscroll();
 
-    this_cell =  &rows[ cursor_row ].cells[ cursor_col ];
-    this_cell->contents.clear();
+    this_cell = &rows[ cursor_row ].cells[ cursor_col ];
+    this_cell->reset();
     this_cell->contents.push_back( act->ch );
-    for ( std::vector<Cell *>::iterator i
-	    = this_cell->overlapped_cells.begin();
-	  i != this_cell->overlapped_cells.end();
-	  i++ ) {
-      **i = Cell();
-    }
-    this_cell->overlapped_cells.clear();
 
     newgrapheme();
 
-    if ( cursor_col < width - 1 ) {
+    if ( (cursor_col < width - 1) && (chwidth == 2) ) {
       Cell *next_cell = &rows[ cursor_row ].cells[ cursor_col + 1 ];
-      if ( chwidth == 2 ) {
-	this_cell->overlapped_cells.push_back( next_cell );
-	next_cell->overlapping_cell = this_cell;
-      } else {
-	next_cell->overlapping_cell = NULL;
-      }
+      this_cell->overlapped_cells.push_back( next_cell );
+      next_cell->overlapping_cell = this_cell;
     }
 
     cursor_col += chwidth;
@@ -232,6 +221,8 @@ void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
 
   if ( dispatch_chars == "K" ) {
     CSI_EL();
+  } else if ( dispatch_chars == "J" ) {
+    CSI_ED();
   } else if ( (dispatch_chars == "A")
 	      || (dispatch_chars == "B")
 	      || (dispatch_chars == "C")
@@ -287,4 +278,21 @@ int Emulator::getparam( size_t N, int defaultval )
   if ( ret < 1 ) ret = defaultval;
 
   return ret;
+}
+
+void Cell::reset( void )
+{
+  if ( overlapping_cell ) {
+    assert( overlapped_cells.size() == 0 );
+    contents.clear();
+  } else {
+    contents.clear();
+    for ( std::vector<Cell *>::iterator i = overlapped_cells.begin();
+	  i != overlapped_cells.end();
+	  i++ ) {
+      (*i)->overlapping_cell = NULL;
+      (*i)->reset();
+    }
+    overlapped_cells.clear();
+  }
 }
