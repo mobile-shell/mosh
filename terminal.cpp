@@ -256,7 +256,10 @@ void Emulator::parse_params( void )
     errno = 0;
     char *endptr;
     int val = strtol( segment_begin, &endptr, 10 );
-    if ( (errno == 0) && (endptr != segment_begin) ) {
+    if ( endptr == segment_begin ) {
+      val = -1;
+    }
+    if ( errno == 0 ) {
       parsed_params.push_back( val );
     }
 
@@ -267,7 +270,21 @@ void Emulator::parse_params( void )
   errno = 0;
   char *endptr;
   int val = strtol( segment_begin, &endptr, 10 );
-  if ( (errno == 0) && (endptr != segment_begin) ) {
+  if ( endptr == segment_begin ) {
+    val = -1;
+  }
+  if ( errno == 0 ) {
     parsed_params.push_back( val );
   }
+}
+
+int Emulator::getparam( size_t N, int defaultval )
+{
+  int ret = defaultval;
+  if ( parsed_params.size() > N ) {
+    ret = parsed_params[ N ];
+  }
+  if ( ret < 1 ) ret = defaultval;
+
+  return ret;
 }

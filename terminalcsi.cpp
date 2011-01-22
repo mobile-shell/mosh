@@ -22,10 +22,7 @@ void Emulator::CSI_EL( void )
 void Emulator::CSI_cursormove( void )
 {
   parse_params();
-  int num = 1;
-  if ( parsed_params.size() >= 1 ) {
-    num = parsed_params[ 0 ];
-  }
+  int num = getparam( 0, 1 );
 
   switch ( dispatch_chars[ 0 ] ) {
   case 'A':
@@ -40,6 +37,11 @@ void Emulator::CSI_cursormove( void )
   case 'D':
     cursor_col -= num;
     break;
+  case 'H':
+    int x = getparam( 0, 1 );
+    int y = getparam( 1, 1 );
+    cursor_row = x - 1;
+    cursor_col = y - 1;
   }
 
   if ( cursor_row < 0 ) cursor_row = 0;

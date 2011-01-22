@@ -62,6 +62,7 @@ namespace Terminal {
 
     void parse_params( void );
     std::vector<int> parsed_params;
+    int getparam( size_t N, int defaultval );
 
     /* CSI methods */
     void CSI_EL( void );
