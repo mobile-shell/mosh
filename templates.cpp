@@ -13,3 +13,4 @@ template class std::vector<Terminal::Cell>;
 template class std::deque<Terminal::Row>;
 template class std::vector<Terminal::Cell *>;
 template class std::vector<wchar_t>;
+template class std::vector<int>;

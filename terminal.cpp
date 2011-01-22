@@ -1,4 +1,7 @@
 #include <assert.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "terminal.hpp"
 
@@ -34,7 +37,8 @@ Emulator::Emulator( size_t s_width, size_t s_height )
     width( s_width ), height( s_height ),
     cursor_col( 0 ), cursor_row( 0 ),
     combining_char_col( 0 ), combining_char_row( 0 ),
-    rows( height, Row( width ) )
+    rows( height, Row( width ) ),
+    params(), dispatch_chars(), parsed_params()
 {
 
 }
@@ -103,7 +107,7 @@ void Emulator::execute( Parser::Execute *act )
   case 0x08: /* BS */
     if ( cursor_col > 0 ) {
       cursor_col--;
-      rows[ cursor_row ].cells[ cursor_col ].contents.clear();
+      newgrapheme(); /* this is not xterm's behavior */
     }
     break;
   }
@@ -146,8 +150,8 @@ void Emulator::debug_printout( FILE *f )
 {
   fprintf( f, "\033[H\033[2J" );
 
-  for ( size_t y = 0; y < height; y++ ) {
-    for ( size_t x = 0; x < width; x++ ) {
+  for ( int y = 0; y < height; y++ ) {
+    for ( int x = 0; x < width; x++ ) {
       fprintf( f, "\033[%d;%dH", y + 1, x + 1 );
       Cell *cell = &rows[ y ].cells[ x ];
       for ( std::vector<wchar_t>::iterator i = cell->contents.begin();
@@ -161,4 +165,80 @@ void Emulator::debug_printout( FILE *f )
   fprintf( f, "\033[%d;%dH", cursor_row + 1, cursor_col + 1 );
 
   fflush( NULL );
+}
+
+void Emulator::param( Parser::Param *act )
+{
+  assert( act->char_present );
+  assert( (act->ch == ';') || ( (act->ch >= '0') && (act->ch <= '9') ) );
+  if ( params.length() < 100 ) {
+    /* enough for 16 five-char params plus 15 semicolons */
+    params.push_back( act->ch );
+  }
+}
+
+void Emulator::collect( Parser::Collect *act )
+{
+  assert( act->char_present );
+  if ( ( dispatch_chars.length() < 8 ) /* never should need more than 2 */
+       && ( act->ch <= 255 ) ) {  /* ignore non-8-bit */
+    dispatch_chars.push_back( act->ch );
+  }
+}
+
+void Emulator::clear( void )
+{
+  params.clear();
+  dispatch_chars.clear();
+}
+
+void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
+{
+  /* add final char to dispatch key */
+  assert( act->char_present );
+  Parser::Collect act2;
+  act2.char_present = true;
+  act2.ch = act->ch;
+  collect( &act2 ); 
+
+  if ( dispatch_chars == "K" ) {
+    CSI_EL();
+  } else if ( (dispatch_chars == "A")
+	      || (dispatch_chars == "B")
+	      || (dispatch_chars == "C")
+	      || (dispatch_chars == "D")
+	      || (dispatch_chars == "H") ) {
+    CSI_cursormove();
+  }
+}
+
+void Emulator::parse_params( void )
+{
+  parsed_params.clear();
+  const char *str = params.c_str();
+  const char *segment_begin = str;
+
+  while ( 1 ) {
+    const char *segment_end = strchr( segment_begin, ';' );
+    if ( segment_end == NULL ) {
+      break;
+    }
+
+    errno = 0;
+    char *endptr;
+    int val = strtol( segment_begin, &endptr, 10 );
+    if ( (errno == 0) && (endptr != segment_begin) ) {
+      parsed_params.push_back( val );
+    }
+
+    segment_begin = segment_end + 1;
+  }
+
+  /* get last param */
+  errno = 0;
+  char *endptr;
+  int val = strtol( segment_begin, &endptr, 10 );
+  if ( (errno == 0) && (endptr != segment_begin) ) {
+    parsed_params.push_back( val );
+  }
 }

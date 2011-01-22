@@ -12,3 +12,18 @@ void Execute::act_on_terminal( Terminal::Emulator *emu )
 {
   emu->execute( this );
 }
+
+void Clear::act_on_terminal( Terminal::Emulator *emu )
+{
+  emu->clear();
+}
+
+void Param::act_on_terminal( Terminal::Emulator *emu )
+{
+  emu->param( this );
+}
+
+void CSI_Dispatch::act_on_terminal( Terminal::Emulator *emu )
+{
+  emu->CSI_dispatch( this );
+}

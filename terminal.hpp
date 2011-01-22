@@ -31,23 +31,39 @@ namespace Terminal {
   class Emulator {
     friend void Parser::Print::act_on_terminal( Emulator * );
     friend void Parser::Execute::act_on_terminal( Emulator * );
+    friend void Parser::Clear::act_on_terminal( Emulator * );
+    friend void Parser::Param::act_on_terminal( Emulator * );
+    friend void Parser::CSI_Dispatch::act_on_terminal( Emulator * );
 
   private:
     Parser::UTF8Parser parser;
 
-    size_t width, height;
-    size_t cursor_col, cursor_row;
-    size_t combining_char_col, combining_char_row;
+    int width, height;
+    int cursor_col, cursor_row;
+    int combining_char_col, combining_char_row;
 
     std::deque<Row> rows;
+    std::string params;
+    std::string dispatch_chars;
 
+    /* action methods */
     void print( Parser::Print *act );
     void execute( Parser::Execute *act );
+    void param( Parser::Param *act );
+    void collect( Parser::Collect *act );
+    void clear( void );
+    void CSI_dispatch( Parser::CSI_Dispatch *act );
 
     void scroll( int N );
     void autoscroll( void );
-
     void newgrapheme( void );
+
+    void parse_params( void );
+    std::vector<int> parsed_params;
+
+    /* CSI methods */
+    void CSI_EL( void );
+    void CSI_cursormove( void );
 
   public:
     Emulator( size_t s_width, size_t s_height );

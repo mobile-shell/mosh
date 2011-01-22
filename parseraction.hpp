@@ -31,23 +31,30 @@ namespace Parser {
     void act_on_terminal( Terminal::Emulator *emu );
   };
   class Execute : public Action {
-  public: std::string name( void ) { return std::string( "Execute" ); }
+  public:
+    std::string name( void ) { return std::string( "Execute" ); }
     void act_on_terminal( Terminal::Emulator *emu );
   };
   class Clear : public Action {
-  public: std::string name( void ) { return std::string( "Clear" ); }
+  public:
+    std::string name( void ) { return std::string( "Clear" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
   class Collect : public Action {
   public: std::string name( void ) { return std::string( "Collect" ); }
   };
   class Param : public Action {
-  public: std::string name( void ) { return std::string( "Param" ); }
+  public:
+    std::string name( void ) { return std::string( "Param" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
   class Esc_Dispatch : public Action {
   public: std::string name( void ) { return std::string( "Esc_Dispatch" ); }
   };
   class CSI_Dispatch : public Action {
-  public: std::string name( void ) { return std::string( "CSI_Dispatch" ); }
+  public:
+    std::string name( void ) { return std::string( "CSI_Dispatch" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
   class Hook : public Action {
   public: std::string name( void ) { return std::string( "Hook" ); }
