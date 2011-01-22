@@ -2,10 +2,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <typeinfo>
 
 #include "terminal.hpp"
 
 using namespace Terminal;
+
+static void swrite( int fd, const char *str );
 
 Cell::Cell()
   : overlapping_cell( NULL ),
@@ -49,7 +52,7 @@ Emulator::~Emulator()
 
 }
 
-std::string Emulator::input( char c )
+std::string Emulator::input( char c, int actfd )
 {
   terminal_to_host.clear();
 
@@ -59,6 +62,24 @@ std::string Emulator::input( char c )
 	i != vec.end();
 	i++ ) {
     Parser::Action *act = *i;
+
+    if ( (actfd > 0) && (typeid(*act) != typeid(Parser::Print)) ) {
+      char actsum[ 32 ];
+      if ( act->char_present ) {
+	if ( isprint( act->ch ) ) {
+	  snprintf( actsum, 32, "%s(0x%02x=%lc) ",
+		    act->name().c_str(), act->ch, act->ch );
+	} else {
+	  snprintf( actsum, 32, "%s(0x%02x) ",
+		    act->name().c_str(), act->ch );
+	}
+      } else {
+	snprintf( actsum, 32, "[%s] ",
+		  act->name().c_str() );
+      }
+
+      swrite( actfd, actsum );
+    }
 
     act->act_on_terminal( this );
 
@@ -168,26 +189,48 @@ void Emulator::print( Parser::Print *act )
   }
 }
 
-void Emulator::debug_printout( FILE *f )
+static void swrite( int fd, const char *str )
 {
-  fprintf( f, "\033[H\033[2J" );
+  ssize_t total_bytes_written = 0;
+  ssize_t bytes_to_write = strlen( str );
+  while ( total_bytes_written < bytes_to_write ) {
+    ssize_t bytes_written = write( fd, str + total_bytes_written,
+				   bytes_to_write - total_bytes_written );
+    if ( bytes_written <= 0 ) {
+      perror( "write" );
+    } else {
+      total_bytes_written += bytes_written;
+    }
+  }
+}
+
+void Emulator::debug_printout( int fd )
+{
+  std::string screen;
+  screen.append( "\033[H\033[2J" );
 
   for ( int y = 0; y < height; y++ ) {
     for ( int x = 0; x < width; x++ ) {
-      fprintf( f, "\033[%d;%dH", y + 1, x + 1 );
+      char curmove[ 32 ];
+      snprintf( curmove, 32, "\033[%d;%dH", y + 1, x + 1 );
+      screen.append( curmove );
       Cell *cell = &rows[ y ].cells[ x ];
       if ( cell->overlapping_cell ) continue;
       for ( std::vector<wchar_t>::iterator i = cell->contents.begin();
 	    i != cell->contents.end();
 	    i++ ) {
-	fprintf( f, "%lc", *i );
+	char utf8[ 8 ];
+	snprintf( utf8, 8, "%lc", *i );
+	screen.append( utf8 );
       }
     }
   }
 
-  fprintf( f, "\033[%d;%dH", cursor_row + 1, cursor_col + 1 );
+  char curmove[ 32 ];
+  snprintf( curmove, 32, "\033[%d;%dH", cursor_row + 1, cursor_col + 1 );
+  screen.append( curmove );
 
-  fflush( NULL );
+  swrite( fd, screen.c_str() );
 }
 
 void Emulator::param( Parser::Param *act )

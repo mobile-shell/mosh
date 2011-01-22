@@ -13,6 +13,8 @@
 #include <wctype.h>
 #include <iostream>
 #include <typeinfo>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "terminal.hpp"
 
@@ -22,14 +24,28 @@
 
 const size_t buf_size = 1024;
 
-void emulate_terminal( int fd );
+void emulate_terminal( int fd, int debug_fd );
 int copy( int src, int dest );
-int termemu( int fd, Terminal::Emulator *terminal );
+int termemu( int fd, Terminal::Emulator *terminal, int debug_fd );
 
-int main( int argc __attribute__((unused)),
-	  char *argv[] __attribute__((unused)),
+int main( int argc,
+	  char *argv[],
 	  char *envp[] )
 {
+  int debug_fd;
+  if ( argc == 1 ) {
+    debug_fd = -1;
+  } else if ( argc == 2 ) {
+    debug_fd = open( argv[ 1 ], O_WRONLY );
+    if ( debug_fd < 0 ) {
+      perror( "open" );
+      exit( 1 );
+    }
+  } else {
+    fprintf( stderr, "Usage: %s [debugfd]\n", argv[ 0 ] );
+    exit( 1 );
+  }
+
   int master;
   struct termios saved_termios, raw_termios, child_termios;
 
@@ -86,7 +102,7 @@ int main( int argc __attribute__((unused)),
       exit( 1 );
     }
 
-    emulate_terminal( master );
+    emulate_terminal( master, debug_fd );
 
     if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
       perror( "tcsetattr" );
@@ -97,7 +113,7 @@ int main( int argc __attribute__((unused)),
   return 0;
 }
 
-void emulate_terminal( int fd )
+void emulate_terminal( int fd, int debug_fd )
 {
   Terminal::Emulator terminal( 80, 24 );
   struct pollfd pollfds[ 2 ];
@@ -120,7 +136,7 @@ void emulate_terminal( int fd )
 	return;
       }
     } else if ( pollfds[ 1 ].revents & POLLIN ) {
-      if ( termemu( fd, &terminal ) < 0 ) {
+      if ( termemu( fd, &terminal, debug_fd ) < 0 ) {
 	return;
       }
     } else if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
@@ -159,7 +175,7 @@ int copy( int src, int dest )
   return 0;
 }
 
-int termemu( int fd, Terminal::Emulator *terminal )
+int termemu( int fd, Terminal::Emulator *terminal, int debug_fd )
 {
   char buf[ buf_size ];
 
@@ -176,10 +192,10 @@ int termemu( int fd, Terminal::Emulator *terminal )
 
   /* feed to terminal */
   for ( int i = 0; i < bytes_read; i++ ) {
-    terminal_to_host.append( terminal->input( buf[ i ] ) );
+    terminal_to_host.append( terminal->input( buf[ i ], debug_fd ) );
   }
 
-  terminal->debug_printout( stdout );
+  terminal->debug_printout( STDOUT_FILENO );
 
   /* write writeback */
   ssize_t total_bytes_written = 0;

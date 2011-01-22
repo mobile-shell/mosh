@@ -77,14 +77,14 @@ namespace Terminal {
     Emulator( size_t s_width, size_t s_height );
     ~Emulator();
 
-    std::string input( char c );
+    std::string input( char c, int debug_fd );
 
     void resize( size_t s_width, size_t s_height );
 
     size_t get_width( void ) { return width; }
     size_t get_height( void ) { return height; }
 
-    void debug_printout( FILE *f );
+    void debug_printout( int fd );
   };
 }
 
