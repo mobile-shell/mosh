@@ -38,7 +38,8 @@ Emulator::Emulator( size_t s_width, size_t s_height )
     cursor_col( 0 ), cursor_row( 0 ),
     combining_char_col( 0 ), combining_char_row( 0 ),
     rows( height, Row( width ) ),
-    params(), dispatch_chars(), errors(), parsed_params()
+    params(), dispatch_chars(), terminal_to_host(),
+    errors(), parsed_params()
 {
 
 }
@@ -48,8 +49,10 @@ Emulator::~Emulator()
 
 }
 
-void Emulator::input( char c )
+std::string Emulator::input( char c )
 {
+  terminal_to_host.clear();
+
   std::vector<Parser::Action *> vec = parser.input( c );
 
   for ( std::vector<Parser::Action *>::iterator i = vec.begin();
@@ -61,6 +64,8 @@ void Emulator::input( char c )
 
     delete act;
   }
+
+  return terminal_to_host;
 }
 
 void Emulator::scroll( int N )
@@ -229,6 +234,8 @@ void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
 	      || (dispatch_chars == "D")
 	      || (dispatch_chars == "H") ) {
     CSI_cursormove();
+  } else if ( dispatch_chars == "c" ) {
+    CSI_DA();
   }
 }
 

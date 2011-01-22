@@ -48,6 +48,7 @@ namespace Terminal {
     std::string params;
     std::string dispatch_chars;
 
+    std::string terminal_to_host;
     std::string errors;
 
     /* action methods */
@@ -70,12 +71,13 @@ namespace Terminal {
     void CSI_EL( void );
     void CSI_ED( void );
     void CSI_cursormove( void );
+    void CSI_DA( void );
 
   public:
     Emulator( size_t s_width, size_t s_height );
     ~Emulator();
 
-    void input( char c );
+    std::string input( char c );
 
     void resize( size_t s_width, size_t s_height );
 

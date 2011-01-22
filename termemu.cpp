@@ -172,12 +172,29 @@ int termemu( int fd, Terminal::Emulator *terminal )
     return -1;
   }
 
+  std::string terminal_to_host;
+
   /* feed to terminal */
   for ( int i = 0; i < bytes_read; i++ ) {
-    terminal->input( buf[ i ] );
+    terminal_to_host.append( terminal->input( buf[ i ] ) );
   }
 
   terminal->debug_printout( stdout );
+
+  /* write writeback */
+  ssize_t total_bytes_written = 0;
+  ssize_t bytes_to_write = terminal_to_host.length();
+  const char *str = terminal_to_host.c_str();
+  while ( total_bytes_written < bytes_to_write ) {
+    ssize_t bytes_written = write( fd, str + total_bytes_written,
+				   bytes_to_write - total_bytes_written );
+    if ( bytes_written <= 0 ) {
+      perror( "write" );
+      return -1;
+    } else {
+      total_bytes_written += bytes_written;
+    }
+  }
 
   return 0;
 }

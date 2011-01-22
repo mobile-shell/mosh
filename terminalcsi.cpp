@@ -83,3 +83,8 @@ void Emulator::CSI_cursormove( void )
 
   newgrapheme();
 }
+
+void Emulator::CSI_DA( void )
+{
+  terminal_to_host.append( "\033[?1;0c" );
+}
