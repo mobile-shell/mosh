@@ -68,16 +68,20 @@ std::string Emulator::input( char c, int actfd )
     act->act_on_terminal( this );
 
     if ( (actfd > 0) && ( !act->handled ) ) {
-      char actsum[ 32 ];
-      wchar_t ch = L'\0';
+      char actsum[ 64 ];
+      char thechar[ 10 ] = { 0 };
       if ( act->char_present ) {
-	ch = act->ch;
+	if ( isprint( act->ch ) ) {
+	  snprintf( thechar, 10, "(%lc)", act->ch );
+	} else {
+	  snprintf( thechar, 10, "(0x%x)", act->ch );
+	}
       }
-      snprintf( actsum, 32, "%s[%s](%s){%lc} ",
+      snprintf( actsum, 64, "%s%s[disp=%s,param=%s] ",
 		act->name().c_str(),
+		thechar,
 		dispatch_chars.c_str(),
-		params.c_str(),
-		ch );
+		params.c_str() );
 
       swrite( actfd, actsum );
     }
