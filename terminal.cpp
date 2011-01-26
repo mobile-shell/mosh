@@ -5,10 +5,9 @@
 #include <typeinfo>
 
 #include "terminal.hpp"
+#include "swrite.hpp"
 
 using namespace Terminal;
-
-static void swrite( int fd, const char *str );
 
 Cell::Cell()
   : overlapping_cell( NULL ),
@@ -189,21 +188,6 @@ void Emulator::print( Parser::Print *act )
     break;
   default:
     assert( false );
-  }
-}
-
-static void swrite( int fd, const char *str )
-{
-  ssize_t total_bytes_written = 0;
-  ssize_t bytes_to_write = strlen( str );
-  while ( total_bytes_written < bytes_to_write ) {
-    ssize_t bytes_written = write( fd, str + total_bytes_written,
-				   bytes_to_write - total_bytes_written );
-    if ( bytes_written <= 0 ) {
-      perror( "write" );
-    } else {
-      total_bytes_written += bytes_written;
-    }
   }
 }
 

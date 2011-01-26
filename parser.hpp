@@ -13,6 +13,10 @@
 #include "parserstate.hpp"
 #include "parserstatefamily.hpp"
 
+#ifndef __STDC_ISO_10646__
+#error "Must have __STDC_ISO_10646__"
+#endif
+
 namespace Parser {
   class Parser {
   private:

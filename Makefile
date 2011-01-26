@@ -1,5 +1,6 @@
-source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalcsi.cpp
-objects = parserstate.o parser.o templates.o terminal.o parseraction.o terminalcsi.o
+source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalcsi.cpp swrite.cpp
+objects = parserstate.o parser.o templates.o terminal.o parseraction.o terminalcsi.o swrite.o
+repos = templates.rpo
 executables = parse termemu
 
 CXX = g++

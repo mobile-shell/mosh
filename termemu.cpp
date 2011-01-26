@@ -17,10 +17,7 @@
 #include <fcntl.h>
 
 #include "terminal.hpp"
-
-#ifndef __STDC_ISO_10646__
-#error "Must have __STDC_ISO_10646__"
-#endif
+#include "swrite.hpp"
 
 const size_t buf_size = 1024;
 
@@ -158,21 +155,9 @@ int copy( int src, int dest )
   } else if ( bytes_read < 0 ) {
     perror( "read" );
     return -1;
-  } else {
-    ssize_t total_bytes_written = 0;
-    while ( total_bytes_written < bytes_read ) {
-      ssize_t bytes_written = write( dest, buf + total_bytes_written,
-				     bytes_read - total_bytes_written );
-      if ( bytes_written <= 0 ) {
-	perror( "write" );
-	return -1;
-      } else {
-	total_bytes_written += bytes_written;
-      }
-    }
   }
 
-  return 0;
+  return swrite( dest, buf, bytes_read );
 }
 
 int termemu( int fd, Terminal::Emulator *terminal, int debug_fd )
@@ -198,19 +183,7 @@ int termemu( int fd, Terminal::Emulator *terminal, int debug_fd )
   terminal->debug_printout( STDOUT_FILENO );
 
   /* write writeback */
-  ssize_t total_bytes_written = 0;
-  ssize_t bytes_to_write = terminal_to_host.length();
-  const char *str = terminal_to_host.c_str();
-  while ( total_bytes_written < bytes_to_write ) {
-    ssize_t bytes_written = write( fd, str + total_bytes_written,
-				   bytes_to_write - total_bytes_written );
-    if ( bytes_written <= 0 ) {
-      perror( "write" );
-      return -1;
-    } else {
-      total_bytes_written += bytes_written;
-    }
-  }
+  return swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() );
 
   return 0;
 }

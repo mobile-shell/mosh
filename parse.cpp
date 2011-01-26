@@ -15,10 +15,7 @@
 #include <typeinfo>
 
 #include "parser.hpp"
-
-#ifndef __STDC_ISO_10646__
-#error "Must have __STDC_ISO_10646__"
-#endif
+#include "swrite.hpp"
 
 const size_t buf_size = 1024;
 
@@ -64,11 +61,6 @@ int main( int argc __attribute__((unused)),
 
   if ( child == 0 ) {
     /* child */
-    if ( chdir( "/" ) < 0 ) {
-      perror( "chdir" );
-      exit( 1 );
-    }
-
     char *my_argv[ 2 ];
     my_argv[ 0 ] = strdup( "/bin/bash" );
     assert( my_argv[ 0 ] );
@@ -147,21 +139,9 @@ int copy( int src, int dest )
   } else if ( bytes_read < 0 ) {
     perror( "read" );
     return -1;
-  } else {
-    ssize_t total_bytes_written = 0;
-    while ( total_bytes_written < bytes_read ) {
-      ssize_t bytes_written = write( dest, buf + total_bytes_written,
-				     bytes_read - total_bytes_written );
-      if ( bytes_written <= 0 ) {
-	perror( "write" );
-	return -1;
-      } else {
-	total_bytes_written += bytes_written;
-      }
-    }
   }
 
-  return 0;
+  return swrite( dest, buf, bytes_read );
 }
 
 int vt_parser( int fd, Parser::UTF8Parser *parser )
