@@ -14,6 +14,7 @@ namespace Terminal {
     Cell *overlapping_cell;
     std::vector<wchar_t> contents;
     std::vector<Cell *> overlapped_cells;
+    char fallback; /* first character is combining character */
 
     Cell();
   

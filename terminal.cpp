@@ -12,13 +12,15 @@ using namespace Terminal;
 Cell::Cell()
   : overlapping_cell( NULL ),
     contents(),
-    overlapped_cells()
+    overlapped_cells(),
+    fallback( false )
 {}
 
 Cell::Cell( const Cell &x )
   : overlapping_cell( x.overlapping_cell ),
     contents( x.contents ),
-    overlapped_cells( x.overlapped_cells )
+    overlapped_cells( x.overlapped_cells ),
+    fallback( x.fallback )
 {}
 
 Cell & Cell::operator=( const Cell &x )
@@ -26,6 +28,7 @@ Cell & Cell::operator=( const Cell &x )
   overlapping_cell = x.overlapping_cell;
   contents = x.contents;
   overlapped_cells = x.overlapped_cells;
+  fallback = x.fallback;
 
   return *this;
 }
@@ -87,15 +90,13 @@ std::string Emulator::input( char c, int actfd )
 
 void Emulator::scroll( int N )
 {
-  if ( N == 0 ) {
-    return;
-  } else if ( N > 0 ) {
-    for ( int i = 0; i < N; i++ ) {
-      rows.pop_front();
-      rows.push_back( Row( width ) );
-      cursor_row--;
-      combining_char_row--;
-    }
+  assert( N >= 0 );
+
+  for ( int i = 0; i < N; i++ ) {
+    rows.pop_front();
+    rows.push_back( Row( width ) );
+    cursor_row--;
+    combining_char_row--;
   }
 }
 
@@ -120,11 +121,13 @@ void Emulator::execute( Parser::Execute *act )
   case 0x0a: /* LF */
     cursor_row++;
     autoscroll();
+    newgrapheme();
     act->handled = true;
     break;
 
   case 0x0d: /* CR */
     cursor_col = 0;
+    newgrapheme();
     act->handled = true;
     break;
     
@@ -147,7 +150,9 @@ void Emulator::print( Parser::Print *act )
   }
 
   assert( cursor_row < height ); /* must be on screen */
-  assert( cursor_row <= width ); /* one off is ok */
+  assert( cursor_col <= width + 1 ); /* two off is ok */
+  assert( combining_char_row < height );
+  assert( combining_char_col < width );
 
   int chwidth = act->ch == L'\0' ? -1 : wcwidth( act->ch );
 
@@ -179,6 +184,16 @@ void Emulator::print( Parser::Print *act )
     act->handled = true;
     break;
   case 0: /* combining character */
+    if ( rows[ combining_char_row ].cells[ combining_char_col ].contents.size() == 0 ) {
+      /* cell starts with combining character */
+      rows[ combining_char_row ].cells[ combining_char_col ].fallback = true;
+      assert( cursor_col == combining_char_col );
+      assert( cursor_row == combining_char_row );
+      assert( cursor_col < width );
+      cursor_col++;
+      /* a combining character should never be able to wrap us */
+    }
+
     if ( rows[ combining_char_row ].cells[ combining_char_col ].contents.size() < 16 ) { /* seems like a reasonable limit on combining character */
       rows[ combining_char_row ].cells[ combining_char_col ].contents.push_back( act->ch );
     }
@@ -203,6 +218,13 @@ void Emulator::debug_printout( int fd )
       screen.append( curmove );
       Cell *cell = &rows[ y ].cells[ x ];
       if ( cell->overlapping_cell ) continue;
+
+      if ( cell->fallback ) {
+	char utf8[ 8 ];
+	snprintf( utf8, 8, "%lc", 0xA0 );
+	screen.append( utf8 );
+      }
+
       for ( std::vector<wchar_t>::iterator i = cell->contents.begin();
 	    i != cell->contents.end();
 	    i++ ) {
@@ -342,11 +364,12 @@ int Emulator::getparam( size_t N, int defaultval )
 
 void Cell::reset( void )
 {
+  contents.clear();
+  fallback = false;
+
   if ( overlapping_cell ) {
     assert( overlapped_cells.size() == 0 );
-    contents.clear();
   } else {
-    contents.clear();
     for ( std::vector<Cell *>::iterator i = overlapped_cells.begin();
 	  i != overlapped_cells.end();
 	  i++ ) {
