@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <assert.h>
+#include <string.h>
 
 #include "terminalactionstate.hpp"
 #include "parseraction.hpp"
@@ -9,7 +11,7 @@ ActionState::ActionState()
   : params(), parsed_params(), parsed( false ), dispatch_chars()
 {}
 
-void newparamchar( Parser::Param *act )
+void ActionState::newparamchar( Parser::Param *act )
 {
   assert( act->char_present );
   assert( (act->ch == ';') || ( (act->ch >= '0') && (act->ch <= '9') ) );
@@ -100,7 +102,7 @@ int ActionState::getparam( size_t N, int defaultval )
 std::string ActionState::str( void )
 {
   char assum[ 64 ];
-  snprintf( assum, 64, "[dispatch=%s params=%s]",
+  snprintf( assum, 64, "[dispatch=\"%s\" params=\"%s\"]",
 	    dispatch_chars.c_str(), params.c_str() );
   return std::string( assum );
 }

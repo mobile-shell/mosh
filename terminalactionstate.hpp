@@ -2,6 +2,7 @@
 #define TERMINALACTIONSTATE_HPP
 
 #include <vector>
+#include <string>
 
 namespace Parser {
   class Param;
@@ -12,6 +13,7 @@ namespace Parser {
 namespace Terminal {
   class ActionState {
   private:
+  public: /* tmp */
     std::string params;
     std::vector<int> parsed_params;
     bool parsed;

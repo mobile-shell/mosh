@@ -6,11 +6,11 @@
 
 using namespace Parser;
 
-std::string Parser::str( void )
+std::string Action::str( void )
 {
   char thechar[ 10 ] = { 0 };
   if ( char_present ) {
-    snprintf( thechar, 10, isprint( ch ) ? "(%lc)" : "(0x%x)", act->ch );
+    snprintf( thechar, 10, isprint( ch ) ? "(%lc)" : "(0x%x)", ch );
   }
 
   return name() + std::string( thechar );
@@ -28,17 +28,17 @@ void Execute::act_on_terminal( Terminal::Emulator *emu )
 
 void Clear::act_on_terminal( Terminal::Emulator *emu )
 {
-  emu->clear( this );
+  emu->as.clear( this );
 }
 
 void Param::act_on_terminal( Terminal::Emulator *emu )
 {
-  emu->param( this );
+  emu->as.newparamchar( this );
 }
 
 void Collect::act_on_terminal( Terminal::Emulator *emu )
 {
-  emu->collect( this );
+  emu->as.collect( this );
 }
 
 void CSI_Dispatch::act_on_terminal( Terminal::Emulator *emu )

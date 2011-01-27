@@ -1,6 +1,9 @@
 #ifndef TERMINALFB_HPP
 #define TERMINALFB_HPP
 
+#include <vector>
+#include <deque>
+
 /* Terminal framebuffer */
 
 namespace Terminal {

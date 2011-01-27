@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "terminalframebuffer.hpp"
 
 using namespace Terminal;
