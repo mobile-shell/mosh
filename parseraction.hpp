@@ -15,6 +15,8 @@ namespace Parser {
     wchar_t ch;
     bool handled;
 
+    std::string str( void );
+
     virtual std::string name( void ) = 0;
 
     virtual void act_on_terminal( Terminal::Emulator * ) {};
