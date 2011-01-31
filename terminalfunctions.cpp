@@ -159,7 +159,7 @@ void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
   fb->ds.set_tab();
 }
 
-static Function func_Ctrl_HTS( CONTROL, "\x88", Ctrl_HT );
+static Function func_Ctrl_HTS( CONTROL, "\x88", Ctrl_HTS );
 
 void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
 {
