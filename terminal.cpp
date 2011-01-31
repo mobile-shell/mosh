@@ -108,7 +108,16 @@ void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
 
 void Emulator::Esc_dispatch( Parser::Esc_Dispatch *act )
 {
-  dispatch.dispatch( ESCAPE, act, &fb );
+  /* handle 7-bit ESC-encoding of C1 control characters */
+  if ( (dispatch.get_dispatch_chars().size() == 0)
+       && (0x40 <= act->ch)
+       && (act->ch <= 0x5F) ) {
+    act->ch += 0x40;
+    dispatch.dispatch( CONTROL, act, &fb );
+    act->ch -= 0x40;
+  } else {
+    dispatch.dispatch( ESCAPE, act, &fb );
+  }
 }
 
 void Emulator::debug_printout( int fd )

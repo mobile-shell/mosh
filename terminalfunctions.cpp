@@ -111,6 +111,7 @@ void Ctrl_LF( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 }
 
 static Function func_Ctrl_LF( CONTROL, "\x0a", Ctrl_LF );
+static Function func_Ctrl_IND( CONTROL, "\x84", Ctrl_LF );
 
 void Ctrl_CR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
@@ -125,3 +126,4 @@ void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 }
 
 static Function func_Ctrl_BS( CONTROL, "\x08", Ctrl_BS );
+
