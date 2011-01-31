@@ -57,8 +57,12 @@ DrawState::DrawState( int s_width, int s_height )
   : width( s_width ), height( s_height ),
     cursor_col( 0 ), cursor_row( 0 ),
     combining_char_col( 0 ), combining_char_row( 0 ), tabs( s_width ),
-    next_print_will_wrap( false ), auto_wrap_mode( true )
-{}
+    next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true )
+{
+  for ( int i = 0; i < width; i++ ) {
+    tabs[ i ] = ( (i % 8) == 0 );
+  }
+}
 
 Framebuffer::Framebuffer( int s_width, int s_height )
   : rows( s_height, Row( s_width ) ), ds( s_width, s_height )

@@ -57,6 +57,7 @@ namespace Terminal {
 
     Dispatcher();
     int getparam( size_t N, int defaultval );
+    int param_count( void );
 
     void newparamchar( Parser::Param *act );
     void collect( Parser::Collect *act );

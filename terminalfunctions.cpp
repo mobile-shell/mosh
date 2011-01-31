@@ -173,3 +173,36 @@ void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
 }
 
 static Function func_CSI_TBC( CSI, "g", CSI_TBC );
+
+static bool *get_DEC_mode( int param, Framebuffer *fb ) {
+  switch ( param ) {
+  case 6: /* origin */
+    return &(fb->ds.origin_mode);
+  case 7: /* auto wrap */
+    return &(fb->ds.auto_wrap_mode);
+  }
+  return NULL;
+}
+
+void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
+{
+  for ( int i = 0; i < dispatch->param_count(); i++ ) {
+    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb );
+    if ( mode ) {
+      *mode = true;
+    }
+  }
+}
+
+void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
+{
+  for ( int i = 0; i < dispatch->param_count(); i++ ) {
+    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb );
+    if ( mode ) {
+      *mode = false;
+    }
+  }
+}
+
+static Function func_CSI_DECSM( CSI, "?h", CSI_DECSM );
+static Function func_CSI_DECRM( CSI, "?l", CSI_DECRM );

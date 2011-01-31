@@ -44,6 +44,7 @@ namespace Terminal {
 
   public:
     bool next_print_will_wrap;
+    bool origin_mode;
     bool auto_wrap_mode;
 
     /* bold, etc. */
