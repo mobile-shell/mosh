@@ -56,8 +56,8 @@ void Cell::reset( void )
 DrawState::DrawState( int s_width, int s_height )
   : width( s_width ), height( s_height ),
     cursor_col( 0 ), cursor_row( 0 ),
-    combining_char_col( 0 ), combining_char_row( 0 ),
-    next_print_will_wrap( false )
+    combining_char_col( 0 ), combining_char_row( 0 ), tabs( s_width ),
+    next_print_will_wrap( false ), auto_wrap_mode( true )
 {}
 
 Framebuffer::Framebuffer( int s_width, int s_height )
@@ -178,4 +178,24 @@ void Framebuffer::claim_overlap( int row, int col )
       next_cell->overlapping_cell = the_cell;
     }
   }
+}
+
+void DrawState::set_tab( void )
+{
+  tabs[ cursor_col ] = true;
+}
+
+void DrawState::clear_tab( int col )
+{
+  tabs[ col ] = false;
+}
+
+int DrawState::get_next_tab( void )
+{
+  for ( int i = cursor_col + 1; i < width; i++ ) {
+    if ( tabs[ i ] ) {
+      return i;
+    }
+  }
+  return -1;
 }

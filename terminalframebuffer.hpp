@@ -40,8 +40,11 @@ namespace Terminal {
     int cursor_col, cursor_row;
     int combining_char_col, combining_char_row;
 
+    std::vector<bool> tabs;
+
   public:
     bool next_print_will_wrap;
+    bool auto_wrap_mode;
 
     /* bold, etc. */
 
@@ -54,6 +57,10 @@ namespace Terminal {
     int get_combining_char_row( void ) { return combining_char_row; }
     int get_width( void ) { return width; }
     int get_height( void ) { return height; }
+
+    void set_tab( void );
+    void clear_tab( int col );
+    int get_next_tab( void );
 
     DrawState( int s_width, int s_height );
   };

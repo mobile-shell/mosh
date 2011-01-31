@@ -63,7 +63,7 @@ void Emulator::print( Parser::Print *act )
   switch ( chwidth ) {
   case 1: /* normal character */
   case 2: /* wide character */
-    if ( fb.ds.next_print_will_wrap ) {
+    if ( fb.ds.auto_wrap_mode && fb.ds.next_print_will_wrap ) {
       fb.ds.move_col( 0 );
       fb.move_rows_autoscroll( 1 );
     }

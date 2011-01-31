@@ -141,3 +141,35 @@ void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 }
 
 static Function func_Ctrl_NEL( CONTROL, "\x85", Ctrl_NEL );
+
+void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  int col = fb->ds.get_next_tab();
+  if ( col == -1 ) { /* no tabs, go to end of line */
+    fb->ds.move_col( fb->ds.get_width() - 1 );
+  } else {
+    fb->ds.move_col( col );
+  }
+}
+
+static Function func_Ctrl_HT( CONTROL, "\x09", Ctrl_HT );
+
+void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  fb->ds.set_tab();
+}
+
+static Function func_Ctrl_HTS( CONTROL, "\x88", Ctrl_HT );
+
+void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
+{
+  if ( dispatch->getparam( 0, 0 ) == 3 ) { /* clear all tab stops */
+    for ( int x = 0; x < fb->ds.get_width(); x++ ) {
+      fb->ds.clear_tab( x );
+    }
+  } else {
+    fb->ds.clear_tab( fb->ds.get_cursor_col() );
+  }
+}
+
+static Function func_CSI_TBC( CSI, "g", CSI_TBC );
