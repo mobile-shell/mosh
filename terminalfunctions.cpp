@@ -176,6 +176,10 @@ static Function func_CSI_TBC( CSI, "g", CSI_TBC );
 
 static bool *get_DEC_mode( int param, Framebuffer *fb ) {
   switch ( param ) {
+  case 3: /* 80/132 */
+    fb->ds.move_row( 0 );
+    fb->ds.move_col( 0 );
+    return NULL;
   case 6: /* origin */
     fb->ds.move_row( 0 );
     fb->ds.move_col( 0 );
