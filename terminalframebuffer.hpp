@@ -13,6 +13,7 @@ namespace Terminal {
     std::vector<wchar_t> contents;
     std::vector<Cell *> overlapped_cells;
     char fallback; /* first character is combining character */
+    int width;
 
     Cell();
   
@@ -29,19 +30,51 @@ namespace Terminal {
     Row( size_t s_width );
   };
 
-  class Framebuffer {
-  public:
+  class DrawState {
+  private:
     int width, height;
+
+    void new_grapheme( void );
+    void snap_cursor_to_border( void );
+
     int cursor_col, cursor_row;
     int combining_char_col, combining_char_row;
 
+  public:
+    bool next_print_will_wrap;
+
+    /* bold, etc. */
+
+    void move_row( int N, bool relative = false );
+    void move_col( int N, bool relative = false, bool implicit = false );
+
+    int get_cursor_col( void ) { return cursor_col; }
+    int get_cursor_row( void ) { return cursor_row; }
+    int get_combining_char_col( void ) { return combining_char_col; }
+    int get_combining_char_row( void ) { return combining_char_row; }
+    int get_width( void ) { return width; }
+    int get_height( void ) { return height; }
+
+    DrawState( int s_width, int s_height );
+  };
+
+  class Framebuffer {
+  private:
     std::deque<Row> rows;
 
     void scroll( int N );
-    void autoscroll( void );
-    void newgrapheme( void );
 
+  public:
     Framebuffer( int s_width, int s_height );
+    DrawState ds;
+
+    void move_rows_autoscroll( int rows );
+
+    Cell *get_cell( void );
+    Cell *get_cell( int row, int col );
+    Cell *get_combining_cell( void );
+
+    void claim_overlap( int row, int col );
   };
 }
 

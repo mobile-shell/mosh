@@ -45,24 +45,18 @@ void Emulator::execute( Parser::Execute *act )
 
   switch ( act->ch ) {
   case 0x0a: /* LF */
-    fb.cursor_row++;
-    fb.autoscroll();
-    fb.newgrapheme();
+    fb.move_rows_autoscroll( 1 );
     act->handled = true;
     break;
 
   case 0x0d: /* CR */
-    fb.cursor_col = 0;
-    fb.newgrapheme();
+    fb.ds.move_col( 0 );
     act->handled = true;
     break;
     
   case 0x08: /* BS */
-    if ( fb.cursor_col > 0 ) {
-      fb.cursor_col--;
-      fb.newgrapheme(); /* this is not xterm's behavior */
-      act->handled = true;
-    }
+    fb.ds.move_col( -1, true );
+    act->handled = true;
     break;
   }
 }
@@ -71,56 +65,47 @@ void Emulator::print( Parser::Print *act )
 {
   assert( act->char_present );
 
-  if ( (fb.width == 0) || (fb.height == 0) ) {
+  int chwidth = act->ch == L'\0' ? -1 : wcwidth( act->ch );
+
+  Cell *this_cell = fb.get_cell();
+
+  if ( !this_cell ) { /* zero-size framebuffer */
     return;
   }
 
-  assert( fb.cursor_row < fb.height ); /* must be on screen */
-  assert( fb.cursor_col <= fb.width + 1 ); /* two off is ok */
-  assert( fb.combining_char_row < fb.height );
-  assert( fb.combining_char_col < fb.width );
-
-  int chwidth = act->ch == L'\0' ? -1 : wcwidth( act->ch );
-
-  Cell *this_cell;
+  Cell *combining_cell = fb.get_combining_cell();
 
   switch ( chwidth ) {
   case 1: /* normal character */
   case 2: /* wide character */
-    if ( fb.cursor_col >= fb.width ) { /* wrap */
-      fb.cursor_col = 0;
-      fb.cursor_row++;
+    if ( fb.ds.next_print_will_wrap ) {
+      fb.ds.move_col( 0 );
+      fb.move_rows_autoscroll( 1 );
     }
 
-    fb.autoscroll();
-    fb.newgrapheme();
+    this_cell = fb.get_cell();
 
-    this_cell = &fb.rows[ fb.cursor_row ].cells[ fb.cursor_col ];
     this_cell->reset();
     this_cell->contents.push_back( act->ch );
+    this_cell->width = chwidth;
 
-    if ( (fb.cursor_col < fb.width - 1) && (chwidth == 2) ) {
-      Cell *next_cell = &fb.rows[ fb.cursor_row ].cells[ fb.cursor_col + 1 ];
-      this_cell->overlapped_cells.push_back( next_cell );
-      next_cell->overlapping_cell = this_cell;
-    }
+    fb.claim_overlap( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
 
-    fb.cursor_col += chwidth;
+    fb.ds.move_col( chwidth, true, true );
+
     act->handled = true;
     break;
   case 0: /* combining character */
-    if ( fb.rows[ fb.combining_char_row ].cells[ fb.combining_char_col ].contents.size() == 0 ) {
+    if ( combining_cell->contents.size() == 0 ) {
       /* cell starts with combining character */
-      fb.rows[ fb.combining_char_row ].cells[ fb.combining_char_col ].fallback = true;
-      assert( fb.cursor_col == fb.combining_char_col );
-      assert( fb.cursor_row == fb.combining_char_row );
-      assert( fb.cursor_col < fb.width );
-      fb.cursor_col++;
-      /* a combining character should never be able to wrap us */
+      assert( this_cell == combining_cell );
+      assert( combining_cell->width == 1 );
+      combining_cell->fallback = true;
+      fb.ds.move_col( 1, true, true );
     }
 
-    if ( fb.rows[ fb.combining_char_row ].cells[ fb.combining_char_col ].contents.size() < 16 ) { /* seems like a reasonable limit on combining character */
-      fb.rows[ fb.combining_char_row ].cells[ fb.combining_char_col ].contents.push_back( act->ch );
+    if ( combining_cell->contents.size() < 16 ) { /* seems like a reasonable limit on combining characters */
+      combining_cell->contents.push_back( act->ch );
     }
     act->handled = true;
     break;
@@ -129,42 +114,6 @@ void Emulator::print( Parser::Print *act )
   default:
     assert( false );
   }
-}
-
-void Emulator::debug_printout( int fd )
-{
-  std::string screen;
-  screen.append( "\033[H\033[2J" );
-
-  for ( int y = 0; y < fb.height; y++ ) {
-    for ( int x = 0; x < fb.width; x++ ) {
-      char curmove[ 32 ];
-      snprintf( curmove, 32, "\033[%d;%dH", y + 1, x + 1 );
-      screen.append( curmove );
-      Cell *cell = &fb.rows[ y ].cells[ x ];
-      if ( cell->overlapping_cell ) continue;
-
-      if ( cell->fallback ) {
-	char utf8[ 8 ];
-	snprintf( utf8, 8, "%lc", 0xA0 );
-	screen.append( utf8 );
-      }
-
-      for ( std::vector<wchar_t>::iterator i = cell->contents.begin();
-	    i != cell->contents.end();
-	    i++ ) {
-	char utf8[ 8 ];
-	snprintf( utf8, 8, "%lc", *i );
-	screen.append( utf8 );
-      }
-    }
-  }
-
-  char curmove[ 32 ];
-  snprintf( curmove, 32, "\033[%d;%dH", fb.cursor_row + 1, fb.cursor_col + 1 );
-  screen.append( curmove );
-
-  swrite( fd, screen.c_str() );
 }
 
 void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
@@ -211,4 +160,44 @@ void Emulator::Esc_dispatch( Parser::Esc_Dispatch *act )
     Esc_DECALN();
     act->handled = true;
   }
+}
+
+void Emulator::debug_printout( int fd )
+{
+  std::string screen;
+  screen.append( "\033[H\033[2J" );
+
+  for ( int y = 0; y < fb.ds.get_height(); y++ ) {
+    for ( int x = 0; x < fb.ds.get_width(); x++ ) {
+      char curmove[ 32 ];
+      snprintf( curmove, 32, "\033[%d;%dH", y + 1, x + 1 );
+      screen.append( curmove );
+      Cell *cell = fb.get_cell( y, x );
+      if ( cell->overlapping_cell ) continue;
+
+      assert( (cell->overlapped_cells.size() + 1 == (size_t)cell->width)
+	      || (x == fb.ds.get_width() - 1) );
+
+      if ( cell->fallback ) {
+	char utf8[ 8 ];
+	snprintf( utf8, 8, "%lc", 0xA0 );
+	screen.append( utf8 );
+      }
+
+      for ( std::vector<wchar_t>::iterator i = cell->contents.begin();
+	    i != cell->contents.end();
+	    i++ ) {
+	char utf8[ 8 ];
+	snprintf( utf8, 8, "%lc", *i );
+	screen.append( utf8 );
+      }
+    }
+  }
+
+  char curmove[ 32 ];
+  snprintf( curmove, 32, "\033[%d;%dH", fb.ds.get_cursor_row() + 1,
+	    fb.ds.get_cursor_col() + 1 );
+  screen.append( curmove );
+
+  swrite( fd, screen.c_str() );
 }
