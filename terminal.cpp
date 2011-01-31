@@ -123,12 +123,12 @@ void Emulator::Esc_dispatch( Parser::Esc_Dispatch *act )
 void Emulator::debug_printout( int fd )
 {
   std::string screen;
-  screen.append( "\033[H\033[2J" );
+  screen.append( "\033[H" );
 
   for ( int y = 0; y < fb.ds.get_height(); y++ ) {
     for ( int x = 0; x < fb.ds.get_width(); x++ ) {
       char curmove[ 32 ];
-      snprintf( curmove, 32, "\033[%d;%dH", y + 1, x + 1 );
+      snprintf( curmove, 32, "\033[%d;%dH\033[X", y + 1, x + 1 );
       screen.append( curmove );
       Cell *cell = fb.get_cell( y, x );
       if ( cell->overlapping_cell ) continue;
