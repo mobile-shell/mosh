@@ -1,5 +1,5 @@
-#ifndef TERMINALACTIONSTATE_HPP
-#define TERMINALACTIONSTATE_HPP
+#ifndef TERMINALDISPATCHER_HPP
+#define TERMINALDISPATCHER_HPP
 
 #include <vector>
 #include <string>
@@ -11,7 +11,7 @@ namespace Parser {
 }
 
 namespace Terminal {
-  class ActionState {
+  class Dispatcher {
   private:
   public: /* tmp */
     std::string params;
@@ -23,7 +23,7 @@ namespace Terminal {
     void parse_params( void );
 
   public:
-    ActionState();
+    Dispatcher();
     int getparam( size_t N, int defaultval );
 
     void newparamchar( Parser::Param *act );

@@ -8,7 +8,7 @@
 
 #include "parser.hpp"
 #include "terminalframebuffer.hpp"
-#include "terminalactionstate.hpp"
+#include "terminaldispatcher.hpp"
 
 namespace Terminal {
   class Emulator {
@@ -23,7 +23,7 @@ namespace Terminal {
   private:
     Parser::UTF8Parser parser;
     Framebuffer fb;
-    ActionState as;
+    Dispatcher dispatch;
 
     std::string terminal_to_host;
 

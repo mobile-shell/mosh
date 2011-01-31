@@ -28,17 +28,17 @@ void Execute::act_on_terminal( Terminal::Emulator *emu )
 
 void Clear::act_on_terminal( Terminal::Emulator *emu )
 {
-  emu->as.clear( this );
+  emu->dispatch.clear( this );
 }
 
 void Param::act_on_terminal( Terminal::Emulator *emu )
 {
-  emu->as.newparamchar( this );
+  emu->dispatch.newparamchar( this );
 }
 
 void Collect::act_on_terminal( Terminal::Emulator *emu )
 {
-  emu->as.collect( this );
+  emu->dispatch.collect( this );
 }
 
 void CSI_Dispatch::act_on_terminal( Terminal::Emulator *emu )

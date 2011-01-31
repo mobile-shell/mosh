@@ -10,7 +10,7 @@
 using namespace Terminal;
 
 Emulator::Emulator( size_t s_width, size_t s_height )
-  : parser(), fb( s_width, s_height ), as(), terminal_to_host()
+  : parser(), fb( s_width, s_height ), dispatch(), terminal_to_host()
 {}
 
 std::string Emulator::input( char c, int actfd )
@@ -29,7 +29,7 @@ std::string Emulator::input( char c, int actfd )
     /* print out debugging information */
     if ( (actfd > 0) && ( !act->handled ) ) {
       char actsum[ 64 ];
-      snprintf( actsum, 64, "%s%s ", act->str().c_str(), as.str().c_str() );
+      snprintf( actsum, 64, "%s%s ", act->str().c_str(), dispatch.str().c_str() );
       swrite( actfd, actsum );
     }
     delete act;
@@ -123,9 +123,9 @@ void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
   Parser::Collect act2;
   act2.char_present = true;
   act2.ch = act->ch;
-  as.collect( &act2 ); 
+  dispatch.collect( &act2 ); 
 
-  std::string dispatch_chars = as.dispatch_chars;
+  std::string dispatch_chars = dispatch.dispatch_chars;
 
   if ( dispatch_chars == "K" ) {
     CSI_EL();
@@ -154,9 +154,9 @@ void Emulator::Esc_dispatch( Parser::Esc_Dispatch *act )
   Parser::Collect act2;
   act2.char_present = true;
   act2.ch = act->ch;
-  as.collect( &act2 ); 
+  dispatch.collect( &act2 ); 
   
-  if ( as.dispatch_chars == "#8" ) {
+  if ( dispatch.dispatch_chars == "#8" ) {
     Esc_DECALN();
     act->handled = true;
   }

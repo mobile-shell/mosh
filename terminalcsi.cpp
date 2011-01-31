@@ -16,10 +16,10 @@ void Emulator::CSI_EL( void )
   /* default: active position to end of line, inclusive */
   int start = fb.ds.get_cursor_col(), end = fb.ds.get_width() - 1;
 
-  if ( as.params == "1" ) { /* start of screen to active position, inclusive */
+  if ( dispatch.params == "1" ) { /* start of screen to active position, inclusive */
     start = 0;
     end = fb.ds.get_cursor_col();
-  } else if ( as.params == "2" ) { /* all of line */
+  } else if ( dispatch.params == "2" ) { /* all of line */
     start = 0;
   }
 
@@ -27,12 +27,12 @@ void Emulator::CSI_EL( void )
 }
 
 void Emulator::CSI_ED( void ) {
-  if ( as.params == "1" ) { /* start of screen to active position, inclusive */
+  if ( dispatch.params == "1" ) { /* start of screen to active position, inclusive */
     for ( int y = 0; y < fb.ds.get_cursor_row(); y++ ) {
       clearline( &fb, y, 0, fb.ds.get_width() - 1 );
     }
     clearline( &fb, -1, 0, fb.ds.get_cursor_col() );
-  } else if ( as.params == "2" ) { /* entire screen */
+  } else if ( dispatch.params == "2" ) { /* entire screen */
     for ( int y = 0; y < fb.ds.get_height(); y++ ) {
       clearline( &fb, y, 0, fb.ds.get_width() - 1 );
     }
@@ -46,9 +46,9 @@ void Emulator::CSI_ED( void ) {
 
 void Emulator::CSI_cursormove( void )
 {
-  int num = as.getparam( 0, 1 );
+  int num = dispatch.getparam( 0, 1 );
 
-  switch ( as.dispatch_chars[ 0 ] ) {
+  switch ( dispatch.dispatch_chars[ 0 ] ) {
   case 'A':
     fb.ds.move_row( -num, true );
     break;
@@ -63,8 +63,8 @@ void Emulator::CSI_cursormove( void )
     break;
   case 'H':
   case 'f':
-    int x = as.getparam( 0, 1 );
-    int y = as.getparam( 1, 1 );
+    int x = dispatch.getparam( 0, 1 );
+    int y = dispatch.getparam( 1, 1 );
     fb.ds.move_row( x - 1 );
     fb.ds.move_col( y - 1 );
   }

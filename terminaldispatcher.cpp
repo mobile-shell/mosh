@@ -2,16 +2,16 @@
 #include <assert.h>
 #include <string.h>
 
-#include "terminalactionstate.hpp"
+#include "terminaldispatcher.hpp"
 #include "parseraction.hpp"
 
 using namespace Terminal;
 
-ActionState::ActionState()
+Dispatcher::Dispatcher()
   : params(), parsed_params(), parsed( false ), dispatch_chars()
 {}
 
-void ActionState::newparamchar( Parser::Param *act )
+void Dispatcher::newparamchar( Parser::Param *act )
 {
   assert( act->char_present );
   assert( (act->ch == ';') || ( (act->ch >= '0') && (act->ch <= '9') ) );
@@ -23,7 +23,7 @@ void ActionState::newparamchar( Parser::Param *act )
   parsed = false;
 }
 
-void ActionState::collect( Parser::Collect *act )
+void Dispatcher::collect( Parser::Collect *act )
 {
   assert( act->char_present );
   if ( ( dispatch_chars.length() < 8 ) /* never should need more than 2 */
@@ -33,7 +33,7 @@ void ActionState::collect( Parser::Collect *act )
   }
 }
 
-void ActionState::clear( Parser::Clear *act )
+void Dispatcher::clear( Parser::Clear *act )
 {
   params.clear();
   dispatch_chars.clear();
@@ -41,7 +41,7 @@ void ActionState::clear( Parser::Clear *act )
   act->handled = true;
 }
 
-void ActionState::parse_params( void )
+void Dispatcher::parse_params( void )
 {
   if ( parsed ) {
     return;
@@ -84,7 +84,7 @@ void ActionState::parse_params( void )
   parsed = true;
 }
 
-int ActionState::getparam( size_t N, int defaultval )
+int Dispatcher::getparam( size_t N, int defaultval )
 {
   int ret = defaultval;
   if ( !parsed ) {
@@ -99,7 +99,7 @@ int ActionState::getparam( size_t N, int defaultval )
   return ret;
 }
 
-std::string ActionState::str( void )
+std::string Dispatcher::str( void )
 {
   char assum[ 64 ];
   snprintf( assum, 64, "[dispatch=\"%s\" params=\"%s\"]",
