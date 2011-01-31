@@ -127,3 +127,17 @@ void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 
 static Function func_Ctrl_BS( CONTROL, "\x08", Ctrl_BS );
 
+void Ctrl_RI( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  fb->move_rows_autoscroll( -1 );
+}
+
+static Function func_Ctrl_RI( CONTROL, "\x8D", Ctrl_RI );
+
+void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  fb->ds.move_col( 0 );
+  fb->move_rows_autoscroll( 1 );
+}
+
+static Function func_Ctrl_NEL( CONTROL, "\x85", Ctrl_NEL );

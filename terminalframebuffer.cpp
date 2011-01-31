@@ -66,12 +66,20 @@ Framebuffer::Framebuffer( int s_width, int s_height )
 
 void Framebuffer::scroll( int N )
 {
-  assert( N >= 0 );
+  if ( N >= 0 ) {
+    for ( int i = 0; i < N; i++ ) {
+      rows.pop_front();
+      rows.push_back( Row( ds.get_width() ) );
+      ds.move_row( -1, true );
+    }
+  } else {
+    N = -N;
 
-  for ( int i = 0; i < N; i++ ) {
-    rows.pop_front();
-    rows.push_back( Row( ds.get_width() ) );
-    ds.move_row( -1, true );
+    for ( int i = 0; i < N; i++ ) {
+      rows.pop_back();
+      rows.push_front( Row( ds.get_width() ) );
+      ds.move_row( 1, true );
+    }
   }
 }
 
@@ -129,6 +137,8 @@ void Framebuffer::move_rows_autoscroll( int rows )
 {
   if ( ds.get_cursor_row() + rows >= ds.get_height() ) {
     scroll( ds.get_height() - ds.get_cursor_row() - rows + 1 );
+  } else if ( ds.get_cursor_row() + rows < 0 ) {
+    scroll( ds.get_cursor_row() + rows );
   }
 
   ds.move_row( rows, true );
