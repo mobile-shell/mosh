@@ -10,12 +10,12 @@
 using namespace Terminal;
 
 Emulator::Emulator( size_t s_width, size_t s_height )
-  : parser(), fb( s_width, s_height ), dispatch(), terminal_to_host()
+  : parser(), fb( s_width, s_height ), dispatch()
 {}
 
 std::string Emulator::input( char c, int actfd )
 {
-  terminal_to_host.clear();
+  dispatch.terminal_to_host.clear();
 
   std::vector<Parser::Action *> vec = parser.input( c );
 
@@ -36,7 +36,7 @@ std::string Emulator::input( char c, int actfd )
   }
 
   /* the user is supposed to send this string to the host, as if typed */
-  return terminal_to_host;
+  return dispatch.terminal_to_host;
 }
 
 void Emulator::execute( Parser::Execute *act )
@@ -118,48 +118,12 @@ void Emulator::print( Parser::Print *act )
 
 void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
 {
-  /* add final char to dispatch key */
-  assert( act->char_present );
-  Parser::Collect act2;
-  act2.char_present = true;
-  act2.ch = act->ch;
-  dispatch.collect( &act2 ); 
-
-  std::string dispatch_chars = dispatch.dispatch_chars;
-
-  if ( dispatch_chars == "K" ) {
-    CSI_EL();
-    act->handled = true;
-  } else if ( dispatch_chars == "J" ) {
-    CSI_ED();
-    act->handled = true;
-  } else if ( (dispatch_chars == "A")
-	      || (dispatch_chars == "B")
-	      || (dispatch_chars == "C")
-	      || (dispatch_chars == "D")
-	      || (dispatch_chars == "H") 
-	      || (dispatch_chars == "f") ) {
-    CSI_cursormove();
-    act->handled = true;
-  } else if ( dispatch_chars == "c" ) {
-    CSI_DA();
-    act->handled = true;
-  }
+  dispatch.dispatch( CSI, act, &fb );
 }
 
 void Emulator::Esc_dispatch( Parser::Esc_Dispatch *act )
 {
-  /* add final char to dispatch key */
-  assert( act->char_present );
-  Parser::Collect act2;
-  act2.char_present = true;
-  act2.ch = act->ch;
-  dispatch.collect( &act2 ); 
-  
-  if ( dispatch.dispatch_chars == "#8" ) {
-    Esc_DECALN();
-    act->handled = true;
-  }
+  dispatch.dispatch( ESCAPE, act, &fb );
 }
 
 void Emulator::debug_printout( int fd )

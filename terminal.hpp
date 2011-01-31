@@ -25,8 +25,6 @@ namespace Terminal {
     Framebuffer fb;
     Dispatcher dispatch;
 
-    std::string terminal_to_host;
-
     /* action methods */
     void print( Parser::Print *act );
     void execute( Parser::Execute *act );

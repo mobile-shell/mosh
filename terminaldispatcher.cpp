@@ -8,7 +8,8 @@
 using namespace Terminal;
 
 Dispatcher::Dispatcher()
-  : params(), parsed_params(), parsed( false ), dispatch_chars()
+  : params(), parsed_params(), parsed( false ), dispatch_chars(),
+    terminal_to_host()
 {}
 
 void Dispatcher::newparamchar( Parser::Param *act )
@@ -105,4 +106,45 @@ std::string Dispatcher::str( void )
   snprintf( assum, 64, "[dispatch=\"%s\" params=\"%s\"]",
 	    dispatch_chars.c_str(), params.c_str() );
   return std::string( assum );
+}
+
+static void register_function( Function_Type type,
+			       std::string dispatch_chars,
+			       Function f )
+{
+  switch ( type ) {
+  case ESCAPE:
+    global_dispatch_registry.escape.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
+    break;
+  case CSI:
+    global_dispatch_registry.CSI.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
+    break;
+  }
+}
+
+Function::Function( Function_Type type, std::string dispatch_chars,
+		    void (*s_function)( Framebuffer *, Dispatcher * ) )
+  : function( s_function )
+{
+  register_function( type, dispatch_chars, *this );
+}
+
+void Dispatcher::dispatch( Function_Type type, Parser::Action *act, Framebuffer *fb )
+{
+  /* add final char to dispatch key */
+  assert( act->char_present );
+  Parser::Collect act2;
+  act2.char_present = true;
+  act2.ch = act->ch;
+  collect( &act2 ); 
+
+  dispatch_map_t *map = (type == ESCAPE) ? &global_dispatch_registry.escape : &global_dispatch_registry.CSI;
+
+  dispatch_map_t::const_iterator i = map->find( dispatch_chars );
+  if ( i == map->end() ) {
+    return;
+  } else {
+    act->handled = true;
+    return i->second.function( fb, this );
+  }
 }

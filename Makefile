@@ -1,5 +1,5 @@
-source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalcsi.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp
-objects = parserstate.o parser.o templates.o terminal.o parseraction.o terminalcsi.o swrite.o terminalframebuffer.o terminaldispatcher.o
+source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp
+objects = parserstate.o parser.o templates.o terminal.o parseraction.o terminalfunctions.o swrite.o terminalframebuffer.o terminaldispatcher.o
 repos = templates.rpo
 executables = parse termemu
 

@@ -16,7 +16,7 @@ namespace Terminal {
     int width;
 
     Cell();
-  
+
     Cell( const Cell & );
     Cell & operator=( const Cell & );
 

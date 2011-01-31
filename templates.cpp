@@ -1,6 +1,7 @@
 #include <vector>
 #include <deque>
 #include <wchar.h>
+#include <string>
 
 #include "terminal.hpp"
 
@@ -14,3 +15,4 @@ template class std::deque<Terminal::Row>;
 template class std::vector<Terminal::Cell *>;
 template class std::vector<wchar_t>;
 template class std::vector<int>;
+template class std::map<std::string, Terminal::Function>;
