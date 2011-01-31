@@ -104,3 +104,24 @@ void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 }
 
 static Function func_Esc_DECALN( ESCAPE, "#8", Esc_DECALN );
+
+void Ctrl_LF( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  fb->move_rows_autoscroll( 1 );
+}
+
+static Function func_Ctrl_LF( CONTROL, "\x0a", Ctrl_LF );
+
+void Ctrl_CR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  fb->ds.move_col( 0 );
+}
+
+static Function func_Ctrl_CR( CONTROL, "\x0d", Ctrl_CR );
+
+void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  fb->ds.move_col( -1, true );
+}
+
+static Function func_Ctrl_BS( CONTROL, "\x08", Ctrl_BS );

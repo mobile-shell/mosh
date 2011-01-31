@@ -12,13 +12,14 @@ namespace Parser {
   class Clear;
   class Esc_Dispatch;
   class CSI_Dispatch;
+  class Execute;
 }
 
 namespace Terminal {
   class Framebuffer;
   class Dispatcher;
 
-  enum Function_Type { ESCAPE, CSI };
+  enum Function_Type { ESCAPE, CSI, CONTROL };
 
   class Function {
   public:
@@ -34,8 +35,9 @@ namespace Terminal {
   public:
     dispatch_map_t escape;
     dispatch_map_t CSI;
+    dispatch_map_t control;
 
-    DispatchRegistry() : escape(), CSI() {}
+    DispatchRegistry() : escape(), CSI(), control() {}
   };
 
   static DispatchRegistry global_dispatch_registry;

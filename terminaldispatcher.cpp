@@ -119,6 +119,9 @@ static void register_function( Function_Type type,
   case CSI:
     global_dispatch_registry.CSI.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
     break;
+  case CONTROL:
+    global_dispatch_registry.control.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
+    break;
   }
 }
 
@@ -132,15 +135,30 @@ Function::Function( Function_Type type, std::string dispatch_chars,
 void Dispatcher::dispatch( Function_Type type, Parser::Action *act, Framebuffer *fb )
 {
   /* add final char to dispatch key */
-  assert( act->char_present );
-  Parser::Collect act2;
-  act2.char_present = true;
-  act2.ch = act->ch;
-  collect( &act2 ); 
 
-  dispatch_map_t *map = (type == ESCAPE) ? &global_dispatch_registry.escape : &global_dispatch_registry.CSI;
+  if ( type != CONTROL ) {
+    assert( act->char_present );
+    Parser::Collect act2;
+    act2.char_present = true;
+    act2.ch = act->ch;
+    collect( &act2 ); 
+  }
 
-  dispatch_map_t::const_iterator i = map->find( dispatch_chars );
+  dispatch_map_t *map;
+  switch ( type ) {
+  case ESCAPE:  map = &global_dispatch_registry.escape;  break;
+  case CSI:     map = &global_dispatch_registry.CSI;     break;
+  case CONTROL: map = &global_dispatch_registry.control; break;
+  }
+
+  std::string key = dispatch_chars;
+  if ( type == CONTROL ) {
+    assert( act->ch <= 255 );
+    char ctrlstr[ 2 ] = { (char)act->ch, 0 };
+    key = std::string( ctrlstr );
+  }
+
+  dispatch_map_t::const_iterator i = map->find( key );
   if ( i == map->end() ) {
     return;
   } else {

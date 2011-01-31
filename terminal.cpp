@@ -43,22 +43,7 @@ void Emulator::execute( Parser::Execute *act )
 {
   assert( act->char_present );
 
-  switch ( act->ch ) {
-  case 0x0a: /* LF */
-    fb.move_rows_autoscroll( 1 );
-    act->handled = true;
-    break;
-
-  case 0x0d: /* CR */
-    fb.ds.move_col( 0 );
-    act->handled = true;
-    break;
-    
-  case 0x08: /* BS */
-    fb.ds.move_col( -1, true );
-    act->handled = true;
-    break;
-  }
+  dispatch.dispatch( CONTROL, act, &fb );
 }
 
 void Emulator::print( Parser::Print *act )
