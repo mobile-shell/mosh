@@ -100,6 +100,7 @@ namespace Terminal {
 
     void save_cursor( void );
     void restore_cursor( void );
+    void clear_saved_cursor( void ) { save = SavedCursor(); }
 
     DrawState( int s_width, int s_height );
   };
@@ -129,6 +130,7 @@ namespace Terminal {
     void delete_cell( int row, int col );
 
     void reset( void );
+    void soft_reset( void );
   };
 }
 

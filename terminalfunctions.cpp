@@ -447,3 +447,11 @@ void Esc_RIS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 }
 
 static Function func_Esc_RIS( ESCAPE, "c", Esc_RIS );
+
+/* soft reset */
+void CSI_DECSTR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  fb->soft_reset();
+}
+
+static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );

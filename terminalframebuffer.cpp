@@ -313,3 +313,12 @@ void Framebuffer::reset( void )
   rows = std::deque<Row>( height, Row( width ) );
   ds = DrawState( width, height );
 }
+
+void Framebuffer::soft_reset( void )
+{
+  ds.insert_mode = false;
+  ds.origin_mode = false;
+  ds.set_scrolling_region( 0, ds.get_height() - 1 );
+  ds.clear_renditions();
+  ds.clear_saved_cursor();
+}
