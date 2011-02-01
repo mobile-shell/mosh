@@ -94,10 +94,18 @@ static Function func_CSI_cursormove_f( CSI, "f", CSI_cursormove );
 /* device attributes */
 void CSI_DA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 {
-  dispatch->terminal_to_host.append( "\033[?1;0c" );
+  dispatch->terminal_to_host.append( "\033[?62c" ); /* plain vt220 */
 }
 
 static Function func_CSI_DA( CSI, "c", CSI_DA );
+
+/* secondary device attributes */
+void CSI_SDA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
+{
+  dispatch->terminal_to_host.append( "\033[>1;10;0c" ); /* plain vt220 */
+}
+
+static Function func_CSI_SDA( CSI, ">c", CSI_SDA );
 
 /* screen alignment diagnostic */
 void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
