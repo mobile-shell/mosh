@@ -249,6 +249,39 @@ void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_DECSM( CSI, "?h", CSI_DECSM );
 static Function func_CSI_DECRM( CSI, "?l", CSI_DECRM );
 
+static bool *get_ANSI_mode( int param, Framebuffer *fb ) {
+  switch ( param ) {
+  case 4: /* insert/replace mode */
+    return &(fb->ds.insert_mode);
+  }
+  return NULL;
+}
+
+/* set mode */
+void CSI_SM( Framebuffer *fb, Dispatcher *dispatch )
+{
+  for ( int i = 0; i < dispatch->param_count(); i++ ) {
+    bool *mode = get_ANSI_mode( dispatch->getparam( i, 0 ), fb );
+    if ( mode ) {
+      *mode = true;
+    }
+  }
+}
+
+/* clear mode */
+void CSI_RM( Framebuffer *fb, Dispatcher *dispatch )
+{
+  for ( int i = 0; i < dispatch->param_count(); i++ ) {
+    bool *mode = get_ANSI_mode( dispatch->getparam( i, 0 ), fb );
+    if ( mode ) {
+      *mode = false;
+    }
+  }
+}
+
+static Function func_CSI_SM( CSI, "h", CSI_SM );
+static Function func_CSI_RM( CSI, "l", CSI_RM );
+
 /* set top and bottom margins */
 void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
 {
@@ -392,3 +425,17 @@ void CSI_HPA( Framebuffer *fb, Dispatcher *dispatch )
 
 static Function func_CSI_CHA( CSI, "G", CSI_HPA ); /* ECMA-48 name: CHA */
 static Function func_CSI_HPA( CSI, "\x60", CSI_HPA ); /* ECMA-48 name: HPA */
+
+/* erase character */
+void CSI_ECH( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int num = dispatch->getparam( 0, 1 );
+  int limit = fb->ds.get_cursor_col() + num;
+  if ( limit >= fb->ds.get_width() ) {
+    limit = fb->ds.get_width() - 1;
+  }
+
+  clearline( fb, -1, fb->ds.get_cursor_col(), limit );
+}
+
+static Function func_CSI_ECH( CSI, "X", CSI_ECH );

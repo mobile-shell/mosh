@@ -68,6 +68,12 @@ void Emulator::print( Parser::Print *act )
       fb.move_rows_autoscroll( 1 );
     }
 
+    if ( fb.ds.insert_mode ) {
+      for ( int i = 0; i < chwidth; i++ ) {
+	fb.insert_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
+      }
+    }
+
     this_cell = fb.get_cell();
 
     this_cell->reset();

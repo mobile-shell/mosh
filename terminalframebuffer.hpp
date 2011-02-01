@@ -66,6 +66,7 @@ namespace Terminal {
     bool next_print_will_wrap;
     bool origin_mode;
     bool auto_wrap_mode;
+    bool insert_mode;
 
     /* bold, etc. */
 
