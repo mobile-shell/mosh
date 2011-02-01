@@ -47,7 +47,7 @@ DrawState::DrawState( int s_width, int s_height )
     scrolling_region_top_row( 0 ), scrolling_region_bottom_row( height - 1 ),
     renditions(), save(),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true ),
-    insert_mode( false )
+    insert_mode( false ), cursor_visible( true )
 {
   for ( int i = 0; i < width; i++ ) {
     tabs[ i ] = ( (i % 8) == 0 );

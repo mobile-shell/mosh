@@ -180,8 +180,12 @@ void Emulator::debug_printout( int fd )
   }
 
   char curmove[ 32 ];
-  snprintf( curmove, 32, "\033[%d;%dH", fb.ds.get_cursor_row() + 1,
-	    fb.ds.get_cursor_col() + 1 );
+  if ( fb.ds.cursor_visible ) {
+    snprintf( curmove, 32, "\033[?25h\033[%d;%dH", fb.ds.get_cursor_row() + 1,
+	      fb.ds.get_cursor_col() + 1 );
+  } else {
+    snprintf( curmove, 32, "\033[?25l" );
+  }
   screen.append( curmove );
 
   swrite( fd, screen.c_str() );

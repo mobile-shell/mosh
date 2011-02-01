@@ -220,6 +220,8 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
     return &(fb->ds.origin_mode);
   case 7: /* auto wrap */
     return &(fb->ds.auto_wrap_mode);
+  case 25:
+    return &(fb->ds.cursor_visible);
   }
   return NULL;
 }

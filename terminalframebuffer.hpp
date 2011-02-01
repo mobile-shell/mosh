@@ -67,6 +67,7 @@ namespace Terminal {
     bool origin_mode;
     bool auto_wrap_mode;
     bool insert_mode;
+    bool cursor_visible;
 
     /* bold, etc. */
 
