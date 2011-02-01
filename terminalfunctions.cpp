@@ -227,6 +227,8 @@ void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
   int bottom = dispatch->getparam( 1, fb->ds.get_height() );
 
   fb->ds.set_scrolling_region( top - 1, bottom - 1 );
+  fb->ds.move_row( 0 );
+  fb->ds.move_col( 0 );
 }
 
 static Function func_CSI_DECSTMB( CSI, "r", CSI_DECSTBM );

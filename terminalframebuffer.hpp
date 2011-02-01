@@ -69,6 +69,9 @@ namespace Terminal {
 
     void set_scrolling_region( int top, int bottom );
 
+    int get_scrolling_region_top_row( void ) { return scrolling_region_top_row; }
+    int get_scrolling_region_bottom_row( void ) { return scrolling_region_bottom_row; }
+
     int limit_top( void );
     int limit_bottom( void );
 

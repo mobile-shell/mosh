@@ -73,16 +73,16 @@ void Framebuffer::scroll( int N )
 {
   if ( N >= 0 ) {
     for ( int i = 0; i < N; i++ ) {
-      rows.erase( rows.begin() + ds.limit_top() );
-      rows.insert( rows.begin() + ds.limit_bottom(), Row( ds.get_width() ) );
+      rows.erase( rows.begin() + ds.get_scrolling_region_top_row() );
+      rows.insert( rows.begin() + ds.get_scrolling_region_bottom_row(), Row( ds.get_width() ) );
       ds.move_row( -1, true );
     }
   } else {
     N = -N;
 
     for ( int i = 0; i < N; i++ ) {
-      rows.erase( rows.begin() + ds.limit_bottom() );
-      rows.insert( rows.begin() + ds.limit_top(), Row( ds.get_width() ) );
+      rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() );
+      rows.insert( rows.begin() + ds.get_scrolling_region_top_row(), Row( ds.get_width() ) );
       ds.move_row( 1, true );
     }
   }
@@ -107,7 +107,7 @@ void DrawState::move_row( int N, bool relative )
   if ( relative ) {
     cursor_row += N;
   } else {
-    cursor_row = N;
+    cursor_row = N + limit_top();
   }
 
   snap_cursor_to_border();
@@ -140,10 +140,17 @@ void DrawState::move_col( int N, bool relative, bool implicit )
 
 void Framebuffer::move_rows_autoscroll( int rows )
 {
-  if ( ds.get_cursor_row() + rows > ds.limit_bottom() ) {
-    scroll( ds.get_cursor_row() + rows - ds.limit_bottom() );
-  } else if ( ds.get_cursor_row() + rows < ds.limit_top() ) {
-    scroll( ds.get_cursor_row() + rows - ds.limit_top() );
+  /* don't scroll if outside the scrolling region */
+  if ( (ds.get_cursor_row() < ds.get_scrolling_region_top_row())
+       || (ds.get_cursor_row() > ds.get_scrolling_region_bottom_row()) ) {
+    ds.move_row( rows, true );
+    return;
+  }
+
+  if ( ds.get_cursor_row() + rows > ds.get_scrolling_region_bottom_row() ) {
+    scroll( ds.get_cursor_row() + rows - ds.get_scrolling_region_bottom_row() );
+  } else if ( ds.get_cursor_row() + rows < ds.get_scrolling_region_top_row() ) {
+    scroll( ds.get_cursor_row() + rows - ds.get_scrolling_region_top_row() );
   }
 
   ds.move_row( rows, true );
