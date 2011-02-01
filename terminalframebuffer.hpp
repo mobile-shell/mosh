@@ -123,6 +123,9 @@ namespace Terminal {
 
     void insert_line( int before_row );
     void delete_line( int row );
+
+    void insert_cell( int row, int col );
+    void delete_cell( int row, int col );
   };
 }
 

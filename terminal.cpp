@@ -58,10 +58,6 @@ void Emulator::print( Parser::Print *act )
 
   Cell *this_cell = fb.get_cell();
 
-  if ( !this_cell ) { /* zero-size framebuffer */
-    return;
-  }
-
   Cell *combining_cell = fb.get_combining_cell();
 
   switch ( chwidth ) {

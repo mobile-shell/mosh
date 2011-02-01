@@ -145,9 +145,8 @@ void Framebuffer::move_rows_autoscroll( int rows )
 
 Cell *Framebuffer::get_cell( void )
 {
-  if ( (ds.get_width() == 0) || (ds.get_height() == 0) ) {
-    return NULL;
-  }
+  assert( ds.get_width() );
+  assert( ds.get_height() );
 
   return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
 }
@@ -232,10 +231,7 @@ std::vector<int> DrawState::get_tabs( void )
 
 void Framebuffer::apply_renditions_to_current_cell( void )
 {
-  Cell *this_cell = get_cell();
-  assert( this_cell );
-
-  this_cell->renditions = ds.get_renditions();
+  get_cell()->renditions = ds.get_renditions();
 }
 
 SavedCursor::SavedCursor()
@@ -291,4 +287,21 @@ void Framebuffer::delete_line( int row )
 void Row::insert_cell( int col )
 {
   cells.insert( cells.begin() + col, Cell() );
+  cells.erase( cells.end() - 1 );
+}
+
+void Row::delete_cell( int col )
+{
+  cells.erase( cells.begin() + col );
+  cells.push_back( Cell() );
+}
+
+void Framebuffer::insert_cell( int row, int col )
+{
+  rows[ row ].insert_cell( col );
+}
+
+void Framebuffer::delete_cell( int row, int col )
+{
+  rows[ row ].delete_cell( col );
 }

@@ -341,3 +341,28 @@ void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
 }
 
 static Function func_CSI_DL( CSI, "M", CSI_DL );
+
+/* insert characters */
+void CSI_ICH( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int cells = dispatch->getparam( 0, 1 );
+
+  for ( int i = 0; i < cells; i++ ) {
+    fb->insert_cell( fb->ds.get_cursor_row(), fb->ds.get_cursor_col() );
+  }
+}
+
+static Function func_CSI_ICH( CSI, "@", CSI_ICH );
+
+/* delete character */
+void CSI_DCH( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int cells = dispatch->getparam( 0, 1 );
+
+  for ( int i = 0; i < cells; i++ ) {
+    fb->delete_cell( fb->ds.get_cursor_row(), fb->ds.get_cursor_col() );
+  }
+}
+
+static Function func_CSI_DCH( CSI, "P", CSI_DCH );
+
