@@ -1,7 +1,9 @@
 #include <unistd.h>
+#include <string>
 
 #include "terminaldispatcher.hpp"
 #include "terminalframebuffer.hpp"
+#include "parseraction.hpp"
 
 using namespace Terminal;
 
@@ -457,3 +459,18 @@ void CSI_DECSTR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 }
 
 static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );
+
+/* xterm uses an Operating System Command to set the window title */
+void Dispatcher::OSC_dispatch( Parser::OSC_End *act, Framebuffer *fb )
+{
+  if ( OSC_string.size() >= 2 ) {
+    if ( (OSC_string[ 0 ] == L'0')
+	 && (OSC_string[ 1 ] == L';') ) {
+      std::vector<wchar_t> newtitle = OSC_string;
+      newtitle.erase( newtitle.begin() );
+      newtitle.erase( newtitle.begin() );
+      fb->set_window_title( newtitle );
+      act->handled = true;
+    }
+  }
+}

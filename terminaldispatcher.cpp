@@ -9,7 +9,7 @@ using namespace Terminal;
 
 Dispatcher::Dispatcher()
   : params(), parsed_params(), parsed( false ), dispatch_chars(),
-    terminal_to_host()
+    OSC_string(), terminal_to_host()
 {}
 
 void Dispatcher::newparamchar( Parser::Param *act )
@@ -146,8 +146,7 @@ Function::Function( Function_Type type, std::string dispatch_chars,
 void Dispatcher::dispatch( Function_Type type, Parser::Action *act, Framebuffer *fb )
 {
   /* add final char to dispatch key */
-
-  if ( type != CONTROL ) {
+  if ( (type == ESCAPE) || (type == CSI) ) {
     assert( act->char_present );
     Parser::Collect act2;
     act2.char_present = true;
@@ -176,4 +175,19 @@ void Dispatcher::dispatch( Function_Type type, Parser::Action *act, Framebuffer 
     act->handled = true;
     return i->second.function( fb, this );
   }
+}
+
+void Dispatcher::OSC_put( Parser::OSC_Put *act )
+{
+  assert( act->char_present );
+  if ( OSC_string.size() < 256 ) { /* should be a long enough window title */
+    OSC_string.push_back( act->ch );
+    act->handled = true;
+  }
+}
+
+void Dispatcher::OSC_start( Parser::OSC_Start *act )
+{
+  OSC_string.clear();
+  act->handled = true;
 }

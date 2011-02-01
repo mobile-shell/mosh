@@ -73,13 +73,19 @@ namespace Parser {
   public: std::string name( void ) { return std::string( "Unhook" ); }
   };
   class OSC_Start : public Action {
-  public: std::string name( void ) { return std::string( "OSC_Start" ); }
+  public:
+    std::string name( void ) { return std::string( "OSC_Start" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
   class OSC_Put : public Action {
-  public: std::string name( void ) { return std::string( "OSC_Put" ); }
+  public:
+    std::string name( void ) { return std::string( "OSC_Put" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
   class OSC_End : public Action {
-  public: std::string name( void ) { return std::string( "OSC_End" ); }
+  public:
+    std::string name( void ) { return std::string( "OSC_End" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
   };
 }
 

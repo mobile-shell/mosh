@@ -55,7 +55,7 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows( s_height, Row( s_width ) ), ds( s_width, s_height )
+  : rows( s_height, Row( s_width ) ), window_title(), ds( s_width, s_height )
 {}
 
 void Framebuffer::scroll( int N )
@@ -311,6 +311,7 @@ void Framebuffer::reset( void )
 {
   int width = ds.get_width(), height = ds.get_height();
   rows = std::deque<Row>( height, Row( width ) );
+  window_title.clear();
   ds = DrawState( width, height );
 }
 

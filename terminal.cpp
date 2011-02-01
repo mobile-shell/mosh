@@ -120,6 +120,12 @@ void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
   dispatch.dispatch( CSI, act, &fb );
 }
 
+void Emulator::OSC_end( Parser::OSC_End *act )
+{
+  fb.ds.next_print_will_wrap = false;
+  dispatch.OSC_dispatch( act, &fb );
+}
+
 void Emulator::Esc_dispatch( Parser::Esc_Dispatch *act )
 {
   fb.ds.next_print_will_wrap = false;
@@ -139,6 +145,18 @@ void Emulator::debug_printout( int fd )
 {
   std::string screen;
   screen.append( "\033[H" );
+
+  /* set window title */
+  screen.append( "\033]0;" );
+  std::vector<wchar_t> window_title = fb.get_window_title();
+  for ( std::vector<wchar_t>::iterator i = window_title.begin();
+	i != window_title.end();
+	i++ ) {
+    char utf8[ 8 ];
+    snprintf( utf8, 8, "%lc", *i );
+    screen.append( utf8 );
+  }
+  screen.append( "\x7" ); /* xterm's "OSC" string ends in BEL... */
 
   for ( int y = 0; y < fb.ds.get_height(); y++ ) {
     for ( int x = 0; x < fb.ds.get_width(); /* let charwidth handle advance */ ) {

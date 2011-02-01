@@ -50,3 +50,18 @@ void Esc_Dispatch::act_on_terminal( Terminal::Emulator *emu )
 {
   emu->Esc_dispatch( this );
 }
+
+void OSC_Put::act_on_terminal( Terminal::Emulator *emu )
+{
+  emu->dispatch.OSC_put( this );
+}
+
+void OSC_Start::act_on_terminal( Terminal::Emulator *emu )
+{
+  emu->dispatch.OSC_start( this );
+}
+
+void OSC_End::act_on_terminal( Terminal::Emulator *emu )
+{
+  emu->OSC_end( this );
+}

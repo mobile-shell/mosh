@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <deque>
+#include <string>
 
 /* Terminal framebuffer */
 
@@ -109,6 +110,7 @@ namespace Terminal {
   class Framebuffer {
   private:
     std::deque<Row> rows;
+    std::vector<wchar_t> window_title;
 
     void scroll( int N );
 
@@ -132,6 +134,9 @@ namespace Terminal {
 
     void reset( void );
     void soft_reset( void );
+
+    void set_window_title( std::vector<wchar_t> s ) { window_title = s; }
+    std::vector<wchar_t> get_window_title( void ) { return window_title; }
   };
 }
 

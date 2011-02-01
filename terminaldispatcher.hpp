@@ -13,6 +13,9 @@ namespace Parser {
   class Esc_Dispatch;
   class CSI_Dispatch;
   class Execute;
+  class OSC_Start;
+  class OSC_Put;
+  class OSC_End;
 }
 
 namespace Terminal {
@@ -49,6 +52,7 @@ namespace Terminal {
     bool parsed;
 
     std::string dispatch_chars;
+    std::vector<wchar_t> OSC_string; /* only used to set the window title */
 
     void parse_params( void );
 
@@ -66,7 +70,12 @@ namespace Terminal {
     std::string str( void );
 
     void dispatch( Function_Type type, Parser::Action *act, Framebuffer *fb );
-    const std::string get_dispatch_chars( void ) { return dispatch_chars; }
+    std::string get_dispatch_chars( void ) { return dispatch_chars; }
+    std::vector<wchar_t> get_OSC_string( void ) { return OSC_string; }
+
+    void OSC_put( Parser::OSC_Put *act );
+    void OSC_start( Parser::OSC_Start *act );
+    void OSC_dispatch( Parser::OSC_End *act, Framebuffer *fb );
   };
 }
 
