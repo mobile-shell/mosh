@@ -306,3 +306,10 @@ void Framebuffer::delete_cell( int row, int col )
 {
   rows[ row ].delete_cell( col );
 }
+
+void Framebuffer::reset( void )
+{
+  int width = ds.get_width(), height = ds.get_height();
+  rows = std::deque<Row>( height, Row( width ) );
+  ds = DrawState( width, height );
+}

@@ -127,6 +127,8 @@ namespace Terminal {
 
     void insert_cell( int row, int col );
     void delete_cell( int row, int col );
+
+    void reset( void );
   };
 }
 
