@@ -65,6 +65,8 @@ namespace Terminal {
     void clear_tab( int col );
     int get_next_tab( void );
 
+    std::vector<int> get_tabs( void );
+
     void set_scrolling_region( int top, int bottom );
 
     int limit_top( void );

@@ -236,3 +236,16 @@ int DrawState::limit_bottom( void )
 {
   return origin_mode ? scrolling_region_bottom_row : height - 1;
 }
+
+std::vector<int> DrawState::get_tabs( void )
+{
+  std::vector<int> ret;
+
+  for ( int i = 0; i < width; i++ ) {
+    if ( tabs[ i ] ) {
+      ret.push_back( i );
+    }
+  }
+
+  return ret;
+}

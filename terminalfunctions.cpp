@@ -163,12 +163,16 @@ static Function func_Ctrl_HTS( CONTROL, "\x88", Ctrl_HTS );
 
 void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
 {
-  if ( dispatch->getparam( 0, 0 ) == 3 ) { /* clear all tab stops */
+  int param = dispatch->getparam( 0, 0 );
+  switch ( param ) {
+  case 0: /* clear this tab stop */
+    fb->ds.clear_tab( fb->ds.get_cursor_col() );    
+    break;
+  case 3: /* clear all tab stops */
     for ( int x = 0; x < fb->ds.get_width(); x++ ) {
       fb->ds.clear_tab( x );
     }
-  } else {
-    fb->ds.clear_tab( fb->ds.get_cursor_col() );
+    break;
   }
 }
 
