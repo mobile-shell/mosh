@@ -366,3 +366,21 @@ void CSI_DCH( Framebuffer *fb, Dispatcher *dispatch )
 
 static Function func_CSI_DCH( CSI, "P", CSI_DCH );
 
+/* line position absolute */
+void CSI_VPA( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int row = dispatch->getparam( 0, 1 );
+  fb->ds.move_row( row - 1 );
+}
+
+static Function func_CSI_VPA( CSI, "d", CSI_VPA );
+
+/* character position absolute */
+void CSI_HPA( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int col = dispatch->getparam( 0, 1 );
+  fb->ds.move_col( col - 1 );
+}
+
+static Function func_CSI_CHA( CSI, "G", CSI_HPA ); /* ECMA-48 name: CHA */
+static Function func_CSI_HPA( CSI, "\x60", CSI_HPA ); /* ECMA-48 name: HPA */
