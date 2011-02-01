@@ -177,8 +177,12 @@ static Function func_CSI_TBC( CSI, "g", CSI_TBC );
 static bool *get_DEC_mode( int param, Framebuffer *fb ) {
   switch ( param ) {
   case 3: /* 80/132 */
+    /* clear screen */
     fb->ds.move_row( 0 );
     fb->ds.move_col( 0 );
+    for ( int y = 0; y < fb->ds.get_height(); y++ ) {
+      clearline( fb, y, 0, fb->ds.get_width() - 1 );
+    }
     return NULL;
   case 6: /* origin */
     fb->ds.move_row( 0 );
@@ -212,3 +216,19 @@ void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
 
 static Function func_CSI_DECSM( CSI, "?h", CSI_DECSM );
 static Function func_CSI_DECRM( CSI, "?l", CSI_DECRM );
+
+void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int top = dispatch->getparam( 0, 1 );
+  int bottom = dispatch->getparam( 1, fb->ds.get_height() );
+
+  fb->ds.set_scrolling_region( top - 1, bottom - 1 );
+}
+
+static Function func_CSI_DECSTMB( CSI, "r", CSI_DECSTBM );
+
+void Ctrl_BEL( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch __attribute((unused)) )
+{}
+
+static Function func_Ctrl_BEL( CONTROL, "\x07", Ctrl_BEL );
+

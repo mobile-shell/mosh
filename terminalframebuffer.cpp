@@ -57,6 +57,7 @@ DrawState::DrawState( int s_width, int s_height )
   : width( s_width ), height( s_height ),
     cursor_col( 0 ), cursor_row( 0 ),
     combining_char_col( 0 ), combining_char_row( 0 ), tabs( s_width ),
+    scrolling_region_top_row( 0 ), scrolling_region_bottom_row( height - 1 ),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true )
 {
   for ( int i = 0; i < width; i++ ) {
@@ -72,16 +73,16 @@ void Framebuffer::scroll( int N )
 {
   if ( N >= 0 ) {
     for ( int i = 0; i < N; i++ ) {
-      rows.pop_front();
-      rows.push_back( Row( ds.get_width() ) );
+      rows.erase( rows.begin() + ds.limit_top() );
+      rows.insert( rows.begin() + ds.limit_bottom(), Row( ds.get_width() ) );
       ds.move_row( -1, true );
     }
   } else {
     N = -N;
 
     for ( int i = 0; i < N; i++ ) {
-      rows.pop_back();
-      rows.push_front( Row( ds.get_width() ) );
+      rows.erase( rows.begin() + ds.limit_bottom() );
+      rows.insert( rows.begin() + ds.limit_top(), Row( ds.get_width() ) );
       ds.move_row( 1, true );
     }
   }
@@ -95,8 +96,8 @@ void DrawState::new_grapheme( void )
 
 void DrawState::snap_cursor_to_border( void )
 {
-  if ( cursor_row < 0 ) cursor_row = 0;
-  if ( cursor_row >= height ) cursor_row = height - 1;
+  if ( cursor_row < limit_top() ) cursor_row = limit_top();
+  if ( cursor_row > limit_bottom() ) cursor_row = limit_bottom();
   if ( cursor_col < 0 ) cursor_col = 0;
   if ( cursor_col >= width ) cursor_col = width - 1;
 }
@@ -139,10 +140,10 @@ void DrawState::move_col( int N, bool relative, bool implicit )
 
 void Framebuffer::move_rows_autoscroll( int rows )
 {
-  if ( ds.get_cursor_row() + rows >= ds.get_height() ) {
-    scroll( ds.get_height() - ds.get_cursor_row() - rows + 1 );
-  } else if ( ds.get_cursor_row() + rows < 0 ) {
-    scroll( ds.get_cursor_row() + rows );
+  if ( ds.get_cursor_row() + rows > ds.limit_bottom() ) {
+    scroll( ds.get_cursor_row() + rows - ds.limit_bottom() );
+  } else if ( ds.get_cursor_row() + rows < ds.limit_top() ) {
+    scroll( ds.get_cursor_row() + rows - ds.limit_top() );
   }
 
   ds.move_row( rows, true );
@@ -202,4 +203,36 @@ int DrawState::get_next_tab( void )
     }
   }
   return -1;
+}
+
+void DrawState::set_scrolling_region( int top, int bottom )
+{
+  if ( height < 1 ) {
+    return;
+  }
+
+  scrolling_region_top_row = top;
+  scrolling_region_bottom_row = bottom;
+
+  if ( scrolling_region_top_row < 0 ) scrolling_region_top_row = 0;
+  if ( scrolling_region_bottom_row >= height ) scrolling_region_bottom_row = height - 1;
+
+  if ( scrolling_region_bottom_row < scrolling_region_top_row )
+    scrolling_region_bottom_row = scrolling_region_top_row;
+  /* real rule requires TWO-line scrolling region */
+
+  if ( origin_mode ) {
+    snap_cursor_to_border();
+    new_grapheme();
+  }
+}
+
+int DrawState::limit_top( void )
+{
+  return origin_mode ? scrolling_region_top_row : 0;
+}
+
+int DrawState::limit_bottom( void )
+{
+  return origin_mode ? scrolling_region_bottom_row : height - 1;
 }

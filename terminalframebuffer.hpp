@@ -42,6 +42,8 @@ namespace Terminal {
 
     std::vector<bool> tabs;
 
+    int scrolling_region_top_row, scrolling_region_bottom_row;
+
   public:
     bool next_print_will_wrap;
     bool origin_mode;
@@ -62,6 +64,11 @@ namespace Terminal {
     void set_tab( void );
     void clear_tab( int col );
     int get_next_tab( void );
+
+    void set_scrolling_region( int top, int bottom );
+
+    int limit_top( void );
+    int limit_bottom( void );
 
     DrawState( int s_width, int s_height );
   };

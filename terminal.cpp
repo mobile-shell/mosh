@@ -88,7 +88,8 @@ void Emulator::print( Parser::Print *act )
       fb.ds.move_col( 1, true, true );
     }
 
-    if ( combining_cell->contents.size() < 16 ) { /* seems like a reasonable limit on combining characters */
+    if ( combining_cell->contents.size() < 16 ) {
+      /* seems like a reasonable limit on combining characters */
       combining_cell->contents.push_back( act->ch );
     }
     act->handled = true;
