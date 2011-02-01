@@ -29,7 +29,12 @@ std::string Emulator::input( char c, int actfd )
     /* print out debugging information */
     if ( (actfd > 0) && ( !act->handled ) ) {
       char actsum[ 64 ];
-      snprintf( actsum, 64, "%s%s ", act->str().c_str(), dispatch.str().c_str() );
+      if ( (typeid( *act ) == typeid( Parser::CSI_Dispatch ))
+	   || (typeid( *act ) == typeid( Parser::Esc_Dispatch )) ) {
+	snprintf( actsum, 64, "%s%s ", act->str().c_str(), dispatch.str().c_str() );
+      } else {
+	snprintf( actsum, 64, "%s ", act->str().c_str() );
+      }
       swrite( actfd, actsum );
     }
     delete act;

@@ -166,6 +166,10 @@ Transition CSI_Entry::input_state_rule( wchar_t ch )
 
 Transition CSI_Param::input_state_rule( wchar_t ch )
 {
+  if ( C0_prime( ch ) ) {
+    return Transition( new Execute );
+  }
+
   if ( ( (0x30 <= ch) && (ch <= 0x39) ) || ( ch == 0x3B ) ) {
     return Transition( new Param );
   }

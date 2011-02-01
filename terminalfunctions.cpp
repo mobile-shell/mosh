@@ -118,8 +118,11 @@ void Ctrl_LF( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
   fb->move_rows_autoscroll( 1 );
 }
 
+/* same procedure for index, vertical tab, and form feed control codes */
 static Function func_Ctrl_LF( CONTROL, "\x0a", Ctrl_LF );
 static Function func_Ctrl_IND( CONTROL, "\x84", Ctrl_LF );
+static Function func_Ctrl_VT( CONTROL, "\x0b", Ctrl_LF );
+static Function func_Ctrl_FF( CONTROL, "\x0c", Ctrl_LF );
 
 /* carriage return */
 void Ctrl_CR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
@@ -137,7 +140,7 @@ void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 
 static Function func_Ctrl_BS( CONTROL, "\x08", Ctrl_BS );
 
-/* reverse index -- like a backwards linefeed */
+/* reverse index -- like a backwards line feed */
 void Ctrl_RI( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->move_rows_autoscroll( -1 );
