@@ -79,8 +79,7 @@ void Framebuffer::scroll( int N )
 {
   if ( N >= 0 ) {
     for ( int i = 0; i < N; i++ ) {
-      rows.erase( rows.begin() + ds.get_scrolling_region_top_row() );
-      rows.insert( rows.begin() + ds.get_scrolling_region_bottom_row(), Row( ds.get_width() ) );
+      delete_line( ds.get_scrolling_region_top_row() );
       ds.move_row( -1, true );
     }
   } else {
@@ -306,14 +305,14 @@ void Framebuffer::insert_line( int before_row )
     return;
   }
 
-  rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() );
   rows.insert( rows.begin() + before_row, Row( ds.get_width() ) );
+  rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
 }
 
 void Framebuffer::delete_line( int row )
 {
   if ( (row < ds.get_scrolling_region_top_row())
-       || (row > ds.get_scrolling_region_bottom_row() + 1) ) {
+       || (row > ds.get_scrolling_region_bottom_row()) ) {
     return;
   }
 
