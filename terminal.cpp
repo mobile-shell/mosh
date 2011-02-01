@@ -79,7 +79,12 @@ void Emulator::print( Parser::Print *act )
     this_cell->width = chwidth;
     fb.apply_renditions_to_current_cell();
 
-    fb.claim_overlap( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
+    if ( chwidth == 2 ) { /* erase overlapped cell */
+      Cell *next = fb.get_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 );
+      if ( next ) {
+	next->reset();
+      }
+    }
 
     fb.ds.move_col( chwidth, true, true );
 
@@ -134,15 +139,11 @@ void Emulator::debug_printout( int fd )
   screen.append( "\033[H" );
 
   for ( int y = 0; y < fb.ds.get_height(); y++ ) {
-    for ( int x = 0; x < fb.ds.get_width(); x++ ) {
+    for ( int x = 0; x < fb.ds.get_width(); /* let charwidth handle advance */ ) {
       char curmove[ 32 ];
       snprintf( curmove, 32, "\033[%d;%dH\033[X", y + 1, x + 1 );
       screen.append( curmove );
       Cell *cell = fb.get_cell( y, x );
-      if ( cell->overlapping_cell ) continue;
-
-      assert( (cell->overlapped_cells.size() + 1 == (size_t)cell->width)
-	      || (x == fb.ds.get_width() - 1) );
 
       /* print renditions */
       screen.append( "\033[0" );
@@ -171,6 +172,8 @@ void Emulator::debug_printout( int fd )
 	snprintf( utf8, 8, "%lc", *i );
 	screen.append( utf8 );
       }
+
+      x += cell->width;
     }
   }
 

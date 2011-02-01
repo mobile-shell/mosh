@@ -5,18 +5,14 @@
 using namespace Terminal;
 
 Cell::Cell()
-  : overlapping_cell( NULL ),
-    contents(),
-    overlapped_cells(),
+  : contents(),
     fallback( false ),
     width( 1 ),
     renditions()
 {}
 
 Cell::Cell( const Cell &x )
-  : overlapping_cell( x.overlapping_cell ),
-    contents( x.contents ),
-    overlapped_cells( x.overlapped_cells ),
+  : contents( x.contents ),
     fallback( x.fallback ),
     width( x.width ),
     renditions( x.renditions )
@@ -24,9 +20,7 @@ Cell::Cell( const Cell &x )
 
 Cell & Cell::operator=( const Cell &x )
 {
-  overlapping_cell = x.overlapping_cell;
   contents = x.contents;
-  overlapped_cells = x.overlapped_cells;
   fallback = x.fallback;
   width = x.width;
   renditions = x.renditions;
@@ -44,18 +38,6 @@ void Cell::reset( void )
   fallback = false;
   width = 1;
   renditions.clear();
-
-  if ( overlapping_cell ) {
-    assert( overlapped_cells.size() == 0 );
-  } else {
-    for ( std::vector<Cell *>::iterator i = overlapped_cells.begin();
-	  i != overlapped_cells.end();
-	  i++ ) {
-      (*i)->overlapping_cell = NULL;
-      (*i)->reset();
-    }
-    overlapped_cells.clear();
-  }
 }
 
 DrawState::DrawState( int s_width, int s_height )
@@ -183,20 +165,6 @@ Cell *Framebuffer::get_combining_cell( void )
   return &rows[ ds.get_combining_char_row() ].cells[ ds.get_combining_char_col() ];
 }
 
-void Framebuffer::claim_overlap( int row, int col )
-{
-  Cell *the_cell = &rows[ row ].cells[ col ];
-
-  for ( int i = col + 1; i < col + the_cell->width; i++ ) {
-    if ( i < ds.get_width() ) {
-      Cell *next_cell = get_cell( row, i );
-      next_cell->reset();
-      the_cell->overlapped_cells.push_back( next_cell );
-      next_cell->overlapping_cell = the_cell;
-    }
-  }
-}
-
 void DrawState::set_tab( void )
 {
   tabs[ cursor_col ] = true;
@@ -318,4 +286,9 @@ void Framebuffer::delete_line( int row )
 
   rows.erase( rows.begin() + row );
   rows.insert( rows.begin() + ds.get_scrolling_region_bottom_row(), Row( ds.get_width() ) );
+}
+
+void Row::insert_cell( int col )
+{
+  cells.insert( cells.begin() + col, Cell() );
 }

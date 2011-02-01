@@ -9,9 +9,7 @@
 namespace Terminal {
   class Cell {
   public:
-    Cell *overlapping_cell;
     std::vector<wchar_t> contents;
-    std::vector<Cell *> overlapped_cells;
     char fallback; /* first character is combining character */
     int width;
     std::vector<int> renditions; /* e.g., bold, blinking, etc. */
@@ -29,6 +27,9 @@ namespace Terminal {
     std::vector<Cell> cells;
 
     Row( size_t s_width );
+
+    void insert_cell( int col );
+    void delete_cell( int col );
   };
 
   class SavedCursor {
@@ -119,7 +120,7 @@ namespace Terminal {
     Cell *get_combining_cell( void );
 
     void apply_renditions_to_current_cell( void );
-    void claim_overlap( int row, int col );
+
     void insert_line( int before_row );
     void delete_line( int row );
   };
