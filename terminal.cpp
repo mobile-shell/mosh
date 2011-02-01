@@ -82,9 +82,8 @@ void Emulator::print( Parser::Print *act )
     fb.apply_renditions_to_current_cell();
 
     if ( chwidth == 2 ) { /* erase overlapped cell */
-      Cell *next = fb.get_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 );
-      if ( next ) {
-	next->reset();
+      if ( fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) {
+	fb.get_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 )->reset();
       }
     }
 
@@ -156,7 +155,7 @@ void Emulator::debug_printout( int fd )
     snprintf( utf8, 8, "%lc", *i );
     screen.append( utf8 );
   }
-  screen.append( "\x7" ); /* xterm's "OSC" string ends in BEL... */
+  screen.append( "\033\\" );
 
   for ( int y = 0; y < fb.ds.get_height(); y++ ) {
     for ( int x = 0; x < fb.ds.get_width(); /* let charwidth handle advance */ ) {

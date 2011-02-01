@@ -184,6 +184,4 @@ int termemu( int fd, Terminal::Emulator *terminal, int debug_fd )
 
   /* write writeback */
   return swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() );
-
-  return 0;
 }

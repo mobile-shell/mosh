@@ -108,6 +108,10 @@ std::vector<Parser::Action *> Parser::UTF8Parser::input( char c )
       throw std::string( "Unknown return value from mbrtowc" );
     }
 
+    if ( (pwc < 0) || (pwc > 0x10FFFF) ) { /* outside Unicode range */
+      pwc = (wchar_t) 0xFFFD;
+    }
+
     std::vector<Action *> vec = parser.input( pwc );
     for ( std::vector<Action *>::iterator i = vec.begin();
 	  i != vec.end();

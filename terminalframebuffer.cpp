@@ -69,8 +69,8 @@ void Framebuffer::scroll( int N )
     N = -N;
 
     for ( int i = 0; i < N; i++ ) {
-      rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() );
       rows.insert( rows.begin() + ds.get_scrolling_region_top_row(), Row( ds.get_width() ) );
+      rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
       ds.move_row( 1, true );
     }
   }
@@ -149,6 +149,15 @@ Cell *Framebuffer::get_cell( void )
   assert( ds.get_width() );
   assert( ds.get_height() );
 
+  assert( ds.get_cursor_row() < ds.get_height() );
+  assert( ds.get_cursor_col() < ds.get_width() );
+
+  assert( ds.get_cursor_row() >= 0 );
+  assert( ds.get_cursor_col() >= 0 );
+
+  assert( rows.size() == (size_t)ds.get_height() );
+  assert( rows[ ds.get_cursor_row() ].cells.size() == (size_t)ds.get_width() );
+
   return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
 }
 
@@ -156,6 +165,18 @@ Cell *Framebuffer::get_cell( int row, int col )
 {
   if ( row == -1 ) row = ds.get_cursor_row();
   if ( col == -1 ) col = ds.get_cursor_col();
+
+  assert( ds.get_width() );
+  assert( ds.get_height() );
+
+  assert( row < ds.get_height() );
+  assert( col < ds.get_width() );
+
+  assert( row >= 0 );
+  assert( col >= 0 );
+
+  assert( rows.size() == (size_t)ds.get_height() );
+  assert( rows[ row ].cells.size() == (size_t)ds.get_width() );
 
   return &rows[ row ].cells[ col ];
 }
@@ -281,20 +302,26 @@ void Framebuffer::delete_line( int row )
     return;
   }
 
+  int insertbefore = ds.get_scrolling_region_bottom_row() + 1;
+  if ( insertbefore == ds.get_height() ) {
+    rows.push_back( Row( ds.get_width() ) );
+  } else {
+    rows.insert( rows.begin() + insertbefore, Row( ds.get_width() ) );
+  }
+
   rows.erase( rows.begin() + row );
-  rows.insert( rows.begin() + ds.get_scrolling_region_bottom_row(), Row( ds.get_width() ) );
 }
 
 void Row::insert_cell( int col )
 {
   cells.insert( cells.begin() + col, Cell() );
-  cells.erase( cells.end() - 1 );
+  cells.pop_back();
 }
 
 void Row::delete_cell( int col )
 {
-  cells.erase( cells.begin() + col );
   cells.push_back( Cell() );
+  cells.erase( cells.begin() + col );
 }
 
 void Framebuffer::insert_cell( int row, int col )
