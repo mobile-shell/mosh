@@ -288,3 +288,24 @@ void Esc_DECRC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 
 static Function func_Esc_DECSC( ESCAPE, "7", Esc_DECSC );
 static Function func_Esc_DECRC( ESCAPE, "8", Esc_DECRC );
+
+/* device status report -- e.g., cursor position (used by resize) */
+void CSI_DSR( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int param = dispatch->getparam( 0, 0 );
+
+  switch ( param ) {
+  case 5: /* device status report requested */
+    dispatch->terminal_to_host.append( "\033[0n" );
+    break;
+  case 6: /* report of active position requested */
+    char cpr[ 32 ];
+    snprintf( cpr, 32, "\033[%d;%dR",
+	      fb->ds.get_cursor_row() + 1,
+	      fb->ds.get_cursor_col() + 1 );
+    dispatch->terminal_to_host.append( cpr );
+    break;
+  }
+}
+
+static Function func_CSI_DSR( CSI, "n", CSI_DSR );
