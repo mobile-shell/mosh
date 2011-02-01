@@ -259,3 +259,18 @@ void Ctrl_BEL( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch __att
 {}
 
 static Function func_Ctrl_BEL( CONTROL, "\x07", Ctrl_BEL );
+
+/* select graphics rendition -- e.g., bold, blinking, etc. */
+void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
+{
+  for ( int i = 0; i < dispatch->param_count(); i++ ) {
+    int rendition = dispatch->getparam( i, 0 );
+    if ( rendition == 0 ) {
+      fb->ds.clear_renditions();
+    } else {
+      fb->ds.add_rendition( rendition );
+    }
+  }
+}
+
+static Function func_CSI_SGR( CSI, "m", CSI_SGR );

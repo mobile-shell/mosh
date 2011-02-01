@@ -77,6 +77,7 @@ void Emulator::print( Parser::Print *act )
     this_cell->reset();
     this_cell->contents.push_back( act->ch );
     this_cell->width = chwidth;
+    fb.apply_renditions_to_current_cell();
 
     fb.claim_overlap( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
 
@@ -143,6 +144,20 @@ void Emulator::debug_printout( int fd )
       assert( (cell->overlapped_cells.size() + 1 == (size_t)cell->width)
 	      || (x == fb.ds.get_width() - 1) );
 
+      /* print renditions */
+      screen.append( "\033[0" );
+      char rendition[ 32 ];
+      for ( std::vector<int>::iterator i = cell->renditions.begin();
+	    i != cell->renditions.end();
+	    i++ ) {
+	snprintf( rendition, 32, ";%d", *i );
+	screen.append( rendition );
+      }
+      screen.append( "m" );
+
+      /* print cell contents */
+
+      /* cells that begin with combining character get combiner attached to no-break space */
       if ( cell->fallback ) {
 	char utf8[ 8 ];
 	snprintf( utf8, 8, "%lc", 0xA0 );

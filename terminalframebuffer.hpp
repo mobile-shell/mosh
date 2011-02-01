@@ -14,6 +14,7 @@ namespace Terminal {
     std::vector<Cell *> overlapped_cells;
     char fallback; /* first character is combining character */
     int width;
+    std::vector<int> renditions; /* e.g., bold, blinking, etc. */
 
     Cell();
 
@@ -43,6 +44,8 @@ namespace Terminal {
     std::vector<bool> tabs;
 
     int scrolling_region_top_row, scrolling_region_bottom_row;
+
+    std::vector<int> renditions;
 
   public:
     bool next_print_will_wrap;
@@ -75,6 +78,10 @@ namespace Terminal {
     int limit_top( void );
     int limit_bottom( void );
 
+    void clear_renditions( void ) { renditions.clear(); }
+    void add_rendition( int x ) { renditions.push_back( x ); }
+    const std::vector<int> get_renditions( void ) { return renditions; }
+
     DrawState( int s_width, int s_height );
   };
 
@@ -94,6 +101,7 @@ namespace Terminal {
     Cell *get_cell( int row, int col );
     Cell *get_combining_cell( void );
 
+    void apply_renditions_to_current_cell( void );
     void claim_overlap( int row, int col );
   };
 }

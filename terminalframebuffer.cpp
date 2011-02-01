@@ -9,7 +9,8 @@ Cell::Cell()
     contents(),
     overlapped_cells(),
     fallback( false ),
-    width( 1 )
+    width( 1 ),
+    renditions()
 {}
 
 Cell::Cell( const Cell &x )
@@ -17,7 +18,8 @@ Cell::Cell( const Cell &x )
     contents( x.contents ),
     overlapped_cells( x.overlapped_cells ),
     fallback( x.fallback ),
-    width( 1 )
+    width( x.width ),
+    renditions( x.renditions )
 {}
 
 Cell & Cell::operator=( const Cell &x )
@@ -26,6 +28,8 @@ Cell & Cell::operator=( const Cell &x )
   contents = x.contents;
   overlapped_cells = x.overlapped_cells;
   fallback = x.fallback;
+  width = x.width;
+  renditions = x.renditions;
 
   return *this;
 }
@@ -39,6 +43,7 @@ void Cell::reset( void )
   contents.clear();
   fallback = false;
   width = 1;
+  renditions.clear();
 
   if ( overlapping_cell ) {
     assert( overlapped_cells.size() == 0 );
@@ -58,6 +63,7 @@ DrawState::DrawState( int s_width, int s_height )
     cursor_col( 0 ), cursor_row( 0 ),
     combining_char_col( 0 ), combining_char_row( 0 ), tabs( s_width ),
     scrolling_region_top_row( 0 ), scrolling_region_bottom_row( height - 1 ),
+    renditions(),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true )
 {
   for ( int i = 0; i < width; i++ ) {
@@ -255,4 +261,12 @@ std::vector<int> DrawState::get_tabs( void )
   }
 
   return ret;
+}
+
+void Framebuffer::apply_renditions_to_current_cell( void )
+{
+  Cell *this_cell = get_cell();
+  assert( this_cell );
+
+  this_cell->renditions = ds.get_renditions();
 }
