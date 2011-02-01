@@ -63,7 +63,7 @@ DrawState::DrawState( int s_width, int s_height )
     cursor_col( 0 ), cursor_row( 0 ),
     combining_char_col( 0 ), combining_char_row( 0 ), tabs( s_width ),
     scrolling_region_top_row( 0 ), scrolling_region_bottom_row( height - 1 ),
-    renditions(),
+    renditions(), save(),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true )
 {
   for ( int i = 0; i < width; i++ ) {
@@ -269,4 +269,32 @@ void Framebuffer::apply_renditions_to_current_cell( void )
   assert( this_cell );
 
   this_cell->renditions = ds.get_renditions();
+}
+
+SavedCursor::SavedCursor()
+  : cursor_col( 0 ), cursor_row( 0 ),
+    renditions(),
+    auto_wrap_mode( true ),
+    origin_mode( false )
+{}
+
+void DrawState::save_cursor( void )
+{
+  save.cursor_col = cursor_col;
+  save.cursor_row = cursor_row;
+  save.renditions = renditions;
+  save.auto_wrap_mode = auto_wrap_mode;
+  save.origin_mode = origin_mode;
+}
+
+void DrawState::restore_cursor( void )
+{
+  cursor_col = save.cursor_col;
+  cursor_row = save.cursor_row;
+  renditions = save.renditions;
+  auto_wrap_mode = save.auto_wrap_mode;
+  origin_mode = save.origin_mode;
+
+  snap_cursor_to_border();
+  new_grapheme();
 }

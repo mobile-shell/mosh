@@ -31,6 +31,18 @@ namespace Terminal {
     Row( size_t s_width );
   };
 
+  class SavedCursor {
+  public:
+    int cursor_col, cursor_row;
+    std::vector<int> renditions;
+    /* character set shift state */
+    bool auto_wrap_mode;
+    bool origin_mode;
+    /* state of selective erase */
+
+    SavedCursor();
+  };
+
   class DrawState {
   private:
     int width, height;
@@ -46,6 +58,8 @@ namespace Terminal {
     int scrolling_region_top_row, scrolling_region_bottom_row;
 
     std::vector<int> renditions;
+
+    SavedCursor save;
 
   public:
     bool next_print_will_wrap;
@@ -81,6 +95,9 @@ namespace Terminal {
     void clear_renditions( void ) { renditions.clear(); }
     void add_rendition( int x ) { renditions.push_back( x ); }
     const std::vector<int> get_renditions( void ) { return renditions; }
+
+    void save_cursor( void );
+    void restore_cursor( void );
 
     DrawState( int s_width, int s_height );
   };

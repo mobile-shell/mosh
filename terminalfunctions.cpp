@@ -274,3 +274,17 @@ void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
 }
 
 static Function func_CSI_SGR( CSI, "m", CSI_SGR );
+
+/* save and restore cursor */
+void Esc_DECSC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  fb->ds.save_cursor();
+}
+
+void Esc_DECRC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  fb->ds.restore_cursor();
+}
+
+static Function func_Esc_DECSC( ESCAPE, "7", Esc_DECSC );
+static Function func_Esc_DECRC( ESCAPE, "8", Esc_DECRC );
