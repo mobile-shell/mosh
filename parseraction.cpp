@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <ctype.h>
+#include <wctype.h>
 
 #include "parseraction.hpp"
 #include "terminal.hpp"
@@ -10,7 +10,7 @@ std::string Action::str( void )
 {
   char thechar[ 10 ] = { 0 };
   if ( char_present ) {
-    snprintf( thechar, 10, isprint( ch ) ? "(%lc)" : "(0x%x)", ch );
+    snprintf( thechar, 10, iswprint( ch ) ? "(%lc)" : "(0x%x)", ch );
   }
 
   return name() + std::string( thechar );

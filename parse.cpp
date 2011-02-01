@@ -168,7 +168,7 @@ int vt_parser( int fd, Parser::UTF8Parser *parser )
       assert( act );
 
       if ( act->char_present ) {
-	if ( isprint( act->ch ) ) {
+	if ( iswprint( act->ch ) ) {
 	  printf( "%s(0x%02x=%lc) ", act->name().c_str(), act->ch, act->ch );
 	} else {
 	  printf( "%s(0x%02x) ", act->name().c_str(), act->ch );
