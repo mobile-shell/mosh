@@ -298,3 +298,25 @@ void DrawState::restore_cursor( void )
   snap_cursor_to_border();
   new_grapheme();
 }
+
+void Framebuffer::insert_line( int before_row )
+{
+  if ( (before_row < ds.get_scrolling_region_top_row())
+       || (before_row > ds.get_scrolling_region_bottom_row() + 1) ) {
+    return;
+  }
+
+  rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() );
+  rows.insert( rows.begin() + before_row, Row( ds.get_width() ) );
+}
+
+void Framebuffer::delete_line( int row )
+{
+  if ( (row < ds.get_scrolling_region_top_row())
+       || (row > ds.get_scrolling_region_bottom_row() + 1) ) {
+    return;
+  }
+
+  rows.erase( rows.begin() + row );
+  rows.insert( rows.begin() + ds.get_scrolling_region_bottom_row(), Row( ds.get_width() ) );
+}

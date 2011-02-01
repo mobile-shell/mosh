@@ -120,6 +120,8 @@ namespace Terminal {
 
     void apply_renditions_to_current_cell( void );
     void claim_overlap( int row, int col );
+    void insert_line( int before_row );
+    void delete_line( int row );
   };
 }
 

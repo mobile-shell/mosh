@@ -309,3 +309,35 @@ void CSI_DSR( Framebuffer *fb, Dispatcher *dispatch )
 }
 
 static Function func_CSI_DSR( CSI, "n", CSI_DSR );
+
+/* insert line */
+void CSI_IL( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int lines = dispatch->getparam( 0, 1 );
+
+  for ( int i = 0; i < lines; i++ ) {
+    fb->insert_line( fb->ds.get_cursor_row() );
+  }
+
+  /* vt220 manual and Ecma-48 say to move to first column */
+  /* but xterm and gnome-terminal don't */
+  fb->ds.move_col( 0 );
+}
+
+static Function func_CSI_IL( CSI, "L", CSI_IL );
+
+/* delete line */
+void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int lines = dispatch->getparam( 0, 1 );
+
+  for ( int i = 0; i < lines; i++ ) {
+    fb->delete_line( fb->ds.get_cursor_row() );
+  }
+
+  /* same story -- xterm and gnome-terminal don't
+     move to first column */
+  fb->ds.move_col( 0 );
+}
+
+static Function func_CSI_DL( CSI, "M", CSI_DL );
