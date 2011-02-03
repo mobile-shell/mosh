@@ -21,5 +21,7 @@ std::string UserInput::input( Parser::UserByte *act )
   /* This doesn't handle the 8-bit SS3 C1 control, which would be
      two octets in UTF-8. Fortunately nobody seems to send this. */
 
+  act->handled = true;
+
   return std::string( translated_str );
 }

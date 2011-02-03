@@ -184,7 +184,7 @@ int termemu( int host_fd, int src_fd, bool user, int debug_fd,
       act->act_on_terminal( terminal );
 
       /* print out action for debugging */
-      if ( (debug_fd > 0) ) {
+      if ( (debug_fd > 0) && (!act->handled) ) {
 	char actsum[ 64 ];
 	snprintf( actsum, 64, "%s ", act->str().c_str() );
 	swrite( debug_fd, actsum );
