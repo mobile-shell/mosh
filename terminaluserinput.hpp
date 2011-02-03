@@ -7,17 +7,15 @@
 namespace Terminal {
   class UserInput {
   private:
-    bool last_byte;
-    bool application_mode_cursor;
+    short last_byte;
 
   public:
     UserInput()
-      : last_byte( 0 ),
-	application_mode_cursor( false )
+      : last_byte( -1 )
     {}
 
-    std::string input( Parser::UserByte *act );
-    void set_cursor_application_mode( bool mode ) { application_mode_cursor = mode; }
+    std::string input( Parser::UserByte *act,
+		       bool application_mode_cursor_keys );
   };
 }
 

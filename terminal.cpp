@@ -183,3 +183,15 @@ void Emulator::debug_printout( int fd )
 
   swrite( fd, screen.c_str() );
 }
+
+std::string Emulator::open( void )
+{
+  char appmode[ 6 ] = { 0x1b, '[', '?', '1', 'h', 0 };
+  return std::string( appmode );
+}
+
+std::string Emulator::close( void )
+{
+  char ansimode[ 6 ] = { 0x1b, '[', '?', '1', 'l', 0 };
+  return std::string( ansimode );
+}

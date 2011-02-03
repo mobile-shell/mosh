@@ -70,6 +70,8 @@ namespace Terminal {
     bool insert_mode;
     bool cursor_visible;
 
+    bool application_mode_cursor_keys;
+
     /* bold, etc. */
 
     void move_row( int N, bool relative = false );

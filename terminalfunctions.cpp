@@ -208,6 +208,8 @@ static Function func_CSI_TBC( CSI, "g", CSI_TBC );
 
 static bool *get_DEC_mode( int param, Framebuffer *fb ) {
   switch ( param ) {
+  case 1: /* cursor key mode */
+    return &(fb->ds.application_mode_cursor_keys);
   case 3: /* 80/132 */
     /* clear screen */
     fb->ds.move_row( 0 );

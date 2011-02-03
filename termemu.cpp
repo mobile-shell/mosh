@@ -127,28 +127,32 @@ void emulate_terminal( int fd, int debug_fd )
   pollfds[ 1 ].fd = fd;
   pollfds[ 1 ].events = POLLIN;
 
+  swrite( STDOUT_FILENO, terminal.open().c_str() );
+
   while ( 1 ) {
     int active_fds = poll( pollfds, 2, -1 );
     if ( active_fds <= 0 ) {
       perror( "poll" );
-      return;
+      break;
     }
 
     if ( pollfds[ 0 ].revents & POLLIN ) {
       if ( termemu( fd, STDIN_FILENO, true, debug_fd, &parser, &terminal ) < 0 ) {
-	return;
+	break;
       }
     } else if ( pollfds[ 1 ].revents & POLLIN ) {
       if ( termemu( fd, fd, false, debug_fd, &parser, &terminal ) < 0 ) {
-	return;
+	break;
       }
     } else if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
 		& (POLLERR | POLLHUP | POLLNVAL) ) {
-      return;
+      break;
     } else {
       fprintf( stderr, "poll mysteriously woken up\n" );
     }
   }
+
+  swrite( STDOUT_FILENO, terminal.close().c_str() );
 }
 
 int termemu( int host_fd, int src_fd, bool user, int debug_fd,

@@ -68,5 +68,6 @@ void OSC_End::act_on_terminal( Terminal::Emulator *emu )
 
 void UserByte::act_on_terminal( Terminal::Emulator *emu )
 {
-  emu->dispatch.terminal_to_host.append( emu->user.input( this ) );
+  emu->dispatch.terminal_to_host.append( emu->user.input( this,
+							  emu->fb.ds.application_mode_cursor_keys ) );
 }
