@@ -1,0 +1,25 @@
+#include "terminaluserinput.hpp"
+
+using namespace Terminal;
+
+std::string UserInput::input( Parser::UserByte *act )
+{
+  char translated_str[ 2 ] = { act->c, 0 };
+
+  /* The user will always be in application mode. If rtm is not in
+     application mode, convert user's cursor control function to an
+     ANSI cursor control sequence */
+
+  /* We don't need lookahead to do this for 7-bit. */
+
+  if ( (!application_mode_cursor)
+       && (last_byte == 0x1b) /* ESC */
+       && (act->c == 'O') ) { /* ESC O = 7-bit SS3 = application mode */
+    translated_str[ 0 ] = '[';
+  }
+
+  /* This doesn't handle the 8-bit SS3 C1 control, which would be
+     two octets in UTF-8. Fortunately nobody seems to send this. */
+
+  return std::string( translated_str );
+}

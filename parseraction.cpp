@@ -65,3 +65,8 @@ void OSC_End::act_on_terminal( Terminal::Emulator *emu )
 {
   emu->OSC_end( this );
 }
+
+void UserByte::act_on_terminal( Terminal::Emulator *emu )
+{
+  emu->dispatch.terminal_to_host.append( emu->user.input( this ) );
+}

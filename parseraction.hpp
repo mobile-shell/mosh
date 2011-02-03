@@ -87,6 +87,17 @@ namespace Parser {
     std::string name( void ) { return std::string( "OSC_End" ); }
     void act_on_terminal( Terminal::Emulator *emu );
   };
+
+  class UserByte : public Action {
+    /* user keystroke -- not part of the host-source state machine*/
+  public:
+    char c; /* The user-source byte. We don't try to interpret the charset */
+
+    std::string name( void ) { return std::string( "UserByte" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
+
+    UserByte( int s_c ) : c( s_c ) {}
+  };
 }
 
 #endif

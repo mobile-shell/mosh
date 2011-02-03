@@ -9,6 +9,7 @@
 #include "parseraction.hpp"
 #include "terminalframebuffer.hpp"
 #include "terminaldispatcher.hpp"
+#include "terminaluserinput.hpp"
 
 namespace Terminal {
   class Emulator {
@@ -22,10 +23,12 @@ namespace Terminal {
     friend void Parser::OSC_Start::act_on_terminal( Emulator * );
     friend void Parser::OSC_Put::act_on_terminal( Emulator * );
     friend void Parser::OSC_End::act_on_terminal( Emulator * );
+    friend void Parser::UserByte::act_on_terminal( Emulator * );
 
   private:
     Framebuffer fb;
     Dispatcher dispatch;
+    UserInput user;
 
     /* action methods */
     void print( Parser::Print *act );

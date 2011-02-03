@@ -24,8 +24,9 @@ const size_t buf_size = 1024;
 
 void emulate_terminal( int fd, int debug_fd );
 int copy( int src, int dest );
-int termemu( int fd, Parser::UTF8Parser *parser,
-	     Terminal::Emulator *terminal, int debug_fd );
+int termemu( int host_fd, int src_fd, bool user, int debug_fd,
+	     Parser::UTF8Parser *parser,
+	     Terminal::Emulator *terminal );
 
 int main( int argc,
 	  char *argv[],
@@ -134,11 +135,11 @@ void emulate_terminal( int fd, int debug_fd )
     }
 
     if ( pollfds[ 0 ].revents & POLLIN ) {
-      if ( copy( STDIN_FILENO, fd ) < 0 ) {
+      if ( termemu( fd, STDIN_FILENO, true, debug_fd, &parser, &terminal ) < 0 ) {
 	return;
       }
     } else if ( pollfds[ 1 ].revents & POLLIN ) {
-      if ( termemu( fd, &parser, &terminal, debug_fd ) < 0 ) {
+      if ( termemu( fd, fd, false, debug_fd, &parser, &terminal ) < 0 ) {
 	return;
       }
     } else if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
@@ -150,28 +151,14 @@ void emulate_terminal( int fd, int debug_fd )
   }
 }
 
-int copy( int src, int dest )
-{
-  char buf[ buf_size ];
-
-  ssize_t bytes_read = read( src, buf, buf_size );
-  if ( bytes_read == 0 ) { /* EOF */
-    return -1;
-  } else if ( bytes_read < 0 ) {
-    perror( "read" );
-    return -1;
-  }
-
-  return swrite( dest, buf, bytes_read );
-}
-
-int termemu( int fd, Parser::UTF8Parser *parser,
-	     Terminal::Emulator *terminal, int debug_fd )
+int termemu( int host_fd, int src_fd, bool user, int debug_fd,
+	     Parser::UTF8Parser *parser,
+	     Terminal::Emulator *terminal )
 {
   char buf[ buf_size ];
 
   /* fill buffer if possible */
-  ssize_t bytes_read = read( fd, buf, buf_size );
+  ssize_t bytes_read = read( src_fd, buf, buf_size );
   if ( bytes_read == 0 ) { /* EOF */
     return -1;
   } else if ( bytes_read < 0 ) {
@@ -179,21 +166,37 @@ int termemu( int fd, Parser::UTF8Parser *parser,
     return -1;
   }
 
-  /* feed bytes to parser, and actions to terminal */
   for ( int i = 0; i < bytes_read; i++ ) {
-    std::list<Parser::Action *> actions = parser->input( buf[ i ] );
+    /* feed bytes to parser */
+    std::list<Parser::Action *> actions;
+    if ( user ) {
+      actions.push_back( new Parser::UserByte( buf[ i ] ) );
+    } else {
+      actions = parser->input( buf[ i ] );
+    }
+
+    /* apply actions to terminal */
     for ( std::list<Parser::Action *>::iterator i = actions.begin();
 	  i != actions.end();
 	  i++ ) {
-      (*i)->act_on_terminal( terminal );
+      Parser::Action *act = *i;
+      /* apply action to terminal */
+      act->act_on_terminal( terminal );
+
+      /* print out action for debugging */
+      if ( (debug_fd > 0) ) {
+	char actsum[ 64 ];
+	snprintf( actsum, 64, "%s ", act->str().c_str() );
+	swrite( debug_fd, actsum );
+      }
+
+      delete *i;
     }
   }
 
   terminal->debug_printout( STDOUT_FILENO );
 
-  debug_fd = debug_fd;
-
   /* write writeback */
   std::string terminal_to_host = terminal->read_octets_to_host();
-  return swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() );
+  return swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() );
 }
