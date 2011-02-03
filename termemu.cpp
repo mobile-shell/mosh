@@ -23,7 +23,8 @@ const size_t buf_size = 1024;
 
 void emulate_terminal( int fd, int debug_fd );
 int copy( int src, int dest );
-int termemu( int fd, Terminal::Emulator *terminal, int debug_fd );
+int termemu( int fd, Parser::UTF8Parser *parser,
+	     Terminal::Emulator *terminal, int debug_fd );
 
 int main( int argc,
 	  char *argv[],
@@ -107,11 +108,14 @@ int main( int argc,
     }
   }
 
+  printf( "[rtm is exiting.]\n" );
+
   return 0;
 }
 
 void emulate_terminal( int fd, int debug_fd )
 {
+  Parser::UTF8Parser parser;
   Terminal::Emulator terminal( 80, 24 );
   struct pollfd pollfds[ 2 ];
 
@@ -133,7 +137,7 @@ void emulate_terminal( int fd, int debug_fd )
 	return;
       }
     } else if ( pollfds[ 1 ].revents & POLLIN ) {
-      if ( termemu( fd, &terminal, debug_fd ) < 0 ) {
+      if ( termemu( fd, &parser, &terminal, debug_fd ) < 0 ) {
 	return;
       }
     } else if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
@@ -160,7 +164,8 @@ int copy( int src, int dest )
   return swrite( dest, buf, bytes_read );
 }
 
-int termemu( int fd, Terminal::Emulator *terminal, int debug_fd )
+int termemu( int fd, Parser::UTF8Parser *parser,
+	     Terminal::Emulator *terminal, int debug_fd )
 {
   char buf[ buf_size ];
 
@@ -173,15 +178,21 @@ int termemu( int fd, Terminal::Emulator *terminal, int debug_fd )
     return -1;
   }
 
-  std::string terminal_to_host;
-
-  /* feed to terminal */
+  /* feed bytes to parser, and actions to terminal */
   for ( int i = 0; i < bytes_read; i++ ) {
-    terminal_to_host.append( terminal->input( buf[ i ], debug_fd ) );
+    std::list<Parser::Action *> actions = parser->input( buf[ i ] );
+    for ( std::list<Parser::Action *>::iterator i = actions.begin();
+	  i != actions.end();
+	  i++ ) {
+      (*i)->act_on_terminal( terminal );
+    }
   }
 
   terminal->debug_printout( STDOUT_FILENO );
 
+  debug_fd = debug_fd;
+
   /* write writeback */
+  std::string terminal_to_host = terminal->read_octets_to_host();
   return swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() );
 }

@@ -10,38 +10,14 @@
 using namespace Terminal;
 
 Emulator::Emulator( size_t s_width, size_t s_height )
-  : parser(), fb( s_width, s_height ), dispatch()
+  : fb( s_width, s_height ), dispatch()
 {}
 
-std::string Emulator::input( char c, int actfd )
+std::string Emulator::read_octets_to_host( void )
 {
+  std::string ret = dispatch.terminal_to_host;
   dispatch.terminal_to_host.clear();
-
-  std::vector<Parser::Action *> vec = parser.input( c );
-
-  for ( std::vector<Parser::Action *>::iterator i = vec.begin();
-	i != vec.end();
-	i++ ) {
-    Parser::Action *act = *i;
-
-    act->act_on_terminal( this );
-
-    /* print out debugging information */
-    if ( (actfd > 0) && ( !act->handled ) ) {
-      char actsum[ 64 ];
-      if ( (typeid( *act ) == typeid( Parser::CSI_Dispatch ))
-	   || (typeid( *act ) == typeid( Parser::Esc_Dispatch )) ) {
-	snprintf( actsum, 64, "%s%s ", act->str().c_str(), dispatch.str().c_str() );
-      } else {
-	snprintf( actsum, 64, "%s ", act->str().c_str() );
-      }
-      swrite( actfd, actsum );
-    }
-    delete act;
-  }
-
-  /* the user is supposed to send this string to the host, as if typed */
-  return dispatch.terminal_to_host;
+  return ret;
 }
 
 void Emulator::execute( Parser::Execute *act )

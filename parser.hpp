@@ -5,7 +5,7 @@
    http://www.vt100.net/emu/dec_ansi_parser */
 
 #include <wchar.h>
-#include <vector>
+#include <list>
 #include <string.h>
 
 #include "parsertransition.hpp"
@@ -30,7 +30,7 @@ namespace Parser {
     Parser & operator=( const Parser & );
     ~Parser() {}
 
-    std::vector<Action *> input( wchar_t ch );
+    std::list<Action *> input( wchar_t ch );
   };
 
   static const size_t BUF_SIZE = 8;
@@ -45,7 +45,7 @@ namespace Parser {
   public:
     UTF8Parser();
 
-    std::vector<Action *> input( char c );
+    std::list<Action *> input( char c );
   };
 }
 

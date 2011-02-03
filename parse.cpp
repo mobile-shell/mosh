@@ -159,8 +159,8 @@ int vt_parser( int fd, Parser::UTF8Parser *parser )
 
   /* feed to parser */
   for ( int i = 0; i < bytes_read; i++ ) {
-    std::vector<Parser::Action *> actions = parser->input( buf[ i ] );
-    for ( std::vector<Parser::Action *>::iterator j = actions.begin();
+    std::list<Parser::Action *> actions = parser->input( buf[ i ] );
+    for ( std::list<Parser::Action *>::iterator j = actions.begin();
 	  j != actions.end();
 	  j++ ) {
 

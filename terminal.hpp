@@ -24,7 +24,6 @@ namespace Terminal {
     friend void Parser::OSC_End::act_on_terminal( Emulator * );
 
   private:
-    Parser::UTF8Parser parser;
     Framebuffer fb;
     Dispatcher dispatch;
 
@@ -38,7 +37,7 @@ namespace Terminal {
   public:
     Emulator( size_t s_width, size_t s_height );
 
-    std::string input( char c, int debug_fd );
+    std::string read_octets_to_host( void );
 
     void debug_printout( int fd );
   };

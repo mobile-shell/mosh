@@ -5,7 +5,7 @@
 #include "parser.hpp"
 
 static void append_or_delete( Parser::Action *act,
-			      std::vector<Parser::Action *>&vec )
+			      std::list<Parser::Action *>&vec )
 {
   assert( act );
 
@@ -16,9 +16,9 @@ static void append_or_delete( Parser::Action *act,
   }
 }
 
-std::vector<Parser::Action *> Parser::Parser::input( wchar_t ch )
+std::list<Parser::Action *> Parser::Parser::input( wchar_t ch )
 {
-  std::vector<Action *> ret;
+  std::list<Action *> ret;
 
   Transition tx = state->input( ch );
 
@@ -47,7 +47,7 @@ Parser::UTF8Parser::UTF8Parser()
   assert( BUF_SIZE >= MB_CUR_MAX );
 }
 
-std::vector<Parser::Action *> Parser::UTF8Parser::input( char c )
+std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
 {
   assert( buf_len < BUF_SIZE );
 
@@ -62,7 +62,7 @@ std::vector<Parser::Action *> Parser::UTF8Parser::input( char c )
 
   size_t total_bytes_parsed = 0;
   size_t orig_buf_len = buf_len;
-  std::vector<Action *> ret;
+  std::list<Action *> ret;
 
   /* this routine is somewhat complicated in order to comply with
      Unicode 6.0, section 3.9, "Best Practices for using U+FFFD" */
@@ -112,12 +112,8 @@ std::vector<Parser::Action *> Parser::UTF8Parser::input( char c )
       pwc = (wchar_t) 0xFFFD;
     }
 
-    std::vector<Action *> vec = parser.input( pwc );
-    for ( std::vector<Action *>::iterator i = vec.begin();
-	  i != vec.end();
-	  i++ ) {
-      ret.push_back( *i );
-    }
+    std::list<Action *> vec = parser.input( pwc );
+    ret.insert( ret.end(), vec.begin(), vec.end() );
 
     total_bytes_parsed += bytes_parsed;
   }
