@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "parser.hpp"
 #include "terminal.hpp"
 #include "swrite.hpp"
 
