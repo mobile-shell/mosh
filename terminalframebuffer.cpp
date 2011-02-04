@@ -8,7 +8,8 @@ Cell::Cell()
   : contents(),
     fallback( false ),
     width( 1 ),
-    renditions()
+    renditions(),
+    need_back_color_erase( true )
 {}
 
 Row::Row( size_t s_width )
@@ -21,6 +22,7 @@ void Cell::reset( void )
   fallback = false;
   width = 1;
   renditions.clear();
+  need_back_color_erase = true;
 }
 
 DrawState::DrawState( int s_width, int s_height )
@@ -247,6 +249,7 @@ std::vector<int> DrawState::get_tabs( void )
 
 void Framebuffer::apply_renditions_to_current_cell( void )
 {
+  get_cell()->need_back_color_erase = false;
   get_cell()->renditions = ds.get_renditions();
 }
 
@@ -387,5 +390,36 @@ void DrawState::resize( int s_width, int s_height )
   if ( (combining_char_col >= width)
        || (combining_char_row >= height) ) {
     combining_char_col = combining_char_row = -1;
+  }
+}
+
+int DrawState::get_background_rendition( void )
+{
+  int color = 0;
+  for ( std::vector<int>::iterator i = renditions.begin();
+	i != renditions.end();
+	i++ ) {
+    int r = *i;
+    if ( (40 <= r) && (r <= 47) ) {
+      color = r;
+    }
+  }
+
+  return color;
+}
+
+void Framebuffer::back_color_erase( void )
+{
+  int bg_color = ds.get_background_rendition();
+
+  for ( int row = 0; row < ds.get_height(); row++ ) {
+    for ( int col = 0; col < ds.get_width(); col++ ) {
+      Cell *cell = get_cell( row, col );
+      if ( cell->need_back_color_erase ) {
+	assert( cell->renditions.empty() );
+	cell->renditions.push_back( bg_color );
+	cell->need_back_color_erase = false;
+      }
+    }
   }
 }

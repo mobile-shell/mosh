@@ -14,6 +14,7 @@ namespace Terminal {
     char fallback; /* first character is combining character */
     int width;
     std::vector<int> renditions; /* e.g., bold, blinking, etc. */
+    bool need_back_color_erase;
 
     Cell();
 
@@ -99,6 +100,7 @@ namespace Terminal {
     void clear_renditions( void ) { renditions.clear(); }
     void add_rendition( int x ) { renditions.push_back( x ); }
     const std::vector<int> get_renditions( void ) { return renditions; }
+    int get_background_rendition( void );
 
     void save_cursor( void );
     void restore_cursor( void );
@@ -141,6 +143,8 @@ namespace Terminal {
     std::vector<wchar_t> get_window_title( void ) { return window_title; }
 
     void resize( int s_width, int s_height );
+
+    void back_color_erase( void );
   };
 }
 

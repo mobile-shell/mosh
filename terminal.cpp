@@ -123,6 +123,8 @@ void Emulator::Esc_dispatch( Parser::Esc_Dispatch *act )
 
 void Emulator::debug_printout( int fd )
 {
+  fb.back_color_erase();
+
   std::string screen;
   screen.append( "\033[H" );
 

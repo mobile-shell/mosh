@@ -312,6 +312,8 @@ static Function func_Ctrl_BEL( CONTROL, "\x07", Ctrl_BEL );
 /* select graphics rendition -- e.g., bold, blinking, etc. */
 void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
 {
+  fb->back_color_erase();
+
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
     int rendition = dispatch->getparam( i, 0 );
     if ( rendition == 0 ) {
