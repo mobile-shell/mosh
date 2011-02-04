@@ -387,7 +387,7 @@ void DrawState::resize( int s_width, int s_height )
     /* xterm and rxvt-unicode do this. gnome-terminal only
        resets scrolling region if it has to become smaller in resize */
     scrolling_region_top_row = 0;
-    scrolling_region_bottom_row = height - 1;
+    scrolling_region_bottom_row = s_height - 1;
   }
 
   width = s_width;
