@@ -140,6 +140,12 @@ void emulate_terminal( int fd, int debug_fd )
     return;
   }
 
+  /* tell child process */
+  if ( ioctl( fd, TIOCSWINSZ, &window_size ) < 0 ) {
+    perror( "ioctl TIOCSWINSZ" );
+    return;
+  }
+
   /* open parser and terminal */
   Parser::UTF8Parser parser;
   Terminal::Emulator terminal( window_size.ws_col, window_size.ws_row );

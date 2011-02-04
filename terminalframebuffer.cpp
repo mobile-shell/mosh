@@ -186,8 +186,8 @@ Cell *Framebuffer::get_cell( int row, int col )
 
 Cell *Framebuffer::get_combining_cell( void )
 {
-  if ( (ds.get_combining_char_row() >= ds.get_width())
-       || (ds.get_combining_char_col() >= ds.get_height()) ) {
+  if ( (ds.get_combining_char_col() >= ds.get_width())
+       || (ds.get_combining_char_row() >= ds.get_height()) ) {
     return NULL;
   } /* can happen if a resize came in between */
 
