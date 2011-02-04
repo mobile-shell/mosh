@@ -56,7 +56,10 @@ DrawState::DrawState( int s_width, int s_height )
 
 Framebuffer::Framebuffer( int s_width, int s_height )
   : rows( s_height, Row( s_width ) ), window_title(), ds( s_width, s_height )
-{}
+{
+  assert( s_height > 0 );
+  assert( s_width > 0 );
+}
 
 void Framebuffer::scroll( int N )
 {
@@ -183,6 +186,11 @@ Cell *Framebuffer::get_cell( int row, int col )
 
 Cell *Framebuffer::get_combining_cell( void )
 {
+  if ( (ds.get_combining_char_row() >= ds.get_width())
+       || (ds.get_combining_char_col() >= ds.get_height()) ) {
+    return NULL;
+  } /* can happen if a resize came in between */
+
   return &rows[ ds.get_combining_char_row() ].cells[ ds.get_combining_char_col() ];
 }
 
@@ -280,7 +288,7 @@ void DrawState::restore_cursor( void )
   auto_wrap_mode = save.auto_wrap_mode;
   origin_mode = save.origin_mode;
 
-  snap_cursor_to_border();
+  snap_cursor_to_border(); /* we could have resized in between */
   new_grapheme();
 }
 
@@ -351,4 +359,41 @@ void Framebuffer::soft_reset( void )
   ds.set_scrolling_region( 0, ds.get_height() - 1 );
   ds.clear_renditions();
   ds.clear_saved_cursor();
+}
+
+void Framebuffer::resize( int s_width, int s_height )
+{
+  assert( s_width > 0 );
+  assert( s_height > 0 );
+
+  rows.resize( s_height, Row( ds.get_width() ) );
+
+  for ( std::deque<Row>::iterator i = rows.begin();
+	i != rows.end();
+	i++ ) {
+    (*i).cells.resize( s_width, Cell() );
+  }
+
+  ds.resize( s_width, s_height );
+}
+
+void DrawState::resize( int s_width, int s_height )
+{
+  width = s_width;
+  height = s_height;
+
+  snap_cursor_to_border();
+
+  if ( scrolling_region_top_row >= height ) {
+    scrolling_region_top_row = 0;
+  }
+
+  if ( scrolling_region_bottom_row >= height ) {
+    scrolling_region_bottom_row = height - 1;
+  }
+
+  tabs.resize( width );
+
+  /* saved cursor will be snapped to border on restore */
+  /* combining char cell can now be offscreen */
 }

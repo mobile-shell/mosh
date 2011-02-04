@@ -34,7 +34,7 @@ void Emulator::print( Parser::Print *act )
 
   Cell *this_cell = fb.get_cell();
 
-  Cell *combining_cell = fb.get_combining_cell();
+  Cell *combining_cell = fb.get_combining_cell(); /* can be null if we were resized */
 
   switch ( chwidth ) {
   case 1: /* normal character */
@@ -68,6 +68,11 @@ void Emulator::print( Parser::Print *act )
     act->handled = true;
     break;
   case 0: /* combining character */
+    if ( combining_cell == NULL ) { /* character is now offscreen */
+      act->handled = true;
+      break;
+    }
+
     if ( combining_cell->contents.size() == 0 ) {
       /* cell starts with combining character */
       assert( this_cell == combining_cell );
@@ -194,4 +199,9 @@ std::string Emulator::close( void )
 {
   char ansimode[ 6 ] = { 0x1b, '[', '?', '1', 'l', 0 };
   return std::string( ansimode );
+}
+
+void Emulator::resize( size_t s_width, size_t s_height )
+{
+  fb.resize( s_width, s_height );
 }

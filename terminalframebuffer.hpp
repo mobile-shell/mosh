@@ -106,6 +106,8 @@ namespace Terminal {
     void restore_cursor( void );
     void clear_saved_cursor( void ) { save = SavedCursor(); }
 
+    void resize( int s_width, int s_height );
+
     DrawState( int s_width, int s_height );
   };
 
@@ -139,6 +141,8 @@ namespace Terminal {
 
     void set_window_title( std::vector<wchar_t> s ) { window_title = s; }
     std::vector<wchar_t> get_window_title( void ) { return window_title; }
+
+    void resize( int s_width, int s_height );
   };
 }
 

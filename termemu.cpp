@@ -15,6 +15,8 @@
 #include <typeinfo>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/signalfd.h>
+#include <termios.h>
 
 #include "parser.hpp"
 #include "terminal.hpp"
@@ -117,9 +119,31 @@ int main( int argc,
 
 void emulate_terminal( int fd, int debug_fd )
 {
+  /* establish WINCH fd and start listening for signal */
+  sigset_t signal_mask;
+  assert( sigemptyset( &signal_mask ) == 0 );
+  assert( sigaddset( &signal_mask, SIGWINCH ) == 0 );
+
+  /* stop "ignoring" WINCH signal */
+  assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
+
+  int winch_fd = signalfd( -1, &signal_mask, 0 );
+  if ( winch_fd < 0 ) {
+    perror( "signalfd" );
+    return;
+  }
+
+  /* get current window size */
+  struct winsize window_size;
+  if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
+    perror( "ioctl TIOCGWINSZ" );
+    return;
+  }
+
+  /* open parser and terminal */
   Parser::UTF8Parser parser;
-  Terminal::Emulator terminal( 80, 24 );
-  struct pollfd pollfds[ 2 ];
+  Terminal::Emulator terminal( window_size.ws_col, window_size.ws_row );
+  struct pollfd pollfds[ 3 ];
 
   pollfds[ 0 ].fd = STDIN_FILENO;
   pollfds[ 0 ].events = POLLIN;
@@ -127,10 +151,13 @@ void emulate_terminal( int fd, int debug_fd )
   pollfds[ 1 ].fd = fd;
   pollfds[ 1 ].events = POLLIN;
 
+  pollfds[ 2 ].fd = winch_fd;
+  pollfds[ 2 ].events = POLLIN;
+
   swrite( STDOUT_FILENO, terminal.open().c_str() );
 
   while ( 1 ) {
-    int active_fds = poll( pollfds, 2, -1 );
+    int active_fds = poll( pollfds, 3, -1 );
     if ( active_fds <= 0 ) {
       perror( "poll" );
       break;
@@ -143,6 +170,26 @@ void emulate_terminal( int fd, int debug_fd )
     } else if ( pollfds[ 1 ].revents & POLLIN ) {
       if ( termemu( fd, fd, false, debug_fd, &parser, &terminal ) < 0 ) {
 	break;
+      }
+    } else if ( pollfds[ 2 ].revents & POLLIN ) {
+      /* resize */
+      struct signalfd_siginfo info;
+      assert( read( winch_fd, &info, sizeof( info ) ) == sizeof( info ) );
+      assert( info.ssi_signo == SIGWINCH );
+
+      /* get new size */
+      if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
+	perror( "ioctl TIOCGWINSZ" );
+	return;
+      }
+
+      /* tell emulator */
+      terminal.resize( window_size.ws_col, window_size.ws_row );
+
+      /* tell child process */
+      if ( ioctl( fd, TIOCSWINSZ, &window_size ) < 0 ) {
+	perror( "ioctl TIOCSWINSZ" );
+	return;
       }
     } else if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
 		& (POLLERR | POLLHUP | POLLNVAL) ) {

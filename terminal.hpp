@@ -46,6 +46,9 @@ namespace Terminal {
 
     std::string open( void ); /* put user cursor keys in application mode */
     std::string close( void ); /* restore user cursor keys */
+
+    void resize( size_t s_width, size_t s_height );
+
   };
 }
 
