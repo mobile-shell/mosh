@@ -186,8 +186,8 @@ Cell *Framebuffer::get_cell( int row, int col )
 
 Cell *Framebuffer::get_combining_cell( void )
 {
-  if ( (ds.get_combining_char_col() == -1)
-       || (ds.get_combining_char_row() == -1)
+  if ( (ds.get_combining_char_col() < 0)
+       || (ds.get_combining_char_row() < 0)
        || (ds.get_combining_char_col() >= ds.get_width())
        || (ds.get_combining_char_row() >= ds.get_height()) ) {
     return NULL;
@@ -381,16 +381,17 @@ void Framebuffer::resize( int s_width, int s_height )
 
 void DrawState::resize( int s_width, int s_height )
 {
-  width = s_width;
-  height = s_height;
-
-  if ( scrolling_region_top_row >= height ) {
+  if ( (width != s_width)
+       || (height != s_height) ) {
+    /* reset entire scrolling region on any resize */
+    /* xterm and rxvt-unicode do this. gnome-terminal only
+       resets scrolling region if it has to become smaller in resize */
     scrolling_region_top_row = 0;
-  }
-
-  if ( scrolling_region_bottom_row >= height ) {
     scrolling_region_bottom_row = height - 1;
   }
+
+  width = s_width;
+  height = s_height;
 
   snap_cursor_to_border();
 
