@@ -186,7 +186,9 @@ Cell *Framebuffer::get_cell( int row, int col )
 
 Cell *Framebuffer::get_combining_cell( void )
 {
-  if ( (ds.get_combining_char_col() >= ds.get_width())
+  if ( (ds.get_combining_char_col() == -1)
+       || (ds.get_combining_char_row() == -1)
+       || (ds.get_combining_char_col() >= ds.get_width())
        || (ds.get_combining_char_row() >= ds.get_height()) ) {
     return NULL;
   } /* can happen if a resize came in between */
@@ -382,8 +384,6 @@ void DrawState::resize( int s_width, int s_height )
   width = s_width;
   height = s_height;
 
-  snap_cursor_to_border();
-
   if ( scrolling_region_top_row >= height ) {
     scrolling_region_top_row = 0;
   }
@@ -392,8 +392,15 @@ void DrawState::resize( int s_width, int s_height )
     scrolling_region_bottom_row = height - 1;
   }
 
+  snap_cursor_to_border();
+
   tabs.resize( width );
 
   /* saved cursor will be snapped to border on restore */
-  /* combining char cell can now be offscreen */
+
+  /* invalidate combining char cell if necessary */
+  if ( (combining_char_col >= width)
+       || (combining_char_row >= height) ) {
+    combining_char_col = combining_char_row = -1;
+  }
 }
