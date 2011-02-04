@@ -17,9 +17,6 @@ namespace Terminal {
 
     Cell();
 
-    Cell( const Cell & );
-    Cell & operator=( const Cell & );
-
     void reset( void );
   };
 

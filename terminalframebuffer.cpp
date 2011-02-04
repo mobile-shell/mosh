@@ -11,23 +11,6 @@ Cell::Cell()
     renditions()
 {}
 
-Cell::Cell( const Cell &x )
-  : contents( x.contents ),
-    fallback( x.fallback ),
-    width( x.width ),
-    renditions( x.renditions )
-{}
-
-Cell & Cell::operator=( const Cell &x )
-{
-  contents = x.contents;
-  fallback = x.fallback;
-  width = x.width;
-  renditions = x.renditions;
-
-  return *this;
-}
-
 Row::Row( size_t s_width )
   : cells( s_width )
 {}
