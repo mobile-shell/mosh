@@ -69,6 +69,7 @@ namespace Terminal {
     bool auto_wrap_mode;
     bool insert_mode;
     bool cursor_visible;
+    bool reverse_video;
 
     bool application_mode_cursor_keys;
 

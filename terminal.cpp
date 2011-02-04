@@ -138,6 +138,11 @@ void Emulator::debug_printout( int fd )
   }
   screen.append( "\033\\" );
 
+  /* set reverse video */
+  char rev[ 8 ];
+  snprintf( rev, 8, "\033[?5%c", (fb.ds.reverse_video ? 'h' : 'l') );
+  screen.append( rev );
+
   for ( int y = 0; y < fb.ds.get_height(); y++ ) {
     for ( int x = 0; x < fb.ds.get_width(); /* let charwidth handle advance */ ) {
       char curmove[ 32 ];

@@ -210,7 +210,7 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
   switch ( param ) {
   case 1: /* cursor key mode */
     return &(fb->ds.application_mode_cursor_keys);
-  case 3: /* 80/132 */
+  case 3: /* 80/132. Ignore but clear screen. */
     /* clear screen */
     fb->ds.move_row( 0 );
     fb->ds.move_col( 0 );
@@ -218,6 +218,8 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
       clearline( fb, y, 0, fb->ds.get_width() - 1 );
     }
     return NULL;
+  case 5: /* reverse video */
+    return &(fb->ds.reverse_video);
   case 6: /* origin */
     fb->ds.move_row( 0 );
     fb->ds.move_col( 0 );
