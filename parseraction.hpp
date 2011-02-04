@@ -98,6 +98,20 @@ namespace Parser {
 
     UserByte( int s_c ) : c( s_c ) {}
   };
+
+  class Resize : public Action {
+    /* resize event -- not part of the host-source state machine*/
+  public:
+    size_t width, height;
+
+    std::string name( void ) { return std::string( "Resize" ); }
+    void act_on_terminal( Terminal::Emulator *emu );
+
+    Resize( size_t s_width, size_t s_height )
+      : width( s_width ),
+	height( s_height )
+    {}
+  };
 }
 
 #endif

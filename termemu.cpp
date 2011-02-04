@@ -207,7 +207,8 @@ void emulate_terminal( int fd, int debug_fd )
       }
 
       /* tell emulator */
-      terminal.resize( window_size.ws_col, window_size.ws_row );
+      Parser::Resize r( window_size.ws_col, window_size.ws_row );
+      r.act_on_terminal( &terminal );
 
       /* tell child process */
       if ( ioctl( fd, TIOCSWINSZ, &window_size ) < 0 ) {

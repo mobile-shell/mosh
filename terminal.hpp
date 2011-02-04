@@ -24,6 +24,7 @@ namespace Terminal {
     friend void Parser::OSC_Put::act_on_terminal( Emulator * );
     friend void Parser::OSC_End::act_on_terminal( Emulator * );
     friend void Parser::UserByte::act_on_terminal( Emulator * );
+    friend void Parser::Resize::act_on_terminal( Emulator * );
 
   private:
     Framebuffer fb;
@@ -36,6 +37,7 @@ namespace Terminal {
     void CSI_dispatch( Parser::CSI_Dispatch *act );
     void Esc_dispatch( Parser::Esc_Dispatch *act );
     void OSC_end( Parser::OSC_End *act );
+    void resize( size_t s_width, size_t s_height );
 
   public:
     Emulator( size_t s_width, size_t s_height );
@@ -46,9 +48,6 @@ namespace Terminal {
 
     std::string open( void ); /* put user cursor keys in application mode */
     std::string close( void ); /* restore user cursor keys */
-
-    void resize( size_t s_width, size_t s_height );
-
   };
 }
 

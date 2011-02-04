@@ -71,3 +71,9 @@ void UserByte::act_on_terminal( Terminal::Emulator *emu )
   emu->dispatch.terminal_to_host.append( emu->user.input( this,
 							  emu->fb.ds.application_mode_cursor_keys ) );
 }
+
+void Resize::act_on_terminal( Terminal::Emulator *emu )
+{
+  emu->resize( width, height );
+  handled = true;
+}
