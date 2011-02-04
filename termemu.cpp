@@ -17,6 +17,8 @@
 #include <fcntl.h>
 #include <sys/signalfd.h>
 #include <termios.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include "parser.hpp"
 #include "terminal.hpp"
@@ -30,9 +32,7 @@ int termemu( int host_fd, int src_fd, bool user, int debug_fd,
 	     Parser::UTF8Parser *parser,
 	     Terminal::Emulator *terminal );
 
-int main( int argc,
-	  char *argv[],
-	  char *envp[] )
+int main( int argc, char *argv[] )
 {
   int debug_fd;
   if ( argc == 1 ) {
@@ -82,13 +82,30 @@ int main( int argc,
 
   if ( child == 0 ) {
     /* child */
-    char *my_argv[ 2 ];
-    my_argv[ 0 ] = strdup( "/bin/bash" );
-    assert( my_argv[ 0 ] );
+    if ( setenv( "TERM", "xterm", true ) < 0 ) {
+      perror( "setenv" );
+      exit( 1 );
+    }
 
+    /* ask ncurses to send UTF-8 instead of ISO 2022 for line-drawing chars */
+    if ( setenv( "NCURSES_NO_UTF8_ACS", "1", true ) < 0 ) {
+      perror( "setenv" );
+      exit( 1 );
+    }
+
+    /* get shell name */
+    struct passwd *pw = getpwuid( geteuid() );
+    if ( pw == NULL ) {
+      perror( "getpwuid" );
+      exit( 1 );
+    }
+
+    char *my_argv[ 2 ];
+    my_argv[ 0 ] = strdup( pw->pw_shell );
+    assert( my_argv[ 0 ] );
     my_argv[ 1 ] = NULL;
 
-    if ( execve( "/bin/bash", my_argv, envp ) < 0 ) {
+    if ( execve( pw->pw_shell, my_argv, environ ) < 0 ) {
       perror( "execve" );
       exit( 1 );
     }

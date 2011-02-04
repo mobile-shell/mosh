@@ -127,7 +127,7 @@ void Emulator::debug_printout( int fd )
   screen.append( "\033[H" );
 
   /* set window title */
-  screen.append( "\033]0;" );
+  screen.append( "\033]0;[rtm] " );
   std::vector<wchar_t> window_title = fb.get_window_title();
   for ( std::vector<wchar_t>::iterator i = window_title.begin();
 	i != window_title.end();
