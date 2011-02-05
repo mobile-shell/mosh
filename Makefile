@@ -12,8 +12,8 @@ all: $(executables)
 parse: parse.o $(objects)
 	$(CXX) $(CXXFLAGS) -o $@ $+ $(LIBS)
 
-termemu: termemu.o $(objects)
-	$(CXX) $(CXXFLAGS) -o $@ $+ $(LIBS)
+termemu: termemu.o $(objects) parse # serialize link steps because of -frepo
+	$(CXX) $(CXXFLAGS) -o $@ termemu.o $(objects) $(LIBS)
 
 templates.o: templates.cpp
 	$(CXX) $(CXXFLAGS) -frepo -c -o $@ $<
