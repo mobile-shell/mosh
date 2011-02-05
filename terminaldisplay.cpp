@@ -110,8 +110,7 @@ std::string Display::new_frame( Framebuffer &f )
 
       x += cell->width;
 
-      if ( cell->contents.empty() ) {
-      } else {
+      if ( !cell->contents.empty() ) {
 	cursor_x += cell->width;
       }
     }
