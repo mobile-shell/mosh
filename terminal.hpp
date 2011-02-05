@@ -25,6 +25,7 @@ namespace Terminal {
     {}
 
     std::string new_frame( Framebuffer &f );
+    void invalidate( void ) { initialized = false; }
   };
 
   class Emulator {
