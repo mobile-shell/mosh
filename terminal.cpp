@@ -126,7 +126,6 @@ void Emulator::debug_printout( int fd )
   fb.back_color_erase();
 
   std::string screen;
-  screen.append( "\033[H" );
 
   /* set window title */
   screen.append( "\033]0;[rtm] " );
@@ -148,7 +147,7 @@ void Emulator::debug_printout( int fd )
   for ( int y = 0; y < fb.ds.get_height(); y++ ) {
     for ( int x = 0; x < fb.ds.get_width(); /* let charwidth handle advance */ ) {
       char curmove[ 32 ];
-      snprintf( curmove, 32, "\033[%d;%dH\033[X", y + 1, x + 1 );
+      snprintf( curmove, 32, "\033[%d;%dH", y + 1, x + 1 );
       screen.append( curmove );
       Cell *cell = fb.get_cell( y, x );
 
@@ -162,6 +161,9 @@ void Emulator::debug_printout( int fd )
 	screen.append( rendition );
       }
       screen.append( "m" );
+
+      /* clear cell */
+      screen.append( "\033[X" );
 
       /* print cell contents */
 
