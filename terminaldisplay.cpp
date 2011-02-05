@@ -46,6 +46,8 @@ std::string Display::new_frame( Framebuffer &f )
     current_renditions.push_back( 0 );
   }
 
+  int cursor_x = -1, cursor_y = -1;
+
   /* iterate for every cell */
   for ( int y = 0; y < f.ds.get_height(); y++ ) {
     for ( int x = 0; x < f.ds.get_width(); /* let charwidth handle advance */ ) {
@@ -57,10 +59,12 @@ std::string Display::new_frame( Framebuffer &f )
 	continue;
       }
 
-      char curmove[ 32 ];
-      snprintf( curmove, 32, "\033[%d;%dH", y + 1, x + 1 );
-      screen.append( curmove );
-      cursor_was_moved = true;
+      if ( (x != cursor_x) || (y != cursor_y) ) {
+	char curmove[ 32 ];
+	snprintf( curmove, 32, "\033[%d;%dH", y + 1, x + 1 );
+	screen.append( curmove );
+	cursor_was_moved = true;
+      }
 
       std::vector<int> cell_print_renditions;
       cell_print_renditions = cell->renditions;
@@ -82,7 +86,9 @@ std::string Display::new_frame( Framebuffer &f )
       }
 
       /* clear cell */
-      screen.append( "\033[X" );
+      if ( cell->contents.empty() ) {
+	screen.append( "\033[X" );
+      }
 
       /* cells that begin with combining character get combiner attached to no-break space */
       if ( cell->fallback ) {
@@ -99,7 +105,15 @@ std::string Display::new_frame( Framebuffer &f )
 	screen.append( utf8 );
       }
 
+      cursor_x = x;
+      cursor_y = y;
+
       x += cell->width;
+
+      if ( cell->contents.empty() ) {
+      } else {
+	cursor_x += cell->width;
+      }
     }
   }
 
