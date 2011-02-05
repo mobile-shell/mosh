@@ -66,6 +66,9 @@ std::string Display::new_frame( Framebuffer &f )
 	cursor_was_moved = true;
       }
 
+      cursor_x = x;
+      cursor_y = y;
+
       std::list<int> cell_print_renditions;
       cell_print_renditions = cell->renditions;
       cell_print_renditions.insert( cell_print_renditions.begin(), 0 );
@@ -85,9 +88,24 @@ std::string Display::new_frame( Framebuffer &f )
 	current_renditions = cell_print_renditions;
       }
 
-      /* clear cell */
       if ( cell->contents.empty() ) {
-	screen.append( "\033[X" );
+	/* see how far we can stretch a clear */
+	int clear_count = 0;
+	for ( int col = x; col < f.ds.get_width(); col++ ) {
+	  Cell *other_cell = f.get_cell( y, col );
+	  if ( (cell->renditions == other_cell->renditions)
+	       && (other_cell->contents.empty()) ) {
+	    clear_count++;
+	  } else {
+	    break;
+	  }
+	}
+	char clearer[ 32 ];
+	snprintf( clearer, 32, "\033[%dX", clear_count );
+	screen.append( clearer );
+
+	x += clear_count;
+	continue;
       }
 
       /* cells that begin with combining character get combiner attached to no-break space */
@@ -105,14 +123,8 @@ std::string Display::new_frame( Framebuffer &f )
 	screen.append( utf8 );
       }
 
-      cursor_x = x;
-      cursor_y = y;
-
       x += cell->width;
-
-      if ( !cell->contents.empty() ) {
-	cursor_x += cell->width;
-      }
+      cursor_x += cell->width;
     }
   }
 
