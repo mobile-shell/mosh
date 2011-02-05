@@ -19,6 +19,7 @@
 #include <termios.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <sys/time.h>
 
 #include "parser.hpp"
 #include "terminal.hpp"
@@ -134,6 +135,29 @@ int main( int argc, char *argv[] )
   return 0;
 }
 
+void tick( Terminal::Emulator *e )
+{
+  static bool initialized = false;
+  static struct timeval last_time;
+
+  struct timeval this_time;
+
+  if ( gettimeofday( &this_time, NULL ) < 0 ) {
+    perror( "gettimeofday" );
+  }
+
+  int diff = 1000000 * (this_time.tv_sec - last_time.tv_sec)
+    + (this_time.tv_usec - last_time.tv_usec);
+
+  if ( (!initialized)
+       || (diff >= 20000) ) {
+    std::string update = e->new_frame();
+    swrite( STDOUT_FILENO, update.c_str() );
+    initialized = true;
+    last_time = this_time;
+  }
+}
+
 void emulate_terminal( int fd, int debug_fd )
 {
   /* establish WINCH fd and start listening for signal */
@@ -181,8 +205,8 @@ void emulate_terminal( int fd, int debug_fd )
   swrite( STDOUT_FILENO, terminal.open().c_str() );
 
   while ( 1 ) {
-    int active_fds = poll( pollfds, 3, -1 );
-    if ( active_fds <= 0 ) {
+    int active_fds = poll( pollfds, 3, 0.02 );
+    if ( active_fds < 0 ) {
       perror( "poll" );
       break;
     }
@@ -195,8 +219,6 @@ void emulate_terminal( int fd, int debug_fd )
       if ( termemu( fd, fd, false, debug_fd, &parser, &terminal ) < 0 ) {
 	break;
       }
-      std::string update = terminal.new_frame();
-      swrite( STDOUT_FILENO, update.c_str() );
     } else if ( pollfds[ 2 ].revents & POLLIN ) {
       /* resize */
       struct signalfd_siginfo info;
@@ -221,10 +243,13 @@ void emulate_terminal( int fd, int debug_fd )
     } else if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
 		& (POLLERR | POLLHUP | POLLNVAL) ) {
       break;
-    } else {
-      fprintf( stderr, "poll mysteriously woken up\n" );
     }
+
+    tick( &terminal );
   }
+
+  std::string update = terminal.new_frame();
+  swrite( STDOUT_FILENO, update.c_str() );
 
   swrite( STDOUT_FILENO, terminal.close().c_str() );
 }
