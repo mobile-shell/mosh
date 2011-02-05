@@ -350,7 +350,7 @@ void Framebuffer::back_color_erase( void )
     for ( int col = 0; col < ds.get_width(); col++ ) {
       Cell *cell = get_cell( row, col );
       if ( cell->renditions.background_color == -1 ) {
-	cell->renditions.background_color = bg_color;
+	cell->renditions.background_color = bg_color == -1 ? 0 : bg_color;
       }
     }
   }
