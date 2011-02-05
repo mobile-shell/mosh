@@ -19,6 +19,8 @@ namespace Terminal {
     Cell();
 
     void reset( void );
+
+    bool operator==( const Cell &x );
   };
 
   class Row {

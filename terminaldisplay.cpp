@@ -49,19 +49,18 @@ std::string Display::new_frame( Framebuffer &f )
   /* iterate for every cell */
   for ( int y = 0; y < f.ds.get_height(); y++ ) {
     for ( int x = 0; x < f.ds.get_width(); /* let charwidth handle advance */ ) {
-      std::string cell_string;
       Cell *cell = f.get_cell( y, x );
-      bool different = false;
+
+      if ( initialized
+	   && ( *cell == *(last_frame.get_cell( y, x )) ) ) {
+	x += cell->width;
+	continue;
+      }
 
       char curmove[ 32 ];
       snprintf( curmove, 32, "\033[%d;%dH", y + 1, x + 1 );
-      cell_string.append( curmove );
-
-      /* have renditions changed? */
-      if ( (!initialized)
-	   || (cell->renditions != last_frame.get_cell( y, x )->renditions) ) {
-	different = true;
-      }
+      screen.append( curmove );
+      cursor_was_moved = true;
 
       std::vector<int> cell_print_renditions;
       cell_print_renditions = cell->renditions;
@@ -69,53 +68,35 @@ std::string Display::new_frame( Framebuffer &f )
 
       if ( cell_print_renditions != current_renditions ) {
 	/* print renditions */
-	cell_string.append( "\033[0" );
+	screen.append( "\033[0" );
 	char rendition[ 32 ];
 	for ( std::vector<int>::iterator i = cell->renditions.begin();
 	      i != cell->renditions.end();
 	      i++ ) {
 	  snprintf( rendition, 32, ";%d", *i );
-	  cell_string.append( rendition );
+	  screen.append( rendition );
 	}
-	cell_string.append( "m" );
+	screen.append( "m" );
+
+	current_renditions = cell_print_renditions;
       }
 
       /* clear cell */
-      cell_string.append( "\033[X" );
-
-      /* did fallback status change? */
-      if ( (!initialized)
-	   || (cell->fallback != last_frame.get_cell( y, x )->fallback) ) {
-	different = true;
-      }
+      screen.append( "\033[X" );
 
       /* cells that begin with combining character get combiner attached to no-break space */
       if ( cell->fallback ) {
 	char utf8[ 8 ];
 	snprintf( utf8, 8, "%lc", 0xA0 );
-	cell_string.append( utf8 );
+	screen.append( utf8 );
       }
 
-      /* have cell contents changed? */
-      if ( (!initialized)
-	   || (cell->contents != last_frame.get_cell( y, x )->contents) ) {
-	different = true;
-      }
-
-      /* always restrike the cell contents if anything changed */
       for ( std::vector<wchar_t>::iterator i = cell->contents.begin();
 	    i != cell->contents.end();
 	    i++ ) {
 	char utf8[ 8 ];
 	snprintf( utf8, 8, "%lc", *i );
-	cell_string.append( utf8 );
-      }
-
-      /* if anything changed, redo cell */
-      if ( different ) {
-	screen.append( cell_string );
-	cursor_was_moved = true;
-	current_renditions = cell_print_renditions;
+	screen.append( utf8 );
       }
 
       x += cell->width;

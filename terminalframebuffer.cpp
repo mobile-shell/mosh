@@ -25,6 +25,17 @@ void Cell::reset( void )
   need_back_color_erase = true;
 }
 
+bool Cell::operator==( const Cell &x )
+{
+  assert( !need_back_color_erase );
+  assert( !x.need_back_color_erase );
+
+  return ( (contents == x.contents)
+	   && (fallback == x.fallback)
+	   && (width == x.width)
+	   && (renditions == x.renditions) );
+}
+
 DrawState::DrawState( int s_width, int s_height )
   : width( s_width ), height( s_height ),
     cursor_col( 0 ), cursor_row( 0 ),
@@ -412,16 +423,14 @@ void Framebuffer::back_color_erase( void )
 {
   int bg_color = ds.get_background_rendition();
 
-  if ( bg_color < 0 ) {
-    return;
-  }
-
   for ( int row = 0; row < ds.get_height(); row++ ) {
     for ( int col = 0; col < ds.get_width(); col++ ) {
       Cell *cell = get_cell( row, col );
       if ( cell->need_back_color_erase ) {
 	assert( cell->renditions.empty() );
-	cell->renditions.push_back( bg_color );
+	if ( bg_color > 0 ) {
+	  cell->renditions.push_back( bg_color );
+	}
 	cell->need_back_color_erase = false;
       }
     }
