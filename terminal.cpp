@@ -154,7 +154,7 @@ void Emulator::debug_printout( int fd )
       /* print renditions */
       screen.append( "\033[0" );
       char rendition[ 32 ];
-      for ( std::vector<int>::iterator i = cell->renditions.begin();
+      for ( std::list<int>::iterator i = cell->renditions.begin();
 	    i != cell->renditions.end();
 	    i++ ) {
 	snprintf( rendition, 32, ";%d", *i );

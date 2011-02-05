@@ -16,7 +16,7 @@ namespace Terminal {
   private:
     bool initialized;
     Framebuffer last_frame;
-    std::vector<int> current_renditions;
+    std::list<int> current_renditions;
 
   public:
     Display( int width, int height )

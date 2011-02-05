@@ -4,6 +4,7 @@
 #include <vector>
 #include <deque>
 #include <string>
+#include <list>
 
 /* Terminal framebuffer */
 
@@ -13,7 +14,7 @@ namespace Terminal {
     std::vector<wchar_t> contents;
     char fallback; /* first character is combining character */
     int width;
-    std::vector<int> renditions; /* e.g., bold, blinking, etc. */
+    std::list<int> renditions; /* e.g., bold, blinking, etc. */
     bool need_back_color_erase;
 
     Cell();
@@ -36,7 +37,7 @@ namespace Terminal {
   class SavedCursor {
   public:
     int cursor_col, cursor_row;
-    std::vector<int> renditions;
+    std::list<int> renditions;
     /* character set shift state */
     bool auto_wrap_mode;
     bool origin_mode;
@@ -59,7 +60,7 @@ namespace Terminal {
 
     int scrolling_region_top_row, scrolling_region_bottom_row;
 
-    std::vector<int> renditions;
+    std::list<int> renditions;
 
     SavedCursor save;
 
@@ -100,8 +101,8 @@ namespace Terminal {
     int limit_bottom( void );
 
     void clear_renditions( void ) { renditions.clear(); }
-    void add_rendition( int x ) { renditions.push_back( x ); }
-    const std::vector<int> get_renditions( void ) { return renditions; }
+    void add_rendition( int x );
+    const std::list<int> get_renditions( void ) { return renditions; }
     int get_background_rendition( void );
 
     void save_cursor( void );

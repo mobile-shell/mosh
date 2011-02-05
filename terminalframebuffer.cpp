@@ -407,11 +407,11 @@ void DrawState::resize( int s_width, int s_height )
 int DrawState::get_background_rendition( void )
 {
   int color = -1;
-  for ( std::vector<int>::iterator i = renditions.begin();
+  for ( std::list<int>::iterator i = renditions.begin();
 	i != renditions.end();
 	i++ ) {
     int r = *i;
-    if ( (40 <= r) && (r <= 47) ) {
+    if ( (40 <= r) && (r <= 49) ) {
       color = r;
     }
   }
@@ -435,4 +435,31 @@ void Framebuffer::back_color_erase( void )
       }
     }
   }
+}
+
+static bool fg_colorval( const int &x ) { return (30 <= x) && (x <= 39); }
+static bool bg_colorval( const int &x ) { return (40 <= x) && (x <= 49); }
+
+void DrawState::add_rendition( int x )
+{
+  /* Filter out older renditions that we know
+     will now be reset */
+
+  renditions.remove( x );
+
+  switch ( x ) {
+  case 1: case 22: renditions.remove( 1 ); renditions.remove( 22 ); break; /* bold */
+  case 4: case 24: renditions.remove( 4 ); renditions.remove( 24 ); break; /* underlined */
+  case 5: case 25: renditions.remove( 5 ); renditions.remove( 25 ); break; /* blink */
+  case 7: case 27: renditions.remove( 7 ); renditions.remove( 27 ); break; /* inverse */
+  case 8: case 28: renditions.remove( 8 ); renditions.remove( 28 ); break; /* invisible */
+  }
+
+  if ( (30 <= x) && (x <= 39) ) { /* foreground color */
+    renditions.remove_if( fg_colorval );
+  } else if ( (40 <= x) && (x <= 49) ) { /* background color */
+    renditions.remove_if( bg_colorval );
+  }
+
+  renditions.push_back( x );
 }

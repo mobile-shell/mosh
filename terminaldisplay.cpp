@@ -66,7 +66,7 @@ std::string Display::new_frame( Framebuffer &f )
 	cursor_was_moved = true;
       }
 
-      std::vector<int> cell_print_renditions;
+      std::list<int> cell_print_renditions;
       cell_print_renditions = cell->renditions;
       cell_print_renditions.insert( cell_print_renditions.begin(), 0 );
 
@@ -74,7 +74,7 @@ std::string Display::new_frame( Framebuffer &f )
 	/* print renditions */
 	screen.append( "\033[0" );
 	char rendition[ 32 ];
-	for ( std::vector<int>::iterator i = cell->renditions.begin();
+	for ( std::list<int>::iterator i = cell->renditions.begin();
 	      i != cell->renditions.end();
 	      i++ ) {
 	  snprintf( rendition, 32, ";%d", *i );
