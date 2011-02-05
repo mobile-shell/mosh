@@ -166,6 +166,7 @@ void emulate_terminal( int fd, int debug_fd )
   /* open parser and terminal */
   Parser::UTF8Parser parser;
   Terminal::Emulator terminal( window_size.ws_col, window_size.ws_row );
+
   struct pollfd pollfds[ 3 ];
 
   pollfds[ 0 ].fd = STDIN_FILENO;
@@ -194,6 +195,8 @@ void emulate_terminal( int fd, int debug_fd )
       if ( termemu( fd, fd, false, debug_fd, &parser, &terminal ) < 0 ) {
 	break;
       }
+      std::string update = terminal.new_frame();
+      swrite( STDOUT_FILENO, update.c_str() );
     } else if ( pollfds[ 2 ].revents & POLLIN ) {
       /* resize */
       struct signalfd_siginfo info;
@@ -268,8 +271,6 @@ int termemu( int host_fd, int src_fd, bool user, int debug_fd,
       delete *i;
     }
   }
-
-  terminal->debug_printout( STDOUT_FILENO );
 
   /* write writeback */
   std::string terminal_to_host = terminal->read_octets_to_host();

@@ -395,7 +395,7 @@ void DrawState::resize( int s_width, int s_height )
 
 int DrawState::get_background_rendition( void )
 {
-  int color = 0;
+  int color = -1;
   for ( std::vector<int>::iterator i = renditions.begin();
 	i != renditions.end();
 	i++ ) {
@@ -411,6 +411,10 @@ int DrawState::get_background_rendition( void )
 void Framebuffer::back_color_erase( void )
 {
   int bg_color = ds.get_background_rendition();
+
+  if ( bg_color < 0 ) {
+    return;
+  }
 
   for ( int row = 0; row < ds.get_height(); row++ ) {
     for ( int col = 0; col < ds.get_width(); col++ ) {

@@ -12,6 +12,21 @@
 #include "terminaluserinput.hpp"
 
 namespace Terminal {
+  class Display {
+  private:
+    bool initialized;
+    Framebuffer last_frame;
+    std::vector<int> current_renditions;
+
+  public:
+    Display( int width, int height )
+      : initialized( false ), last_frame( width, height ),
+	current_renditions()
+    {}
+
+    std::string new_frame( Framebuffer &f );
+  };
+
   class Emulator {
     friend void Parser::Print::act_on_terminal( Emulator * );
     friend void Parser::Execute::act_on_terminal( Emulator * );
@@ -30,6 +45,7 @@ namespace Terminal {
     Framebuffer fb;
     Dispatcher dispatch;
     UserInput user;
+    Display display;
 
     /* action methods */
     void print( Parser::Print *act );
@@ -48,6 +64,8 @@ namespace Terminal {
 
     std::string open( void ); /* put user cursor keys in application mode */
     std::string close( void ); /* restore user cursor keys */
+
+    std::string new_frame( void ) { return display.new_frame( fb ); }
   };
 }
 
