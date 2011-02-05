@@ -9,8 +9,7 @@ void Cell::reset( void )
   contents.clear();
   fallback = false;
   width = 1;
-  renditions.clear();
-  need_back_color_erase = true;
+  renditions = Renditions();
 }
 
 DrawState::DrawState( int s_width, int s_height )
@@ -200,7 +199,6 @@ std::vector<int> DrawState::get_tabs( void )
 
 void Framebuffer::apply_renditions_to_current_cell( void )
 {
-  get_cell()->need_back_color_erase = false;
   get_cell()->renditions = ds.get_renditions();
 }
 
@@ -297,7 +295,7 @@ void Framebuffer::soft_reset( void )
   ds.cursor_visible = true; /* per xterm and gnome-terminal */
   ds.application_mode_cursor_keys = false;
   ds.set_scrolling_region( 0, ds.get_height() - 1 );
-  ds.clear_renditions();
+  ds.add_rendition( 0 );
   ds.clear_saved_cursor();
 }
 
@@ -344,21 +342,6 @@ void DrawState::resize( int s_width, int s_height )
   }
 }
 
-int DrawState::get_background_rendition( void )
-{
-  int color = -1;
-  for ( std::list<int>::iterator i = renditions.begin();
-	i != renditions.end();
-	i++ ) {
-    int r = *i;
-    if ( (40 <= r) && (r <= 49) ) {
-      color = r;
-    }
-  }
-
-  return color;
-}
-
 void Framebuffer::back_color_erase( void )
 {
   int bg_color = ds.get_background_rendition();
@@ -366,40 +349,65 @@ void Framebuffer::back_color_erase( void )
   for ( int row = 0; row < ds.get_height(); row++ ) {
     for ( int col = 0; col < ds.get_width(); col++ ) {
       Cell *cell = get_cell( row, col );
-      if ( cell->need_back_color_erase ) {
-	//	assert( cell->renditions.empty() );
-	if ( bg_color > 0 ) {
-	  cell->renditions.push_back( bg_color );
-	}
-	cell->need_back_color_erase = false;
+      if ( cell->renditions.background_color == -1 ) {
+	cell->renditions.background_color = bg_color;
       }
     }
   }
 }
 
-static bool fg_colorval( const int &x ) { return (30 <= x) && (x <= 39); }
-static bool bg_colorval( const int &x ) { return (40 <= x) && (x <= 49); }
+Renditions::Renditions()
+  : bold( false ), underlined( false ), blink( false ),
+    inverse( false ), invisible( false ), foreground_color( 0 ),
+    background_color( -1 )
+{}
 
-void DrawState::add_rendition( int x )
+void Renditions::set_rendition( int num )
 {
-  /* Filter out older renditions that we know
-     will now be reset */
-
-  renditions.remove( x );
-
-  switch ( x ) {
-  case 1: case 22: renditions.remove( 1 ); renditions.remove( 22 ); break; /* bold */
-  case 4: case 24: renditions.remove( 4 ); renditions.remove( 24 ); break; /* underlined */
-  case 5: case 25: renditions.remove( 5 ); renditions.remove( 25 ); break; /* blink */
-  case 7: case 27: renditions.remove( 7 ); renditions.remove( 27 ); break; /* inverse */
-  case 8: case 28: renditions.remove( 8 ); renditions.remove( 28 ); break; /* invisible */
+  if ( num == 0 ) {
+    bold = underlined = blink = inverse = invisible = false;
+    foreground_color = background_color = 0;
+    return;
   }
 
-  if ( (30 <= x) && (x <= 39) ) { /* foreground color */
-    renditions.remove_if( fg_colorval );
-  } else if ( (40 <= x) && (x <= 49) ) { /* background color */
-    renditions.remove_if( bg_colorval );
+  if ( (30 <= num) && (num <= 39) ) { /* foreground color */
+    foreground_color = num;
+    return;
+  } else if ( (40 <= num) && (num <= 49) ) { /* background color */
+    background_color = num;
+    return;
   }
 
-  renditions.push_back( x );
+  switch ( num ) {
+  case 1: case 22: bold = (num == 1); break;
+  case 4: case 24: underlined = (num == 4); break;
+  case 5: case 25: blink = (num == 5); break;
+  case 7: case 27: inverse = (num == 7); break;
+  case 8: case 28: invisible = (num == 8); break;
+  }
+}
+
+std::string Renditions::sgr( void )
+{
+  std::string ret;
+
+  ret.append( "\033[0" );
+  if ( bold ) ret.append( ";1" );
+  if ( underlined ) ret.append( ";4" );
+  if ( blink ) ret.append( ";5" );
+  if ( inverse ) ret.append( ";7" );
+  if ( invisible ) ret.append( ";8" );
+  if ( foreground_color ) {
+    char col[ 8 ];
+    snprintf( col, 8, ";%d", foreground_color );
+    ret.append( col );
+  }
+  if ( background_color ) {
+    char col[ 8 ];
+    snprintf( col, 8, ";%d", background_color );
+    ret.append( col );
+  }
+  ret.append( "m" );
+
+  return ret;
 }

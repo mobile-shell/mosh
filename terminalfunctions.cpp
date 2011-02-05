@@ -322,11 +322,7 @@ void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
       bce = true;
     }
 
-    if ( rendition == 0 ) {
-      fb->ds.clear_renditions();
-    } else {
-      fb->ds.add_rendition( rendition );
-    }
+    fb->ds.add_rendition( rendition );
   }
 }
 

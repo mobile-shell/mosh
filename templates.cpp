@@ -21,5 +21,3 @@ template class vector<wchar_t>;
 template class vector<int>;
 template class map<string, Function>;
 template class vector<bool>;
-template class list<int>;
-template void std::list<int, std::allocator<int> >::remove_if<bool (*)(int const&)>(bool (*)(int const&));

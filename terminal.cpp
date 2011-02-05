@@ -152,15 +152,7 @@ void Emulator::debug_printout( int fd )
       Cell *cell = fb.get_cell( y, x );
 
       /* print renditions */
-      screen.append( "\033[0" );
-      char rendition[ 32 ];
-      for ( std::list<int>::iterator i = cell->renditions.begin();
-	    i != cell->renditions.end();
-	    i++ ) {
-	snprintf( rendition, 32, ";%d", *i );
-	screen.append( rendition );
-      }
-      screen.append( "m" );
+      screen.append( cell->renditions.sgr() );
 
       /* clear cell */
       screen.append( "\033[X" );

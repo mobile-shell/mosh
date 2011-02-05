@@ -39,11 +39,10 @@ std::string Display::new_frame( Framebuffer &f )
        || (f.ds.get_width() != last_frame.ds.get_width())
        || (f.ds.get_height() != last_frame.ds.get_height()) ) {
     /* clear screen */
-    screen.append( "\033[0m;\033[H\033[2J" );
+    screen.append( "\033[0m\033[H\033[2J" );
     initialized = false;
     cursor_was_moved = true;
-    current_renditions.clear();
-    current_renditions.push_back( 0 );
+    current_rendition_string = "\033[0m";
   }
 
   int cursor_x = -1, cursor_y = -1;
@@ -69,23 +68,12 @@ std::string Display::new_frame( Framebuffer &f )
       cursor_x = x;
       cursor_y = y;
 
-      std::list<int> cell_print_renditions;
-      cell_print_renditions = cell->renditions;
-      cell_print_renditions.insert( cell_print_renditions.begin(), 0 );
+      std::string rendition_str = cell->renditions.sgr();
 
-      if ( cell_print_renditions != current_renditions ) {
+      if ( current_rendition_string != rendition_str ) {
 	/* print renditions */
-	screen.append( "\033[0" );
-	char rendition[ 32 ];
-	for ( std::list<int>::iterator i = cell->renditions.begin();
-	      i != cell->renditions.end();
-	      i++ ) {
-	  snprintf( rendition, 32, ";%d", *i );
-	  screen.append( rendition );
-	}
-	screen.append( "m" );
-
-	current_renditions = cell_print_renditions;
+	screen.append( rendition_str );
+	current_rendition_string = rendition_str;
       }
 
       if ( cell->contents.empty() ) {

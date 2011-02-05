@@ -9,20 +9,41 @@
 /* Terminal framebuffer */
 
 namespace Terminal {
+  class Renditions {
+  public:
+    bool bold, underlined, blink, inverse, invisible;
+    int foreground_color;
+    int background_color;
+
+    Renditions();
+    void set_rendition( int num );
+    std::string sgr( void );
+    void back_color_erase( int num )
+    {
+      if ( background_color == -1 ) background_color = num;
+    }
+
+    bool operator==( const Renditions &x )
+    {
+      return (bold == x.bold) && (underlined == x.underlined)
+	&& (blink == x.blink) && (inverse == x.inverse)
+	&& (invisible == x.invisible) && (foreground_color == x.foreground_color)
+	&& (background_color == x.background_color);
+    }
+  };
+
   class Cell {
   public:
     std::vector<wchar_t> contents;
     char fallback; /* first character is combining character */
     int width;
-    std::list<int> renditions; /* e.g., bold, blinking, etc. */
-    bool need_back_color_erase;
+    Renditions renditions;
 
     Cell()
       : contents(),
 	fallback( false ),
 	width( 1 ),
-	renditions(),
-	need_back_color_erase( true )
+	renditions()
     {}
 
     void reset( void );
@@ -51,7 +72,7 @@ namespace Terminal {
   class SavedCursor {
   public:
     int cursor_col, cursor_row;
-    std::list<int> renditions;
+    Renditions renditions;
     /* character set shift state */
     bool auto_wrap_mode;
     bool origin_mode;
@@ -74,7 +95,7 @@ namespace Terminal {
 
     int scrolling_region_top_row, scrolling_region_bottom_row;
 
-    std::list<int> renditions;
+    Renditions renditions;
 
     SavedCursor save;
 
@@ -114,10 +135,9 @@ namespace Terminal {
     int limit_top( void );
     int limit_bottom( void );
 
-    void clear_renditions( void ) { renditions.clear(); }
-    void add_rendition( int x );
-    const std::list<int> get_renditions( void ) { return renditions; }
-    int get_background_rendition( void );
+    void add_rendition( int x ) { renditions.set_rendition( x ); }
+    Renditions get_renditions( void ) { return renditions; }
+    int get_background_rendition( void ) { return renditions.background_color; }
 
     void save_cursor( void );
     void restore_cursor( void );

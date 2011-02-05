@@ -16,12 +16,12 @@ namespace Terminal {
   private:
     bool initialized;
     Framebuffer last_frame;
-    std::list<int> current_renditions;
+    std::string current_rendition_string;
 
   public:
     Display( int width, int height )
       : initialized( false ), last_frame( width, height ),
-	current_renditions()
+	current_rendition_string()
     {}
 
     std::string new_frame( Framebuffer &f );
