@@ -4,18 +4,6 @@
 
 using namespace Terminal;
 
-Cell::Cell()
-  : contents(),
-    fallback( false ),
-    width( 1 ),
-    renditions(),
-    need_back_color_erase( true )
-{}
-
-Row::Row( size_t s_width )
-  : cells( s_width )
-{}
-
 void Cell::reset( void )
 {
   contents.clear();
@@ -23,17 +11,6 @@ void Cell::reset( void )
   width = 1;
   renditions.clear();
   need_back_color_erase = true;
-}
-
-bool Cell::operator==( const Cell &x )
-{
-  assert( !need_back_color_erase );
-  assert( !x.need_back_color_erase );
-
-  return ( (contents == x.contents)
-	   && (fallback == x.fallback)
-	   && (width == x.width)
-	   && (renditions == x.renditions) );
 }
 
 DrawState::DrawState( int s_width, int s_height )
@@ -142,43 +119,6 @@ void Framebuffer::move_rows_autoscroll( int rows )
   }
 
   ds.move_row( rows, true );
-}
-
-Cell *Framebuffer::get_cell( void )
-{
-  assert( ds.get_width() );
-  assert( ds.get_height() );
-
-  assert( ds.get_cursor_row() < ds.get_height() );
-  assert( ds.get_cursor_col() < ds.get_width() );
-
-  assert( ds.get_cursor_row() >= 0 );
-  assert( ds.get_cursor_col() >= 0 );
-
-  assert( rows.size() == (size_t)ds.get_height() );
-  assert( rows[ ds.get_cursor_row() ].cells.size() == (size_t)ds.get_width() );
-
-  return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
-}
-
-Cell *Framebuffer::get_cell( int row, int col )
-{
-  if ( row == -1 ) row = ds.get_cursor_row();
-  if ( col == -1 ) col = ds.get_cursor_col();
-
-  assert( ds.get_width() );
-  assert( ds.get_height() );
-
-  assert( row < ds.get_height() );
-  assert( col < ds.get_width() );
-
-  assert( row >= 0 );
-  assert( col >= 0 );
-
-  assert( rows.size() == (size_t)ds.get_height() );
-  assert( rows[ row ].cells.size() == (size_t)ds.get_width() );
-
-  return &rows[ row ].cells[ col ];
 }
 
 Cell *Framebuffer::get_combining_cell( void )
@@ -427,7 +367,7 @@ void Framebuffer::back_color_erase( void )
     for ( int col = 0; col < ds.get_width(); col++ ) {
       Cell *cell = get_cell( row, col );
       if ( cell->need_back_color_erase ) {
-	assert( cell->renditions.empty() );
+	//	assert( cell->renditions.empty() );
 	if ( bg_color > 0 ) {
 	  cell->renditions.push_back( bg_color );
 	}

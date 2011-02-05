@@ -17,18 +17,32 @@ namespace Terminal {
     std::list<int> renditions; /* e.g., bold, blinking, etc. */
     bool need_back_color_erase;
 
-    Cell();
+    Cell()
+      : contents(),
+	fallback( false ),
+	width( 1 ),
+	renditions(),
+	need_back_color_erase( true )
+    {}
 
     void reset( void );
 
-    bool operator==( const Cell &x );
+    inline bool operator==( const Cell &x )
+    {
+      return ( (contents == x.contents)
+	       && (fallback == x.fallback)
+	       && (width == x.width)
+	       && (renditions == x.renditions) );
+    }
   };
 
   class Row {
   public:
     std::vector<Cell> cells;
 
-    Row( size_t s_width );
+    Row( size_t s_width )
+      : cells( s_width )
+    {}
 
     void insert_cell( int col );
     void delete_cell( int col );
@@ -127,8 +141,19 @@ namespace Terminal {
 
     void move_rows_autoscroll( int rows );
 
-    Cell *get_cell( void );
-    Cell *get_cell( int row, int col );
+    inline Cell *get_cell( void )
+    {
+      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
+    }
+
+    inline Cell *get_cell( int row, int col )
+    {
+      if ( row == -1 ) row = ds.get_cursor_row();
+      if ( col == -1 ) col = ds.get_cursor_col();
+
+      return &rows[ row ].cells[ col ];
+    }
+
     Cell *get_combining_cell( void );
 
     void apply_renditions_to_current_cell( void );

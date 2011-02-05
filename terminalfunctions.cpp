@@ -312,10 +312,16 @@ static Function func_Ctrl_BEL( CONTROL, "\x07", Ctrl_BEL );
 /* select graphics rendition -- e.g., bold, blinking, etc. */
 void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
 {
-  fb->back_color_erase();
+  bool bce = false;
 
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
     int rendition = dispatch->getparam( i, 0 );
+    if ( (40 <= rendition) && (rendition <= 49) && (!bce) ) {
+      /* we're changing the background color */
+      fb->back_color_erase();
+      bce = true;
+    }
+
     if ( rendition == 0 ) {
       fb->ds.clear_renditions();
     } else {
