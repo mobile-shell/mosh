@@ -137,9 +137,9 @@ std::string Display::new_frame( Framebuffer &f )
   if ( (!initialized)
        || (f.ds.cursor_visible != last_frame.ds.cursor_visible) ) {
     if ( f.ds.cursor_visible ) {
-      screen.append( "\033[25h" );
+      screen.append( "\033[?25h" );
     } else {
-      screen.append( "\033[25l" );
+      screen.append( "\033[?25l" );
     }
   }
 
