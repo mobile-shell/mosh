@@ -27,28 +27,14 @@
 
 const size_t buf_size = 16384;
 
-void emulate_terminal( int fd, int debug_fd );
+void emulate_terminal( int fd );
 int copy( int src, int dest );
-int termemu( int host_fd, int src_fd, bool user, int debug_fd,
+int termemu( int host_fd, int src_fd, bool user,
 	     Parser::UTF8Parser *parser,
 	     Terminal::Emulator *terminal );
 
-int main( int argc, char *argv[] )
+int main( void )
 {
-  int debug_fd;
-  if ( argc == 1 ) {
-    debug_fd = -1;
-  } else if ( argc == 2 ) {
-    debug_fd = open( argv[ 1 ], O_WRONLY );
-    if ( debug_fd < 0 ) {
-      perror( "open" );
-      exit( 1 );
-    }
-  } else {
-    fprintf( stderr, "Usage: %s [debugfd]\n", argv[ 0 ] );
-    exit( 1 );
-  }
-
   int master;
   struct termios saved_termios, raw_termios, child_termios;
 
@@ -122,7 +108,7 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
-    emulate_terminal( master, debug_fd );
+    emulate_terminal( master );
 
     if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
       perror( "tcsetattr" );
@@ -135,6 +121,7 @@ int main( int argc, char *argv[] )
   return 0;
 }
 
+/* Print a frame if the last frame was more than 1/50 seconds ago */
 bool tick( Terminal::Emulator *e )
 {
   static bool initialized = false;
@@ -162,7 +149,24 @@ bool tick( Terminal::Emulator *e )
   return false;
 }
 
-void emulate_terminal( int fd, int debug_fd )
+/* This is the main loop.
+
+   1. New bytes from the user get applied to the terminal emulator
+      as "UserByte" actions.
+
+   2. New bytes from the host get sent to the Parser, and then
+      those actions are applied to the terminal.
+
+   3. Resize events (from a SIGWINCH signal) get turned into
+      "Resize" actions and applied to the terminal.
+
+   At every event from poll(), we run the tick() function to
+   possibly print a new frame (if we haven't printed one in the
+   last 1/50 second). The new frames are "differential" -- they
+   assume the previous frame was sent to the real terminal.
+*/
+
+void emulate_terminal( int fd )
 {
   /* establish WINCH fd and start listening for signal */
   sigset_t signal_mask;
@@ -218,11 +222,11 @@ void emulate_terminal( int fd, int debug_fd )
     }
 
     if ( pollfds[ 0 ].revents & POLLIN ) {
-      if ( termemu( fd, STDIN_FILENO, true, debug_fd, &parser, &terminal ) < 0 ) {
+      if ( termemu( fd, STDIN_FILENO, true, &parser, &terminal ) < 0 ) {
 	break;
       }
     } else if ( pollfds[ 1 ].revents & POLLIN ) {
-      if ( termemu( fd, fd, false, debug_fd, &parser, &terminal ) < 0 ) {
+      if ( termemu( fd, fd, false, &parser, &terminal ) < 0 ) {
 	break;
       }
     } else if ( pollfds[ 2 ].revents & POLLIN ) {
@@ -264,7 +268,7 @@ void emulate_terminal( int fd, int debug_fd )
   swrite( STDOUT_FILENO, terminal.close().c_str() );
 }
 
-int termemu( int host_fd, int src_fd, bool user, int debug_fd,
+int termemu( int host_fd, int src_fd, bool user,
 	     Parser::UTF8Parser *parser,
 	     Terminal::Emulator *terminal )
 {
@@ -295,13 +299,6 @@ int termemu( int host_fd, int src_fd, bool user, int debug_fd,
       Parser::Action *act = *i;
       /* apply action to terminal */
       act->act_on_terminal( terminal );
-
-      /* print out action for debugging */
-      if ( (debug_fd > 0) && (!act->handled) ) {
-	char actsum[ 64 ];
-	snprintf( actsum, 64, "%s ", act->str().c_str() );
-	swrite( debug_fd, actsum );
-      }
 
       delete *i;
     }

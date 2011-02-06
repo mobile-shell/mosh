@@ -2,6 +2,8 @@
 
 using namespace Terminal;
 
+/* Print a new "frame" to the terminal, using ANSI/ECMA-48 escape codes. */
+
 std::string Display::new_frame( Framebuffer &f )
 {
   f.back_color_erase();

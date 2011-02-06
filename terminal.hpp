@@ -62,8 +62,6 @@ namespace Terminal {
 
     std::string read_octets_to_host( void );
 
-    void debug_printout( int fd );
-
     std::string open( void ); /* put user cursor keys in application mode */
     std::string close( void ); /* restore user cursor keys */
 
