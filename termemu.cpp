@@ -25,7 +25,7 @@
 #include "terminal.hpp"
 #include "swrite.hpp"
 
-const size_t buf_size = 1024;
+const size_t buf_size = 16384;
 
 void emulate_terminal( int fd, int debug_fd );
 int copy( int src, int dest );
