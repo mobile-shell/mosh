@@ -17,11 +17,12 @@ namespace Terminal {
     bool initialized;
     Framebuffer last_frame;
     std::string current_rendition_string;
+    int cursor_x, cursor_y;
 
   public:
     Display( int width, int height )
       : initialized( false ), last_frame( width, height ),
-	current_rendition_string()
+	current_rendition_string(), cursor_x( -1 ), cursor_y( -1 )
     {}
 
     std::string new_frame( Framebuffer &f );

@@ -7,7 +7,6 @@ std::string Display::new_frame( Framebuffer &f )
   f.back_color_erase();
 
   std::string screen;
-  bool cursor_was_moved = false;
 
   /* has window title changed? */
   if ( (!initialized)
@@ -41,11 +40,9 @@ std::string Display::new_frame( Framebuffer &f )
     /* clear screen */
     screen.append( "\033[0m\033[H\033[2J" );
     initialized = false;
-    cursor_was_moved = true;
+    cursor_x = cursor_y = 0;
     current_rendition_string = "\033[0m";
   }
-
-  int cursor_x = -1, cursor_y = -1;
 
   /* iterate for every cell */
   for ( int y = 0; y < f.ds.get_height(); y++ ) {
@@ -62,7 +59,6 @@ std::string Display::new_frame( Framebuffer &f )
 	char curmove[ 32 ];
 	snprintf( curmove, 32, "\033[%d;%dH", y + 1, x + 1 );
 	screen.append( curmove );
-	cursor_was_moved = true;
       }
 
       cursor_x = x;
@@ -118,13 +114,14 @@ std::string Display::new_frame( Framebuffer &f )
 
   /* has cursor location changed? */
   if ( (!initialized)
-       || (f.ds.get_cursor_row() != last_frame.ds.get_cursor_row())
-       || (f.ds.get_cursor_col() != last_frame.ds.get_cursor_col())
-       || cursor_was_moved ) {
+       || (f.ds.get_cursor_row() != cursor_y)
+       || (f.ds.get_cursor_col() != cursor_x) ) {
     char curmove[ 32 ];
     snprintf( curmove, 32, "\033[%d;%dH", f.ds.get_cursor_row() + 1,
 	      f.ds.get_cursor_col() + 1 );
     screen.append( curmove );
+    cursor_x = f.ds.get_cursor_col();
+    cursor_y = f.ds.get_cursor_row();
   }
 
   /* has cursor visibility changed? */
