@@ -135,7 +135,7 @@ int main( int argc, char *argv[] )
   return 0;
 }
 
-void tick( Terminal::Emulator *e )
+bool tick( Terminal::Emulator *e )
 {
   static bool initialized = false;
   static struct timeval last_time;
@@ -155,7 +155,11 @@ void tick( Terminal::Emulator *e )
     swrite( STDOUT_FILENO, update.c_str() );
     initialized = true;
     last_time = this_time;
+
+    return true;
   }
+
+  return false;
 }
 
 void emulate_terminal( int fd, int debug_fd )
@@ -204,8 +208,10 @@ void emulate_terminal( int fd, int debug_fd )
 
   swrite( STDOUT_FILENO, terminal.open().c_str() );
 
+  int poll_timeout = -1;
+
   while ( 1 ) {
-    int active_fds = poll( pollfds, 3, 0.02 );
+    int active_fds = poll( pollfds, 3, poll_timeout );
     if ( active_fds < 0 ) {
       perror( "poll" );
       break;
@@ -245,7 +251,11 @@ void emulate_terminal( int fd, int debug_fd )
       break;
     }
 
-    tick( &terminal );
+    if ( tick( &terminal ) ) { /* there was a frame */
+      poll_timeout = -1;
+    } else {
+      poll_timeout = 20;
+    }
   }
 
   std::string update = terminal.new_frame();
