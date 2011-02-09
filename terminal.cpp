@@ -40,6 +40,7 @@ void Emulator::print( Parser::Print *act )
   case 1: /* normal character */
   case 2: /* wide character */
     if ( fb.ds.auto_wrap_mode && fb.ds.next_print_will_wrap ) {
+      fb.get_row( -1 )->wrap = true;
       fb.ds.move_col( 0 );
       fb.move_rows_autoscroll( 1 );
     }

@@ -411,3 +411,12 @@ std::string Renditions::sgr( void )
 
   return ret;
 }
+
+void Row::reset( void )
+{
+  for ( std::vector<Cell>::iterator i = cells.begin();
+	i != cells.end();
+	i++ ) {
+    i->reset();
+  }
+}

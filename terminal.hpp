@@ -10,25 +10,9 @@
 #include "terminalframebuffer.hpp"
 #include "terminaldispatcher.hpp"
 #include "terminaluserinput.hpp"
+#include "terminaldisplay.hpp"
 
 namespace Terminal {
-  class Display {
-  private:
-    bool initialized;
-    Framebuffer last_frame;
-    std::string current_rendition_string;
-    int cursor_x, cursor_y;
-
-  public:
-    Display( int width, int height )
-      : initialized( false ), last_frame( width, height ),
-	current_rendition_string(), cursor_x( -1 ), cursor_y( -1 )
-    {}
-
-    std::string new_frame( Framebuffer &f );
-    void invalidate( void ) { initialized = false; }
-  };
-
   class Emulator {
     friend void Parser::Print::act_on_terminal( Emulator * );
     friend void Parser::Execute::act_on_terminal( Emulator * );

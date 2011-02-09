@@ -60,13 +60,16 @@ namespace Terminal {
   class Row {
   public:
     std::vector<Cell> cells;
+    bool wrap;
 
     Row( size_t s_width )
-      : cells( s_width )
+      : cells( s_width ), wrap( false )
     {}
 
     void insert_cell( int col );
     void delete_cell( int col );
+
+    void reset( void );
   };
 
   class SavedCursor {
@@ -160,6 +163,13 @@ namespace Terminal {
     DrawState ds;
 
     void move_rows_autoscroll( int rows );
+
+    Row *get_row( int row )
+    {
+      if ( row == -1 ) row = ds.get_cursor_row();
+
+      return &rows[ row ];
+    }
 
     inline Cell *get_cell( void )
     {
