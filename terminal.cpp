@@ -45,6 +45,20 @@ void Emulator::print( Parser::Print *act )
       fb.move_rows_autoscroll( 1 );
     }
 
+    /* wrap 2-cell chars if no room, even without will-wrap flag */
+    if ( fb.ds.auto_wrap_mode
+	 && (chwidth == 2)
+	 && (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
+      this_cell->reset();
+      fb.get_row( -1 )->wrap = false;
+      /* There doesn't seem to be a consistent way to get the
+	 downstream terminal emulator to set the wrap-around
+	 copy-and-paste flag on a row that ends with an empty cell
+	 because a wide char was wrapped to the next line. */
+      fb.ds.move_col( 0 );
+      fb.move_rows_autoscroll( 1 );
+    }
+
     if ( fb.ds.insert_mode ) {
       for ( int i = 0; i < chwidth; i++ ) {
 	fb.insert_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );

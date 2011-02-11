@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "terminaldisplay.hpp"
 
 using namespace Terminal;
@@ -49,7 +51,36 @@ std::string Display::new_frame( Framebuffer &f )
 
   /* iterate for every cell */
   for ( y = 0; y < f.ds.get_height(); y++ ) {
+    int last_x = 0;
     for ( x = 0; x < f.ds.get_width(); /* let charwidth handle advance */ ) {
+      last_x = x;
+      put_cell( f );
+
+      /* To hint that a word-select should group the end of one line
+	 with the beginning of the next, we let the real cursor
+	 actually wrap around in cases where it wrapped around for us. */
+
+      if ( (cursor_x >= f.ds.get_width())
+	   && (y < f.ds.get_height() - 1)
+	   && f.get_row( y )->wrap
+	   && (!initialized || !last_frame.get_row( y )->wrap) ) {
+	/* next write will wrap */
+	cursor_x = 0;
+	cursor_y++;
+      }
+    }
+
+    /* Turn off wrap */
+    if ( (y < f.ds.get_height() - 1)
+	 && (!f.get_row( y )->wrap)
+	 && (!initialized || last_frame.get_row( y )->wrap) ) {
+      x = last_x;
+      last_frame.get_cell( y, x )->reset();
+
+      snprintf( tmp, 64, "\033[%d;%dH\033[K", y + 1, x + 1 );
+      str.append( tmp );
+      cursor_x = x;
+
       put_cell( f );
     }
   }
