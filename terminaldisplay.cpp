@@ -8,26 +8,27 @@ using namespace Terminal;
 
 std::string Display::new_frame( Framebuffer &f )
 {
+  FrameState frame;
+
   /* fill in background color on any cells that have been reset
      or created since last time */
   f.back_color_erase();
 
-  str.clear();
   char tmp[ 64 ];
 
   /* has window title changed? */
   if ( (!initialized)
        || (f.get_window_title() != last_frame.get_window_title()) ) {
       /* set window title */
-    str.append( "\033]0;[rtm] " );
+    frame.append( "\033]0;[rtm] " );
     std::vector<wchar_t> window_title = f.get_window_title();
     for ( std::vector<wchar_t>::iterator i = window_title.begin();
 	  i != window_title.end();
 	  i++ ) {
       snprintf( tmp, 64, "%lc", *i );
-      str.append( tmp );
+      frame.append( tmp );
     }
-    str.append( "\033\\" );
+    frame.append( "\033\\" );
   }
 
   /* has reverse video state changed? */
@@ -35,7 +36,7 @@ std::string Display::new_frame( Framebuffer &f )
        || (f.ds.reverse_video != last_frame.ds.reverse_video) ) {
     /* set reverse video */
     snprintf( tmp, 64, "\033[?5%c", (f.ds.reverse_video ? 'h' : 'l') );
-    str.append( tmp );
+    frame.append( tmp );
   }
 
   /* has size changed? */
@@ -43,27 +44,28 @@ std::string Display::new_frame( Framebuffer &f )
        || (f.ds.get_width() != last_frame.ds.get_width())
        || (f.ds.get_height() != last_frame.ds.get_height()) ) {
     /* clear screen */
-    str.append( "\033[0m\033[H\033[2J" );
+    frame.append( "\033[0m\033[H\033[2J" );
     initialized = false;
     cursor_x = cursor_y = 0;
     current_rendition_string = "\033[0m";
   }
 
   /* iterate for every cell */
-  for ( y = 0; y < f.ds.get_height(); y++ ) {
+  for ( frame.y = 0; frame.y < f.ds.get_height(); frame.y++ ) {
     int last_x = 0;
-    for ( x = 0; x < f.ds.get_width(); /* let charwidth handle advance */ ) {
-      last_x = x;
-      put_cell( f );
+    for ( frame.x = 0;
+	  frame.x < f.ds.get_width(); /* let put_cell() handle advance */ ) {
+      last_x = frame.x;
+      put_cell( frame, f );
 
       /* To hint that a word-select should group the end of one line
 	 with the beginning of the next, we let the real cursor
 	 actually wrap around in cases where it wrapped around for us. */
 
       if ( (cursor_x >= f.ds.get_width())
-	   && (y < f.ds.get_height() - 1)
-	   && f.get_row( y )->wrap
-	   && (!initialized || !last_frame.get_row( y )->wrap) ) {
+	   && (frame.y < f.ds.get_height() - 1)
+	   && f.get_row( frame.y )->wrap
+	   && (!initialized || !last_frame.get_row( frame.y )->wrap) ) {
 	/* next write will wrap */
 	cursor_x = 0;
 	cursor_y++;
@@ -71,17 +73,17 @@ std::string Display::new_frame( Framebuffer &f )
     }
 
     /* Turn off wrap */
-    if ( (y < f.ds.get_height() - 1)
-	 && (!f.get_row( y )->wrap)
-	 && (!initialized || last_frame.get_row( y )->wrap) ) {
-      x = last_x;
-      last_frame.get_cell( y, x )->reset();
+    if ( (frame.y < f.ds.get_height() - 1)
+	 && (!f.get_row( frame.y )->wrap)
+	 && (!initialized || last_frame.get_row( frame.y )->wrap) ) {
+      frame.x = last_x;
+      last_frame.get_cell( frame.y, frame.x )->reset();
 
-      snprintf( tmp, 64, "\033[%d;%dH\033[K", y + 1, x + 1 );
-      str.append( tmp );
-      cursor_x = x;
+      snprintf( tmp, 64, "\033[%d;%dH\033[K", frame.y + 1, frame.x + 1 );
+      frame.append( tmp );
+      cursor_x = frame.x;
 
-      put_cell( f );
+      put_cell( frame, f );
     }
   }
 
@@ -91,7 +93,7 @@ std::string Display::new_frame( Framebuffer &f )
        || (f.ds.get_cursor_col() != cursor_x) ) {
     snprintf( tmp, 64, "\033[%d;%dH", f.ds.get_cursor_row() + 1,
 	      f.ds.get_cursor_col() + 1 );
-    str.append( tmp );
+    frame.append( tmp );
     cursor_x = f.ds.get_cursor_col();
     cursor_y = f.ds.get_cursor_row();
   }
@@ -100,51 +102,51 @@ std::string Display::new_frame( Framebuffer &f )
   if ( (!initialized)
        || (f.ds.cursor_visible != last_frame.ds.cursor_visible) ) {
     if ( f.ds.cursor_visible ) {
-      str.append( "\033[?25h" );
+      frame.append( "\033[?25h" );
     } else {
-      str.append( "\033[?25l" );
+      frame.append( "\033[?25l" );
     }
   }
 
   last_frame = f;
   initialized = true;
 
-  return str;
+  return frame.str;
 }
 
-void Display::put_cell( Framebuffer &f )
+void Display::put_cell( FrameState &frame, Framebuffer &f )
 {
   char tmp[ 64 ];
 
-  Cell *cell = f.get_cell( y, x );
-  Cell *last_cell = last_frame.get_cell( y, x );
+  Cell *cell = f.get_cell( frame.y, frame.x );
+  Cell *last_cell = last_frame.get_cell( frame.y, frame.x );
 
   if ( initialized
        && ( *cell == *last_cell ) ) {
-    x += cell->width;
+    frame.x += cell->width;
     return;
   }
 
-  if ( (x != cursor_x) || (y != cursor_y) ) {
-    snprintf( tmp, 64, "\033[%d;%dH", y + 1, x + 1 );
-    str.append( tmp );
-    cursor_x = x;
-    cursor_y = y;
+  if ( (frame.x != cursor_x) || (frame.y != cursor_y) ) {
+    snprintf( tmp, 64, "\033[%d;%dH", frame.y + 1, frame.x + 1 );
+    frame.append( tmp );
+    cursor_x = frame.x;
+    cursor_y = frame.y;
   }
 
   std::string rendition_str = cell->renditions.sgr();
 
   if ( current_rendition_string != rendition_str ) {
     /* print renditions */
-    str.append( rendition_str );
+    frame.append( rendition_str );
     current_rendition_string = rendition_str;
   }
 
   if ( cell->contents.empty() ) {
     /* see how far we can stretch a clear */
     int clear_count = 0;
-    for ( int col = x; col < f.ds.get_width(); col++ ) {
-      Cell *other_cell = f.get_cell( y, col );
+    for ( int col = frame.x; col < f.ds.get_width(); col++ ) {
+      Cell *other_cell = f.get_cell( frame.y, col );
       if ( (cell->renditions == other_cell->renditions)
 	   && (other_cell->contents.empty()) ) {
 	clear_count++;
@@ -153,25 +155,25 @@ void Display::put_cell( Framebuffer &f )
       }
     }
     snprintf( tmp, 64, "\033[%dX", clear_count );
-    str.append( tmp );
+    frame.append( tmp );
 
-    x += clear_count;
+    frame.x += clear_count;
     return;
   }
 
   /* cells that begin with combining character get combiner attached to no-break space */
   if ( cell->fallback ) {
     snprintf( tmp, 64, "%lc", 0xA0 );
-    str.append( tmp );
+    frame.append( tmp );
   }
 
   for ( std::vector<wchar_t>::iterator i = cell->contents.begin();
 	i != cell->contents.end();
 	i++ ) {
     snprintf( tmp, 64, "%lc", *i );
-    str.append( tmp );
+    frame.append( tmp );
   }
 
-  x += cell->width;
+  frame.x += cell->width;
   cursor_x += cell->width;
 }
