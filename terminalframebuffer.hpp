@@ -15,13 +15,9 @@ namespace Terminal {
     int foreground_color;
     int background_color;
 
-    Renditions();
+    Renditions( int s_background );
     void set_rendition( int num );
     std::string sgr( void );
-    void back_color_erase( int num )
-    {
-      if ( background_color == -1 ) background_color = num;
-    }
 
     bool operator==( const Renditions &x )
     {
@@ -39,14 +35,14 @@ namespace Terminal {
     int width;
     Renditions renditions;
 
-    Cell()
+    Cell( int background_color )
       : contents(),
 	fallback( false ),
 	width( 1 ),
-	renditions()
+	renditions( background_color )
     {}
 
-    void reset( void );
+    void reset( int background_color );
 
     inline bool operator==( const Cell &x )
     {
@@ -62,14 +58,14 @@ namespace Terminal {
     std::vector<Cell> cells;
     bool wrap;
 
-    Row( size_t s_width )
-      : cells( s_width ), wrap( false )
+    Row( size_t s_width, int background_color )
+      : cells( s_width, Cell( background_color ) ), wrap( false )
     {}
 
-    void insert_cell( int col );
-    void delete_cell( int col );
+    void insert_cell( int col, int background_color );
+    void delete_cell( int col, int background_color );
 
-    void reset( void );
+    void reset( int background_color );
   };
 
   class SavedCursor {
@@ -158,6 +154,8 @@ namespace Terminal {
 
     void scroll( int N );
 
+    Row newrow( void ) { return Row( ds.get_width(), ds.get_background_rendition() ); }
+
   public:
     Framebuffer( int s_width, int s_height );
     DrawState ds;
@@ -202,7 +200,8 @@ namespace Terminal {
 
     void resize( int s_width, int s_height );
 
-    void back_color_erase( void );
+    void reset_cell( Cell *c ) { c->reset( ds.get_background_rendition() ); }
+    void reset_row( Row *r ) { r->reset( ds.get_background_rendition() ); }
   };
 }
 

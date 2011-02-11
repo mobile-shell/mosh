@@ -10,10 +10,6 @@ std::string Display::new_frame( Framebuffer &f )
 {
   FrameState frame;
 
-  /* fill in background color on any cells that have been reset
-     or created since last time */
-  f.back_color_erase();
-
   char tmp[ 64 ];
 
   /* has window title changed? */
@@ -77,7 +73,7 @@ std::string Display::new_frame( Framebuffer &f )
 	 && (!f.get_row( frame.y )->wrap)
 	 && (!initialized || last_frame.get_row( frame.y )->wrap) ) {
       frame.x = last_x;
-      last_frame.get_cell( frame.y, frame.x )->reset();
+      last_frame.reset_cell( last_frame.get_cell( frame.y, frame.x ) );
 
       snprintf( tmp, 64, "\033[%d;%dH\033[K", frame.y + 1, frame.x + 1 );
       frame.append( tmp );

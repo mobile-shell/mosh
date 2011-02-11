@@ -49,7 +49,7 @@ void Emulator::print( Parser::Print *act )
     if ( fb.ds.auto_wrap_mode
 	 && (chwidth == 2)
 	 && (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
-      this_cell->reset();
+      fb.reset_cell( this_cell );
       fb.get_row( -1 )->wrap = false;
       /* There doesn't seem to be a consistent way to get the
 	 downstream terminal emulator to set the wrap-around
@@ -67,14 +67,14 @@ void Emulator::print( Parser::Print *act )
 
     this_cell = fb.get_cell();
 
-    this_cell->reset();
+    fb.reset_cell( this_cell );
     this_cell->contents.push_back( act->ch );
     this_cell->width = chwidth;
     fb.apply_renditions_to_current_cell();
 
     if ( chwidth == 2 ) { /* erase overlapped cell */
       if ( fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) {
-	fb.get_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 )->reset();
+	fb.reset_cell( fb.get_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 ) );
       }
     }
 

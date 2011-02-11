@@ -4,12 +4,12 @@
 
 using namespace Terminal;
 
-void Cell::reset( void )
+void Cell::reset( int background_color )
 {
   contents.clear();
   fallback = false;
   width = 1;
-  renditions = Renditions();
+  renditions = Renditions( background_color );
 }
 
 DrawState::DrawState( int s_width, int s_height )
@@ -17,7 +17,7 @@ DrawState::DrawState( int s_width, int s_height )
     cursor_col( 0 ), cursor_row( 0 ),
     combining_char_col( 0 ), combining_char_row( 0 ), tabs( s_width ),
     scrolling_region_top_row( 0 ), scrolling_region_bottom_row( height - 1 ),
-    renditions(), save(),
+    renditions( 0 ), save(),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true ),
     insert_mode( false ), cursor_visible( true ), reverse_video( false ),
     application_mode_cursor_keys( false )
@@ -28,7 +28,7 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows( s_height, Row( s_width ) ), window_title(), ds( s_width, s_height )
+  : rows( s_height, Row( s_width, 0 ) ), window_title(), ds( s_width, s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
@@ -45,7 +45,7 @@ void Framebuffer::scroll( int N )
     N = -N;
 
     for ( int i = 0; i < N; i++ ) {
-      rows.insert( rows.begin() + ds.get_scrolling_region_top_row(), Row( ds.get_width() ) );
+      rows.insert( rows.begin() + ds.get_scrolling_region_top_row(), newrow() );
       rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
       ds.move_row( 1, true );
     }
@@ -204,7 +204,7 @@ void Framebuffer::apply_renditions_to_current_cell( void )
 
 SavedCursor::SavedCursor()
   : cursor_col( 0 ), cursor_row( 0 ),
-    renditions(),
+    renditions( 0 ),
     auto_wrap_mode( true ),
     origin_mode( false )
 {}
@@ -237,7 +237,7 @@ void Framebuffer::insert_line( int before_row )
     return;
   }
 
-  rows.insert( rows.begin() + before_row, Row( ds.get_width() ) );
+  rows.insert( rows.begin() + before_row, newrow() );
   rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
 }
 
@@ -250,42 +250,42 @@ void Framebuffer::delete_line( int row )
 
   int insertbefore = ds.get_scrolling_region_bottom_row() + 1;
   if ( insertbefore == ds.get_height() ) {
-    rows.push_back( Row( ds.get_width() ) );
+    rows.push_back( newrow() );
   } else {
-    rows.insert( rows.begin() + insertbefore, Row( ds.get_width() ) );
+    rows.insert( rows.begin() + insertbefore, newrow() );
   }
 
   rows.erase( rows.begin() + row );
 }
 
-void Row::insert_cell( int col )
+void Row::insert_cell( int col, int background_color )
 {
-  cells.insert( cells.begin() + col, Cell() );
+  cells.insert( cells.begin() + col, Cell( background_color ) );
   cells.pop_back();
 }
 
-void Row::delete_cell( int col )
+void Row::delete_cell( int col, int background_color )
 {
-  cells.push_back( Cell() );
+  cells.push_back( Cell( background_color ) );
   cells.erase( cells.begin() + col );
 }
 
 void Framebuffer::insert_cell( int row, int col )
 {
-  rows[ row ].insert_cell( col );
+  rows[ row ].insert_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::delete_cell( int row, int col )
 {
-  rows[ row ].delete_cell( col );
+  rows[ row ].delete_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::reset( void )
 {
   int width = ds.get_width(), height = ds.get_height();
-  rows = std::deque<Row>( height, Row( width ) );
-  window_title.clear();
   ds = DrawState( width, height );
+  rows = std::deque<Row>( height, newrow() );
+  window_title.clear();
 }
 
 void Framebuffer::soft_reset( void )
@@ -304,12 +304,12 @@ void Framebuffer::resize( int s_width, int s_height )
   assert( s_width > 0 );
   assert( s_height > 0 );
 
-  rows.resize( s_height, Row( ds.get_width() ) );
+  rows.resize( s_height, newrow() );
 
   for ( std::deque<Row>::iterator i = rows.begin();
 	i != rows.end();
 	i++ ) {
-    (*i).cells.resize( s_width, Cell() );
+    (*i).cells.resize( s_width, Cell( ds.get_background_rendition() ) );
   }
 
   ds.resize( s_width, s_height );
@@ -342,24 +342,10 @@ void DrawState::resize( int s_width, int s_height )
   }
 }
 
-void Framebuffer::back_color_erase( void )
-{
-  int bg_color = ds.get_background_rendition();
-
-  for ( int row = 0; row < ds.get_height(); row++ ) {
-    for ( int col = 0; col < ds.get_width(); col++ ) {
-      Cell *cell = get_cell( row, col );
-      if ( cell->renditions.background_color == -1 ) {
-	cell->renditions.background_color = bg_color == -1 ? 0 : bg_color;
-      }
-    }
-  }
-}
-
-Renditions::Renditions()
+Renditions::Renditions( int s_background )
   : bold( false ), underlined( false ), blink( false ),
     inverse( false ), invisible( false ), foreground_color( 0 ),
-    background_color( -1 )
+    background_color( s_background )
 {}
 
 void Renditions::set_rendition( int num )
@@ -412,11 +398,11 @@ std::string Renditions::sgr( void )
   return ret;
 }
 
-void Row::reset( void )
+void Row::reset( int background_color )
 {
   for ( std::vector<Cell>::iterator i = cells.begin();
 	i != cells.end();
 	i++ ) {
-    i->reset();
+    i->reset( background_color );
   }
 }
