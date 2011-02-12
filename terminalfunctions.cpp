@@ -7,7 +7,7 @@
 
 using namespace Terminal;
 
-/* Terminal functions -- routines activated by CSI, escape or a C1 or C2 control char */
+/* Terminal functions -- routines activated by CSI, escape or a control char */
 
 static void clearline( Framebuffer *fb, int row, int start, int end )
 {

@@ -90,7 +90,6 @@ int Dispatcher::getparam( size_t N, int defaultval )
   int ret = defaultval;
   if ( !parsed ) {
     parse_params();
-    parsed = true;
   }
 
   if ( parsed_params.size() > N ) {
@@ -105,7 +104,6 @@ int Dispatcher::param_count( void )
 {
   if ( !parsed ) {
     parse_params();
-    parsed = true;
   }
 
   return parsed_params.size();

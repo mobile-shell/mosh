@@ -73,10 +73,10 @@ namespace Terminal {
   public:
     int cursor_col, cursor_row;
     Renditions renditions;
-    /* character set shift state */
+    /* not implemented: character set shift state */
     bool auto_wrap_mode;
     bool origin_mode;
-    /* state of selective erase */
+    /* not implemented: state of selective erase */
 
     SavedCursor();
   };
