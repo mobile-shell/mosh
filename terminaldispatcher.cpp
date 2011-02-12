@@ -152,7 +152,7 @@ void Dispatcher::dispatch( Function_Type type, Parser::Action *act, Framebuffer 
     collect( &act2 ); 
   }
 
-  dispatch_map_t *map;
+  dispatch_map_t *map = NULL;
   switch ( type ) {
   case ESCAPE:  map = &global_dispatch_registry.escape;  break;
   case CSI:     map = &global_dispatch_registry.CSI;     break;
