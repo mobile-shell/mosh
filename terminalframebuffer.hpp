@@ -5,6 +5,7 @@
 #include <deque>
 #include <string>
 #include <list>
+#include <assert.h>
 
 /* Terminal framebuffer */
 
@@ -171,6 +172,13 @@ namespace Terminal {
 
     inline Cell *get_cell( void )
     {
+#ifdef DEBUG
+      assert( ds.get_cursor_row() >= 0 );
+      assert( ds.get_cursor_col() >= 0 );
+      assert( ds.get_cursor_row() < ds.get_height() );
+      assert( ds.get_cursor_col() < ds.get_width() );
+#endif
+
       return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
     }
 
@@ -178,6 +186,13 @@ namespace Terminal {
     {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
+
+#ifdef DEBUG
+      assert( row >= 0 );
+      assert( col >= 0 );
+      assert( row < ds.get_height() );
+      assert( col < ds.get_width() );
+#endif
 
       return &rows[ row ].cells[ col ];
     }

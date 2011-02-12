@@ -73,7 +73,9 @@ std::string Display::new_frame( Framebuffer &f )
 	 && (!f.get_row( frame.y )->wrap)
 	 && (!initialized || last_frame.get_row( frame.y )->wrap) ) {
       frame.x = last_x;
-      last_frame.reset_cell( last_frame.get_cell( frame.y, frame.x ) );
+      if ( initialized ) {
+	last_frame.reset_cell( last_frame.get_cell( frame.y, frame.x ) );
+      }
 
       snprintf( tmp, 64, "\033[%d;%dH\033[K", frame.y + 1, frame.x + 1 );
       frame.append( tmp );
@@ -115,10 +117,9 @@ void Display::put_cell( FrameState &frame, Framebuffer &f )
   char tmp[ 64 ];
 
   Cell *cell = f.get_cell( frame.y, frame.x );
-  Cell *last_cell = last_frame.get_cell( frame.y, frame.x );
 
   if ( initialized
-       && ( *cell == *last_cell ) ) {
+       && ( *cell == *(last_frame.get_cell( frame.y, frame.x )) ) ) {
     frame.x += cell->width;
     return;
   }
