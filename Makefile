@@ -21,7 +21,7 @@ templates.o: templates.cpp
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-include depend
+-include depend
 
 depend: $(source)
 	$(CXX) $(INCLUDES) -MM $(source) > depend
