@@ -153,14 +153,13 @@ namespace Terminal {
     std::deque<Row> rows;
     std::vector<wchar_t> window_title;
 
-    void scroll( int N );
-
     Row newrow( void ) { return Row( ds.get_width(), ds.get_background_rendition() ); }
 
   public:
     Framebuffer( int s_width, int s_height );
     DrawState ds;
 
+    void scroll( int N );
     void move_rows_autoscroll( int rows );
 
     Row *get_row( int row )

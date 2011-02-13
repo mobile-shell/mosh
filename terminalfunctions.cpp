@@ -474,3 +474,19 @@ void Dispatcher::OSC_dispatch( Parser::OSC_End *act, Framebuffer *fb )
     }
   }
 }
+
+/* scroll down or terminfo indn */
+void CSI_SD( Framebuffer *fb, Dispatcher *dispatch )
+{
+  fb->scroll( dispatch->getparam( 0, 1 ) );
+}
+
+static Function func_CSI_SD( CSI, "S", CSI_SD );
+
+/* scroll up or terminfo rin */
+void CSI_SU( Framebuffer *fb, Dispatcher *dispatch )
+{
+  fb->scroll( -dispatch->getparam( 0, 1 ) );
+}
+
+static Function func_CSI_SU( CSI, "T", CSI_SU );
