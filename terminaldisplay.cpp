@@ -46,8 +46,69 @@ std::string Display::new_frame( Framebuffer &f )
     current_rendition_string = "\033[0m";
   }
 
+  /* shortcut -- has display moved up by a certain number of lines? */
+  frame.y = 0;
+
+  if ( initialized ) {
+    int lines_scrolled = 0;
+    int scroll_height = 0;
+
+    for ( int row = 0; row < f.ds.get_height(); row++ ) {
+      if ( *(f.get_row( 0 )) == *(last_frame.get_row( row )) ) {
+	/* found a scroll */
+	lines_scrolled = row;
+	scroll_height = 1;
+
+	/* how big is the region that was scrolled? */
+	for ( int region_height = 1;
+	      lines_scrolled + region_height < f.ds.get_height();
+	      region_height++ ) {
+	  if ( *(f.get_row( region_height ))
+	       == *(last_frame.get_row( lines_scrolled + region_height )) ) {
+	    scroll_height = region_height + 1;
+	  } else {
+	    break;
+	  }
+	}
+
+	break;
+      }
+    }
+
+    if ( scroll_height ) {
+      frame.y = scroll_height;
+
+      if ( lines_scrolled ) {
+	if ( cursor_y != f.ds.get_height() - 1 ) {
+	  snprintf( tmp, 64, "\033[%d;%dH", f.ds.get_height(), 1 );
+	  frame.append( tmp );
+
+	  cursor_y = f.ds.get_height() - 1;
+	  cursor_x = 0;
+	}
+
+	if ( current_rendition_string != "\033[0m" ) {
+	  frame.append( "\033[0m" );
+	  current_rendition_string = "\033[0m";
+	}
+
+	for ( int i = 0; i < lines_scrolled; i++ ) {
+	  frame.append( "\n" );
+	}
+
+	for ( int i = 0; i < f.ds.get_height(); i++ ) {
+	  if ( i + lines_scrolled < f.ds.get_height() ) {
+	    *(last_frame.get_row( i )) = *(last_frame.get_row( i + lines_scrolled ));
+	  } else {
+	    last_frame.get_row( i )->reset( 0 );
+	  }
+	}
+      }
+    }
+  }
+
   /* iterate for every cell */
-  for ( frame.y = 0; frame.y < f.ds.get_height(); frame.y++ ) {
+  for ( ; frame.y < f.ds.get_height(); frame.y++ ) {
     int last_x = 0;
     for ( frame.x = 0;
 	  frame.x < f.ds.get_width(); /* let put_cell() handle advance */ ) {

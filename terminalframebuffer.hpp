@@ -20,7 +20,7 @@ namespace Terminal {
     void set_rendition( int num );
     std::string sgr( void );
 
-    bool operator==( const Renditions &x )
+    bool operator==( const Renditions &x ) const
     {
       return (bold == x.bold) && (underlined == x.underlined)
 	&& (blink == x.blink) && (inverse == x.inverse)
@@ -45,7 +45,7 @@ namespace Terminal {
 
     void reset( int background_color );
 
-    inline bool operator==( const Cell &x )
+    bool operator==( const Cell &x ) const
     {
       return ( (contents == x.contents)
 	       && (fallback == x.fallback)
@@ -67,6 +67,11 @@ namespace Terminal {
     void delete_cell( int col, int background_color );
 
     void reset( int background_color );
+
+    bool operator==( const Row &x ) const
+    {
+      return ( (cells == x.cells) && (wrap == x.wrap) );
+    }
   };
 
   class SavedCursor {
