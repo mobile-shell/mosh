@@ -133,11 +133,11 @@ bool tick( Terminal::Emulator *e )
     perror( "gettimeofday" );
   }
 
-  int diff = 1000000 * (this_time.tv_sec - last_time.tv_sec)
-    + (this_time.tv_usec - last_time.tv_usec);
+  double diff = (this_time.tv_sec - last_time.tv_sec)
+    + .000001 * (this_time.tv_usec - last_time.tv_usec);
 
   if ( (!initialized)
-       || (diff >= 20000) ) {
+       || (diff >= 0.02) ) {
     std::string update = e->new_frame();
     swrite( STDOUT_FILENO, update.c_str() );
     initialized = true;
