@@ -26,5 +26,5 @@ std::string UserInput::input( Parser::UserByte *act,
 
   act->handled = true;
 
-  return std::string( translated_str );
+  return std::string( translated_str, 1 );
 }
