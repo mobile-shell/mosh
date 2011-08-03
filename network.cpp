@@ -33,12 +33,14 @@ Flow<Payload>::Packet::Packet( string coded_packet )
     seq( decoding_cache.seq ),
     direction( decoding_cache.direction ),
     payload( decoding_cache.payload_string )
-{}
+{
+  decoding_cache = DecodingCache();
+}
 
 template <class Payload>
 string Flow<Payload>::Packet::tostring( void )
 {
-  uint64_t direction_seq = ((uint64_t( direction == TO_CLIENT ) & 0x1) << 63) | (seq & 0x7FFFFFFFFFFFFFFF);
+  uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & 0x7FFFFFFFFFFFFFFF);
   uint64_t network_order_seq = htobe64( direction_seq );
   const char *seq_str = (const char *)&network_order_seq;
   string seq_string( seq_str, 8 ); /* necessary in case there is a zero byte */
