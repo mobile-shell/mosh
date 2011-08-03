@@ -1,12 +1,39 @@
 #include "network.hpp"
+#include "keystroke.hpp"
 
-class KeyStroke
+int main( int argc, char *argv[] )
 {
-public:
-  char letter;
-};
+  bool server = true;
+  char *ip;
+  int port;
 
-int main( void )
-{
-  Network::Connection<KeyStroke> n();
+  if ( argc > 1 ) {
+    server = false;
+
+    ip = argv[ 1 ];
+    port = atoi( argv[ 2 ] );
+  }
+
+  Network::Connection<KeyStroke, KeyStroke> n( server );
+  fprintf( stderr, "Port bound is %d\n", n.port() );
+
+  if ( !server ) {
+    n.client_connect( ip, port );
+  }
+
+  if ( server ) {
+    while ( true ) {
+      KeyStroke s = n.recv();
+
+      fprintf( stderr, "Got KeyStroke: %c\n", s.letter );
+    }
+  } else {
+    while( true ) {
+      sleep( 1 );
+
+      KeyStroke t( string( "x", 1 ) );
+
+      n.send( t );
+    }
+  }
 }

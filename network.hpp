@@ -7,37 +7,78 @@
 #include <netinet/in.h>
 #include <string>
 
+using namespace std;
+
 namespace Network {
+  enum Direction {
+    TO_SERVER = 0,
+    TO_CLIENT = 1
+  };
+
   template <class Payload>
-  class Connection {
-  private:
+  class Flow {
+  public:
     class Packet {
+    private:
+      class DecodingCache
+      {
+      public:
+	Direction direction;
+	uint64_t seq;
+	string payload_string;
+
+	DecodingCache( string coded_packet );
+	DecodingCache() : direction( TO_CLIENT ), seq( -1 ), payload_string() {}
+      };
+
+      DecodingCache decoding_cache;
+
     public:
-      int64_t seq;
-      int64_t reference_seq;
-
-      std::string tag;
-
-      int64_t ack;
-
-      Payload state;
-
-      Packet( int64_t s_seq, int64_t s_ack, Packet *s_previous, Payload s_state );
-      Packet( std::string wire );
+      uint64_t seq;
+      Direction direction;
+      Payload payload;
+      
+      Packet( uint64_t s_seq, Direction s_direction, Payload s_payload )
+	: decoding_cache(), seq( s_seq ), direction( s_direction ), payload( s_payload )
+      {}
+      
+      Packet( string coded_packet );
+      
+      string tostring( void );
     };
 
-    int64_t next_seq;
-    int64_t next_ack;
-    int sequence_increment;
+    uint64_t next_seq;
+    const Direction direction;
+    int MTU;
+
+    Flow( Direction s_direction )
+      : next_seq( 0 ), direction( s_direction ), MTU( 2048 )
+    {}
+
+    Packet new_packet( Payload &s_payload );
+  };
+
+  template <class Outgoing, class Incoming>
+  class Connection {
+  private:
+    static const int RECEIVE_MTU = 2048;
+
+    Flow<Outgoing> flow;
 
     int sock;
-    struct sockaddr_in addr;
+    struct sockaddr_in remote_addr;
 
-    std::deque<Packet> send_queue;
-    std::deque<Packet> recv_queue;
+    bool server;
+    bool attached;
 
   public:
-    Connection( const char *ip, const char *port, bool server );
+    Connection( bool s_server );
+    
+    void client_connect( const char *ip, int port );
+    void send( Outgoing &s );
+    Incoming recv( void );
+    int fd( void ) { return sock; }
+    int port( void );
   };
 }
 
