@@ -60,7 +60,8 @@ Connection<Outgoing, Incoming>::Connection( bool s_server )
     sock( -1 ),
     remote_addr(),
     server( s_server ),
-    attached( false )
+    attached( false ),
+    MTU( RECEIVE_MTU )
 {
 
   /* create socket */
@@ -80,6 +81,31 @@ Connection<Outgoing, Incoming>::Connection( bool s_server )
     perror( "bind" );
     exit( 1 );
   }
+
+  /* Enable path MTU discovery */
+  char flag = IP_PMTUDISC_DO;
+  socklen_t optlen = sizeof( flag );
+  if ( setsockopt( sock, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
+    perror( "setsockopt" );
+    exit( 1 );
+  }
+}
+
+template <class Outgoing, class Incoming>
+void Connection<Outgoing, Incoming>::update_MTU( void )
+{
+  socklen_t optlen = sizeof( MTU );
+  if ( getsockopt( sock, IPPROTO_IP, IP_MTU, &MTU, &optlen ) < 0 ) {
+    perror( "getsockopt" );
+    exit( 1 );
+  }
+
+  if ( optlen != sizeof( MTU ) ) {
+    fprintf( stderr, "Error getting path MTU.\n" );
+    exit( 1 );
+  }
+
+  fprintf( stderr, "Path MTU: %d\n", MTU );  
 }
 
 template <class Outgoing, class Incoming>
@@ -115,6 +141,8 @@ void Connection<Outgoing, Incoming>::send( Outgoing &s )
     perror( "sendto" );
     exit( 1 );
   }
+
+  update_MTU();
 }
 
 template <class Outgoing, class Incoming>

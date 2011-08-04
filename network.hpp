@@ -49,10 +49,9 @@ namespace Network {
 
     uint64_t next_seq;
     const Direction direction;
-    int MTU;
 
     Flow( Direction s_direction )
-      : next_seq( 0 ), direction( s_direction ), MTU( 2048 )
+      : next_seq( 0 ), direction( s_direction )
     {}
 
     Packet new_packet( Payload &s_payload );
@@ -70,6 +69,10 @@ namespace Network {
 
     bool server;
     bool attached;
+
+    int MTU;
+
+    void update_MTU( void );
 
   public:
     Connection( bool s_server );

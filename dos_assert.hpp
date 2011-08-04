@@ -6,7 +6,7 @@
 
 static void dos_detected( const char *expression, const char *file, int line, const char *function )
 {
-  fprintf( stderr, "Illegal counterparty input (possible DOS) in function %s at %s:%d, failed test: %s\n",
+  fprintf( stderr, "Illegal counterparty input (possible denial of service) in function %s at %s:%d, failed test: %s\n",
 	   function, file, line, expression );
   exit( 1 );
 }
