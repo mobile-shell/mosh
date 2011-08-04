@@ -130,19 +130,25 @@ void Connection<Outgoing, Incoming>::client_connect( const char *ip, int port )
 }
 
 template <class Outgoing, class Incoming>
-void Connection<Outgoing, Incoming>::send( Outgoing &s )
+bool Connection<Outgoing, Incoming>::send( Outgoing &s )
 {
   assert( attached );
 
   string p = flow.new_packet( s ).tostring();
 
-  if ( sendto( sock, p.data(), p.size(), 0,
-	       (sockaddr *)&remote_addr, sizeof( remote_addr ) ) < 0 ) {
+  ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
+			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
+
+  if ( (bytes_sent < 0) && (errno == EMSGSIZE) ) {
+    update_MTU();
+    return false;
+  } else if ( bytes_sent == static_cast<int>( p.size() ) ) {
+    return true;
+  } else {
     perror( "sendto" );
     exit( 1 );
+    return false;
   }
-
-  update_MTU();
 }
 
 template <class Outgoing, class Incoming>

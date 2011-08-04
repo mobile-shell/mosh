@@ -78,7 +78,7 @@ namespace Network {
     Connection( bool s_server );
     
     void client_connect( const char *ip, int port );
-    void send( Outgoing &s );
+    bool send( Outgoing &s );
     Incoming recv( void );
     int fd( void ) { return sock; }
     int port( void );
