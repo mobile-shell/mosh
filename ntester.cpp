@@ -1,3 +1,6 @@
+#include <termios.h>
+#include <unistd.h>
+
 #include "network.hpp"
 #include "keystroke.hpp"
 
@@ -29,13 +32,28 @@ int main( int argc, char *argv[] )
     while ( true ) {
       KeyStroke s = n->recv();
 
-      fprintf( stderr, "Got KeyStroke: %c\n", s.letter );
+      printf( "%c", s.letter );
+      fflush( NULL );
     }
   } else {
-    while( true ) {
-      sleep( 1 );
+      struct termios the_termios;
 
-      KeyStroke t( string( "x", 1 ) );
+      if ( tcgetattr( STDIN_FILENO, &the_termios ) < 0 ) {
+	perror( "tcgetattr" );
+	exit( 1 );
+      }
+
+      cfmakeraw( &the_termios );
+
+      if ( tcsetattr( STDIN_FILENO, TCSANOW, &the_termios ) < 0 ) {
+	perror( "tcsetattr" );
+	exit( 1 );
+      }
+
+    while( true ) {
+      char x = getchar();
+
+      KeyStroke t( string( &x, 1 ) );
 
       n->send( t );
     }
