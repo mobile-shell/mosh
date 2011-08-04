@@ -7,6 +7,8 @@
 #include <netinet/in.h>
 #include <string>
 
+#include "crypto.hpp"
+
 using namespace std;
 
 namespace Network {
@@ -27,7 +29,7 @@ namespace Network {
 	uint64_t seq;
 	string payload_string;
 
-	DecodingCache( string coded_packet );
+	DecodingCache( string coded_packet, Session *session );
 	DecodingCache() : direction( TO_CLIENT ), seq( -1 ), payload_string() {}
       };
 
@@ -42,16 +44,17 @@ namespace Network {
 	: decoding_cache(), seq( s_seq ), direction( s_direction ), payload( s_payload )
       {}
       
-      Packet( string coded_packet );
+      Packet( string coded_packet, Session *session );
       
-      string tostring( void );
+      string tostring( Session *session );
     };
 
     uint64_t next_seq;
-    const Direction direction;
+    Direction direction;
+    Session *session;
 
-    Flow( Direction s_direction )
-      : next_seq( 0 ), direction( s_direction )
+    Flow( Direction s_direction, Session *s_session )
+      : next_seq( 0 ), direction( s_direction ), session( s_session )
     {}
 
     Packet new_packet( Payload &s_payload );
@@ -62,8 +65,6 @@ namespace Network {
   private:
     static const int RECEIVE_MTU = 2048;
 
-    Flow<Outgoing> flow;
-
     int sock;
     struct sockaddr_in remote_addr;
 
@@ -72,16 +73,25 @@ namespace Network {
 
     int MTU;
 
+    Base64Key key;
+    Session session;
+
+    Flow<Outgoing> flow;
+
     void update_MTU( void );
 
+    void setup( void );
+
   public:
-    Connection( bool s_server );
+    Connection();
+    Connection( const char *key_str, const char *ip, int port );
     
-    void client_connect( const char *ip, int port );
     bool send( Outgoing &s );
     Incoming recv( void );
     int fd( void ) { return sock; }
     int port( void );
+    int get_MTU( void ) { return MTU; }
+    string get_key( void ) { return key.printable_key(); }
   };
 }
 

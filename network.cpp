@@ -6,30 +6,25 @@
 
 #include "dos_assert.hpp"
 #include "network.hpp"
+#include "crypto.hpp"
 
 using namespace std;
 using namespace Network;
 
 template <class Payload>
-Flow<Payload>::Packet::DecodingCache::DecodingCache( string coded_packet )
+Flow<Payload>::Packet::DecodingCache::DecodingCache( string coded_packet, Session *session )
   : direction( TO_CLIENT ), seq( -1 ), payload_string()
 {
-  dos_assert( coded_packet.size() >= 8 );
+  Message message = session->decrypt( coded_packet );
 
-  /* Read in sequence number and direction */
-  string seq_string( coded_packet.begin(), coded_packet.begin() + 8 );
-  uint64_t *network_order_seq = (uint64_t *)seq_string.data();
-  uint64_t direction_seq = be64toh( *network_order_seq );
-  direction = (direction_seq & 8000000000000000) ? TO_CLIENT : TO_SERVER;
-  seq = direction_seq & 0x7FFFFFFFFFFFFFFF;
-
-  /* Read in payload */
-  payload_string = string( coded_packet.begin() + 8, coded_packet.end() );  
+  direction = (message.nonce.val() & 8000000000000000) ? TO_CLIENT : TO_SERVER;
+  seq = message.nonce.val() & 0x7FFFFFFFFFFFFFFF;
+  payload_string = message.text;
 }
 
 template <class Payload>
-Flow<Payload>::Packet::Packet( string coded_packet )
-  : decoding_cache( coded_packet ),
+Flow<Payload>::Packet::Packet( string coded_packet, Session *session )
+  : decoding_cache( coded_packet, session ),
     seq( decoding_cache.seq ),
     direction( decoding_cache.direction ),
     payload( decoding_cache.payload_string )
@@ -38,14 +33,11 @@ Flow<Payload>::Packet::Packet( string coded_packet )
 }
 
 template <class Payload>
-string Flow<Payload>::Packet::tostring( void )
+string Flow<Payload>::Packet::tostring( Session *session )
 {
   uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & 0x7FFFFFFFFFFFFFFF);
-  uint64_t network_order_seq = htobe64( direction_seq );
-  const char *seq_str = (const char *)&network_order_seq;
-  string seq_string( seq_str, 8 ); /* necessary in case there is a zero byte */
 
-  return seq_string + payload.tostring();
+  return session->encrypt( Message( direction_seq, payload.tostring() ) );
 }
 
 template <class Payload>
@@ -55,15 +47,8 @@ typename Flow<Payload>::Packet Flow<Payload>::new_packet( Payload &s_payload )
 }
 
 template <class Outgoing, class Incoming>
-Connection<Outgoing, Incoming>::Connection( bool s_server )
-  : flow( s_server ? TO_CLIENT : TO_SERVER ),
-    sock( -1 ),
-    remote_addr(),
-    server( s_server ),
-    attached( false ),
-    MTU( RECEIVE_MTU )
+void Connection<Outgoing, Incoming>::setup( void )
 {
-
   /* create socket */
   sock = socket( AF_INET, SOCK_DGRAM, 0 );
   if ( sock < 0 ) {
@@ -88,7 +73,50 @@ Connection<Outgoing, Incoming>::Connection( bool s_server )
   if ( setsockopt( sock, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
     perror( "setsockopt" );
     exit( 1 );
+  }  
+}
+
+template <class Outgoing, class Incoming>
+Connection<Outgoing, Incoming>::Connection() /* server */
+  : sock( -1 ),
+    remote_addr(),
+    server( true ),
+    attached( false ),
+    MTU( RECEIVE_MTU ),
+    key(),
+    session( key ),
+    flow( TO_CLIENT, &session )
+{
+  setup();
+}
+
+template <class Outgoing, class Incoming>
+Connection<Outgoing, Incoming>::Connection( const char *key_str, const char *ip, int port ) /* client */
+  : sock( -1 ),
+    remote_addr(),
+    server( false ),
+    attached( false ),
+    MTU( RECEIVE_MTU ),
+    key( key_str ),
+    session( key ),
+    flow( TO_SERVER, &session )
+{
+  setup();
+
+  /* associate socket with remote host and port */
+  remote_addr.sin_family = AF_INET;
+  remote_addr.sin_port = htons( port );
+  if ( !inet_aton( ip, &remote_addr.sin_addr ) ) {
+    fprintf( stderr, "Bad IP address %s\n", ip );
+    exit( 1 );
   }
+
+  if ( connect( sock, (sockaddr *)&remote_addr, sizeof( remote_addr ) ) < 0 ) {
+    perror( "connect" );
+    exit( 1 );
+  }
+
+  attached = true;
 }
 
 template <class Outgoing, class Incoming>
@@ -109,32 +137,11 @@ void Connection<Outgoing, Incoming>::update_MTU( void )
 }
 
 template <class Outgoing, class Incoming>
-void Connection<Outgoing, Incoming>::client_connect( const char *ip, int port )
-{
-  assert( !server );
-
-  /* associate socket with remote host and port */
-  remote_addr.sin_family = AF_INET;
-  remote_addr.sin_port = htons( port );
-  if ( !inet_aton( ip, &remote_addr.sin_addr ) ) {
-    fprintf( stderr, "Bad IP address %s\n", ip );
-    exit( 1 );
-  }
-
-  if ( connect( sock, (sockaddr *)&remote_addr, sizeof( remote_addr ) ) < 0 ) {
-    perror( "connect" );
-    exit( 1 );
-  }
-
-  attached = true;
-}
-
-template <class Outgoing, class Incoming>
 bool Connection<Outgoing, Incoming>::send( Outgoing &s )
 {
   assert( attached );
 
-  string p = flow.new_packet( s ).tostring();
+  string p = flow.new_packet( s ).tostring( &session );
 
   ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
@@ -173,7 +180,7 @@ Incoming Connection<Outgoing, Incoming>::recv( void )
     exit( 1 );
   }
 
-  typename Flow<Incoming>::Packet p( string( buf, received_len ) );
+  typename Flow<Incoming>::Packet p( string( buf, received_len ), &session );
   dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
 
   /* server auto-adjusts to client */

@@ -4,26 +4,30 @@
 int main( int argc, char *argv[] )
 {
   bool server = true;
+  char *key;
   char *ip;
   int port;
 
+  Network::Connection<KeyStroke, KeyStroke> *n;
+
   if ( argc > 1 ) {
     server = false;
+    /* client */
 
-    ip = argv[ 1 ];
-    port = atoi( argv[ 2 ] );
+    key = argv[ 1 ];
+    ip = argv[ 2 ];
+    port = atoi( argv[ 3 ] );
+
+    n = new Network::Connection<KeyStroke, KeyStroke>( key, ip, port );
+  } else {
+    n = new Network::Connection<KeyStroke, KeyStroke>();
   }
 
-  Network::Connection<KeyStroke, KeyStroke> n( server );
-  fprintf( stderr, "Port bound is %d\n", n.port() );
-
-  if ( !server ) {
-    n.client_connect( ip, port );
-  }
+  fprintf( stderr, "Port bound is %d, key is %s\n", n->port(), n->get_key().c_str() );
 
   if ( server ) {
     while ( true ) {
-      KeyStroke s = n.recv();
+      KeyStroke s = n->recv();
 
       fprintf( stderr, "Got KeyStroke: %c\n", s.letter );
     }
@@ -33,7 +37,7 @@ int main( int argc, char *argv[] )
 
       KeyStroke t( string( "x", 1 ) );
 
-      n.send( t );
+      n->send( t );
     }
   }
 }
