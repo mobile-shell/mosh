@@ -10,57 +10,42 @@
 #include "crypto.hpp"
 
 using namespace std;
+using namespace Crypto;
 
 namespace Network {
+  class MTUException {
+  public:
+    int MTU;
+    MTUException( int s_MTU ) : MTU( s_MTU ) {};
+  };
+
+  class NetworkException {
+  public:
+    string function;
+    int the_errno;
+    NetworkException( string s_function, int s_errno ) : function( s_function ), the_errno( s_errno ) {}
+  };
+
   enum Direction {
     TO_SERVER = 0,
     TO_CLIENT = 1
   };
 
-  template <class Payload>
-  class Flow {
+  class Packet {
   public:
-    class Packet {
-    private:
-      class DecodingCache
-      {
-      public:
-	Direction direction;
-	uint64_t seq;
-	string payload_string;
-
-	DecodingCache( string coded_packet, Session *session );
-	DecodingCache() : direction( TO_CLIENT ), seq( -1 ), payload_string() {}
-      };
-
-      DecodingCache decoding_cache;
-
-    public:
-      uint64_t seq;
-      Direction direction;
-      Payload payload;
-      
-      Packet( uint64_t s_seq, Direction s_direction, Payload s_payload )
-	: decoding_cache(), seq( s_seq ), direction( s_direction ), payload( s_payload )
-      {}
-      
-      Packet( string coded_packet, Session *session );
-      
-      string tostring( Session *session );
-    };
-
-    uint64_t next_seq;
+    uint64_t seq;
     Direction direction;
-    Session *session;
-
-    Flow( Direction s_direction, Session *s_session )
-      : next_seq( 0 ), direction( s_direction ), session( s_session )
+    string payload;
+    
+    Packet( uint64_t s_seq, Direction s_direction, string s_payload )
+      : seq( s_seq ), direction( s_direction ), payload( s_payload )
     {}
-
-    Packet new_packet( Payload &s_payload );
+    
+    Packet( string coded_packet, Session *session );
+    
+    string tostring( Session *session );
   };
 
-  template <class Outgoing, class Incoming>
   class Connection {
   private:
     static const int RECEIVE_MTU = 2048;
@@ -76,18 +61,20 @@ namespace Network {
     Base64Key key;
     Session session;
 
-    Flow<Outgoing> flow;
-
     void update_MTU( void );
 
     void setup( void );
+
+    Direction direction;
+    uint64_t next_seq;
+    Packet new_packet( string &s_payload );
 
   public:
     Connection();
     Connection( const char *key_str, const char *ip, int port );
     
-    bool send( Outgoing &s );
-    Incoming recv( void );
+    void send( string &s );
+    string recv( void );
     int fd( void ) { return sock; }
     int port( void );
     int get_MTU( void ) { return MTU; }

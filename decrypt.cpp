@@ -8,6 +8,8 @@
 
 #include "crypto.hpp"
 
+using namespace Crypto;
+
 int main( int argc, char *argv[] )
 {
   if ( argc != 2 ) {

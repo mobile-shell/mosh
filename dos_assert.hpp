@@ -11,7 +11,7 @@ static void dos_detected( const char *expression, const char *file, int line, co
   char buffer[ 2048 ];
   snprintf( buffer, 2048, "Illegal counterparty input (possible denial of service) in function %s at %s:%d, failed test: %s\n",
 	    function, file, line, expression );
-  throw CryptoException( buffer );
+  throw Crypto::CryptoException( buffer );
 }
 
 #define dos_assert(expr)						\

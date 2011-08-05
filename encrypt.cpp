@@ -8,20 +8,7 @@
 
 #include "crypto.hpp"
 
-long int myatoi( char *str )
-{
-  char *end;
-
-  errno = 0;
-  long int ret = strtol( str, &end, 10 );
-
-  if ( ( errno != 0 )
-       || ( end != str + strlen( str ) ) ) {
-    throw CryptoException( "Bad integer." );
-  }
-
-  return ret;
-}
+using namespace Crypto;
 
 int main( int argc, char *argv[] )
 {

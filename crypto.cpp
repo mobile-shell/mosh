@@ -5,8 +5,24 @@
 #include "base64.h"
 
 using namespace std;
+using namespace Crypto;
 
 const char rdev[] = "/dev/urandom";
+
+long int myatoi( char *str )
+{
+  char *end;
+
+  errno = 0;
+  long int ret = strtol( str, &end, 10 );
+
+  if ( ( errno != 0 )
+       || ( end != str + strlen( str ) ) ) {
+    throw CryptoException( "Bad integer." );
+  }
+
+  return ret;
+}
 
 static void * sse_alloc( int len )
 {
@@ -178,7 +194,7 @@ Message Session::decrypt( string ciphertext )
   int body_len = ciphertext.size() - 8;
   int pt_len = body_len - 16;
 
-  if ( pt_len <= 0 ) { /* super-assertion that does not equal AE_INVALID */
+  if ( pt_len < 0 ) { /* super-assertion that pt_len does not equal AE_INVALID */
     fprintf( stderr, "BUG.\n" );
     exit( 1 );
   }
@@ -200,7 +216,7 @@ Message Session::decrypt( string ciphertext )
 			     AE_FINALIZE ) ) {  /* final */
     free( plaintext );
     free( body );
-    throw CryptoException( "ae_decrypt() returned error." );
+    throw CryptoException( "Packet failed integrity check." );
   }
 
   Message ret( nonce, string( plaintext, pt_len ) );

@@ -11,7 +11,7 @@ int main( int argc, char *argv[] )
   char *ip;
   int port;
 
-  Network::Connection<KeyStroke, KeyStroke> *n;
+  Network::Connection *n;
 
   try {
     if ( argc > 1 ) {
@@ -22,9 +22,9 @@ int main( int argc, char *argv[] )
       ip = argv[ 2 ];
       port = atoi( argv[ 3 ] );
       
-      n = new Network::Connection<KeyStroke, KeyStroke>( key, ip, port );
+      n = new Network::Connection( key, ip, port );
     } else {
-      n = new Network::Connection<KeyStroke, KeyStroke>();
+      n = new Network::Connection();
     }
   } catch ( CryptoException e ) {
     fprintf( stderr, "Fatal error: %s\n", e.text.c_str() );
@@ -36,34 +36,47 @@ int main( int argc, char *argv[] )
   if ( server ) {
     while ( true ) {
       try {
-	KeyStroke s = n->recv();
-	printf( "%c", s.letter );
+	string s = n->recv();
+	printf( "%s", s.c_str() );
 	fflush( NULL );
       } catch ( CryptoException e ) {
-	fprintf( stderr, "Error: %s\n", e.text.c_str() );
+	fprintf( stderr, "Cryptographic error: %s\n", e.text.c_str() );
       }
     }
   } else {
-      struct termios the_termios;
+    struct termios saved_termios;
+    struct termios the_termios;
 
-      if ( tcgetattr( STDIN_FILENO, &the_termios ) < 0 ) {
-	perror( "tcgetattr" );
-	exit( 1 );
-      }
+    if ( tcgetattr( STDIN_FILENO, &the_termios ) < 0 ) {
+      perror( "tcgetattr" );
+      exit( 1 );
+    }
 
-      cfmakeraw( &the_termios );
+    saved_termios = the_termios;
 
-      if ( tcsetattr( STDIN_FILENO, TCSANOW, &the_termios ) < 0 ) {
-	perror( "tcsetattr" );
-	exit( 1 );
-      }
+    cfmakeraw( &the_termios );
+
+    if ( tcsetattr( STDIN_FILENO, TCSANOW, &the_termios ) < 0 ) {
+      perror( "tcsetattr" );
+      exit( 1 );
+    }
 
     while( true ) {
       char x = getchar();
-
-      KeyStroke t( string( &x, 1 ) );
-
-      n->send( t );
+      
+      string prefix = "Key(" + string( &x, 1 ) + ")";
+      
+      try {
+	n->send( prefix );
+      } catch ( Network::NetworkException e ) {
+	fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
+	break;
+      }
     }
+
+    if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
+      perror( "tcsetattr" );
+      exit( 1 );
+    }    
   }
 }
