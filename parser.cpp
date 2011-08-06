@@ -40,8 +40,8 @@ Parser::UTF8Parser::UTF8Parser()
   : parser(), buf_len( 0 )
 {
   if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
-    fprintf( stderr, "rtm requires a UTF-8 locale.\n" );
-    throw std::string( "rtm requires a UTF-8 locale." );
+    fprintf( stderr, "stm requires a UTF-8 locale.\n" );
+    throw std::string( "stm requires a UTF-8 locale." );
   }
 
   assert( BUF_SIZE >= MB_CUR_MAX );

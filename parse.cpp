@@ -36,7 +36,7 @@ int main( int argc __attribute__((unused)),
   }
 
   if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
-    fprintf( stderr, "rtm requires a UTF-8 locale.\n" );
+    fprintf( stderr, "stm requires a UTF-8 locale.\n" );
     exit( 1 );
   }
 

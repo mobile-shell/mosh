@@ -44,7 +44,7 @@ int main( void )
   }
 
   if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
-    fprintf( stderr, "rtm requires a UTF-8 locale.\n" );
+    fprintf( stderr, "stm requires a UTF-8 locale.\n" );
     exit( 1 );
   }
 
@@ -116,7 +116,7 @@ int main( void )
     }
   }
 
-  printf( "[rtm is exiting.]\n" );
+  printf( "[stm is exiting.]\n" );
 
   return 0;
 }

@@ -7,7 +7,7 @@ std::string UserInput::input( Parser::UserByte *act,
 {
   char translated_str[ 2 ] = { act->c, 0 };
 
-  /* The user will always be in application mode. If rtm is not in
+  /* The user will always be in application mode. If stm is not in
      application mode, convert user's cursor control function to an
      ANSI cursor control sequence */
 

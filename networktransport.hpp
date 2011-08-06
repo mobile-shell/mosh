@@ -10,9 +10,14 @@ namespace Network {
   class Transport
   {
   private:
-    Connection<typename MyState::Conveyance, typename RemoteState::Conveyance> connection;
+    Connection connection;
 
-    uint64_t last_acknowledged_state;
+    typedef dense_hash_map< uint64_t, MyState > StateMapper;
+
+    dense_hash_map< uint64_t, MyState > sent;
+    dense_hash_map< uint64_t, RemoteState > received;
+
+    uint64_t known_receiver_state;
     uint64_t assumed_receiver_state;
     uint64_t last_sent_state;
 

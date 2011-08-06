@@ -16,7 +16,7 @@ std::string Display::new_frame( Framebuffer &f )
   if ( (!initialized)
        || (f.get_window_title() != last_frame.get_window_title()) ) {
       /* set window title */
-    frame.append( "\033]0;[rtm] " );
+    frame.append( "\033]0;[stm] " );
     std::vector<wchar_t> window_title = f.get_window_title();
     for ( std::vector<wchar_t>::iterator i = window_title.begin();
 	  i != window_title.end();
