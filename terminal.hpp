@@ -24,6 +24,7 @@ namespace Terminal {
     friend void Parser::OSC_Start::act_on_terminal( Emulator * );
     friend void Parser::OSC_Put::act_on_terminal( Emulator * );
     friend void Parser::OSC_End::act_on_terminal( Emulator * );
+
     friend void Parser::UserByte::act_on_terminal( Emulator * );
     friend void Parser::Resize::act_on_terminal( Emulator * );
 

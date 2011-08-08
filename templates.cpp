@@ -6,6 +6,9 @@
 
 #include "terminal.hpp"
 
+#include "keystroke.hpp"
+#include "networktransport.cpp"
+
 namespace Parser {
   class Action;
 }
@@ -22,3 +25,4 @@ template class vector<int>;
 template class map<string, Function>;
 template class vector<bool>;
 
+template class Network::Transport<KeyStroke, KeyStroke>;

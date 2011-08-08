@@ -1,32 +1,84 @@
 #ifndef NETWORK_TRANSPORT_HPP
 #define NETWORK_TRANSPORT_HPP
 
-#include <google/dense_hash_map>
+#include <string>
+#include <signal.h>
+#include <time.h>
+#include <list>
 
-using google::dense_hash_map;
+#include "network.hpp"
+
+using namespace std;
 
 namespace Network {
+  class Instruction
+  {
+  public:
+    uint64_t old_num, new_num;
+    string diff;
+
+    uint64_t ack_num;
+
+    Instruction( uint64_t s_old_num, uint64_t s_new_num, string s_diff, uint64_t s_ack_num )
+      : old_num( s_old_num ), new_num( s_new_num ), diff( s_diff ), ack_num( s_ack_num )
+    {}
+
+    string tostring( void ) { return ""; }
+  };
+
+  template <class State>
+  class TimestampedState
+  {
+  public:
+    uint64_t timestamp;
+    uint64_t num;
+    State state;
+
+    TimestampedState( uint64_t s_timestamp, uint64_t s_num, State &s_state )
+      : timestamp( s_timestamp ), num( s_num ), state( s_state )
+    {}
+  };
+
   template <class MyState, class RemoteState>
   class Transport
   {
   private:
+    static const int INITIAL_TIMEOUT = 1000; /* ms, same as TCP */
+    static const int SEND_INTERVAL = 20; /* ms between frames */
+    static const int HEADER_LEN = 40;
+
+    /* helper methods for tick() */
+    void update_assumed_receiver_state( void );
+    void rationalize_states( void );
+    void send_to_receiver( void );
+
     Connection connection;
+    bool server;
 
-    typedef dense_hash_map< uint64_t, MyState > StateMapper;
+    uint64_t timestamp( void );
 
-    dense_hash_map< uint64_t, MyState > sent;
-    dense_hash_map< uint64_t, RemoteState > received;
+    /* sender */
+    MyState current_state;
 
-    uint64_t known_receiver_state;
-    uint64_t assumed_receiver_state;
-    uint64_t last_sent_state;
+    list< TimestampedState<MyState> > sent_states;
+    /* first element: known, acknowledged receiver state */
+    /* last element: last sent state */
+    /* somewhere in the middle: the assumed state of the receiver */
+
+    typename list< TimestampedState<MyState> >::iterator assumed_receiver_state;
+
+    int timeout;
+
+    /* simple receiver */
+    uint64_t highest_state_received;
 
   public:
-    Transport();
-    Transport( const char *key_str, const char *ip, int port );
+    Transport( MyState &initial_state );
+    Transport( MyState &initial_state, const char *key_str, const char *ip, int port );
 
-    
+    void new_state( MyState &s );
+    void tick( void );
   };
-};
+}
 
 #endif

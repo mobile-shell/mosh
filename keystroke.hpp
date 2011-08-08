@@ -4,27 +4,15 @@
 #include <string>
 #include <assert.h>
 
+using namespace std;
+
 class KeyStroke
 {
 public:
-  char letter;
-
-  string tostring( void )
-  {
-    return string( &letter, 1 );
-  };
-
-  KeyStroke( const string x )
-    : letter()
-  {
-    assert( x.size() == 1 );
-
-    letter = x[ 0 ];
-  }
-
-  KeyStroke()
-    : letter( 0 )
-  {}
+  void subtract( KeyStroke * const ) {}
+  string diff_from( KeyStroke const &, int ) { return ""; }
+  void apply_string( string ) {}
+  bool operator==( KeyStroke const & ) const { return true; }
 };
 
 #endif
