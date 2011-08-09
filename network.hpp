@@ -76,8 +76,9 @@ namespace Network {
     void send( string &s );
     string recv( void );
     int fd( void ) { return sock; }
-    int port( void );
     int get_MTU( void ) { return MTU; }
+
+    int port( void );
     string get_key( void ) { return key.printable_key(); }
   };
 }

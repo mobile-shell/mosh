@@ -24,5 +24,6 @@ template class vector<wchar_t>;
 template class vector<int>;
 template class map<string, Function>;
 template class vector<bool>;
+template class deque<char>;
 
 template class Network::Transport<KeyStroke, KeyStroke>;

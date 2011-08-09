@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <iostream>
 
 #include "networktransport.hpp"
 
@@ -48,18 +49,14 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state,
 }
 
 template <class MyState, class RemoteState>
-void Transport<MyState, RemoteState>::new_state( MyState &s )
-{
-  current_state = s;
-
-  tick();
-}
-
-template <class MyState, class RemoteState>
 void Transport<MyState, RemoteState>::tick( void )
 {
   /* Update assumed receiver state */
   update_assumed_receiver_state();
+
+  fprintf( stderr, "Assumed receiver state: %d/%d\r\n",
+	   int(assumed_receiver_state->num),
+	   int(sent_states.back().num) );
 
   /* Cut out common prefix of all states */
   rationalize_states();
@@ -74,20 +71,6 @@ void Transport<MyState, RemoteState>::tick( void )
 template <class MyState, class RemoteState>
 void Transport<MyState, RemoteState>::send_to_receiver( void )
 {
-  if ( assumed_receiver_state->state == sent_states.back().state ) {
-    /* send empty ack */
-    Instruction inst( assumed_receiver_state->num,
-		      assumed_receiver_state->num,
-		      "",
-		      highest_state_received );
-    string s = inst.tostring();
-    connection.send( s );
-    sent_states.back().timestamp = timestamp();
-    return;
-  }
-
-  /* Otherwise, send sequence of diffs between assumed receiver state and current state */
-
   /* We don't want to assume that this sequence of diffs will
      necessarily bring the receiver to the _actual_ current
      state. That requires perfect round-trip stability of the diff
@@ -101,11 +84,31 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
   MyState target_receiver_state( assumed_receiver_state->state );
   target_receiver_state.apply_string( current_state.diff_from( target_receiver_state, -1 ) );
 
+  if ( assumed_receiver_state->state == target_receiver_state ) {
+    /* send empty ack */
+    Instruction inst( assumed_receiver_state->num,
+		      assumed_receiver_state->num,
+		      highest_state_received,
+		      "" );
+    string s = inst.tostring();
+    connection.send( s );
+    assumed_receiver_state->timestamp = timestamp();
+
+    fprintf( stderr, "Empty ack.\r\n" );
+
+    return;
+  }
+
+  int tries = 0;
   while ( !(assumed_receiver_state->state == target_receiver_state) ) {
-    Instruction inst( assumed_receiver_state->num, -1,
+    if ( tries++ > 1024 ) {
+      fprintf( stderr, "BUG: Convergence limit exceeded.\n" );
+      exit( 1 );
+    }
+
+    Instruction inst( assumed_receiver_state->num, -1, highest_state_received,
 		      current_state.diff_from( assumed_receiver_state->state,
-					       connection.get_MTU() - HEADER_LEN ),
-		      highest_state_received );
+					       connection.get_MTU() - HEADER_LEN ) );
     MyState new_state = assumed_receiver_state->state;
     new_state.apply_string( inst.diff );
 
@@ -133,6 +136,11 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
     string s = inst.tostring();
 
     try {
+      fprintf( stderr, "Sending: " );
+      for ( size_t i = 0; i < s.size(); i++ ) {
+	fprintf( stderr, "%c", s[ i ] );
+      }
+      fprintf( stderr, "\r\n" );
       connection.send( s );
     } catch ( MTUException m ) {
       continue;
@@ -174,4 +182,6 @@ void Transport<MyState, RemoteState>::rationalize_states( void )
 	i++ ) {
     i->state.subtract( known_receiver_state );
   }
+
+  current_state.subtract( known_receiver_state );
 }

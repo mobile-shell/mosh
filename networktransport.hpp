@@ -15,15 +15,15 @@ namespace Network {
   {
   public:
     uint64_t old_num, new_num;
-    string diff;
-
     uint64_t ack_num;
 
-    Instruction( uint64_t s_old_num, uint64_t s_new_num, string s_diff, uint64_t s_ack_num )
-      : old_num( s_old_num ), new_num( s_new_num ), diff( s_diff ), ack_num( s_ack_num )
+    string diff;
+
+    Instruction( uint64_t s_old_num, uint64_t s_new_num, uint64_t s_ack_num, string s_diff )
+      : old_num( s_old_num ), new_num( s_new_num ), ack_num( s_ack_num ), diff( s_diff )
     {}
 
-    string tostring( void ) { return ""; }
+    string tostring( void );
   };
 
   template <class State>
@@ -76,8 +76,12 @@ namespace Network {
     Transport( MyState &initial_state );
     Transport( MyState &initial_state, const char *key_str, const char *ip, int port );
 
-    void new_state( MyState &s );
     void tick( void );
+
+    int port( void ) { return connection.port(); }
+    string get_key( void ) { return connection.get_key(); }
+
+    MyState &get_current_state( void ) { return current_state; }
   };
 }
 

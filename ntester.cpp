@@ -1,8 +1,8 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include "network.hpp"
 #include "keystroke.hpp"
+#include "networktransport.hpp"
 
 int main( int argc, char *argv[] )
 {
@@ -11,7 +11,9 @@ int main( int argc, char *argv[] )
   char *ip;
   int port;
 
-  Network::Connection *n;
+  KeyStroke user;
+
+  Network::Transport<KeyStroke, KeyStroke> *n;
 
   try {
     if ( argc > 1 ) {
@@ -22,9 +24,9 @@ int main( int argc, char *argv[] )
       ip = argv[ 2 ];
       port = atoi( argv[ 3 ] );
       
-      n = new Network::Connection( key, ip, port );
+      n = new Network::Transport<KeyStroke, KeyStroke>( user, key, ip, port );
     } else {
-      n = new Network::Connection();
+      n = new Network::Transport<KeyStroke, KeyStroke>( user );
     }
   } catch ( CryptoException e ) {
     fprintf( stderr, "Fatal error: %s\n", e.text.c_str() );
@@ -34,6 +36,7 @@ int main( int argc, char *argv[] )
   fprintf( stderr, "Port bound is %d, key is %s\n", n->port(), n->get_key().c_str() );
 
   if ( server ) {
+    /*
     while ( true ) {
       try {
 	string s = n->recv();
@@ -43,6 +46,8 @@ int main( int argc, char *argv[] )
 	fprintf( stderr, "Cryptographic error: %s\n", e.text.c_str() );
       }
     }
+    */
+    sleep( 6000 );
   } else {
     struct termios saved_termios;
     struct termios the_termios;
@@ -64,10 +69,10 @@ int main( int argc, char *argv[] )
     while( true ) {
       char x = getchar();
       
-      string prefix = "Key(" + string( &x, 1 ) + ")";
+      n->get_current_state().key_hit( x );
       
       try {
-	n->send( prefix );
+	n->tick();
       } catch ( Network::NetworkException e ) {
 	fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
 	break;

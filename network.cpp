@@ -30,7 +30,7 @@ string Packet::tostring( Session *session )
 {
   uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & 0x7FFFFFFFFFFFFFFF);
 
-  return session->encrypt( Message( direction_seq, payload ) );
+  return session->encrypt( Message( Nonce( direction_seq ), payload ) );
 }
 
 Packet Connection::new_packet( string &s_payload )
