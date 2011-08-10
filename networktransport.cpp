@@ -293,7 +293,7 @@ string Transport<MyState, RemoteState>::get_remote_diff( void )
 {
   /* find diff between last receiver state and current remote state, then rationalize states */
 
-  string ret( received_states.back().state.diff_from( last_receiver_state, 1 ) );
+  string ret( received_states.back().state.diff_from( last_receiver_state, -1 ) );
 
   MyState * const oldest_receiver_state = &received_states.front().state;
 
