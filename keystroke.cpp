@@ -21,6 +21,7 @@ string KeyStroke::diff_from( KeyStroke const & existing, int length_limit )
   for ( deque<char>::const_iterator i = existing.user_bytes.begin();
 	i != existing.user_bytes.end();
 	i++ ) {
+    assert( my_it != user_bytes.end() );
     assert( *i == *my_it );
     my_it++;
   }

@@ -20,8 +20,9 @@ Packet::Packet( string coded_packet, Session *session )
 {
   Message message = session->decrypt( coded_packet );
 
-  direction = (message.nonce.val() & 8000000000000000) ? TO_CLIENT : TO_SERVER;
+  direction = (message.nonce.val() & 0x8000000000000000) ? TO_CLIENT : TO_SERVER;
   seq = message.nonce.val() & 0x7FFFFFFFFFFFFFFF;
+
   payload = message.text;
 }
 
@@ -128,6 +129,11 @@ void Connection::send( string &s )
 
   string p = new_packet( s ).tostring( &session );
 
+  /* XXX synthetic packet loss */
+  if ( rand() < RAND_MAX / 2 ) {
+    return;
+  }
+
   ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
 
@@ -163,6 +169,7 @@ string Connection::recv( void )
   }
 
   Packet p( string( buf, received_len ), &session );
+
   dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
 
   /* server auto-adjusts to client */

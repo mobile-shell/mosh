@@ -16,12 +16,17 @@ namespace Network {
   public:
     uint64_t old_num, new_num;
     uint64_t ack_num;
+    uint64_t throwaway_num;
 
     string diff;
 
-    Instruction( uint64_t s_old_num, uint64_t s_new_num, uint64_t s_ack_num, string s_diff )
-      : old_num( s_old_num ), new_num( s_new_num ), ack_num( s_ack_num ), diff( s_diff )
+    Instruction( uint64_t s_old_num, uint64_t s_new_num,
+		 uint64_t s_ack_num, uint64_t s_throwaway_num, string s_diff )
+      : old_num( s_old_num ), new_num( s_new_num ),
+	ack_num( s_ack_num ), throwaway_num( s_throwaway_num ), diff( s_diff )
     {}
+
+    Instruction( string &x );
 
     string tostring( void );
   };
@@ -45,12 +50,16 @@ namespace Network {
   private:
     static const int INITIAL_TIMEOUT = 1000; /* ms, same as TCP */
     static const int SEND_INTERVAL = 20; /* ms between frames */
-    static const int HEADER_LEN = 40;
+    static const int HEADER_LEN = 80;
 
     /* helper methods for tick() */
     void update_assumed_receiver_state( void );
     void rationalize_states( void );
     void send_to_receiver( void );
+
+    /* helper methods for recv() */
+    void process_acknowledgment_through( uint64_t ack_num );
+    void process_throwaway_until( uint64_t throwaway_num );
 
     Connection connection;
     bool server;
@@ -70,18 +79,25 @@ namespace Network {
     int timeout;
 
     /* simple receiver */
-    uint64_t highest_state_received;
+    list< TimestampedState<RemoteState> > received_states;
 
   public:
-    Transport( MyState &initial_state );
-    Transport( MyState &initial_state, const char *key_str, const char *ip, int port );
+    Transport( MyState &initial_state, RemoteState &initial_remote );
+    Transport( MyState &initial_state, RemoteState &initial_remote,
+	       const char *key_str, const char *ip, int port );
 
     void tick( void );
+
+    void recv( void );
 
     int port( void ) { return connection.port(); }
     string get_key( void ) { return connection.get_key(); }
 
     MyState &get_current_state( void ) { return current_state; }
+    RemoteState &get_remote_state( void ) { return received_states.back().state; }
+    uint64_t get_remote_state_num( void ) { return received_states.back().num; }
+
+    int fd( void ) { return connection.fd(); }
   };
 }
 
