@@ -89,7 +89,7 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
 		      sent_states.front().num,
 		      "" );
     string s = inst.tostring();
-    connection.send( s );
+    connection.send( s, false );
     assumed_receiver_state->timestamp = timestamp();
 
     return;

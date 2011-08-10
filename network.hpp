@@ -85,7 +85,7 @@ namespace Network {
     Connection();
     Connection( const char *key_str, const char *ip, int port );
     
-    void send( string &s );
+    void send( string &s, bool send_timestamp = true );
     string recv( void );
     int fd( void ) { return sock; }
     int get_MTU( void ) { return MTU; }

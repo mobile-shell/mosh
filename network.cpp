@@ -148,11 +148,17 @@ void Connection::update_MTU( void )
   fprintf( stderr, "Path MTU: %d\n", MTU );  
 }
 
-void Connection::send( string &s )
+void Connection::send( string &s, bool send_timestamp )
 {
   assert( attached );
 
-  string p = new_packet( s ).tostring( &session );
+  Packet px = new_packet( s );
+
+  if ( !send_timestamp ) {
+    px.timestamp = -1;
+  }
+
+  string p = px.tostring( &session );
 
   /* XXX synthetic packet loss */
   if ( rand() < RAND_MAX / 2 ) {
@@ -258,7 +264,7 @@ uint64_t Network::timestamp( void )
   }
 
   uint64_t millis = tp.tv_nsec / 1000000;
-  millis += uint64_t( tp.tv_sec ) * 1000000;
+  millis += uint64_t( tp.tv_sec ) * 1000;
 
   return millis;
 }
