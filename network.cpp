@@ -161,9 +161,11 @@ void Connection::send( string &s, bool send_timestamp )
   string p = px.tostring( &session );
 
   /* XXX synthetic packet loss */
+  /*
   if ( rand() < RAND_MAX / 2 ) {
     return;
   }
+  */
 
   ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
@@ -209,8 +211,6 @@ string Connection::recv( void )
     uint64_t now = timestamp();
     assert( now >= p.timestamp_reply );
     const double R = now - p.timestamp_reply;
-
-    fprintf( stderr, "Saw delay of %f\r\n", R );
 
     if ( !RTT_hit ) { /* first measurement */
       SRTT = R;
