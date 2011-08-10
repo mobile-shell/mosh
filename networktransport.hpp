@@ -50,7 +50,8 @@ namespace Network {
   private:
     static const int INITIAL_TIMEOUT = 1000; /* ms, same as TCP */
     static const int SEND_INTERVAL = 20; /* ms between frames */
-    static const int HEADER_LEN = 80;
+    static const int ACK_INTERVAL = 1000; /* ms between empty acks */
+    static const int HEADER_LEN = 100;
 
     /* helper methods for tick() */
     void update_assumed_receiver_state( void );

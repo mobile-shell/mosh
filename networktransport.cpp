@@ -77,11 +77,19 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
      sequence of diffs (this time limited by MTU) that bring us to
      that state. */
 
+  if ( !connection.get_attached() ) {
+    return;
+  }
+
   MyState target_receiver_state( assumed_receiver_state->state );
   target_receiver_state.apply_string( current_state.diff_from( target_receiver_state, -1 ) );
 
   if ( assumed_receiver_state->state == target_receiver_state ) {
     /* send empty ack */
+    if ( timestamp() - sent_states.back().timestamp < int64_t( ACK_INTERVAL ) ) {
+      return;
+    }
+
     Instruction inst( assumed_receiver_state->num,
 		      assumed_receiver_state->num,
 		      received_states.back().num,
@@ -221,7 +229,7 @@ void Transport<MyState, RemoteState>::recv( void )
   }
 
   if ( !found ) {
-    fprintf( stderr, "Ignoring out-of-order packet. Reference state %d has been discarded.\n", int(inst.old_num) );
+    //    fprintf( stderr, "Ignoring out-of-order packet. Reference state %d has been discarded or hasn't yet been received.\n", int(inst.old_num) );
     return;
   }
 

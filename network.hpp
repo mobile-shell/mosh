@@ -80,6 +80,7 @@ namespace Network {
 
     int port( void );
     string get_key( void ) { return key.printable_key(); }
+    bool get_attached( void ) { return attached; }
   };
 }
 

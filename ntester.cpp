@@ -52,16 +52,32 @@ int main( int argc, char *argv[] )
   fprintf( stderr, "Port bound is %d, key is %s\n", n->port(), n->get_key().c_str() );
 
   if ( server ) {
+    struct pollfd my_pollfd;
+    my_pollfd.fd = n->fd();
+    my_pollfd.events = POLLIN;
+    uint64_t last_num = n->get_remote_state_num();
     while ( true ) {
       try {
-	n->recv();
 	n->tick();
-	fprintf( stderr, "Num: %d. Contents: ",
-		 (int)n->get_remote_state_num() );
-	for ( size_t i = 0; i < n->get_remote_state().user_bytes.size(); i++ ) {
-	  fprintf( stderr, "%c", n->get_remote_state().user_bytes[ i ] );
+
+	if ( poll( &my_pollfd, 1, 10 ) < 0 ) {
+	  perror( "poll" );
+	  exit( 1 );
 	}
-	fprintf( stderr, "\n" );
+	
+	if ( my_pollfd.revents & POLLIN ) {
+	  n->recv();
+
+	  if ( n->get_remote_state_num() != last_num ) {
+	    fprintf( stderr, "Num: %d. Contents: ",
+		     (int)n->get_remote_state_num() );
+	    for ( size_t i = 0; i < n->get_remote_state().user_bytes.size(); i++ ) {
+	      fprintf( stderr, "%c", n->get_remote_state().user_bytes[ i ] );
+	    }
+	    fprintf( stderr, "\n" );
+	    last_num = n->get_remote_state_num();
+	  }
+	}
       } catch ( CryptoException e ) {
 	fprintf( stderr, "Cryptographic error: %s\n", e.text.c_str() );
       }
@@ -84,16 +100,29 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
+    struct pollfd fds[ 2 ];
+    fds[ 0 ].fd = STDIN_FILENO;
+    fds[ 0 ].events = POLLIN;
+
+    fds[ 1 ].fd = n->fd();
+    fds[ 1 ].events = POLLIN;
+
     while( true ) {
-      char x = getchar();
-      
-      n->get_current_state().key_hit( x );
-      
       try {
-	if ( readable( n->fd() ) ) {
+	n->tick();
+
+	if ( poll( fds, 2, 10 ) < 0 ) {
+	  perror( "poll" );
+	}
+
+	if ( fds[ 0 ].revents & POLLIN ) {
+	  char x = getchar();
+	  n->get_current_state().key_hit( x );
+	}
+
+	if ( fds[ 1 ].revents & POLLIN ) {
 	  n->recv();
 	}
-	n->tick();
       } catch ( Network::NetworkException e ) {
 	fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
 	break;
