@@ -208,7 +208,11 @@ string Connection::recv( void )
   if ( p.timestamp_reply != uint64_t(-1) ) {
     uint64_t now = timestamp();
     assert( now >= p.timestamp_reply );
-    const double R = now - p.timestamp_reply;
+    double R = now - p.timestamp_reply;
+
+    if ( R > 5000 ) { /* cap large values, e.g. server was Ctrl-Zed */
+      R = 5000;
+    }
 
     if ( !RTT_hit ) { /* first measurement */
       SRTT = R;
