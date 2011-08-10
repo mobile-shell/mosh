@@ -48,6 +48,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
   /* client */
 }
 
+/* Returns the number of ms to wait until next (possible) event */
 template <class MyState, class RemoteState>
 int Transport<MyState, RemoteState>::tick( void )
 {
@@ -61,9 +62,14 @@ int Transport<MyState, RemoteState>::tick( void )
 
     /* Send diffs or ack */
     send_to_receiver();
-  }
 
-  int64_t wait = int64_t( sent_states.back().timestamp + SEND_INTERVAL ) - timestamp();
+    return SEND_INTERVAL;
+  } 
+
+  int64_t wait = sent_states.back().timestamp + SEND_INTERVAL - timestamp();
+  if ( wait < 0 ) {
+    wait = 0;
+  }
   return wait;
 }
 
