@@ -48,9 +48,9 @@ namespace Network {
   class Transport
   {
   private:
-    static const int SEND_INTERVAL = 20; /* ms between frames */
+    static const int SEND_INTERVAL = 50; /* ms between frames */
     static const int ACK_INTERVAL = 1000; /* ms between empty acks */
-    static const int HEADER_LEN = 100;
+    static const int HEADER_LEN = 120;
 
     /* helper methods for tick() */
     void update_assumed_receiver_state( void );

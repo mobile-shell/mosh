@@ -210,20 +210,18 @@ string Connection::recv( void )
     assert( now >= p.timestamp_reply );
     double R = now - p.timestamp_reply;
 
-    if ( R > 5000 ) { /* cap large values, e.g. server was Ctrl-Zed */
-      R = 5000;
-    }
+    if ( R < 5000 ) { /* ignore large values, e.g. server was Ctrl-Zed */
+      if ( !RTT_hit ) { /* first measurement */
+	SRTT = R;
+	RTTVAR = R / 2;
+	RTT_hit = true;
+      } else {
+	const double alpha = 1.0 / 8.0;
+	const double beta = 1.0 / 4.0;
 
-    if ( !RTT_hit ) { /* first measurement */
-      SRTT = R;
-      RTTVAR = R / 2;
-      RTT_hit = true;
-    } else {
-      const double alpha = 1.0 / 8.0;
-      const double beta = 1.0 / 4.0;
-
-      RTTVAR = (1 - beta) * RTTVAR + ( beta * fabs( SRTT - R ) );
-      SRTT = (1 - alpha) * SRTT + ( alpha * R );
+	RTTVAR = (1 - beta) * RTTVAR + ( beta * fabs( SRTT - R ) );
+	SRTT = (1 - alpha) * SRTT + ( alpha * R );
+      }
     }
   }
 
