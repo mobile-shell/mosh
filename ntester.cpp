@@ -52,7 +52,7 @@ int main( int argc, char *argv[] )
 	  n->recv();
 
 	  if ( n->get_remote_state_num() != last_num ) {
-	    fprintf( stderr, "%s\n", n->get_remote_diff().c_str() );
+	    fprintf( stderr, "%s", n->get_remote_diff().c_str() );
 	    last_num = n->get_remote_state_num();
 	  }
 	}

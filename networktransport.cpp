@@ -295,17 +295,15 @@ string Transport<MyState, RemoteState>::get_remote_diff( void )
 
   string ret( received_states.back().state.diff_from( last_receiver_state, 1 ) );
 
-  last_receiver_state = received_states.back().state;
-
   MyState * const oldest_receiver_state = &received_states.front().state;
-
-  last_receiver_state.subtract( oldest_receiver_state );
 
   for ( typename list< TimestampedState<RemoteState> >::reverse_iterator i = received_states.rbegin();
 	i != received_states.rend();
 	i++ ) {
     i->state.subtract( oldest_receiver_state );
   }  
+
+  last_receiver_state = received_states.back().state;
 
   return ret;
 }
