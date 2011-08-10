@@ -52,12 +52,7 @@ int main( int argc, char *argv[] )
 	  n->recv();
 
 	  if ( n->get_remote_state_num() != last_num ) {
-	    fprintf( stderr, "Num: %d. Contents: ",
-		     (int)n->get_remote_state_num() );
-	    for ( size_t i = 0; i < n->get_remote_state().user_bytes.size(); i++ ) {
-	      fprintf( stderr, "%c", n->get_remote_state().user_bytes[ i ] );
-	    }
-	    fprintf( stderr, "\n" );
+	    fprintf( stderr, "%s\n", n->get_remote_diff().c_str() );
 	    last_num = n->get_remote_state_num();
 	  }
 	}

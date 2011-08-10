@@ -13,7 +13,8 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     current_state( initial_state ),
     sent_states( 1, TimestampedState<MyState>( timestamp(), 0, initial_state ) ),
     assumed_receiver_state( sent_states.begin() ),
-    received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) )
+    received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
+    last_receiver_state( initial_remote )
 {
   /* server */
 }
@@ -26,7 +27,8 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     current_state( initial_state ),
     sent_states( 1, TimestampedState<MyState>( timestamp(), 0, initial_state ) ),
     assumed_receiver_state( sent_states.begin() ),
-    received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) )
+    received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
+    last_receiver_state( initial_remote )
 {
   /* client */
 }
@@ -144,7 +146,6 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
     }
 
     /* send instruction */
-    /* XXX what about MTU problem? */
     string s = inst.tostring();
 
     try {
@@ -225,6 +226,10 @@ void Transport<MyState, RemoteState>::recv( void )
 
   if ( !found ) {
     //    fprintf( stderr, "Ignoring out-of-order packet. Reference state %d has been discarded or hasn't yet been received.\n", int(inst.old_num) );
+    /* There may be some benefit to storing these diffs until they can be used later,
+       but my guess is that the benefit is slim -- the diffs are likely to be small enough
+       that the entire diff will usually fit in one datagram, and by the time of retransmission
+       the target state will be different anyway. */
     return;
   }
 
@@ -281,4 +286,26 @@ void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwawa
   }
 
   assert( received_states.size() > 0 );
+}
+
+template <class MyState, class RemoteState>
+string Transport<MyState, RemoteState>::get_remote_diff( void )
+{
+  /* find diff between last receiver state and current remote state, then rationalize states */
+
+  string ret( received_states.back().state.diff_from( last_receiver_state, 1 ) );
+
+  last_receiver_state = received_states.back().state;
+
+  MyState * const oldest_receiver_state = &received_states.front().state;
+
+  last_receiver_state.subtract( oldest_receiver_state );
+
+  for ( typename list< TimestampedState<RemoteState> >::reverse_iterator i = received_states.rbegin();
+	i != received_states.rend();
+	i++ ) {
+    i->state.subtract( oldest_receiver_state );
+  }  
+
+  return ret;
 }
