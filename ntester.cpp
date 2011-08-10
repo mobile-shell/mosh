@@ -102,7 +102,7 @@ int main( int argc, char *argv[] )
 
 	if ( fds[ 0 ].revents & POLLIN ) {
 	  char x = getchar();
-	  for ( int i = 0; i < 4096; i++ ) {
+	  for ( int i = 0; i < 20; i++ ) {
 	    n->get_current_state().key_hit( x );
 	  }
 	}

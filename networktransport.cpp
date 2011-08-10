@@ -131,12 +131,10 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
     /* If this is the final diff in a sequence, make sure it does get the highest
        state number (even if we've retread to previously-seen ground ) */
     /* This will force the client to update to this state */
-    /*
     if ( (previously_sent->num != sent_states.back().num)
 	 && (new_state == target_receiver_state) ) {
       previously_sent = sent_states.end();
     }
-    */
 
     if ( previously_sent == sent_states.end() ) { /* not previously sent */
       inst.new_num = sent_states.back().num + 1;
@@ -153,7 +151,7 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
     string s = inst.tostring();
 
     try {
-      fprintf( stderr, "Sent instruction from %d => %d (terminal %d)\r\n", int(inst.old_num), int(inst.new_num), int(sent_states.back().num) );
+      fprintf( stderr, "Sent instruction from %d => %d (terminal %d): %s\r\n", int(inst.old_num), int(inst.new_num), int(sent_states.back().num), inst.diff.c_str() );
       connection.send( s );
     } catch ( MTUException m ) {
       continue;
