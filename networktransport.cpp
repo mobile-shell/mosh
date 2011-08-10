@@ -148,7 +148,7 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
     string s = inst.tostring();
 
     try {
-      fprintf( stderr, "Sent instruction (timeout %d) from %d => %d (terminal %d): %s\r\n", connection.timeout(), int(inst.old_num), int(inst.new_num), int(sent_states.back().num), inst.diff.c_str() );
+      fprintf( stderr, "Sent instruction (timeout %d, queues %d/%d) from %d => %d (terminal %d): %s\r\n", connection.timeout(), (int)sent_states.size(), (int)received_states.size(), int(inst.old_num), int(inst.new_num), int(sent_states.back().num), inst.diff.c_str() );
       connection.send( s );
     } catch ( MTUException m ) {
       continue;
