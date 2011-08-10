@@ -5,21 +5,6 @@
 #include "keystroke.hpp"
 #include "networktransport.hpp"
 
-bool readable( int fd )
-{
-  struct pollfd my_pollfd;
-  my_pollfd.fd = fd;
-  my_pollfd.events = POLLIN;
-
-  int num = poll( &my_pollfd, 1, 0 );
-  if ( num < 0 ) {
-    perror( "poll" );
-    exit( 1 );
-  }
-  
-  return my_pollfd.revents & POLLIN;
-}
-
 int main( int argc, char *argv[] )
 {
   bool server = true;
@@ -60,7 +45,7 @@ int main( int argc, char *argv[] )
       try {
 	n->tick();
 
-	if ( poll( &my_pollfd, 1, 10 ) < 0 ) {
+	if ( poll( &my_pollfd, 1, 5 ) < 0 ) {
 	  perror( "poll" );
 	  exit( 1 );
 	}
@@ -111,7 +96,7 @@ int main( int argc, char *argv[] )
       try {
 	n->tick();
 
-	if ( poll( fds, 2, 10 ) < 0 ) {
+	if ( poll( fds, 2, 5 ) < 0 ) {
 	  perror( "poll" );
 	}
 
