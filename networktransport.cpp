@@ -78,7 +78,8 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
 
   if ( assumed_receiver_state->state == target_receiver_state ) {
     /* send empty ack */
-    if ( timestamp() - sent_states.back().timestamp < int64_t( ACK_INTERVAL ) ) {
+    if ( (!connection.pending_timestamp())
+	 && (timestamp() - sent_states.back().timestamp < int64_t( ACK_INTERVAL )) ) {
       return;
     }
 
@@ -147,7 +148,7 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
     string s = inst.tostring();
 
     try {
-      fprintf( stderr, "Sent instruction from %d => %d (terminal %d): %s\r\n", int(inst.old_num), int(inst.new_num), int(sent_states.back().num), inst.diff.c_str() );
+      fprintf( stderr, "Sent instruction (timeout %d) from %d => %d (terminal %d): %s\r\n", connection.timeout(), int(inst.old_num), int(inst.new_num), int(sent_states.back().num), inst.diff.c_str() );
       connection.send( s );
     } catch ( MTUException m ) {
       continue;
@@ -200,7 +201,6 @@ void Transport<MyState, RemoteState>::recv( void )
   Instruction inst( s );
   
   process_acknowledgment_through( inst.ack_num );
-  //  process_throwaway_until( inst.throwaway.num );
 
   /* first, make sure we don't already have the new state */
   for ( typename list< TimestampedState<RemoteState> >::iterator i = received_states.begin();

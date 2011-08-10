@@ -95,6 +95,7 @@ namespace Network {
     bool get_attached( void ) { return attached; }
 
     int timeout( void ) { return (int)lrint( ceil( SRTT + 4 * RTTVAR ) ); }
+    bool pending_timestamp( void ) { return ( saved_timestamp != uint64_t(-1) ); }
   };
 }
 

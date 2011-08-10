@@ -94,8 +94,8 @@ Connection::Connection() /* server */
     next_seq( 0 ),
     saved_timestamp( -1 ),
     RTT_hit( false ),
-    SRTT( 1 ),
-    RTTVAR( .5 )
+    SRTT( 1000 ),
+    RTTVAR( 500 )
 {
   setup();
 }
@@ -112,8 +112,8 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     next_seq( 0 ),
     saved_timestamp( -1 ),
     RTT_hit( false ),
-    SRTT( 1 ),
-    RTTVAR( .5 )
+    SRTT( 1000 ),
+    RTTVAR( 500 )
 {
   setup();
 
@@ -203,6 +203,8 @@ string Connection::recv( void )
     uint64_t now = timestamp();
     assert( now >= p.timestamp_reply );
     const double R = now - p.timestamp_reply;
+
+    fprintf( stderr, "Saw delay of %f\r\n", R );
 
     if ( !RTT_hit ) { /* first measurement */
       SRTT = R;
