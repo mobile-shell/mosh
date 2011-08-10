@@ -87,7 +87,7 @@ namespace Network {
     Transport( MyState &initial_state, RemoteState &initial_remote,
 	       const char *key_str, const char *ip, int port );
 
-    void tick( void );
+    int tick( void );
 
     void recv( void );
 

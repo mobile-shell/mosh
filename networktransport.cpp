@@ -49,19 +49,22 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
 }
 
 template <class MyState, class RemoteState>
-void Transport<MyState, RemoteState>::tick( void )
+int Transport<MyState, RemoteState>::tick( void )
 {
-  /* Update assumed receiver state */
-  update_assumed_receiver_state();
-
-  /* Cut out common prefix of all states */
-  rationalize_states();
-
   /* Determine if a new diff or empty ack needs to be sent */
   if ( timestamp() - sent_states.back().timestamp >= int64_t( SEND_INTERVAL ) ) {
+    /* Update assumed receiver state */
+    update_assumed_receiver_state();
+
+    /* Cut out common prefix of all states */
+    rationalize_states();
+
     /* Send diffs or ack */
     send_to_receiver();
   }
+
+  int64_t wait = int64_t( sent_states.back().timestamp + SEND_INTERVAL ) - timestamp();
+  return wait;
 }
 
 template <class MyState, class RemoteState>

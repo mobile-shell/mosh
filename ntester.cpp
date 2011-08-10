@@ -43,9 +43,7 @@ int main( int argc, char *argv[] )
     uint64_t last_num = n->get_remote_state_num();
     while ( true ) {
       try {
-	n->tick();
-
-	if ( poll( &my_pollfd, 1, 5 ) < 0 ) {
+	if ( poll( &my_pollfd, 1, n->tick() ) < 0 ) {
 	  perror( "poll" );
 	  exit( 1 );
 	}
@@ -94,9 +92,7 @@ int main( int argc, char *argv[] )
 
     while( true ) {
       try {
-	n->tick();
-
-	if ( poll( fds, 2, 5 ) < 0 ) {
+	if ( poll( fds, 2, n->tick() ) < 0 ) {
 	  perror( "poll" );
 	}
 
