@@ -131,9 +131,13 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
     /* If this is the final diff in a sequence, make sure it does get the highest
        state number (even if we've retread to previously-seen ground ) */
     /* This will force the client to update to this state */
-    if ( (previously_sent->num != sent_states.back().num)
-	 && (new_state == target_receiver_state) ) {
-      previously_sent = sent_states.end();
+    if ( new_state == target_receiver_state ) {
+      if ( new_state == sent_states.back().state ) {
+	previously_sent = sent_states.end();
+	previously_sent--;
+      } else {
+	previously_sent = sent_states.end();
+      }
     }
 
     if ( previously_sent == sent_states.end() ) { /* not previously sent */
