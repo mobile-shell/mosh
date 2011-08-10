@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string>
+#include <math.h>
 
 #include "crypto.hpp"
 
@@ -13,6 +14,8 @@ using namespace std;
 using namespace Crypto;
 
 namespace Network {
+  uint64_t timestamp( void );
+
   class MTUException {
   public:
     int MTU;
@@ -35,10 +38,13 @@ namespace Network {
   public:
     uint64_t seq;
     Direction direction;
+    uint64_t timestamp, timestamp_reply;
     string payload;
     
-    Packet( uint64_t s_seq, Direction s_direction, string s_payload )
-      : seq( s_seq ), direction( s_direction ), payload( s_payload )
+    Packet( uint64_t s_seq, Direction s_direction,
+	    uint64_t s_timestamp, uint64_t s_timestamp_reply, string s_payload )
+      : seq( s_seq ), direction( s_direction ),
+	timestamp( s_timestamp ), timestamp_reply( s_timestamp_reply ), payload( s_payload )
     {}
     
     Packet( string coded_packet, Session *session );
@@ -67,6 +73,12 @@ namespace Network {
 
     Direction direction;
     uint64_t next_seq;
+    uint64_t saved_timestamp;
+
+    bool RTT_hit;
+    double SRTT;
+    double RTTVAR;
+
     Packet new_packet( string &s_payload );
 
   public:
@@ -81,6 +93,8 @@ namespace Network {
     int port( void );
     string get_key( void ) { return key.printable_key(); }
     bool get_attached( void ) { return attached; }
+
+    int timeout( void ) { return (int)lrint( ceil( SRTT + 4 * RTTVAR ) ); }
   };
 }
 

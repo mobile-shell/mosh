@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
+#include <endian.h>
 
 #include "dos_assert.hpp"
 #include "network.hpp"
@@ -16,6 +17,8 @@ using namespace Crypto;
 Packet::Packet( string coded_packet, Session *session )
   : seq( -1 ),
     direction( TO_SERVER ),
+    timestamp( -1 ),
+    timestamp_reply( -1 ),
     payload()
 {
   Message message = session->decrypt( coded_packet );
@@ -23,7 +26,13 @@ Packet::Packet( string coded_packet, Session *session )
   direction = (message.nonce.val() & 0x8000000000000000) ? TO_CLIENT : TO_SERVER;
   seq = message.nonce.val() & 0x7FFFFFFFFFFFFFFF;
 
-  payload = message.text;
+  assert( message.text.size() >= 2 * sizeof( uint64_t ) );
+
+  uint64_t *data = (uint64_t *)message.text.data();
+  timestamp = be64toh( data[ 0 ] );
+  timestamp_reply = be64toh( data[ 1 ] );
+
+  payload = string( message.text.begin() + 2 * sizeof( uint64_t ), message.text.end() );
 }
 
 /* Output coded string from packet */
@@ -31,12 +40,20 @@ string Packet::tostring( Session *session )
 {
   uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & 0x7FFFFFFFFFFFFFFF);
 
-  return session->encrypt( Message( Nonce( direction_seq ), payload ) );
+  uint64_t ts_net[ 2 ] = { htobe64( timestamp ), htobe64( timestamp_reply ) };
+
+  string timestamps = string( (char *)ts_net, 2 * sizeof( uint64_t ) );
+
+  return session->encrypt( Message( Nonce( direction_seq ), timestamps + payload ) );
 }
 
 Packet Connection::new_packet( string &s_payload )
 {
-  return Packet( next_seq++, direction, s_payload );
+  Packet p( next_seq++, direction, timestamp(), saved_timestamp, s_payload );
+
+  saved_timestamp = -1;
+
+  return p;
 }
 
 void Connection::setup( void )
@@ -74,7 +91,11 @@ Connection::Connection() /* server */
     key(),
     session( key ),
     direction( TO_CLIENT ),
-    next_seq( 0 )
+    next_seq( 0 ),
+    saved_timestamp( -1 ),
+    RTT_hit( false ),
+    SRTT( 1 ),
+    RTTVAR( .5 )
 {
   setup();
 }
@@ -88,7 +109,11 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     key( key_str ),
     session( key ),
     direction( TO_SERVER ),
-    next_seq( 0 )
+    next_seq( 0 ),
+    saved_timestamp( -1 ),
+    RTT_hit( false ),
+    SRTT( 1 ),
+    RTTVAR( .5 )
 {
   setup();
 
@@ -170,6 +195,28 @@ string Connection::recv( void )
 
   Packet p( string( buf, received_len ), &session );
 
+  if ( p.timestamp != uint64_t(-1) ) {
+    saved_timestamp = p.timestamp;
+  }
+
+  if ( p.timestamp_reply != uint64_t(-1) ) {
+    uint64_t now = timestamp();
+    assert( now >= p.timestamp_reply );
+    const double R = now - p.timestamp_reply;
+
+    if ( !RTT_hit ) { /* first measurement */
+      SRTT = R;
+      RTTVAR = R / 2;
+      RTT_hit = true;
+    } else {
+      const double alpha = 1.0 / 8.0;
+      const double beta = 1.0 / 4.0;
+
+      RTTVAR = (1 - beta) * RTTVAR + ( beta * fabs( SRTT - R ) );
+      SRTT = (1 - alpha) * SRTT + ( alpha * R );
+    }
+  }
+
   dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
 
   /* server auto-adjusts to client */
@@ -199,3 +246,18 @@ int Connection::port( void )
 
   return ntohs( local_addr.sin_port );
 }
+
+uint64_t Network::timestamp( void )
+{
+  struct timespec tp;
+
+  if ( clock_gettime( CLOCK_MONOTONIC, &tp ) < 0 ) {
+    throw NetworkException( "clock_gettime", errno );
+  }
+
+  uint64_t millis = tp.tv_nsec / 1000000;
+  millis += uint64_t( tp.tv_sec ) * 1000000;
+
+  return millis;
+}
+

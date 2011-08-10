@@ -48,7 +48,6 @@ namespace Network {
   class Transport
   {
   private:
-    static const int INITIAL_TIMEOUT = 1000; /* ms, same as TCP */
     static const int SEND_INTERVAL = 20; /* ms between frames */
     static const int ACK_INTERVAL = 1000; /* ms between empty acks */
     static const int HEADER_LEN = 100;
@@ -65,8 +64,6 @@ namespace Network {
     Connection connection;
     bool server;
 
-    uint64_t timestamp( void );
-
     /* sender */
     MyState current_state;
 
@@ -76,8 +73,6 @@ namespace Network {
     /* somewhere in the middle: the assumed state of the receiver */
 
     typename list< TimestampedState<MyState> >::iterator assumed_receiver_state;
-
-    int timeout;
 
     /* simple receiver */
     list< TimestampedState<RemoteState> > received_states;

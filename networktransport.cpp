@@ -7,28 +7,12 @@ using namespace Network;
 using namespace std;
 
 template <class MyState, class RemoteState>
-uint64_t Transport<MyState, RemoteState>::timestamp( void )
-{
-  struct timespec tp;
-
-  if ( clock_gettime( CLOCK_MONOTONIC, &tp ) < 0 ) {
-    throw NetworkException( "clock_gettime", errno );
-  }
-
-  uint64_t millis = tp.tv_nsec / 1000000;
-  millis += uint64_t( tp.tv_sec ) * 1000000;
-
-  return millis;
-}
-
-template <class MyState, class RemoteState>
 Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState &initial_remote )
   : connection(),
     server( true ),
     current_state( initial_state ),
     sent_states( 1, TimestampedState<MyState>( timestamp(), 0, initial_state ) ),
     assumed_receiver_state( sent_states.begin() ),
-    timeout( INITIAL_TIMEOUT ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) )
 {
   /* server */
@@ -42,7 +26,6 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     current_state( initial_state ),
     sent_states( 1, TimestampedState<MyState>( timestamp(), 0, initial_state ) ),
     assumed_receiver_state( sent_states.begin() ),
-    timeout( INITIAL_TIMEOUT ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) )
 {
   /* client */
@@ -190,7 +173,7 @@ void Transport<MyState, RemoteState>::update_assumed_receiver_state( void )
 	i++ ) {
     assert( now >= i->timestamp );
 
-    if ( now - i->timestamp < int64_t(timeout) ) {
+    if ( int(now - i->timestamp) < connection.timeout() ) {
       assumed_receiver_state = i;
     }
   }
