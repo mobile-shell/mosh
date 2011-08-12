@@ -92,7 +92,8 @@ int main( int argc, char *argv[] )
 	}
 
 	if ( fds[ 0 ].revents & POLLIN ) {
-	  char x = getchar();
+	  char x;
+	  assert( read( STDIN_FILENO, &x, 1 ) == 1 );
 	  n->get_current_state().key_hit( x );
 	}
 

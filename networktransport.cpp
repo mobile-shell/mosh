@@ -75,7 +75,6 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
       return;
     }
 
-
     Instruction inst( assumed_receiver_state->num,
 		      assumed_receiver_state->num,
 		      received_states.back().num,
@@ -94,8 +93,10 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
   uint64_t new_num;
   if ( current_state == sent_states.back().state ) { /* previously sent */
     new_num = sent_states.back().num;
+    fprintf( stderr, "Sending OLD state %d\r\n", (int)new_num );
   } else { /* new state */
     new_num = sent_states.back().num + 1;
+    fprintf( stderr, "Sending NEW state %d\r\n", (int)new_num );
   }
 
   bool done = false;
@@ -112,6 +113,7 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
       send_in_fragments( diff, new_num );
       done = true;
     } catch ( MTUException m ) {
+      fprintf( stderr, "Caught Path MTU exception, MTU now = %d\n", connection.get_MTU() );
       done = false;
     }
   }
@@ -299,6 +301,10 @@ void Transport<MyState, RemoteState>::send_in_fragments( string diff, uint64_t n
 		      fragment_num++,
 		      this_fragment );
     string s = inst.tostring();
+
+    fprintf( stderr, "Sending [%d=>%d], len=%u\n",
+	     (int)inst.old_num, (int)inst.new_num, (unsigned int)inst.diff.size() );
+
     connection.send( s );
   }
 }
