@@ -18,7 +18,7 @@ public:
 
   /* interface for Network::Transport */
   void subtract( KeyStroke * const prefix );
-  string diff_from( KeyStroke const & existing, int length_limit );
+  string diff_from( KeyStroke const & existing );
   void apply_string( string diff );
   bool operator==( KeyStroke const &x ) const { return user_bytes == x.user_bytes; }
 };

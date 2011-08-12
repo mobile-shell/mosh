@@ -12,7 +12,7 @@ void KeyStroke::subtract( KeyStroke * const prefix )
   }
 }
 
-string KeyStroke::diff_from( KeyStroke const & existing, int length_limit )
+string KeyStroke::diff_from( KeyStroke const & existing )
 {
   string ret;
 
@@ -26,8 +26,7 @@ string KeyStroke::diff_from( KeyStroke const & existing, int length_limit )
     my_it++;
   }
 
-  while ( (my_it != user_bytes.end())
-	  && ( (length_limit < 0) ? true : (int(ret.size()) < length_limit) ) ) {
+  while ( my_it != user_bytes.end() ) {
     ret += string( &( *my_it ), 1 );
     my_it++;
   }
