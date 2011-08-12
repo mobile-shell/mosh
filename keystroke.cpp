@@ -22,6 +22,10 @@ string KeyStroke::diff_from( KeyStroke const & existing )
 	i != existing.user_bytes.end();
 	i++ ) {
     assert( my_it != user_bytes.end() );
+    if ( *i != *my_it ) {
+      fprintf( stderr, "BUG: existing state has %c and new state has %c\n",
+	       *i, *my_it );
+    }
     assert( *i == *my_it );
     my_it++;
   }

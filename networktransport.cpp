@@ -146,6 +146,8 @@ void Transport<MyState, RemoteState>::update_assumed_receiver_state( void )
 
     if ( int(now - i->timestamp) < connection.timeout() ) {
       assumed_receiver_state = i;
+    } else {
+      return;
     }
   }
 }
@@ -302,8 +304,8 @@ void Transport<MyState, RemoteState>::send_in_fragments( string diff, uint64_t n
 		      this_fragment );
     string s = inst.tostring();
 
-    fprintf( stderr, "Sending [%d=>%d], len=%u\n",
-	     (int)inst.old_num, (int)inst.new_num, (unsigned int)inst.diff.size() );
+    fprintf( stderr, "Sending [%d=>%d frag %d], len=%u\r\n",
+	     (int)inst.old_num, (int)inst.new_num, inst.fragment_num, (unsigned int)inst.diff.size() );
 
     connection.send( s );
   }
