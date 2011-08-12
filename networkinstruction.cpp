@@ -69,13 +69,14 @@ bool FragmentAssembly::add_fragment( Instruction &inst )
     fragments.clear();
     current_template = inst;
     fragments.resize( real_fragment_num + 1 );
-    fragments[ real_fragment_num ] = inst;
+    fragments.at( real_fragment_num ) = inst;
     fragments_arrived = 1;
     fragments_total = -1;
   } else { /* not a new packet */
     /* see if we already have this fragment */
-    if ( fragments[ real_fragment_num ].old_num != uint64_t(-1) ) {
-      assert( fragments[ real_fragment_num ] == inst );
+    if ( (fragments.size() > real_fragment_num)
+	 && (fragments.at( real_fragment_num ).old_num != uint64_t(-1)) ) {
+      assert( fragments.at( real_fragment_num ) == inst );
     } else {
       if ( fragments_total == -1 ) {
 	fragments.resize( real_fragment_num + 1 );
@@ -102,7 +103,7 @@ Instruction FragmentAssembly::get_assembly( void )
   ret.diff = "";
 
   for ( int i = 0; i < fragments_total; i++ ) {
-    ret.diff += fragments[ i ].diff;
+    ret.diff += fragments.at( i ).diff;
   }
 
   return ret;
