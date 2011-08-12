@@ -22,18 +22,19 @@ namespace Network {
     uint64_t ack_num;
     uint64_t throwaway_num;
     uint16_t fragment_num;
+    bool final;
 
     string diff;
 
-    Instruction() : old_num( -1 ), new_num( -1 ), ack_num( -1 ), throwaway_num( -1 ), fragment_num( -1 ),
+    Instruction() : old_num( -1 ), new_num( -1 ), ack_num( -1 ), throwaway_num( -1 ), fragment_num( -1 ), final( false ),
 		    diff( "" )
     {}
 
     Instruction( uint64_t s_old_num, uint64_t s_new_num,
-		 uint64_t s_ack_num, uint64_t s_throwaway_num, uint16_t s_fragment_num,
+		 uint64_t s_ack_num, uint64_t s_throwaway_num, uint16_t s_fragment_num, bool s_final,
 		 string s_diff )
       : old_num( s_old_num ), new_num( s_new_num ),
-	ack_num( s_ack_num ), throwaway_num( s_throwaway_num ), fragment_num( s_fragment_num ),
+	ack_num( s_ack_num ), throwaway_num( s_throwaway_num ), fragment_num( s_fragment_num ), final( s_final ),
 	diff( s_diff )
     {}
 

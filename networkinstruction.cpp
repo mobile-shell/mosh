@@ -25,7 +25,12 @@ string Instruction::tostring( void )
   ret += network_order_string( new_num );
   ret += network_order_string( ack_num );
   ret += network_order_string( throwaway_num );
-  ret += network_order_string( fragment_num );
+
+  assert( !( fragment_num & 0x8000 ) );
+
+  uint16_t combined_fragment_num = ( final << 15 ) | fragment_num;
+
+  ret += network_order_string( combined_fragment_num );
 
   assert( ret.size() == inst_header_len );
 
@@ -35,7 +40,7 @@ string Instruction::tostring( void )
 }
 
 Instruction::Instruction( string &x )
-  : old_num( -1 ), new_num( -1 ), ack_num( -1 ), throwaway_num( -1 ), fragment_num( -1 ), diff()
+  : old_num( -1 ), new_num( -1 ), ack_num( -1 ), throwaway_num( -1 ), fragment_num( -1 ), final( false ), diff()
 {
   assert( x.size() >= inst_header_len );
   uint64_t *data = (uint64_t *)x.data();
@@ -45,6 +50,8 @@ Instruction::Instruction( string &x )
   ack_num = be64toh( data[ 2 ] );
   throwaway_num = be64toh( data[ 3 ] );
   fragment_num = be16toh( data16[ 16 ] );
+  final = ( fragment_num & 0x8000 ) >> 15;
+  fragment_num &= 0x7FFF;
 
   diff = string( x.begin() + inst_header_len, x.end() );
 }
@@ -57,45 +64,35 @@ bool FragmentAssembly::same_template( Instruction &a, Instruction &b )
 
 bool FragmentAssembly::add_fragment( Instruction &inst )
 {
-  /* decode fragment num */
-  bool last_fragment = inst.fragment_num > 32767;
-  uint16_t real_fragment_num = inst.fragment_num;
-  if ( last_fragment ) {
-    real_fragment_num -= 32768;
-  }
-
   /* see if this is a totally new packet */
   if ( !same_template( inst, current_template ) ) {
     fragments.clear();
     current_template = inst;
-    fragments.resize( real_fragment_num + 1 );
-    fragments.at( real_fragment_num ) = inst;
+    fragments.resize( inst.fragment_num + 1 );
+    fragments.at( inst.fragment_num ) = inst;
     fragments_arrived = 1;
     fragments_total = -1;
   } else { /* not a new packet */
     /* see if we already have this fragment */
-    if ( (fragments.size() > real_fragment_num)
-	 && (fragments.at( real_fragment_num ).old_num != uint64_t(-1)) ) {
-      assert( fragments.at( real_fragment_num ) == inst );
+    if ( (fragments.size() > inst.fragment_num)
+	 && (fragments.at( inst.fragment_num ).old_num != uint64_t(-1)) ) {
+      assert( fragments.at( inst.fragment_num ) == inst );
     } else {
-      if ( (int)fragments.size() < real_fragment_num + 1 ) {
-	fragments.resize( real_fragment_num + 1 );
+      if ( (int)fragments.size() < inst.fragment_num + 1 ) {
+	fragments.resize( inst.fragment_num + 1 );
       }
-      fragments.at( real_fragment_num ) = inst;
+      fragments.at( inst.fragment_num ) = inst;
       fragments_arrived++;
     }
   }
 
-  if ( last_fragment ) {
-    fragments_total = real_fragment_num + 1;
+  if ( inst.final ) {
+    fragments_total = inst.fragment_num + 1;
     fragments.resize( fragments_total );
   }
 
-  if ( fragments_arrived == fragments_total ) {
-    assert( (int)fragments.size() == fragments_total );
-    for ( unsigned int i = 0; i < fragments.size(); i++ ) {
-      assert( fragments.at( i ).old_num != uint64_t(-1) );
-    }
+  if ( fragments_total != -1 ) {
+    assert( fragments_arrived <= fragments_total );
   }
 
   /* see if we're done */

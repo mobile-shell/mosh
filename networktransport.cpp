@@ -79,7 +79,7 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
 		      assumed_receiver_state->num,
 		      received_states.back().num,
 		      sent_states.front().num,
-		      32768,
+		      0, true,
 		      "" );
     string s = inst.tostring();
     connection.send( s, false );
@@ -287,25 +287,24 @@ void Transport<MyState, RemoteState>::send_in_fragments( string diff, uint64_t n
 
     assert( fragment_num <= 32767 );
 
+    bool final = false;
+
     if ( int( diff.size() + HEADER_LEN ) > connection.get_MTU() ) {
       this_fragment = string( diff.begin(), diff.begin() + connection.get_MTU() - HEADER_LEN );
       diff = string( diff.begin() + connection.get_MTU() - HEADER_LEN, diff.end() );
     } else {
       this_fragment = diff;
       diff.clear();
-      fragment_num += 32768; /* last fragment */
+      final = true;
     }
 
     Instruction inst( assumed_receiver_state->num,
 		      new_num,
 		      received_states.back().num,
 		      sent_states.front().num,
-		      fragment_num++,
+		      fragment_num++, final,
 		      this_fragment );
     string s = inst.tostring();
-
-    fprintf( stderr, "Sending [%d=>%d frag %d], len=%u\r\n",
-	     (int)inst.old_num, (int)inst.new_num, inst.fragment_num, (unsigned int)inst.diff.size() );
 
     connection.send( s );
   }
