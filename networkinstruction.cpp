@@ -66,6 +66,7 @@ bool FragmentAssembly::add_fragment( Instruction &inst )
 
   /* see if this is a totally new packet */
   if ( !same_template( inst, current_template ) ) {
+    fprintf( stderr, "New template! [%d => %d]\n", (int)inst.old_num, (int)inst.new_num );
     fragments.clear();
     current_template = inst;
     fragments.resize( real_fragment_num + 1 );
@@ -76,11 +77,13 @@ bool FragmentAssembly::add_fragment( Instruction &inst )
     /* see if we already have this fragment */
     if ( (fragments.size() > real_fragment_num)
 	 && (fragments.at( real_fragment_num ).old_num != uint64_t(-1)) ) {
+      fprintf( stderr, "Fragment %d already present.\n", real_fragment_num );
       assert( fragments.at( real_fragment_num ) == inst );
     } else {
       if ( fragments_total == -1 ) {
 	fragments.resize( real_fragment_num + 1 );
       }
+      fprintf( stderr, "Received fragment %d\n", real_fragment_num );
       fragments.at( real_fragment_num ) = inst;
       fragments_arrived++;
     }
@@ -90,6 +93,8 @@ bool FragmentAssembly::add_fragment( Instruction &inst )
     fragments_total = real_fragment_num + 1;
     fragments.resize( fragments_total );
   }
+
+  fprintf( stderr, "arrived = %d, total = %d\n", fragments_arrived, fragments_total );
 
   /* see if we're done */
   return ( fragments_arrived == fragments_total );
