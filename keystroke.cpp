@@ -7,6 +7,7 @@ void KeyStroke::subtract( KeyStroke * const prefix )
   for ( deque<char>::iterator i = prefix->user_bytes.begin();
 	i != prefix->user_bytes.end();
 	i++ ) {
+    assert( !user_bytes.empty() );
     assert( *i == user_bytes.front() );
     user_bytes.pop_front();
   }
