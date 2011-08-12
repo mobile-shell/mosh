@@ -112,6 +112,8 @@ Instruction FragmentAssembly::get_assembly( void )
   }
 
   fragments.clear();
+  fragments_arrived = 0;
+  fragments_total = -1;
 
   return ret;
 }
