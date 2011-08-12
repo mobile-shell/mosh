@@ -96,6 +96,13 @@ bool FragmentAssembly::add_fragment( Instruction &inst )
 
   fprintf( stderr, "arrived = %d, total = %d\n", fragments_arrived, fragments_total );
 
+  if ( fragments_arrived == fragments_total ) {
+    assert( fragments.size() == fragments_total );
+    for ( int i = 0; i < fragments.size(); i++ ) {
+      assert( fragments.at( i ).old_num != uint64_t(-1) );
+    }
+  }
+
   /* see if we're done */
   return ( fragments_arrived == fragments_total );
 }
