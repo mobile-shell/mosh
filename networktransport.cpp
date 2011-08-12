@@ -93,10 +93,8 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
   uint64_t new_num;
   if ( current_state == sent_states.back().state ) { /* previously sent */
     new_num = sent_states.back().num;
-    fprintf( stderr, "Sending OLD state %d\r\n", (int)new_num );
   } else { /* new state */
     new_num = sent_states.back().num + 1;
-    fprintf( stderr, "Sending NEW state %d\r\n", (int)new_num );
   }
 
   bool done = false;
@@ -116,12 +114,14 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
       fprintf( stderr, "Caught Path MTU exception, MTU now = %d\n", connection.get_MTU() );
       done = false;
     }
-  }
 
-  if ( current_state == sent_states.back().state ) {
-    sent_states.back().timestamp = timestamp();
-  } else {
-    sent_states.push_back( TimestampedState<MyState>( timestamp(), new_num, current_state ) );
+    if ( new_num == sent_states.back().num ) {
+      sent_states.back().timestamp = timestamp();
+    } else {
+      sent_states.push_back( TimestampedState<MyState>( timestamp(), new_num, current_state ) );
+    }
+
+    new_num++;
   }
 
   /* successfully sent, probably */
