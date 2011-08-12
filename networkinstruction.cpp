@@ -111,6 +111,8 @@ Instruction FragmentAssembly::get_assembly( void )
     ret.diff += fragments.at( i ).diff;
   }
 
+  fragments.clear();
+
   return ret;
 }
 
