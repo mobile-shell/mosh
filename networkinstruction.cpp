@@ -80,7 +80,7 @@ bool FragmentAssembly::add_fragment( Instruction &inst )
       fprintf( stderr, "Fragment %d already present.\n", real_fragment_num );
       assert( fragments.at( real_fragment_num ) == inst );
     } else {
-      if ( fragments_total == -1 ) {
+      if ( (int)fragments.size() < real_fragment_num + 1 ) {
 	fragments.resize( real_fragment_num + 1 );
       }
       fprintf( stderr, "Received fragment %d\n", real_fragment_num );
