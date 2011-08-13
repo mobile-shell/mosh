@@ -5,6 +5,7 @@
 #include <string>
 
 #include "terminal.hpp"
+#include "completeterminal.hpp"
 
 #include "user.hpp"
 #include "networktransport.cpp"
@@ -29,5 +30,6 @@ template class vector<bool>;
 
 template class vector<Instruction>;
 template class Transport<UserStream, UserStream>;
+template class Transport<Complete, UserStream>;
 
 template class deque<UserEvent>;

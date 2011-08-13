@@ -76,6 +76,8 @@ namespace Terminal {
     void OSC_put( const Parser::OSC_Put *act );
     void OSC_start( const Parser::OSC_Start *act );
     void OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb );
+
+    bool operator==( const Dispatcher &x ) const;
   };
 }
 

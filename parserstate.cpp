@@ -3,7 +3,7 @@
 
 using namespace Parser;
 
-Transition State::anywhere_rule( wchar_t ch )
+Transition State::anywhere_rule( wchar_t ch ) const
 {
   if ( (ch == 0x18) || (ch == 0x1A)
        || ((0x80 <= ch) && (ch <= 0x8F))
@@ -27,7 +27,7 @@ Transition State::anywhere_rule( wchar_t ch )
   return Transition( NULL, NULL ); /* don't allocate an Ignore action */
 }
 
-Transition State::input( wchar_t ch )
+Transition State::input( wchar_t ch ) const
 {
   Transition ret = anywhere_rule( ch );
   if ( !ret.next_state ) {
@@ -56,7 +56,7 @@ static bool GLGR ( wchar_t ch )
 	   || ( (0xA0 <= ch) && (ch <= 0xFF) ) ); /* GR area */
 }
 
-Transition Ground::input_state_rule( wchar_t ch )
+Transition Ground::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
     return Transition( new Execute );
@@ -69,12 +69,12 @@ Transition Ground::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Action *Escape::enter( void )
+Action *Escape::enter( void ) const
 {
   return new Clear;
 }
 
-Transition Escape::input_state_rule( wchar_t ch )
+Transition Escape::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
     return Transition( new Execute );
@@ -112,7 +112,7 @@ Transition Escape::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Transition Escape_Intermediate::input_state_rule( wchar_t ch )
+Transition Escape_Intermediate::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
     return Transition( new Execute );
@@ -129,12 +129,12 @@ Transition Escape_Intermediate::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Action *CSI_Entry::enter( void )
+Action *CSI_Entry::enter( void ) const
 {
   return new Clear;
 }
 
-Transition CSI_Entry::input_state_rule( wchar_t ch )
+Transition CSI_Entry::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
     return Transition( new Execute );
@@ -164,7 +164,7 @@ Transition CSI_Entry::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Transition CSI_Param::input_state_rule( wchar_t ch )
+Transition CSI_Param::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
     return Transition( new Execute );
@@ -189,7 +189,7 @@ Transition CSI_Param::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Transition CSI_Intermediate::input_state_rule( wchar_t ch )
+Transition CSI_Intermediate::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
     return Transition( new Execute );
@@ -210,7 +210,7 @@ Transition CSI_Intermediate::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Transition CSI_Ignore::input_state_rule( wchar_t ch )
+Transition CSI_Ignore::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
     return Transition( new Execute );
@@ -223,12 +223,12 @@ Transition CSI_Ignore::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Action *DCS_Entry::enter( void )
+Action *DCS_Entry::enter( void ) const
 {
   return new Clear;
 }
 
-Transition DCS_Entry::input_state_rule( wchar_t ch )
+Transition DCS_Entry::input_state_rule( wchar_t ch ) const
 {
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
     return Transition( new Collect, &family->s_DCS_Intermediate );
@@ -253,7 +253,7 @@ Transition DCS_Entry::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Transition DCS_Param::input_state_rule( wchar_t ch )
+Transition DCS_Param::input_state_rule( wchar_t ch ) const
 {
   if ( ( (0x30 <= ch) && (ch <= 0x39) ) || ( ch == 0x3B ) ) {
     return Transition( new Param );
@@ -274,7 +274,7 @@ Transition DCS_Param::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Transition DCS_Intermediate::input_state_rule( wchar_t ch )
+Transition DCS_Intermediate::input_state_rule( wchar_t ch ) const
 {
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
     return Transition( new Collect );
@@ -291,17 +291,17 @@ Transition DCS_Intermediate::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Action *DCS_Passthrough::enter( void )
+Action *DCS_Passthrough::enter( void ) const
 {
   return new Hook;
 }
 
-Action *DCS_Passthrough::exit( void )
+Action *DCS_Passthrough::exit( void ) const
 {
   return new Unhook;
 }
 
-Transition DCS_Passthrough::input_state_rule( wchar_t ch )
+Transition DCS_Passthrough::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) || ( (0x20 <= ch) && (ch <= 0x7E) ) ) {
     return Transition( new Put );
@@ -314,7 +314,7 @@ Transition DCS_Passthrough::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Transition DCS_Ignore::input_state_rule( wchar_t ch )
+Transition DCS_Ignore::input_state_rule( wchar_t ch ) const
 {
   if ( ch == 0x9C ) {
     return Transition( &family->s_Ground );
@@ -323,17 +323,17 @@ Transition DCS_Ignore::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Action *OSC_String::enter( void )
+Action *OSC_String::enter( void ) const
 {
   return new OSC_Start;
 }
 
-Action *OSC_String::exit( void )
+Action *OSC_String::exit( void ) const
 {
   return new OSC_End;
 }
 
-Transition OSC_String::input_state_rule( wchar_t ch )
+Transition OSC_String::input_state_rule( wchar_t ch ) const
 {
   if ( (0x20 <= ch) && (ch <= 0x7F) ) {
     return Transition( new OSC_Put );
@@ -346,7 +346,7 @@ Transition OSC_String::input_state_rule( wchar_t ch )
   return Transition();
 }
 
-Transition SOS_PM_APC_String::input_state_rule( wchar_t ch )
+Transition SOS_PM_APC_String::input_state_rule( wchar_t ch ) const
 {
   if ( ch == 0x9C ) {
     return Transition( &family->s_Ground );

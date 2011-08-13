@@ -49,7 +49,9 @@ namespace Terminal {
     std::string open( void ); /* put user cursor keys in application mode */
     std::string close( void ); /* restore user cursor keys */
 
-    const Framebuffer & get_fb( void ) { return fb; }
+    const Framebuffer & get_fb( void ) const { return fb; }
+
+    bool operator==( Emulator const &x ) const;
   };
 }
 

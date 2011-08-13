@@ -120,3 +120,13 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
 
   return ret;
 }
+
+Parser::Parser::Parser( const Parser &other )
+  : state( other.state )
+{}
+
+Parser::Parser & Parser::Parser::operator=( const Parser &other )
+{
+  state = other.state;
+  return *this;
+}

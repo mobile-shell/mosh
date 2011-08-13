@@ -18,19 +18,25 @@
 #endif
 
 namespace Parser {
+  static StateFamily family;
+
   class Parser {
   private:
-    StateFamily family;
-    State *state;
+    State const *state;
 
   public:
-    Parser() : family(), state( &family.s_Ground ) {}
+    Parser() : state( &family.s_Ground ) {}
 
-    Parser( const Parser & );
+    Parser( const Parser &other );
     Parser & operator=( const Parser & );
     ~Parser() {}
 
     std::list<Action *> input( wchar_t ch );
+
+    bool operator==( const Parser &x ) const
+    {
+      return state == x.state;
+    }
   };
 
   static const size_t BUF_SIZE = 8;
@@ -46,6 +52,11 @@ namespace Parser {
     UTF8Parser();
 
     std::list<Action *> input( char c );
+
+    bool operator==( const UTF8Parser &x ) const
+    {
+      return parser == x.parser;
+    }
   };
 }
 

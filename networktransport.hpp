@@ -105,7 +105,7 @@ namespace Network {
 
     /* simple receiver */
     list< TimestampedState<RemoteState> > received_states;
-    MyState last_receiver_state; /* the state we were in when user last queried state */
+    RemoteState last_receiver_state; /* the state we were in when user last queried state */
 
     FragmentAssembly fragments;
 
@@ -125,6 +125,7 @@ namespace Network {
     string get_key( void ) { return connection.get_key(); }
 
     MyState &get_current_state( void ) { return current_state; }
+    void set_current_state( const MyState &x ) { current_state = x; }
 
     string get_remote_diff( void );
 

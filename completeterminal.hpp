@@ -21,7 +21,13 @@ namespace Terminal {
     std::string open( void ) { return terminal.open(); }
     std::string close( void ) { return terminal.close(); }
 
-    const Framebuffer & get_fb( void ) { return terminal.get_fb(); }
+    const Framebuffer & get_fb( void ) const { return terminal.get_fb(); }
+
+    /* interface for Network::Transport */
+    void subtract( const Complete * ) {}
+    std::string diff_from( const Complete &existing );
+    void apply_string( std::string diff );
+    bool operator==( const Complete &x ) const;
   };
 }
 

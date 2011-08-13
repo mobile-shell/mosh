@@ -151,6 +151,12 @@ namespace Terminal {
     void resize( int s_width, int s_height );
 
     DrawState( int s_width, int s_height );
+
+    bool operator==( const DrawState &x ) const
+    {
+      /* XXX other fields not necessary to compare -- for now */
+      return ( width == x.width ) && ( height == x.height ) && ( renditions == x.renditions );
+    }
   };
 
   class Framebuffer {
@@ -227,6 +233,11 @@ namespace Terminal {
 
     void reset_cell( Cell *c ) { c->reset( ds.get_background_rendition() ); }
     void reset_row( Row *r ) { r->reset( ds.get_background_rendition() ); }
+
+    bool operator==( const Framebuffer &x ) const
+    {
+      return ( rows == x.rows ) && ( window_title == x.window_title ) && ( ds == x.ds );
+    }
   };
 }
 

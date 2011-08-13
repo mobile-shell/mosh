@@ -8,9 +8,9 @@ using namespace Parser;
 using namespace Network;
 using namespace ClientBuffers;
 
-void UserStream::subtract( UserStream * const prefix )
+void UserStream::subtract( const UserStream *prefix )
 {
-  for ( deque<UserEvent>::iterator i = prefix->actions.begin();
+  for ( deque<UserEvent>::const_iterator i = prefix->actions.begin();
 	i != prefix->actions.end();
 	i++ ) {
     assert( !actions.empty() );
@@ -19,7 +19,7 @@ void UserStream::subtract( UserStream * const prefix )
   }
 }
 
-string UserStream::diff_from( UserStream const & existing )
+string UserStream::diff_from( const UserStream &existing )
 {
   deque<UserEvent>::iterator my_it = actions.begin();
 
@@ -83,3 +83,15 @@ void UserStream::apply_string( string diff )
   }
 }
 
+const Parser::Action *UserStream::get_action( unsigned int i )
+{
+  switch( actions[ i ].type ) {
+  case UserByteType:
+    return &( actions[ i ].userbyte );
+  case ResizeType:
+    return &( actions[ i ].resize );
+  default:
+    assert( false );
+    return NULL;
+  }
+}

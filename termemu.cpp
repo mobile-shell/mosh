@@ -28,7 +28,6 @@
 const size_t buf_size = 16384;
 
 void emulate_terminal( int fd );
-int copy( int src, int dest );
 
 int main( void )
 {

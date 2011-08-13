@@ -149,7 +149,7 @@ void Transport<MyState, RemoteState>::update_assumed_receiver_state( void )
 template <class MyState, class RemoteState>
 void Transport<MyState, RemoteState>::rationalize_states( void )
 {
-  MyState * const known_receiver_state = &sent_states.front().state;
+  const MyState * known_receiver_state = &sent_states.front().state;
 
   current_state.subtract( known_receiver_state );
 
@@ -257,7 +257,7 @@ string Transport<MyState, RemoteState>::get_remote_diff( void )
 
   string ret( received_states.back().state.diff_from( last_receiver_state ) );
 
-  MyState * const oldest_receiver_state = &received_states.front().state;
+  const RemoteState *oldest_receiver_state = &received_states.front().state;
 
   for ( typename list< TimestampedState<RemoteState> >::reverse_iterator i = received_states.rbegin();
 	i != received_states.rend();

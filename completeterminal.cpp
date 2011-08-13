@@ -2,8 +2,9 @@
 
 using namespace std;
 using namespace Parser;
+using namespace Terminal;
 
-string Terminal::Complete::act( const string &str )
+string Complete::act( const string &str )
 {
   for ( unsigned int i = 0; i < str.size(); i++ ) {
     /* parse octet into up to three actions */
@@ -22,9 +23,27 @@ string Terminal::Complete::act( const string &str )
   return terminal.read_octets_to_host();
 }
 
-string Terminal::Complete::act( const Action *act )
+string Complete::act( const Action *act )
 {
   /* apply action to terminal */
   act->act_on_terminal( &terminal );
   return terminal.read_octets_to_host();
+}
+
+/* interface for Network::Transport */
+string Complete::diff_from( const Complete &existing )
+{
+  return Terminal::Display::new_frame( true, existing.get_fb(), terminal.get_fb() );
+}
+
+void Complete::apply_string( string diff )
+{
+  string terminal_to_host = act( diff );
+  assert( terminal_to_host.empty() );
+}
+
+bool Complete::operator==( Complete const &x ) const
+{
+  assert( parser == x.parser );
+  return terminal == x.terminal;
 }

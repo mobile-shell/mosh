@@ -40,13 +40,14 @@ namespace Network {
     void push_back( Parser::UserByte s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
     void push_back( Parser::Resize s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
     
-    list<Parser::Action *> get_actions( void );
+    size_t size( void ) { return actions.size(); }
+    const Parser::Action *get_action( unsigned int i );
     
     /* interface for Network::Transport */
-    void subtract( UserStream * const prefix );
-    string diff_from( UserStream const & existing );
+    void subtract( const UserStream *prefix );
+    string diff_from( const UserStream &existing );
     void apply_string( string diff );
-    bool operator==( UserStream const &x ) const { return actions == x.actions; }
+    bool operator==( const UserStream &x ) const { return actions == x.actions; }
   };
 }
 

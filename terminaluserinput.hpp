@@ -16,6 +16,8 @@ namespace Terminal {
 
     std::string input( const Parser::UserByte *act,
 		       bool application_mode_cursor_keys );
+
+    bool operator==( const UserInput &x ) const { return last_byte == x.last_byte; }
   };
 }
 
