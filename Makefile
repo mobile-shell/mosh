@@ -1,11 +1,13 @@
-source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp terminaluserinput.cpp terminaldisplay.cpp network.cpp ntester.cpp ocb.cpp base64.cpp encrypt.cpp decrypt.cpp crypto.cpp networktransport.cpp networkinstruction.cpp keystroke.cpp
-objects = parserstate.o parser.o templates.o terminal.o parseraction.o terminalfunctions.o swrite.o terminalframebuffer.o terminaldispatcher.o terminaluserinput.o terminaldisplay.o network.o ocb.o base64.o crypto.o networktransport.o networkinstruction.o keystroke.o
+proto = userinput.proto
+source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp terminaluserinput.cpp terminaldisplay.cpp network.cpp ntester.cpp ocb.cpp base64.cpp encrypt.cpp decrypt.cpp crypto.cpp networktransport.cpp networkinstruction.cpp user.cpp userinput.pb.cc
+objects = parserstate.o parser.o templates.o terminal.o parseraction.o terminalfunctions.o swrite.o terminalframebuffer.o terminaldispatcher.o terminaluserinput.o terminaldisplay.o network.o ocb.o base64.o crypto.o networktransport.o networkinstruction.o user.o userinput.pb.o
 repos = templates.rpo
 executables = parse termemu ntester encrypt decrypt
 
 CXX = g++
-CXXFLAGS = -g -O2 --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-implicit-templates -fno-default-inline -pipe -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE -D_BSD_SOURCE
-LIBS = -lutil -lssl -lrt -lm
+CXXFLAGS = -g --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-implicit-templates -fno-default-inline -pipe -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE -D_BSD_SOURCE
+LIBS = -lutil -lssl -lrt -lm -lprotobuf-lite
+PROTOC = protoc
 
 all: $(executables)
 
@@ -30,6 +32,12 @@ templates.o: templates.cpp
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+%.pb.cc: %.proto
+	$(PROTOC) --cpp_out=. $<
+
+%.pb.o: %.pb.cc
+	$(CXX) $(CXXFLAGS) -frepo -Wno-effc++ -c -o $@ $<
+
 -include depend
 
 depend: $(source)
@@ -37,4 +45,4 @@ depend: $(source)
 
 .PHONY: clean
 clean:
-	-rm -f $(executables) depend *.o *.rpo
+	-rm -f $(executables) depend *.o *.rpo *.pb.cc *.pb.h

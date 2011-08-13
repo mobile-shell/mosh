@@ -6,8 +6,9 @@
 
 #include "terminal.hpp"
 
-#include "keystroke.hpp"
+#include "user.hpp"
 #include "networktransport.cpp"
+#include "userinput.pb.h"
 
 namespace Parser {
   class Action;
@@ -15,6 +16,7 @@ namespace Parser {
 
 using namespace std;
 using namespace Terminal;
+using namespace Network;
 
 template class list<Parser::Action *>;
 template class vector<Cell>;
@@ -24,7 +26,8 @@ template class vector<wchar_t>;
 template class vector<int>;
 template class map<string, Function>;
 template class vector<bool>;
-template class deque<char>;
-template class vector<Network::Instruction>;
 
-template class Network::Transport<KeyStroke, KeyStroke>;
+template class vector<Instruction>;
+template class Transport<UserStream, UserStream>;
+
+template class deque<UserEvent>;

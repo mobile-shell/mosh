@@ -2,8 +2,10 @@
 #include <unistd.h>
 #include <poll.h>
 
-#include "keystroke.hpp"
+#include "user.hpp"
 #include "networktransport.hpp"
+
+using namespace Network;
 
 int main( int argc, char *argv[] )
 {
@@ -12,9 +14,9 @@ int main( int argc, char *argv[] )
   char *ip;
   int port;
 
-  KeyStroke me, remote;
+  UserStream me, remote;
 
-  Network::Transport<KeyStroke, KeyStroke> *n;
+  Transport<UserStream, UserStream> *n;
 
   try {
     if ( argc > 1 ) {
@@ -25,9 +27,9 @@ int main( int argc, char *argv[] )
       ip = argv[ 2 ];
       port = atoi( argv[ 3 ] );
       
-      n = new Network::Transport<KeyStroke, KeyStroke>( me, remote, key, ip, port );
+      n = new Transport<UserStream, UserStream>( me, remote, key, ip, port );
     } else {
-      n = new Network::Transport<KeyStroke, KeyStroke>( me, remote );
+      n = new Transport<UserStream, UserStream>( me, remote );
     }
   } catch ( CryptoException e ) {
     fprintf( stderr, "Fatal error: %s\n", e.text.c_str() );
@@ -94,13 +96,13 @@ int main( int argc, char *argv[] )
 	if ( fds[ 0 ].revents & POLLIN ) {
 	  char x;
 	  assert( read( STDIN_FILENO, &x, 1 ) == 1 );
-	  n->get_current_state().key_hit( x );
+	  n->get_current_state().push_back( Parser::UserByte( x ) );
 	}
 
 	if ( fds[ 1 ].revents & POLLIN ) {
 	  n->recv();
 	}
-      } catch ( Network::NetworkException e ) {
+      } catch ( NetworkException e ) {
 	fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
 	break;
       } catch ( CryptoException e ) {

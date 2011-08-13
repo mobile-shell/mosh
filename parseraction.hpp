@@ -23,6 +23,8 @@ namespace Parser {
 
     Action() : char_present( false ), ch( -1 ), handled( false ) {};
     virtual ~Action() {};
+
+    virtual bool operator==( const Action &other ) const;
   };
 
   class Ignore : public Action {
@@ -97,6 +99,11 @@ namespace Parser {
     void act_on_terminal( Terminal::Emulator *emu );
 
     UserByte( int s_c ) : c( s_c ) {}
+
+    bool operator==( const UserByte &other ) const
+    {
+      return c == other.c;
+    }
   };
 
   class Resize : public Action {
@@ -111,6 +118,11 @@ namespace Parser {
       : width( s_width ),
 	height( s_height )
     {}
+
+    bool operator==( const Resize &other ) const
+    {
+      return ( width == other.width ) && ( height == other.height );
+    }
   };
 }
 

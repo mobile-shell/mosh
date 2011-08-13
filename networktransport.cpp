@@ -75,6 +75,8 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
       return;
     }
 
+    /* XXX should increment number each time */
+
     Instruction inst( assumed_receiver_state->num,
 		      assumed_receiver_state->num,
 		      received_states.back().num,
