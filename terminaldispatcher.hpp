@@ -63,19 +63,19 @@ namespace Terminal {
     int getparam( size_t N, int defaultval );
     int param_count( void );
 
-    void newparamchar( Parser::Param *act );
-    void collect( Parser::Collect *act );
-    void clear( Parser::Clear *act );
+    void newparamchar( const Parser::Param *act );
+    void collect( const Parser::Collect *act );
+    void clear( const Parser::Clear *act );
     
     std::string str( void );
 
-    void dispatch( Function_Type type, Parser::Action *act, Framebuffer *fb );
+    void dispatch( Function_Type type, const Parser::Action *act, Framebuffer *fb );
     std::string get_dispatch_chars( void ) { return dispatch_chars; }
     std::vector<wchar_t> get_OSC_string( void ) { return OSC_string; }
 
-    void OSC_put( Parser::OSC_Put *act );
-    void OSC_start( Parser::OSC_Start *act );
-    void OSC_dispatch( Parser::OSC_End *act, Framebuffer *fb );
+    void OSC_put( const Parser::OSC_Put *act );
+    void OSC_start( const Parser::OSC_Start *act );
+    void OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb );
   };
 }
 

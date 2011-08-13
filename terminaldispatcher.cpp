@@ -12,7 +12,7 @@ Dispatcher::Dispatcher()
     OSC_string(), terminal_to_host()
 {}
 
-void Dispatcher::newparamchar( Parser::Param *act )
+void Dispatcher::newparamchar( const Parser::Param *act )
 {
   assert( act->char_present );
   assert( (act->ch == ';') || ( (act->ch >= '0') && (act->ch <= '9') ) );
@@ -24,7 +24,7 @@ void Dispatcher::newparamchar( Parser::Param *act )
   parsed = false;
 }
 
-void Dispatcher::collect( Parser::Collect *act )
+void Dispatcher::collect( const Parser::Collect *act )
 {
   assert( act->char_present );
   if ( ( dispatch_chars.length() < 8 ) /* never should need more than 2 */
@@ -34,7 +34,7 @@ void Dispatcher::collect( Parser::Collect *act )
   }
 }
 
-void Dispatcher::clear( Parser::Clear *act )
+void Dispatcher::clear( const Parser::Clear *act )
 {
   params.clear();
   dispatch_chars.clear();
@@ -141,7 +141,7 @@ Function::Function( Function_Type type, std::string dispatch_chars,
   register_function( type, dispatch_chars, *this );
 }
 
-void Dispatcher::dispatch( Function_Type type, Parser::Action *act, Framebuffer *fb )
+void Dispatcher::dispatch( Function_Type type, const Parser::Action *act, Framebuffer *fb )
 {
   /* add final char to dispatch key */
   if ( (type == ESCAPE) || (type == CSI) ) {
@@ -175,7 +175,7 @@ void Dispatcher::dispatch( Function_Type type, Parser::Action *act, Framebuffer 
   }
 }
 
-void Dispatcher::OSC_put( Parser::OSC_Put *act )
+void Dispatcher::OSC_put( const Parser::OSC_Put *act )
 {
   assert( act->char_present );
   if ( OSC_string.size() < 256 ) { /* should be a long enough window title */
@@ -184,7 +184,7 @@ void Dispatcher::OSC_put( Parser::OSC_Put *act )
   }
 }
 
-void Dispatcher::OSC_start( Parser::OSC_Start *act )
+void Dispatcher::OSC_start( const Parser::OSC_Start *act )
 {
   OSC_string.clear();
   act->handled = true;

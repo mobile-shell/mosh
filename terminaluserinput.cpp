@@ -2,7 +2,7 @@
 
 using namespace Terminal;
 
-std::string UserInput::input( Parser::UserByte *act,
+std::string UserInput::input( const Parser::UserByte *act,
 			      bool application_mode_cursor_keys )
 {
   char translated_str[ 2 ] = { act->c, 0 };

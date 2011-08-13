@@ -16,57 +16,57 @@ std::string Action::str( void )
   return name() + std::string( thechar );
 }
 
-void Print::act_on_terminal( Terminal::Emulator *emu )
+void Print::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->print( this );
 }
 
-void Execute::act_on_terminal( Terminal::Emulator *emu )
+void Execute::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->execute( this );
 }
 
-void Clear::act_on_terminal( Terminal::Emulator *emu )
+void Clear::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->dispatch.clear( this );
 }
 
-void Param::act_on_terminal( Terminal::Emulator *emu )
+void Param::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->dispatch.newparamchar( this );
 }
 
-void Collect::act_on_terminal( Terminal::Emulator *emu )
+void Collect::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->dispatch.collect( this );
 }
 
-void CSI_Dispatch::act_on_terminal( Terminal::Emulator *emu )
+void CSI_Dispatch::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->CSI_dispatch( this );
 }
 
-void Esc_Dispatch::act_on_terminal( Terminal::Emulator *emu )
+void Esc_Dispatch::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->Esc_dispatch( this );
 }
 
-void OSC_Put::act_on_terminal( Terminal::Emulator *emu )
+void OSC_Put::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->dispatch.OSC_put( this );
 }
 
-void OSC_Start::act_on_terminal( Terminal::Emulator *emu )
+void OSC_Start::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->dispatch.OSC_start( this );
 }
 
-void OSC_End::act_on_terminal( Terminal::Emulator *emu )
+void OSC_End::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->OSC_end( this );
 }
 
-void UserByte::act_on_terminal( Terminal::Emulator *emu )
+void UserByte::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->dispatch.terminal_to_host.append( emu->user.input( this,
 							  emu->fb.ds.application_mode_cursor_keys ) );
@@ -77,7 +77,7 @@ void UserByte::act_on_terminal( Terminal::Emulator *emu )
   */
 }
 
-void Resize::act_on_terminal( Terminal::Emulator *emu )
+void Resize::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->resize( width, height );
   handled = true;

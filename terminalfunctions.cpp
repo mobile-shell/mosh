@@ -461,7 +461,7 @@ void CSI_DECSTR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );
 
 /* xterm uses an Operating System Command to set the window title */
-void Dispatcher::OSC_dispatch( Parser::OSC_End *act, Framebuffer *fb )
+void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
 {
   if ( OSC_string.size() >= 2 ) {
     if ( (OSC_string[ 0 ] == L'0')

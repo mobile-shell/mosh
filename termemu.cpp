@@ -22,7 +22,7 @@
 #include <sys/time.h>
 
 #include "parser.hpp"
-#include "terminal.hpp"
+#include "completeterminal.hpp"
 #include "swrite.hpp"
 
 const size_t buf_size = 16384;
@@ -122,7 +122,7 @@ int main( void )
 }
 
 /* Print a frame if the last frame was more than 1/50 seconds ago */
-bool tick( Terminal::Emulator *e, Terminal::Display *d, Terminal::Framebuffer &state )
+bool tick( Terminal::Framebuffer &state, const Terminal::Framebuffer &new_frame )
 {
   static bool initialized = false;
   static struct timeval last_time;
@@ -138,9 +138,9 @@ bool tick( Terminal::Emulator *e, Terminal::Display *d, Terminal::Framebuffer &s
 
   if ( (!initialized)
        || (diff >= 0.02) ) {
-    std::string update = d->new_frame( initialized, state, e->get_fb() );
+    std::string update = Terminal::Display::new_frame( initialized, state, new_frame );
     swrite( STDOUT_FILENO, update.c_str() );
-    state = e->get_fb();
+    state = new_frame;
 
     initialized = true;
     last_time = this_time;
@@ -198,9 +198,7 @@ void emulate_terminal( int fd )
   }
 
   /* open parser and terminal */
-  Parser::UTF8Parser parser;
-  Terminal::Emulator terminal( window_size.ws_col, window_size.ws_row );
-  Terminal::Display display;
+  Terminal::Complete complete( window_size.ws_col, window_size.ws_row );
   Terminal::Framebuffer state( window_size.ws_col, window_size.ws_row );
 
   struct pollfd pollfds[ 3 ];
@@ -214,7 +212,7 @@ void emulate_terminal( int fd )
   pollfds[ 2 ].fd = winch_fd;
   pollfds[ 2 ].events = POLLIN;
 
-  swrite( STDOUT_FILENO, terminal.open().c_str() );
+  swrite( STDOUT_FILENO, complete.open().c_str() );
 
   int poll_timeout = -1;
 
@@ -226,11 +224,43 @@ void emulate_terminal( int fd )
     }
 
     if ( pollfds[ 0 ].revents & POLLIN ) {
-      if ( termemu( fd, STDIN_FILENO, true, &parser, &terminal ) < 0 ) {
+      /* input from user */
+      char buf[ buf_size ];
+
+      /* fill buffer if possible */
+      ssize_t bytes_read = read( pollfds[ 0 ].fd, buf, buf_size );
+      if ( bytes_read == 0 ) { /* EOF */
+	return;
+      } else if ( bytes_read < 0 ) {
+	perror( "read" );
+	return;
+      }
+      
+      std::string terminal_to_host;
+      
+      for ( int i = 0; i < bytes_read; i++ ) {
+	Parser::UserByte ub( buf[ i ] );
+	terminal_to_host += complete.act( &ub );
+      }
+      
+      if ( swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	break;
       }
     } else if ( pollfds[ 1 ].revents & POLLIN ) {
-      if ( termemu( fd, fd, false, &parser, &terminal ) < 0 ) {
+      /* input from host */
+      char buf[ buf_size ];
+
+      /* fill buffer if possible */
+      ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
+      if ( bytes_read == 0 ) { /* EOF */
+	return;
+      } else if ( bytes_read < 0 ) {
+	perror( "read" );
+	return;
+      }
+      
+      std::string terminal_to_host = complete.act( std::string( buf, bytes_read ) );
+      if ( swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	break;
       }
     } else if ( pollfds[ 2 ].revents & POLLIN ) {
@@ -247,7 +277,7 @@ void emulate_terminal( int fd )
 
       /* tell emulator */
       Parser::Resize r( window_size.ws_col, window_size.ws_row );
-      r.act_on_terminal( &terminal );
+      complete.act( &r );
 
       /* tell child process */
       if ( ioctl( fd, TIOCSWINSZ, &window_size ) < 0 ) {
@@ -259,17 +289,17 @@ void emulate_terminal( int fd )
       break;
     }
 
-    if ( tick( &terminal, &display, state ) ) { /* there was a frame */
+    if ( tick( state, complete.get_fb()) ) { /* there was a frame */
       poll_timeout = -1;
     } else {
       poll_timeout = 20;
     }
   }
 
-  std::string update = display.new_frame( true, state, terminal.get_fb() );
+  std::string update = Terminal::Display::new_frame( true, state, complete.get_fb() );
   swrite( STDOUT_FILENO, update.c_str() );
 
-  swrite( STDOUT_FILENO, terminal.close().c_str() );
+  swrite( STDOUT_FILENO, complete.close().c_str() );
 }
 
 int termemu( int host_fd, int src_fd, bool user,

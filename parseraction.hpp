@@ -13,13 +13,13 @@ namespace Parser {
   public:
     bool char_present;
     wchar_t ch;
-    bool handled;
+    mutable bool handled;
 
     std::string str( void );
 
     virtual std::string name( void ) = 0;
 
-    virtual void act_on_terminal( Terminal::Emulator * ) {};
+    virtual void act_on_terminal( Terminal::Emulator * ) const {};
 
     Action() : char_present( false ), ch( -1 ), handled( false ) {};
     virtual ~Action() {};
@@ -33,37 +33,37 @@ namespace Parser {
   class Print : public Action {
   public:
     std::string name( void ) { return std::string( "Print" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
   class Execute : public Action {
   public:
     std::string name( void ) { return std::string( "Execute" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
   class Clear : public Action {
   public:
     std::string name( void ) { return std::string( "Clear" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
   class Collect : public Action {
   public:
     std::string name( void ) { return std::string( "Collect" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
   class Param : public Action {
   public:
     std::string name( void ) { return std::string( "Param" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
   class Esc_Dispatch : public Action {
   public:
     std::string name( void ) { return std::string( "Esc_Dispatch" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
   class CSI_Dispatch : public Action {
   public:
     std::string name( void ) { return std::string( "CSI_Dispatch" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
   class Hook : public Action {
   public: std::string name( void ) { return std::string( "Hook" ); }
@@ -77,17 +77,17 @@ namespace Parser {
   class OSC_Start : public Action {
   public:
     std::string name( void ) { return std::string( "OSC_Start" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
   class OSC_Put : public Action {
   public:
     std::string name( void ) { return std::string( "OSC_Put" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
   class OSC_End : public Action {
   public:
     std::string name( void ) { return std::string( "OSC_End" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
   };
 
   class UserByte : public Action {
@@ -96,7 +96,7 @@ namespace Parser {
     char c; /* The user-source byte. We don't try to interpret the charset */
 
     std::string name( void ) { return std::string( "UserByte" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
 
     UserByte( int s_c ) : c( s_c ) {}
 
@@ -112,7 +112,7 @@ namespace Parser {
     size_t width, height;
 
     std::string name( void ) { return std::string( "Resize" ); }
-    void act_on_terminal( Terminal::Emulator *emu );
+    void act_on_terminal( Terminal::Emulator *emu ) const;
 
     Resize( size_t s_width, size_t s_height )
       : width( s_width ),

@@ -21,12 +21,10 @@ namespace Terminal {
 
   class Display {
   private:
-    void put_cell( bool initialized, FrameState &frame, const Framebuffer &f );
+    static void put_cell( bool initialized, FrameState &frame, const Framebuffer &f );
 
   public:
-    Display() {}
-
-    std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f );
+    static std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f );
   };
 }
 

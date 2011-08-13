@@ -20,13 +20,13 @@ std::string Emulator::read_octets_to_host( void )
   return ret;
 }
 
-void Emulator::execute( Parser::Execute *act )
+void Emulator::execute( const Parser::Execute *act )
 {
   fb.ds.next_print_will_wrap = false;
   dispatch.dispatch( CONTROL, act, &fb );
 }
 
-void Emulator::print( Parser::Print *act )
+void Emulator::print( const Parser::Print *act )
 {
   assert( act->char_present );
 
@@ -109,28 +109,28 @@ void Emulator::print( Parser::Print *act )
   }
 }
 
-void Emulator::CSI_dispatch( Parser::CSI_Dispatch *act )
+void Emulator::CSI_dispatch( const Parser::CSI_Dispatch *act )
 {
   fb.ds.next_print_will_wrap = false;
   dispatch.dispatch( CSI, act, &fb );
 }
 
-void Emulator::OSC_end( Parser::OSC_End *act )
+void Emulator::OSC_end( const Parser::OSC_End *act )
 {
   fb.ds.next_print_will_wrap = false;
   dispatch.OSC_dispatch( act, &fb );
 }
 
-void Emulator::Esc_dispatch( Parser::Esc_Dispatch *act )
+void Emulator::Esc_dispatch( const Parser::Esc_Dispatch *act )
 {
   fb.ds.next_print_will_wrap = false;
   /* handle 7-bit ESC-encoding of C1 control characters */
   if ( (dispatch.get_dispatch_chars().size() == 0)
        && (0x40 <= act->ch)
        && (act->ch <= 0x5F) ) {
-    act->ch += 0x40;
-    dispatch.dispatch( CONTROL, act, &fb );
-    act->ch -= 0x40;
+    Parser::Esc_Dispatch act2 = *act;
+    act2.ch += 0x40;
+    dispatch.dispatch( CONTROL, &act2, &fb );
   } else {
     dispatch.dispatch( ESCAPE, act, &fb );
   }

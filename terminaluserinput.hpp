@@ -14,7 +14,7 @@ namespace Terminal {
       : last_byte( -1 )
     {}
 
-    std::string input( Parser::UserByte *act,
+    std::string input( const Parser::UserByte *act,
 		       bool application_mode_cursor_keys );
   };
 }
