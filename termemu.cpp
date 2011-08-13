@@ -29,9 +29,6 @@ const size_t buf_size = 16384;
 
 void emulate_terminal( int fd );
 int copy( int src, int dest );
-int termemu( int host_fd, int src_fd, bool user,
-	     Parser::UTF8Parser *parser,
-	     Terminal::Emulator *terminal );
 
 int main( void )
 {
@@ -300,45 +297,4 @@ void emulate_terminal( int fd )
   swrite( STDOUT_FILENO, update.c_str() );
 
   swrite( STDOUT_FILENO, complete.close().c_str() );
-}
-
-int termemu( int host_fd, int src_fd, bool user,
-	     Parser::UTF8Parser *parser,
-	     Terminal::Emulator *terminal )
-{
-  char buf[ buf_size ];
-
-  /* fill buffer if possible */
-  ssize_t bytes_read = read( src_fd, buf, buf_size );
-  if ( bytes_read == 0 ) { /* EOF */
-    return -1;
-  } else if ( bytes_read < 0 ) {
-    perror( "read" );
-    return -1;
-  }
-
-  for ( int i = 0; i < bytes_read; i++ ) {
-    /* feed bytes to parser */
-    std::list<Parser::Action *> actions;
-    if ( user ) {
-      actions.push_back( new Parser::UserByte( buf[ i ] ) );
-    } else {
-      actions = parser->input( buf[ i ] );
-    }
-
-    /* apply actions to terminal */
-    for ( std::list<Parser::Action *>::iterator i = actions.begin();
-	  i != actions.end();
-	  i++ ) {
-      Parser::Action *act = *i;
-      /* apply action to terminal */
-      act->act_on_terminal( terminal );
-
-      delete *i;
-    }
-  }
-
-  /* write writeback */
-  std::string terminal_to_host = terminal->read_octets_to_host();
-  return swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() );
 }
