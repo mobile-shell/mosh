@@ -136,6 +136,11 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
 
 void Connection::update_MTU( void )
 {
+  /* Temporarily connect socket so we can retrieve path MTU */
+  if ( connect( sock, (sockaddr *)&remote_addr, sizeof( remote_addr ) ) < 0 ) {
+    throw NetworkException( "connect", errno );
+  }
+
   socklen_t optlen = sizeof( MTU );
   if ( getsockopt( sock, IPPROTO_IP, IP_MTU, &MTU, &optlen ) < 0 ) {
     throw NetworkException( "getsockopt", errno );
@@ -145,7 +150,14 @@ void Connection::update_MTU( void )
     throw NetworkException( "Error getting path MTU", errno );
   }
 
-  fprintf( stderr, "Path MTU: %d\n", MTU );  
+  /* Disconnect socket */
+  struct sockaddr disconnect;
+  disconnect.sa_family = AF_UNSPEC;
+
+  if ( connect( sock, (sockaddr *)&disconnect, sizeof( disconnect ) ) < 0 ) {
+    throw NetworkException( "connect", errno );
+  }
+
 }
 
 void Connection::send( string &s, bool send_timestamp )
