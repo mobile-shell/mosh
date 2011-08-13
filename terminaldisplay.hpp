@@ -10,27 +10,23 @@ namespace Terminal {
     int x, y;
     std::string str;
 
-    FrameState() : x(0), y(0), str() {}
+    int cursor_x, cursor_y;
+    std::string current_rendition_string;
+
+    Framebuffer last_frame;
+
+    FrameState( const Framebuffer &s_last ) : x(0), y(0), str(), cursor_x(0), cursor_y(0), current_rendition_string(), last_frame( s_last ) {}
     void append( std::string s ) { str.append( s ); }
   };
 
   class Display {
   private:
-    bool initialized;
-    Framebuffer last_frame;
-    std::string current_rendition_string;
-    int cursor_x, cursor_y;
-
-    void put_cell( FrameState &frame, Framebuffer &f );
+    void put_cell( bool initialized, FrameState &frame, const Framebuffer &f );
 
   public:
-    Display( int width, int height )
-      : initialized( false ), last_frame( width, height ),
-	current_rendition_string(), cursor_x( -1 ), cursor_y( -1 )
-    {}
+    Display() {}
 
-    std::string new_frame( Framebuffer &f );
-    void invalidate( void ) { initialized = false; }
+    std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f );
   };
 }
 

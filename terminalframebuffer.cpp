@@ -199,7 +199,7 @@ std::vector<int> DrawState::get_tabs( void )
 
 void Framebuffer::apply_renditions_to_current_cell( void )
 {
-  get_cell()->renditions = ds.get_renditions();
+  get_mutable_cell()->renditions = ds.get_renditions();
 }
 
 SavedCursor::SavedCursor()
@@ -373,7 +373,7 @@ void Renditions::set_rendition( int num )
   }
 }
 
-std::string Renditions::sgr( void )
+std::string Renditions::sgr( void ) const
 {
   std::string ret;
 

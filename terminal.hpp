@@ -32,7 +32,6 @@ namespace Terminal {
     Framebuffer fb;
     Dispatcher dispatch;
     UserInput user;
-    Display display;
 
     /* action methods */
     void print( Parser::Print *act );
@@ -50,7 +49,7 @@ namespace Terminal {
     std::string open( void ); /* put user cursor keys in application mode */
     std::string close( void ); /* restore user cursor keys */
 
-    std::string new_frame( void ) { return display.new_frame( fb ); }
+    const Framebuffer & get_fb( void ) { return fb; }
   };
 }
 

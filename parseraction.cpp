@@ -70,9 +70,11 @@ void UserByte::act_on_terminal( Terminal::Emulator *emu )
 {
   emu->dispatch.terminal_to_host.append( emu->user.input( this,
 							  emu->fb.ds.application_mode_cursor_keys ) );
-  if ( c == 0x0c ) { /* Ctrl-L */
+  /*
+  if ( c == 0x0c ) { // Ctrl-L
     emu->display.invalidate();
   }
+  */
 }
 
 void Resize::act_on_terminal( Terminal::Emulator *emu )

@@ -122,7 +122,7 @@ int main( void )
 }
 
 /* Print a frame if the last frame was more than 1/50 seconds ago */
-bool tick( Terminal::Emulator *e )
+bool tick( Terminal::Emulator *e, Terminal::Display *d, Terminal::Framebuffer &state )
 {
   static bool initialized = false;
   static struct timeval last_time;
@@ -138,8 +138,10 @@ bool tick( Terminal::Emulator *e )
 
   if ( (!initialized)
        || (diff >= 0.02) ) {
-    std::string update = e->new_frame();
+    std::string update = d->new_frame( initialized, state, e->get_fb() );
     swrite( STDOUT_FILENO, update.c_str() );
+    state = e->get_fb();
+
     initialized = true;
     last_time = this_time;
 
@@ -198,6 +200,8 @@ void emulate_terminal( int fd )
   /* open parser and terminal */
   Parser::UTF8Parser parser;
   Terminal::Emulator terminal( window_size.ws_col, window_size.ws_row );
+  Terminal::Display display;
+  Terminal::Framebuffer state( window_size.ws_col, window_size.ws_row );
 
   struct pollfd pollfds[ 3 ];
 
@@ -255,15 +259,17 @@ void emulate_terminal( int fd )
       break;
     }
 
-    if ( tick( &terminal ) ) { /* there was a frame */
+    if ( tick( &terminal, &display, state ) ) { /* there was a frame */
       poll_timeout = -1;
     } else {
       poll_timeout = 20;
     }
   }
 
+  /* XXX last frame
   std::string update = terminal.new_frame();
   swrite( STDOUT_FILENO, update.c_str() );
+  */
 
   swrite( STDOUT_FILENO, terminal.close().c_str() );
 }

@@ -10,7 +10,7 @@
 using namespace Terminal;
 
 Emulator::Emulator( size_t s_width, size_t s_height )
-  : fb( s_width, s_height ), dispatch(), user(), display( s_width, s_height )
+  : fb( s_width, s_height ), dispatch(), user()
 {}
 
 std::string Emulator::read_octets_to_host( void )
@@ -32,7 +32,7 @@ void Emulator::print( Parser::Print *act )
 
   int chwidth = act->ch == L'\0' ? -1 : wcwidth( act->ch );
 
-  Cell *this_cell = fb.get_cell();
+  Cell *this_cell = fb.get_mutable_cell();
 
   Cell *combining_cell = fb.get_combining_cell(); /* can be null if we were resized */
 
@@ -40,7 +40,7 @@ void Emulator::print( Parser::Print *act )
   case 1: /* normal character */
   case 2: /* wide character */
     if ( fb.ds.auto_wrap_mode && fb.ds.next_print_will_wrap ) {
-      fb.get_row( -1 )->wrap = true;
+      fb.get_mutable_row( -1 )->wrap = true;
       fb.ds.move_col( 0 );
       fb.move_rows_autoscroll( 1 );
     }
@@ -50,7 +50,7 @@ void Emulator::print( Parser::Print *act )
 	 && (chwidth == 2)
 	 && (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
       fb.reset_cell( this_cell );
-      fb.get_row( -1 )->wrap = false;
+      fb.get_mutable_row( -1 )->wrap = false;
       /* There doesn't seem to be a consistent way to get the
 	 downstream terminal emulator to set the wrap-around
 	 copy-and-paste flag on a row that ends with an empty cell
@@ -65,7 +65,7 @@ void Emulator::print( Parser::Print *act )
       }
     }
 
-    this_cell = fb.get_cell();
+    this_cell = fb.get_mutable_cell();
 
     fb.reset_cell( this_cell );
     this_cell->contents.push_back( act->ch );
@@ -74,7 +74,7 @@ void Emulator::print( Parser::Print *act )
 
     if ( chwidth == 2 ) { /* erase overlapped cell */
       if ( fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) {
-	fb.reset_cell( fb.get_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 ) );
+	fb.reset_cell( fb.get_mutable_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 ) );
       }
     }
 

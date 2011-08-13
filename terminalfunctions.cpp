@@ -12,7 +12,7 @@ using namespace Terminal;
 static void clearline( Framebuffer *fb, int row, int start, int end )
 {
   for ( int col = start; col <= end; col++ ) {
-    fb->reset_cell( fb->get_cell( row, col ) );
+    fb->reset_cell( fb->get_mutable_cell( row, col ) );
   }
 }
 
@@ -27,7 +27,7 @@ void CSI_EL( Framebuffer *fb, Dispatcher *dispatch )
     clearline( fb, -1, 0, fb->ds.get_cursor_col() );
     break;
   case 2: /* all of line */
-    fb->reset_row( fb->get_row( -1 ) );
+    fb->reset_row( fb->get_mutable_row( -1 ) );
     break;
   }
 }
@@ -40,18 +40,18 @@ void CSI_ED( Framebuffer *fb, Dispatcher *dispatch ) {
   case 0: /* active position to end of screen, inclusive */
     clearline( fb, -1, fb->ds.get_cursor_col(), fb->ds.get_width() - 1 );
     for ( int y = fb->ds.get_cursor_row() + 1; y < fb->ds.get_height(); y++ ) {
-      fb->reset_row( fb->get_row( y ) );
+      fb->reset_row( fb->get_mutable_row( y ) );
     }
     break;
   case 1: /* start of screen to active position, inclusive */
     for ( int y = 0; y < fb->ds.get_cursor_row(); y++ ) {
-      fb->reset_row( fb->get_row( y ) );
+      fb->reset_row( fb->get_mutable_row( y ) );
     }
     clearline( fb, -1, 0, fb->ds.get_cursor_col() );
     break;
   case 2: /* entire screen */
     for ( int y = 0; y < fb->ds.get_height(); y++ ) {
-      fb->reset_row( fb->get_row( y ) );
+      fb->reset_row( fb->get_mutable_row( y ) );
     }
     break;
   }
@@ -114,8 +114,8 @@ void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   for ( int y = 0; y < fb->ds.get_height(); y++ ) {
     for ( int x = 0; x < fb->ds.get_width(); x++ ) {
-      fb->reset_cell( fb->get_cell( y, x ) );
-      fb->get_cell( y, x )->contents.push_back( L'E' );
+      fb->reset_cell( fb->get_mutable_cell( y, x ) );
+      fb->get_mutable_cell( y, x )->contents.push_back( L'E' );
     }
   }
 }
@@ -215,7 +215,7 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
     fb->ds.move_row( 0 );
     fb->ds.move_col( 0 );
     for ( int y = 0; y < fb->ds.get_height(); y++ ) {
-      fb->reset_row( fb->get_row( y ) );
+      fb->reset_row( fb->get_mutable_row( y ) );
     }
     return NULL;
   case 5: /* reverse video */

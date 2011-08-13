@@ -18,7 +18,7 @@ namespace Terminal {
 
     Renditions( int s_background );
     void set_rendition( int num );
-    std::string sgr( void );
+    std::string sgr( void ) const;
 
     bool operator==( const Renditions &x ) const
     {
@@ -119,12 +119,12 @@ namespace Terminal {
     void move_row( int N, bool relative = false );
     void move_col( int N, bool relative = false, bool implicit = false );
 
-    int get_cursor_col( void ) { return cursor_col; }
-    int get_cursor_row( void ) { return cursor_row; }
-    int get_combining_char_col( void ) { return combining_char_col; }
-    int get_combining_char_row( void ) { return combining_char_row; }
-    int get_width( void ) { return width; }
-    int get_height( void ) { return height; }
+    int get_cursor_col( void ) const { return cursor_col; }
+    int get_cursor_row( void ) const { return cursor_row; }
+    int get_combining_char_col( void ) const { return combining_char_col; }
+    int get_combining_char_row( void ) const { return combining_char_row; }
+    int get_width( void ) const { return width; }
+    int get_height( void ) const { return height; }
 
     void set_tab( void );
     void clear_tab( int col );
@@ -134,14 +134,14 @@ namespace Terminal {
 
     void set_scrolling_region( int top, int bottom );
 
-    int get_scrolling_region_top_row( void ) { return scrolling_region_top_row; }
-    int get_scrolling_region_bottom_row( void ) { return scrolling_region_bottom_row; }
+    int get_scrolling_region_top_row( void ) const { return scrolling_region_top_row; }
+    int get_scrolling_region_bottom_row( void ) const { return scrolling_region_bottom_row; }
 
     int limit_top( void );
     int limit_bottom( void );
 
     void add_rendition( int x ) { renditions.set_rendition( x ); }
-    Renditions get_renditions( void ) { return renditions; }
+    Renditions get_renditions( void ) const { return renditions; }
     int get_background_rendition( void ) { return renditions.background_color; }
 
     void save_cursor( void );
@@ -167,36 +167,42 @@ namespace Terminal {
     void scroll( int N );
     void move_rows_autoscroll( int rows );
 
-    Row *get_row( int row )
+    const Row *get_row( int row ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
 
       return &rows[ row ];
     }
 
-    inline Cell *get_cell( void )
+    inline const Cell *get_cell( void ) const
     {
-#ifdef DEBUG
-      assert( ds.get_cursor_row() >= 0 );
-      assert( ds.get_cursor_col() >= 0 );
-      assert( ds.get_cursor_row() < ds.get_height() );
-      assert( ds.get_cursor_col() < ds.get_width() );
-#endif
-
       return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
     }
 
-    inline Cell *get_cell( int row, int col )
+    inline const Cell *get_cell( int row, int col ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
 
-#ifdef DEBUG
-      assert( row >= 0 );
-      assert( col >= 0 );
-      assert( row < ds.get_height() );
-      assert( col < ds.get_width() );
-#endif
+      return &rows[ row ].cells[ col ];
+    }
+
+    Row *get_mutable_row( int row )
+    {
+      if ( row == -1 ) row = ds.get_cursor_row();
+
+      return &rows[ row ];
+    }
+
+    inline Cell *get_mutable_cell( void )
+    {
+      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
+    }
+
+    inline Cell *get_mutable_cell( int row, int col )
+    {
+      if ( row == -1 ) row = ds.get_cursor_row();
+      if ( col == -1 ) col = ds.get_cursor_col();
 
       return &rows[ row ].cells[ col ];
     }
@@ -215,7 +221,7 @@ namespace Terminal {
     void soft_reset( void );
 
     void set_window_title( std::vector<wchar_t> s ) { window_title = s; }
-    std::vector<wchar_t> get_window_title( void ) { return window_title; }
+    std::vector<wchar_t> get_window_title( void ) const { return window_title; }
 
     void resize( int s_width, int s_height );
 
