@@ -266,10 +266,8 @@ void emulate_terminal( int fd )
     }
   }
 
-  /* XXX last frame
-  std::string update = terminal.new_frame();
+  std::string update = display.new_frame( true, state, terminal.get_fb() );
   swrite( STDOUT_FILENO, update.c_str() );
-  */
 
   swrite( STDOUT_FILENO, terminal.close().c_str() );
 }
