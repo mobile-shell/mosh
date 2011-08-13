@@ -136,13 +136,23 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
 
 void Connection::update_MTU( void )
 {
-  /* Temporarily connect socket so we can retrieve path MTU */
-  if ( connect( sock, (sockaddr *)&remote_addr, sizeof( remote_addr ) ) < 0 ) {
+  if ( !attached ) {
+    return;
+  }
+
+  /* We don't want to use our main socket because we don't want to have to connect it */
+  int path_MTU_socket = socket( AF_INET, SOCK_DGRAM, 0 );
+  if ( path_MTU_socket < 0 ) {
+    throw NetworkException( "socket", errno );
+  }
+
+  /* Connect socket so we can retrieve path MTU */
+  if ( connect( path_MTU_socket, (sockaddr *)&remote_addr, sizeof( remote_addr ) ) < 0 ) {
     throw NetworkException( "connect", errno );
   }
 
   socklen_t optlen = sizeof( MTU );
-  if ( getsockopt( sock, IPPROTO_IP, IP_MTU, &MTU, &optlen ) < 0 ) {
+  if ( getsockopt( path_MTU_socket, IPPROTO_IP, IP_MTU, &MTU, &optlen ) < 0 ) {
     throw NetworkException( "getsockopt", errno );
   }
 
@@ -150,14 +160,9 @@ void Connection::update_MTU( void )
     throw NetworkException( "Error getting path MTU", errno );
   }
 
-  /* Disconnect socket */
-  struct sockaddr disconnect;
-  disconnect.sa_family = AF_UNSPEC;
-
-  if ( connect( sock, (sockaddr *)&disconnect, sizeof( disconnect ) ) < 0 ) {
-    throw NetworkException( "connect", errno );
+  if ( close( path_MTU_socket ) < 0 ) {
+    throw NetworkException( "close", errno );
   }
-
 }
 
 void Connection::send( string &s, bool send_timestamp )

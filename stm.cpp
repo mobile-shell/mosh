@@ -180,7 +180,8 @@ void client( const char *ip, int port, const char *key )
 
     if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
 	 & (POLLERR | POLLHUP | POLLNVAL) ) {
-      break;
+      perror( "poll" );
+      //      break;
     }
   }
 }
