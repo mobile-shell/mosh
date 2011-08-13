@@ -231,7 +231,7 @@ void Transport<MyState, RemoteState>::process_acknowledgment_through( uint64_t a
   }
 
   assert( sent_states.size() > 0 );
-  assert( sent_states.front().num == ack_num );
+  //  assert( sent_states.front().num == ack_num );
 }
 
 template <class MyState, class RemoteState>
