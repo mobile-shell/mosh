@@ -208,7 +208,7 @@ void emulate_terminal( int fd )
   pollfds[ 2 ].fd = winch_fd;
   pollfds[ 2 ].events = POLLIN;
 
-  swrite( STDOUT_FILENO, complete.open().c_str() );
+  swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
 
   int poll_timeout = -1;
 
@@ -295,5 +295,5 @@ void emulate_terminal( int fd )
   std::string update = Terminal::Display::new_frame( true, state, complete.get_fb() );
   swrite( STDOUT_FILENO, update.c_str() );
 
-  swrite( STDOUT_FILENO, complete.close().c_str() );
+  swrite( STDOUT_FILENO, Terminal::Emulator::close().c_str() );
 }

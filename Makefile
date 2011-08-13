@@ -1,11 +1,11 @@
 proto = userinput.proto
-source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp terminaluserinput.cpp terminaldisplay.cpp network.cpp ntester.cpp ocb.cpp base64.cpp encrypt.cpp decrypt.cpp crypto.cpp networktransport.cpp networkinstruction.cpp user.cpp userinput.pb.cc completeterminal.cpp rtm-server.cpp
+source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp terminaluserinput.cpp terminaldisplay.cpp network.cpp ntester.cpp ocb.cpp base64.cpp encrypt.cpp decrypt.cpp crypto.cpp networktransport.cpp networkinstruction.cpp user.cpp userinput.pb.cc completeterminal.cpp stm-server.cpp stm.cpp
 objects = parserstate.o parser.o templates.o terminal.o parseraction.o terminalfunctions.o swrite.o terminalframebuffer.o terminaldispatcher.o terminaluserinput.o terminaldisplay.o network.o ocb.o base64.o crypto.o networktransport.o networkinstruction.o user.o userinput.pb.o completeterminal.o
 repos = templates.rpo
-executables = parse termemu ntester encrypt decrypt rtm-server
+executables = parse termemu ntester encrypt decrypt stm-server stm
 
 CXX = g++
-CXXFLAGS = -g --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-implicit-templates -fno-default-inline -pipe -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE -D_BSD_SOURCE
+CXXFLAGS = -g -O2 --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-implicit-templates -fno-default-inline -pipe -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE -D_BSD_SOURCE
 LIBS = -lutil -lssl -lrt -lm -lprotobuf-lite
 PROTOC = protoc
 
@@ -26,8 +26,11 @@ encrypt: encrypt.o $(objects) ntester # serialize link steps because of -frepo
 decrypt: decrypt.o $(objects) encrypt # serialize link steps because of -frepo
 	$(CXX) $(CXXFLAGS) -o $@ decrypt.o $(objects) $(LIBS)
 
-rtm-server: rtm-server.o $(objects) decrypt # serialize link steps because of -frepo
-	$(CXX) $(CXXFLAGS) -o $@ rtm-server.o $(objects) $(LIBS)
+stm-server: stm-server.o $(objects) decrypt # serialize link steps because of -frepo
+	$(CXX) $(CXXFLAGS) -o $@ stm-server.o $(objects) $(LIBS)
+
+stm: stm.o $(objects) stm-server # serialize link steps because of -frepo
+	$(CXX) $(CXXFLAGS) -o $@ stm.o $(objects) $(LIBS)
 
 templates.o: templates.cpp
 	$(CXX) $(CXXFLAGS) -frepo -c -o $@ $<

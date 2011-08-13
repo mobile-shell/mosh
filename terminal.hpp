@@ -46,8 +46,8 @@ namespace Terminal {
 
     std::string read_octets_to_host( void );
 
-    std::string open( void ); /* put user cursor keys in application mode */
-    std::string close( void ); /* restore user cursor keys */
+    static std::string open( void ); /* put user cursor keys in application mode */
+    static std::string close( void ); /* restore user cursor keys */
 
     const Framebuffer & get_fb( void ) const { return fb; }
 

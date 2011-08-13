@@ -18,9 +18,6 @@ namespace Terminal {
     std::string act( const std::string &str );
     std::string act( const Parser::Action *act );
 
-    std::string open( void ) { return terminal.open(); }
-    std::string close( void ) { return terminal.close(); }
-
     const Framebuffer & get_fb( void ) const { return terminal.get_fb(); }
 
     /* interface for Network::Transport */

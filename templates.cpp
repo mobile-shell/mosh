@@ -31,5 +31,6 @@ template class vector<bool>;
 template class vector<Instruction>;
 template class Transport<UserStream, UserStream>;
 template class Transport<Complete, UserStream>;
+template class Transport<UserStream, Complete>;
 
 template class deque<UserEvent>;

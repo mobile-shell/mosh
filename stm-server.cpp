@@ -91,7 +91,7 @@ int main( void )
     serve( master );
   }
 
-  printf( "[stm is exiting.]\n" );
+  printf( "[stm-server is exiting.]\n" );
 
   return 0;
 }
@@ -132,8 +132,6 @@ void serve( int host_fd )
   uint64_t last_remote_num = network.get_remote_state_num();
 
   while ( 1 ) {
-    network.set_current_state( terminal );
-
     int active_fds = poll( pollfds, 2, network.tick() );
     if ( active_fds < 0 ) {
       perror( "poll" );
@@ -154,6 +152,9 @@ void serve( int host_fd )
 	for ( size_t i = 0; i < us.size(); i++ ) {
 	  terminal_to_host += terminal.act( us.get_action( i ) );
 	}
+
+	/* update client with new state of terminal */
+	network.set_current_state( terminal );
 
 	/* write any writeback octets back to the host */
 	if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
@@ -176,8 +177,12 @@ void serve( int host_fd )
 	return;
       }
       
-      /* write any writeback octets back to the host */
       string terminal_to_host = terminal.act( string( buf, bytes_read ) );
+
+      /* update client with new state of terminal */
+      network.set_current_state( terminal );
+
+      /* write any writeback octets back to the host */
       if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	break;
       }

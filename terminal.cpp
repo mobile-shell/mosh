@@ -155,7 +155,5 @@ void Emulator::resize( size_t s_width, size_t s_height )
 
 bool Emulator::operator==( Emulator const &x ) const
 {
-  assert( dispatch == x.dispatch );
-  assert( user == x.user );
-  return fb == x.fb;
+  return ( dispatch == x.dispatch ) && ( user == x.user ) && ( fb == x.fb );
 }
