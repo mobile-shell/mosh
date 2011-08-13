@@ -84,7 +84,7 @@ namespace Network {
     void update_assumed_receiver_state( void );
     void rationalize_states( void );
     void send_to_receiver( void );
-    void send_in_fragments( string diff, uint64_t new_num );
+    void send_in_fragments( string diff, uint64_t new_num, bool send_timestamp = true );
 
     /* helper methods for recv() */
     void process_acknowledgment_through( uint64_t ack_num );

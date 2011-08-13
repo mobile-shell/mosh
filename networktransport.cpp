@@ -67,30 +67,22 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
     return;
   }
 
-  if ( (assumed_receiver_state->num == sent_states.back().num)
-       && (sent_states.back().state == current_state) ) {
+  string diff = current_state.diff_from( assumed_receiver_state->state );
+
+  if ( diff.empty() ) {
     /* send empty ack */
     if ( (!connection.pending_timestamp())
 	 && (timestamp() - sent_states.back().timestamp < int64_t( ACK_INTERVAL )) ) {
       return;
     }
 
-    /* XXX should increment number each time */
+    uint64_t new_num = sent_states.back().num + 1;
 
-    Instruction inst( assumed_receiver_state->num,
-		      assumed_receiver_state->num,
-		      received_states.back().num,
-		      sent_states.front().num,
-		      0, true,
-		      "" );
-    string s = inst.tostring();
-    connection.send( s, false );
-    assumed_receiver_state->timestamp = timestamp();
+    send_in_fragments( diff, new_num, false );
+    sent_states.push_back( TimestampedState<MyState>( timestamp(), new_num, current_state ) );
 
     return;
   }
-
-  string diff = current_state.diff_from( assumed_receiver_state->state );
 
   uint64_t new_num;
   if ( current_state == sent_states.back().state ) { /* previously sent */
@@ -184,7 +176,6 @@ void Transport<MyState, RemoteState>::recv( void )
 	  i != received_states.end();
 	  i++ ) {
       if ( inst.new_num == i->num ) {
-	i->timestamp = timestamp();
 	return;
       }
     }
@@ -280,13 +271,13 @@ string Transport<MyState, RemoteState>::get_remote_diff( void )
 }
 
 template <class MyState, class RemoteState>
-void Transport<MyState, RemoteState>::send_in_fragments( string diff, uint64_t new_num )
+void Transport<MyState, RemoteState>::send_in_fragments( string diff, uint64_t new_num, bool send_timestamp )
 {
   uint16_t fragment_num = 0;
 
-  while ( !diff.empty() ) {
+  do {
     string this_fragment;
-
+    
     assert( fragment_num <= 32767 );
 
     bool final = false;
@@ -308,6 +299,6 @@ void Transport<MyState, RemoteState>::send_in_fragments( string diff, uint64_t n
 		      this_fragment );
     string s = inst.tostring();
 
-    connection.send( s );
-  }
+    connection.send( s, send_timestamp );
+  } while ( !diff.empty() );
 }
