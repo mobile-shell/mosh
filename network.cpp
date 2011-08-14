@@ -177,11 +177,6 @@ void Connection::send( string &s, bool send_timestamp )
 
   string p = px.tostring( &session );
 
-  /* XXX synthetic packet loss */
-  if ( rand() < RAND_MAX / 2 ) {
-    return;
-  }
-
   ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
 

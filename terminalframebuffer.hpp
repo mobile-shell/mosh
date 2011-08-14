@@ -154,10 +154,10 @@ namespace Terminal {
 
     bool operator==( const DrawState &x ) const
     {
-      /* XXX other fields not necessary to compare -- for now */
+      /* only compare fields that affect display */
       return ( width == x.width ) && ( height == x.height ) && ( cursor_col == x.cursor_col )
 	&& ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible ) &&
-	( reverse_video == x.reverse_video ) && ( renditions == x.renditions ) && ( tabs == x.tabs );
+	( reverse_video == x.reverse_video ) && ( renditions == x.renditions );
     }
   };
 
