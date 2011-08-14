@@ -187,8 +187,13 @@ void client( const char *ip, int port, const char *key )
 	return;
       }
 
-      /* tell emulator */
-      network.get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
+      /* tell remote emulator */
+      Parser::Resize res( window_size.ws_col, window_size.ws_row );
+
+      network.get_current_state().push_back( res );
+
+      /* tell local emulator -- there is probably a safer way to do this */
+      network.get_remote_state_mutable().act( &res );
     }
 
     if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
