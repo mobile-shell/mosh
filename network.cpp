@@ -129,9 +129,11 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     throw NetworkException( buffer, saved_errno );
   }
 
+  /*
   if ( connect( sock, (sockaddr *)&remote_addr, sizeof( remote_addr ) ) < 0 ) {
     throw NetworkException( "connect", errno );
   }
+  */
 
   attached = true;
 }
