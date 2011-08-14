@@ -15,7 +15,8 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     assumed_receiver_state( sent_states.begin() ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
     last_receiver_state( initial_remote ),
-    fragments()
+    fragments(),
+    verbose( false )
 {
   /* server */
 }
@@ -30,7 +31,8 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     assumed_receiver_state( sent_states.begin() ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
     last_receiver_state( initial_remote ),
-    fragments()
+    fragments(),
+    verbose( false )
 {
   /* client */
 }
@@ -300,5 +302,11 @@ void Transport<MyState, RemoteState>::send_in_fragments( string diff, uint64_t n
     string s = inst.tostring();
 
     connection.send( s, send_timestamp );
+
+    if ( verbose ) {
+      fprintf( stderr, "Sent [%d=>%d] frag %d, ack=%d, throwaway=%d, len=%d\n",
+	       (int)inst.old_num, (int)inst.new_num, (int)inst.fragment_num,
+	       (int)inst.ack_num, (int)inst.throwaway_num, (int)inst.diff.size() );
+    }
   } while ( !diff.empty() );
 }

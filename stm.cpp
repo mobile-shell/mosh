@@ -112,7 +112,7 @@ void client( const char *ip, int port, const char *key )
     return;
   }
 
-  /* XXX transmit initial resize */
+  /* XXX transmit initial resize and initialize */
 
   /* local state */
   Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
@@ -180,8 +180,7 @@ void client( const char *ip, int port, const char *key )
 
     if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
 	 & (POLLERR | POLLHUP | POLLNVAL) ) {
-      perror( "poll" );
-      //      break;
+      break;
     }
   }
 }

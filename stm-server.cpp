@@ -118,6 +118,8 @@ void serve( int host_fd )
   Network::UserStream blank;
   Network::Transport< Terminal::Complete, Network::UserStream > network( terminal, blank );
 
+  network.set_verbose();
+
   printf( "key= %s port= %d\n", network.get_key().c_str(), network.port() );
 
   /* prepare to poll for events */

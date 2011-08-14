@@ -109,6 +109,8 @@ namespace Network {
 
     FragmentAssembly fragments;
 
+    bool verbose;
+
   public:
     Transport( MyState &initial_state, RemoteState &initial_remote );
     Transport( MyState &initial_state, RemoteState &initial_remote,
@@ -132,6 +134,8 @@ namespace Network {
     uint64_t get_remote_state_num( void ) { return received_states.back().num; }
 
     int fd( void ) { return connection.fd(); }
+
+    void set_verbose( void ) { verbose = true; }
   };
 }
 
