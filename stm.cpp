@@ -114,14 +114,17 @@ void client( const char *ip, int port, const char *key )
 
   /* local state */
   Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
-  Terminal::Framebuffer state( window_size.ws_col, window_size.ws_row );
+
+  /* initialize screen */
+  string init = Terminal::Display::new_frame( false, terminal.get_fb(), terminal.get_fb() );
+  swrite( STDOUT_FILENO, init.data(), init.size() );
 
   /* open network */
   Network::UserStream blank;
   Network::Transport< Network::UserStream, Terminal::Complete > network( blank, terminal,
 									 key, ip, port );
 
-  /* set terminal size */
+  /* tell server the size of the terminal */
   network.get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
 
   /* prepare to poll for events */
