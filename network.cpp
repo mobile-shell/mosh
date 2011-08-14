@@ -64,16 +64,6 @@ void Connection::setup( void )
     throw NetworkException( "socket", errno );
   }
 
-  /* Bind to free local port.
-     This usage does not seem to be endorsed by POSIX. */
-  struct sockaddr_in local_addr;
-  local_addr.sin_family = AF_INET;
-  local_addr.sin_port = htons( 0 );
-  local_addr.sin_addr.s_addr = INADDR_ANY;
-  if ( bind( sock, (sockaddr *)&local_addr, sizeof( local_addr ) ) < 0 ) {
-    throw NetworkException( "bind", errno );
-  }
-
   /* Enable path MTU discovery */
   char flag = IP_PMTUDISC_DO;
   socklen_t optlen = sizeof( flag );
@@ -99,6 +89,16 @@ Connection::Connection() /* server */
     RTTVAR( 500 )
 {
   setup();
+
+  /* Bind to free local port.
+     This usage does not seem to be endorsed by POSIX. */
+  struct sockaddr_in local_addr;
+  local_addr.sin_family = AF_INET;
+  local_addr.sin_port = htons( 0 );
+  local_addr.sin_addr.s_addr = INADDR_ANY;
+  if ( bind( sock, (sockaddr *)&local_addr, sizeof( local_addr ) ) < 0 ) {
+    throw NetworkException( "bind", errno );
+  }
 }
 
 Connection::Connection( const char *key_str, const char *ip, int port ) /* client */

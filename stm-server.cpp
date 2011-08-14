@@ -208,6 +208,7 @@ void serve( int host_fd )
       }
     } catch ( Network::NetworkException e ) {
       fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
+      sleep( 1 );
     }
   }
 }
