@@ -193,7 +193,11 @@ void client( const char *ip, int port, const char *key )
       network.get_current_state().push_back( res );
 
       /* tell local emulator -- there is probably a safer way to do this */
-      network.get_remote_state_mutable().act( &res );
+      for ( list< Network::TimestampedState<Terminal::Complete> >::iterator i = network.begin();
+	    i != network.end();
+	    i++ ) {
+	i->state.act( &res );
+      }
     }
 
     if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)

@@ -131,7 +131,8 @@ namespace Network {
 
     string get_remote_diff( void );
 
-    RemoteState &get_remote_state_mutable( void ) { return received_states.back().state; }
+    typename list< TimestampedState<RemoteState > >::iterator begin( void ) { return received_states.begin(); }
+    typename list< TimestampedState<RemoteState > >::iterator end( void ) { return received_states.end(); }
 
     uint64_t get_remote_state_num( void ) { return received_states.back().num; }
 
