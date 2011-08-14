@@ -74,6 +74,7 @@ namespace Network {
     Direction direction;
     uint64_t next_seq;
     uint64_t saved_timestamp;
+    uint64_t expected_receiver_seq;
 
     bool RTT_hit;
     double SRTT;

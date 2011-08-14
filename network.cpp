@@ -93,6 +93,7 @@ Connection::Connection() /* server */
     direction( TO_CLIENT ),
     next_seq( 0 ),
     saved_timestamp( -1 ),
+    expected_receiver_seq( 0 ),
     RTT_hit( false ),
     SRTT( 1000 ),
     RTTVAR( 500 )
@@ -111,6 +112,7 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     direction( TO_SERVER ),
     next_seq( 0 ),
     saved_timestamp( -1 ),
+    expected_receiver_seq( 0 ),
     RTT_hit( false ),
     SRTT( 1000 ),
     RTTVAR( 500 )
@@ -213,46 +215,51 @@ string Connection::recv( void )
 
   Packet p( string( buf, received_len ), &session );
 
-  if ( p.timestamp != uint64_t(-1) ) {
-    saved_timestamp = p.timestamp;
-  }
+  dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
 
-  if ( p.timestamp_reply != uint64_t(-1) ) {
-    uint64_t now = timestamp();
-    assert( now >= p.timestamp_reply );
-    double R = now - p.timestamp_reply;
+  if ( p.seq >= expected_receiver_seq ) { /* don't use out-of-order packets for timestamp or targeting */
+    expected_receiver_seq = p.seq + 1; /* this is security-sensitive because a replay attack could otherwise
+					  screw up the timestamp and targeting */
 
-    if ( R < 5000 ) { /* ignore large values, e.g. server was Ctrl-Zed */
-      if ( !RTT_hit ) { /* first measurement */
-	SRTT = R;
-	RTTVAR = R / 2;
-	RTT_hit = true;
-      } else {
-	const double alpha = 1.0 / 8.0;
-	const double beta = 1.0 / 4.0;
+    if ( p.timestamp != uint64_t(-1) ) {
+      saved_timestamp = p.timestamp;
+    }
 
-	RTTVAR = (1 - beta) * RTTVAR + ( beta * fabs( SRTT - R ) );
-	SRTT = (1 - alpha) * SRTT + ( alpha * R );
+    if ( p.timestamp_reply != uint64_t(-1) ) {
+      uint64_t now = timestamp();
+      assert( now >= p.timestamp_reply );
+      double R = now - p.timestamp_reply;
+
+      if ( R < 5000 ) { /* ignore large values, e.g. server was Ctrl-Zed */
+	if ( !RTT_hit ) { /* first measurement */
+	  SRTT = R;
+	  RTTVAR = R / 2;
+	  RTT_hit = true;
+	} else {
+	  const double alpha = 1.0 / 8.0;
+	  const double beta = 1.0 / 4.0;
+	  
+	  RTTVAR = (1 - beta) * RTTVAR + ( beta * fabs( SRTT - R ) );
+	  SRTT = (1 - alpha) * SRTT + ( alpha * R );
+	}
+      }
+    }
+
+    /* server auto-adjusts to client */
+    if ( server ) {
+      attached = true;
+
+      if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
+	   || (remote_addr.sin_port != packet_remote_addr.sin_port) ) {
+	remote_addr = packet_remote_addr;
+	fprintf( stderr, "Server now attached to client at %s:%d\n",
+		 inet_ntoa( remote_addr.sin_addr ),
+		 ntohs( remote_addr.sin_port ) );
       }
     }
   }
 
-  dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
-
-  /* server auto-adjusts to client */
-  if ( server ) {
-    attached = true;
-
-    if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
-	 || (remote_addr.sin_port != packet_remote_addr.sin_port) ) {
-      remote_addr = packet_remote_addr;
-      fprintf( stderr, "Server now attached to client at %s:%d\n",
-	       inet_ntoa( remote_addr.sin_addr ),
-	       ntohs( remote_addr.sin_port ) );
-    }
-  }
-
-  return p.payload;
+  return p.payload; /* we do return out-of-order or duplicated packets to caller */
 }
 
 int Connection::port( void )
