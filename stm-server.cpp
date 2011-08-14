@@ -158,7 +158,7 @@ void serve( int host_fd )
 	    /* tell child process of resize */
 	    const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
 	    window_size.ws_col = res->width;
-	    window_size.ws_col = res->height;
+	    window_size.ws_row = res->height;
 	    if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
 	      perror( "ioctl TIOCSWINSZ" );
 	      return;
