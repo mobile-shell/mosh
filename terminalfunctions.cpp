@@ -434,7 +434,7 @@ static Function func_CSI_HPA( CSI, "\x60", CSI_HPA ); /* ECMA-48 name: HPA */
 void CSI_ECH( Framebuffer *fb, Dispatcher *dispatch )
 {
   int num = dispatch->getparam( 0, 1 );
-  int limit = fb->ds.get_cursor_col() + num;
+  int limit = fb->ds.get_cursor_col() + num - 1;
   if ( limit >= fb->ds.get_width() ) {
     limit = fb->ds.get_width() - 1;
   }
