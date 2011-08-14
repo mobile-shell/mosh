@@ -10,6 +10,7 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <typeinfo>
 
 #include "networktransport.hpp"
 #include "completeterminal.hpp"
@@ -153,6 +154,16 @@ void serve( int host_fd )
 	/* apply userstream to terminal */
 	for ( size_t i = 0; i < us.size(); i++ ) {
 	  terminal_to_host += terminal.act( us.get_action( i ) );
+	  if ( typeid( *us.get_action( i ) ) == typeid( Parser::Resize ) ) {
+	    /* tell child process of resize */
+	    const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
+	    window_size.ws_col = res->width;
+	    window_size.ws_col = res->height;
+	    if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
+	      perror( "ioctl TIOCSWINSZ" );
+	      return;
+	    }
+	  }
 	}
 
 	/* update client with new state of terminal */

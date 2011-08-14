@@ -112,8 +112,6 @@ void client( const char *ip, int port, const char *key )
     return;
   }
 
-  /* XXX transmit initial resize and initialize */
-
   /* local state */
   Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
   Terminal::Framebuffer state( window_size.ws_col, window_size.ws_row );
@@ -122,6 +120,9 @@ void client( const char *ip, int port, const char *key )
   Network::UserStream blank;
   Network::Transport< Network::UserStream, Terminal::Complete > network( blank, terminal,
 									 key, ip, port );
+
+  /* set terminal size */
+  network.get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
 
   /* prepare to poll for events */
   struct pollfd pollfds[ 3 ];
@@ -175,7 +176,19 @@ void client( const char *ip, int port, const char *key )
     }
 
     if ( pollfds[ 2 ].revents & POLLIN ) {
-      /* handle resize */
+      /* resize */
+      struct signalfd_siginfo info;
+      assert( read( winch_fd, &info, sizeof( info ) ) == sizeof( info ) );
+      assert( info.ssi_signo == SIGWINCH );
+
+      /* get new size */
+      if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
+	perror( "ioctl TIOCGWINSZ" );
+	return;
+      }
+
+      /* tell emulator */
+      network.get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
     }
 
     if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
