@@ -74,7 +74,8 @@ void Transport<MyState, RemoteState>::send_to_receiver( void )
   if ( diff.empty() ) {
     /* send empty ack */
     if ( (!connection.pending_timestamp())
-	 && (timestamp() - sent_states.back().timestamp < int64_t( ACK_INTERVAL )) ) {
+	 && (timestamp() - sent_states.back().timestamp < int64_t( ACK_INTERVAL ))
+	 && (sent_states.back().num > 0) ) {
       return;
     }
 
