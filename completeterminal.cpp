@@ -44,6 +44,6 @@ void Complete::apply_string( string diff )
 
 bool Complete::operator==( Complete const &x ) const
 {
-  assert( parser == x.parser );
+  //  assert( parser == x.parser ); /* parser state is irrelevant for us */
   return terminal == x.terminal;
 }
