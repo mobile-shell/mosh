@@ -135,75 +135,79 @@ void serve( int host_fd )
   uint64_t last_remote_num = network.get_remote_state_num();
 
   while ( 1 ) {
-    int active_fds = poll( pollfds, 2, network.tick() );
-    if ( active_fds < 0 ) {
-      perror( "poll" );
-      break;
-    }
+    try {
+      int active_fds = poll( pollfds, 2, network.tick() );
+      if ( active_fds < 0 ) {
+	perror( "poll" );
+	break;
+      }
 
-    if ( pollfds[ 0 ].revents & POLLIN ) {
-      /* packet received from the network */
-      network.recv();
-
-      /* is new user input available for the terminal? */
-      if ( network.get_remote_state_num() != last_remote_num ) {
-	string terminal_to_host;
-
-	Network::UserStream us;
-	us.apply_string( network.get_remote_diff() );
-	/* apply userstream to terminal */
-	for ( size_t i = 0; i < us.size(); i++ ) {
-	  terminal_to_host += terminal.act( us.get_action( i ) );
-	  if ( typeid( *us.get_action( i ) ) == typeid( Parser::Resize ) ) {
-	    /* tell child process of resize */
-	    const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
-	    window_size.ws_col = res->width;
-	    window_size.ws_row = res->height;
-	    if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
-	      perror( "ioctl TIOCSWINSZ" );
-	      return;
+      if ( pollfds[ 0 ].revents & POLLIN ) {
+	/* packet received from the network */
+	network.recv();
+	
+	/* is new user input available for the terminal? */
+	if ( network.get_remote_state_num() != last_remote_num ) {
+	  string terminal_to_host;
+	  
+	  Network::UserStream us;
+	  us.apply_string( network.get_remote_diff() );
+	  /* apply userstream to terminal */
+	  for ( size_t i = 0; i < us.size(); i++ ) {
+	    terminal_to_host += terminal.act( us.get_action( i ) );
+	    if ( typeid( *us.get_action( i ) ) == typeid( Parser::Resize ) ) {
+	      /* tell child process of resize */
+	      const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
+	      window_size.ws_col = res->width;
+	      window_size.ws_row = res->height;
+	      if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
+		perror( "ioctl TIOCSWINSZ" );
+		return;
+	      }
 	    }
 	  }
-	}
 
+	  /* update client with new state of terminal */
+	  network.set_current_state( terminal );
+	  
+	  /* write any writeback octets back to the host */
+	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
+	    break;
+	  }
+	}
+      }
+      
+      if ( pollfds[ 1 ].revents & POLLIN ) {
+	/* input from the host needs to be fed to the terminal */
+	const int buf_size = 16384;
+	char buf[ buf_size ];
+	
+	/* fill buffer if possible */
+	ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
+	if ( bytes_read == 0 ) { /* EOF */
+	  return;
+	} else if ( bytes_read < 0 ) {
+	  perror( "read" );
+	  return;
+	}
+	
+	string terminal_to_host = terminal.act( string( buf, bytes_read ) );
+	
 	/* update client with new state of terminal */
 	network.set_current_state( terminal );
-
+	
 	/* write any writeback octets back to the host */
 	if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	  break;
 	}
       }
-    }
-    
-    if ( pollfds[ 1 ].revents & POLLIN ) {
-      /* input from the host needs to be fed to the terminal */
-      const int buf_size = 16384;
-      char buf[ buf_size ];
-
-      /* fill buffer if possible */
-      ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
-      if ( bytes_read == 0 ) { /* EOF */
-	return;
-      } else if ( bytes_read < 0 ) {
-	perror( "read" );
-	return;
-      }
       
-      string terminal_to_host = terminal.act( string( buf, bytes_read ) );
-
-      /* update client with new state of terminal */
-      network.set_current_state( terminal );
-
-      /* write any writeback octets back to the host */
-      if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
+      if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
+	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	break;
       }
-    }
-
-    if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
-	 & (POLLERR | POLLHUP | POLLNVAL) ) {
-      break;
+    } catch ( Network::NetworkException e ) {
+      fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
     }
   }
 }

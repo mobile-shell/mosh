@@ -139,70 +139,74 @@ void client( const char *ip, int port, const char *key )
   uint64_t last_remote_num = network.get_remote_state_num();
 
   while ( 1 ) {
-    int active_fds = poll( pollfds, 3, network.tick() );
-    if ( active_fds < 0 ) {
-      perror( "poll" );
-      break;
-    }
-
-    if ( pollfds[ 0 ].revents & POLLIN ) {
-      /* packet received from the network */
-      network.recv();
-
-      /* is a new frame available from the terminal? */
-      if ( network.get_remote_state_num() != last_remote_num ) {
-	string diff = network.get_remote_diff();
-	swrite( STDOUT_FILENO, diff.data(), diff.size() );
+    try {
+      int active_fds = poll( pollfds, 3, network.tick() );
+      if ( active_fds < 0 ) {
+	perror( "poll" );
+	break;
       }
-    }
+
+      if ( pollfds[ 0 ].revents & POLLIN ) {
+	/* packet received from the network */
+	network.recv();
+
+	/* is a new frame available from the terminal? */
+	if ( network.get_remote_state_num() != last_remote_num ) {
+	  string diff = network.get_remote_diff();
+	  swrite( STDOUT_FILENO, diff.data(), diff.size() );
+	}
+      }
     
-    if ( pollfds[ 1 ].revents & POLLIN ) {
-      /* input from the user needs to be fed to the network */
-      const int buf_size = 16384;
-      char buf[ buf_size ];
+      if ( pollfds[ 1 ].revents & POLLIN ) {
+	/* input from the user needs to be fed to the network */
+	const int buf_size = 16384;
+	char buf[ buf_size ];
 
-      /* fill buffer if possible */
-      ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
-      if ( bytes_read == 0 ) { /* EOF */
-	return;
-      } else if ( bytes_read < 0 ) {
-	perror( "read" );
-	return;
+	/* fill buffer if possible */
+	ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
+	if ( bytes_read == 0 ) { /* EOF */
+	  return;
+	} else if ( bytes_read < 0 ) {
+	  perror( "read" );
+	  return;
+	}
+
+	for ( int i = 0; i < bytes_read; i++ ) {
+	  network.get_current_state().push_back( Parser::UserByte( buf[ i ] ) );
+	}
       }
 
-      for ( int i = 0; i < bytes_read; i++ ) {
-	network.get_current_state().push_back( Parser::UserByte( buf[ i ] ) );
+      if ( pollfds[ 2 ].revents & POLLIN ) {
+	/* resize */
+	struct signalfd_siginfo info;
+	assert( read( winch_fd, &info, sizeof( info ) ) == sizeof( info ) );
+	assert( info.ssi_signo == SIGWINCH );
+	
+	/* get new size */
+	if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
+	  perror( "ioctl TIOCGWINSZ" );
+	  return;
+	}
+	
+	/* tell remote emulator */
+	Parser::Resize res( window_size.ws_col, window_size.ws_row );
+	
+	network.get_current_state().push_back( res );
+
+	/* tell local emulator -- there is probably a safer way to do this */
+	for ( list< Network::TimestampedState<Terminal::Complete> >::iterator i = network.begin();
+	      i != network.end();
+	      i++ ) {
+	  i->state.act( &res );
+	}
       }
-    }
 
-    if ( pollfds[ 2 ].revents & POLLIN ) {
-      /* resize */
-      struct signalfd_siginfo info;
-      assert( read( winch_fd, &info, sizeof( info ) ) == sizeof( info ) );
-      assert( info.ssi_signo == SIGWINCH );
-
-      /* get new size */
-      if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
-	perror( "ioctl TIOCGWINSZ" );
-	return;
+      if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
+	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+	break;
       }
-
-      /* tell remote emulator */
-      Parser::Resize res( window_size.ws_col, window_size.ws_row );
-
-      network.get_current_state().push_back( res );
-
-      /* tell local emulator -- there is probably a safer way to do this */
-      for ( list< Network::TimestampedState<Terminal::Complete> >::iterator i = network.begin();
-	    i != network.end();
-	    i++ ) {
-	i->state.act( &res );
-      }
-    }
-
-    if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
-	 & (POLLERR | POLLHUP | POLLNVAL) ) {
-      break;
+    } catch ( Network::NetworkException e ) {
+      fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
     }
   }
 }
