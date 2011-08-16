@@ -1,0 +1,15 @@
+Simplify send() routine to call diff() when state has changed
+
+Figure out packet double-sending issue [if delay > 1/50 sec?]
+
+Graceful exit / server shutdown
+
+Make roaming much smoother (with error message placement)
+
+Notify if lost contact with server
+
+Speculative local echo
+
+Write startup script
+
+screen -r
