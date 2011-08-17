@@ -40,7 +40,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
 template <class MyState, class RemoteState>
 unsigned int Transport<MyState, RemoteState>::send_interval( void )
 {
-  unsigned int SEND_INTERVAL = connection.timeout() / 2;
+  unsigned int SEND_INTERVAL = connection.timeout() / 10;
   if ( SEND_INTERVAL < SEND_INTERVAL_MIN ) {
     SEND_INTERVAL = SEND_INTERVAL_MIN;
   } else if ( SEND_INTERVAL > SEND_INTERVAL_MAX ) {
