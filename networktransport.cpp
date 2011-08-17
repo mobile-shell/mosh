@@ -37,12 +37,25 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
   /* client */
 }
 
+template <class MyState, class RemoteState>
+unsigned int Transport<MyState, RemoteState>::send_interval( void )
+{
+  unsigned int SEND_INTERVAL = connection.timeout() / 2;
+  if ( SEND_INTERVAL < SEND_INTERVAL_MIN ) {
+    SEND_INTERVAL = SEND_INTERVAL_MIN;
+  } else if ( SEND_INTERVAL > SEND_INTERVAL_MAX ) {
+    SEND_INTERVAL = SEND_INTERVAL_MAX;
+  }
+
+  return SEND_INTERVAL;
+}
+
 /* Returns the number of ms to wait until next (possible) event */
 template <class MyState, class RemoteState>
 int Transport<MyState, RemoteState>::tick( void )
 {
   /* Determine if a new diff or empty ack needs to be sent */
-  if ( timestamp() - sent_states.back().timestamp >= int64_t( SEND_INTERVAL ) ) {
+  if ( timestamp() - sent_states.back().timestamp >= send_interval() ) {
     /* Update assumed receiver state */
     update_assumed_receiver_state();
 
@@ -52,10 +65,10 @@ int Transport<MyState, RemoteState>::tick( void )
     /* Send diffs or ack */
     send_to_receiver();
 
-    return SEND_INTERVAL;
+    return send_interval();
   } 
 
-  int64_t wait = sent_states.back().timestamp + SEND_INTERVAL - timestamp();
+  int64_t wait = sent_states.back().timestamp + send_interval() - timestamp();
   if ( wait < 0 ) {
     wait = 0;
   }
@@ -305,9 +318,10 @@ void Transport<MyState, RemoteState>::send_in_fragments( string diff, uint64_t n
     connection.send( s, send_timestamp );
 
     if ( verbose ) {
-      fprintf( stderr, "Sent [%d=>%d] frag %d, ack=%d, throwaway=%d, len=%d\n",
+      fprintf( stderr, "Sent [%d=>%d] frag %d, ack=%d, throwaway=%d, len=%d, frame rate=%.2f\n",
 	       (int)inst.old_num, (int)inst.new_num, (int)inst.fragment_num,
-	       (int)inst.ack_num, (int)inst.throwaway_num, (int)inst.diff.size() );
+	       (int)inst.ack_num, (int)inst.throwaway_num, (int)inst.diff.size(),
+	       1000.0 / (double)send_interval() );
     }
   } while ( !diff.empty() );
 }

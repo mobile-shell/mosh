@@ -76,11 +76,13 @@ namespace Network {
   class Transport
   {
   private:
-    static const int SEND_INTERVAL = 50; /* ms between frames */
+    static const unsigned int SEND_INTERVAL_MIN = 20; /* ms between frames */
+    static const unsigned int SEND_INTERVAL_MAX = 250; /* ms between frames */
     static const int ACK_INTERVAL = 1000; /* ms between empty acks */
     static const int HEADER_LEN = 120;
 
     /* helper methods for tick() */
+    unsigned int send_interval( void );
     void update_assumed_receiver_state( void );
     void rationalize_states( void );
     void send_to_receiver( void );
