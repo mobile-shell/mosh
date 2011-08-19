@@ -80,8 +80,8 @@ namespace Network {
     static const int SEND_INTERVAL_MAX = 250; /* ms between frames */
     static const int ACK_INTERVAL = 1000; /* ms between empty acks */
     static const int ACK_DELAY = 10; /* ms before delayed ack */
-    static const int SEND_MINDELAY = 20; /* ms to collect all input */
-    static const int HEADER_LEN = 120;
+    static const int SEND_MINDELAY = 50; /* ms to collect all input */
+    static const int HEADER_LEN = 74;
 
     /* helper methods for tick() */
     unsigned int send_interval( void );
