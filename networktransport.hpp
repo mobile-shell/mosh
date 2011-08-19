@@ -76,16 +76,19 @@ namespace Network {
   class Transport
   {
   private:
-    static const unsigned int SEND_INTERVAL_MIN = 20; /* ms between frames */
-    static const unsigned int SEND_INTERVAL_MAX = 250; /* ms between frames */
+    static const int SEND_INTERVAL_MIN = 20; /* ms between frames */
+    static const int SEND_INTERVAL_MAX = 250; /* ms between frames */
     static const int ACK_INTERVAL = 1000; /* ms between empty acks */
+    static const int ACK_DELAY = 10; /* ms before delayed ack */
+    static const int SEND_MINDELAY = 20; /* ms to collect all input */
     static const int HEADER_LEN = 120;
 
     /* helper methods for tick() */
     unsigned int send_interval( void );
     void update_assumed_receiver_state( void );
     void rationalize_states( void );
-    void send_to_receiver( void );
+    void send_to_receiver( string diff );
+    void send_empty_ack( void );
     void send_in_fragments( string diff, uint64_t new_num, bool send_timestamp = true );
 
     /* helper methods for recv() */
@@ -112,15 +115,19 @@ namespace Network {
     FragmentAssembly fragments;
 
     bool verbose;
+    uint64_t next_ack_time;
+    uint64_t next_send_time;
 
   public:
     Transport( MyState &initial_state, RemoteState &initial_remote );
     Transport( MyState &initial_state, RemoteState &initial_remote,
 	       const char *key_str, const char *ip, int port );
 
-    /* Send data or an ack if necessary.
-       Returns the number of ms to wait until next event. */
-    int tick( void );
+    /* Send data or an ack if necessary. */
+    void tick( void );
+
+    /* Returns the number of ms to wait until next event. */
+    int wait_time( void );
 
     /* Blocks waiting for a packet. */
     void recv( void );

@@ -136,7 +136,7 @@ void serve( int host_fd )
 
   while ( 1 ) {
     try {
-      int active_fds = poll( pollfds, 2, network.tick() );
+      int active_fds = poll( pollfds, 2, network.wait_time() );
       if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;
@@ -206,6 +206,8 @@ void serve( int host_fd )
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	break;
       }
+
+      network.tick();
     } catch ( Network::NetworkException e ) {
       fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
       sleep( 1 );

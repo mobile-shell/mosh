@@ -33,7 +33,11 @@ string Complete::act( const Action *act )
 /* interface for Network::Transport */
 string Complete::diff_from( const Complete &existing )
 {
-  return Terminal::Display::new_frame( true, existing.get_fb(), terminal.get_fb() );
+  if ( existing.get_fb() == get_fb() ) {
+    return "";
+  } else {
+    return Terminal::Display::new_frame( true, existing.get_fb(), terminal.get_fb() );
+  }
 }
 
 void Complete::apply_string( string diff )

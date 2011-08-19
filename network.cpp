@@ -290,3 +290,11 @@ uint64_t Network::timestamp( void )
   return millis;
 }
 
+uint64_t Connection::timeout( void )
+{
+  uint64_t RTO = lrint( ceil( SRTT + 4 * RTTVAR ) );
+  if ( RTO < MIN_RTO ) {
+    RTO = MIN_RTO;
+  }
+  return RTO;
+}

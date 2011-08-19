@@ -143,7 +143,7 @@ void client( const char *ip, int port, const char *key )
 
   while ( 1 ) {
     try {
-      int active_fds = poll( pollfds, 3, network.tick() );
+      int active_fds = poll( pollfds, 3, network.wait_time() );
       if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;
@@ -208,6 +208,8 @@ void client( const char *ip, int port, const char *key )
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	break;
       }
+
+      network.tick();
     } catch ( Network::NetworkException e ) {
       fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
       sleep( 1 );

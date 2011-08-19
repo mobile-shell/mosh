@@ -55,6 +55,7 @@ namespace Network {
   class Connection {
   private:
     static const int RECEIVE_MTU = 2048;
+    static const uint64_t MIN_RTO = 50; /* ms */
 
     int sock;
     struct sockaddr_in remote_addr;
@@ -95,7 +96,8 @@ namespace Network {
     string get_key( void ) { return key.printable_key(); }
     bool get_attached( void ) { return attached; }
 
-    int timeout( void ) { return (int)lrint( ceil( SRTT + 4 * RTTVAR ) ); }
+    uint64_t timeout( void );
+    double get_SRTT( void ) { return SRTT; }
     bool pending_timestamp( void ) { return ( saved_timestamp != uint64_t(-1) ); }
   };
 }

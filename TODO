@@ -1,5 +1,7 @@
 Simplify send() routine to call diff() when state has changed
 
+Delayed ACK
+
 Figure out packet double-sending issue [if delay > 1/50 sec?]
 
 Graceful exit / server shutdown
