@@ -41,6 +41,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
   /* client */
 }
 
+/* Try to send roughly two frames per RTT, bounded by limits on frame rate */
 template <class MyState, class RemoteState>
 unsigned int Transport<MyState, RemoteState>::send_interval( void )
 {
@@ -54,6 +55,7 @@ unsigned int Transport<MyState, RemoteState>::send_interval( void )
   return SEND_INTERVAL;
 }
 
+/* How many ms can the caller wait before we will have an event (empty ack or next frame)? */
 template <class MyState, class RemoteState>
 int Transport<MyState, RemoteState>::wait_time( void )
 {
@@ -88,7 +90,7 @@ int Transport<MyState, RemoteState>::wait_time( void )
   }
 }
 
-/* Send data or an ack if necessary */
+/* Send data or an empty ack if necessary */
 template <class MyState, class RemoteState>
 void Transport<MyState, RemoteState>::tick( void )
 {
@@ -313,6 +315,7 @@ void Transport<MyState, RemoteState>::process_acknowledgment_through( uint64_t a
   //  assert( sent_states.front().num == ack_num );
 }
 
+/* The sender uses throwaway_num to tell us the earliest received state that we need to keep around */
 template <class MyState, class RemoteState>
 void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwaway_num )
 {
