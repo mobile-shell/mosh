@@ -9,6 +9,7 @@
 
 #include "user.hpp"
 #include "networktransport.cpp"
+#include "transportsender.cpp"
 #include "userinput.pb.h"
 
 namespace Parser {
@@ -32,5 +33,8 @@ template class vector<Fragment>;
 template class Transport<UserStream, UserStream>;
 template class Transport<Complete, UserStream>;
 template class Transport<UserStream, Complete>;
+
+template class TransportSender<UserStream>;
+template class TransportSender<Complete>;
 
 template class deque<UserEvent>;

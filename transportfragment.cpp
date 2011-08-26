@@ -1,7 +1,7 @@
 #include <endian.h>
 #include <assert.h>
 
-#include "networktransport.hpp"
+#include "transportfragment.hpp"
 #include "transportinstruction.pb.h"
 
 using namespace Network;
