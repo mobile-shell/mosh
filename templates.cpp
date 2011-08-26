@@ -28,7 +28,7 @@ template class vector<int>;
 template class map<string, Function>;
 template class vector<bool>;
 
-template class vector<Instruction>;
+template class vector<Fragment>;
 template class Transport<UserStream, UserStream>;
 template class Transport<Complete, UserStream>;
 template class Transport<UserStream, Complete>;

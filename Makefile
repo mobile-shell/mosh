@@ -1,6 +1,6 @@
-proto = userinput.proto
-source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp terminaluserinput.cpp terminaldisplay.cpp network.cpp ntester.cpp ocb.cpp base64.cpp encrypt.cpp decrypt.cpp crypto.cpp networktransport.cpp networkinstruction.cpp user.cpp userinput.pb.cc completeterminal.cpp stm-server.cpp stm.cpp
-objects = parserstate.o parser.o templates.o terminal.o parseraction.o terminalfunctions.o swrite.o terminalframebuffer.o terminaldispatcher.o terminaluserinput.o terminaldisplay.o network.o ocb.o base64.o crypto.o networktransport.o networkinstruction.o user.o userinput.pb.o completeterminal.o
+proto = userinput.proto transportinstruction.proto
+source = parse.cpp parserstate.cpp parser.cpp templates.cpp terminal.cpp termemu.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp terminaluserinput.cpp terminaldisplay.cpp network.cpp ntester.cpp ocb.cpp base64.cpp encrypt.cpp decrypt.cpp crypto.cpp networktransport.cpp networkfragment.cpp user.cpp userinput.pb.cc completeterminal.cpp stm-server.cpp stm.cpp transportinstruction.pb.cc
+objects = parserstate.o parser.o templates.o terminal.o parseraction.o terminalfunctions.o swrite.o terminalframebuffer.o terminaldispatcher.o terminaluserinput.o terminaldisplay.o network.o ocb.o base64.o crypto.o networktransport.o networkfragment.o user.o userinput.pb.o completeterminal.o transportinstruction.pb.o
 repos = templates.rpo
 executables = parse termemu ntester encrypt decrypt stm-server stm
 

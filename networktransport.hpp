@@ -8,54 +8,52 @@
 #include <vector>
 
 #include "network.hpp"
+#include "transportinstruction.pb.h"
 
 using namespace std;
+using namespace TransportBuffers;
 
 namespace Network {
-  class Instruction
+  class Fragment
   {
   private:
-    static const size_t inst_header_len = 4 * sizeof( uint64_t ) + 1 * sizeof( uint16_t );
+    static const size_t frag_header_len = 2 * sizeof( uint16_t );
 
   public:
-    uint64_t old_num, new_num;
-    uint64_t ack_num;
-    uint64_t throwaway_num;
+    uint16_t id;
     uint16_t fragment_num;
     bool final;
 
-    string diff;
+    bool initialized;
 
-    Instruction() : old_num( -1 ), new_num( -1 ), ack_num( -1 ), throwaway_num( -1 ), fragment_num( -1 ), final( false ),
-		    diff( "" )
+    string contents;
+
+    Fragment()
+      : id( -1 ), fragment_num( -1 ), final( false ), initialized( false ), contents()
     {}
 
-    Instruction( uint64_t s_old_num, uint64_t s_new_num,
-		 uint64_t s_ack_num, uint64_t s_throwaway_num, uint16_t s_fragment_num, bool s_final,
-		 string s_diff )
-      : old_num( s_old_num ), new_num( s_new_num ),
-	ack_num( s_ack_num ), throwaway_num( s_throwaway_num ), fragment_num( s_fragment_num ), final( s_final ),
-	diff( s_diff )
+    Fragment( uint16_t s_id, uint16_t s_fragment_num, bool s_final, string s_contents )
+      : id( s_id ), fragment_num( s_fragment_num ), final( s_final ), initialized( true ),
+	contents( s_contents )
     {}
 
-    Instruction( string &x );
+    Fragment( string &x );
 
     string tostring( void );
 
-    bool operator==( const Instruction &x );
+    bool operator==( const Fragment &x );
   };
 
   class FragmentAssembly
   {
   private:
-    vector<Instruction> fragments;
-    Instruction current_template;
+    vector<Fragment> fragments;
+    uint16_t current_id;
     int fragments_arrived, fragments_total;
 
   public:
-    FragmentAssembly() : fragments(), current_template(), fragments_arrived( 0 ), fragments_total( -1 ) {}
-    static bool same_template( Instruction &a, Instruction &b );
-    bool add_fragment( Instruction &inst );
+    FragmentAssembly() : fragments(), current_id( -1 ), fragments_arrived( 0 ), fragments_total( -1 ) {}
+    bool add_fragment( Fragment &inst );
     Instruction get_assembly( void );
   };
 
@@ -107,6 +105,9 @@ namespace Network {
     /* somewhere in the middle: the assumed state of the receiver */
 
     typename list< TimestampedState<MyState> >::iterator assumed_receiver_state;
+
+    uint16_t next_instruction_id;
+    Instruction last_instruction_sent;
 
     /* simple receiver */
     list< TimestampedState<RemoteState> > received_states;
