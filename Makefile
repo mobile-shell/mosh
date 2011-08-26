@@ -6,7 +6,7 @@ executables = parse termemu ntester encrypt decrypt stm-server stm
 
 CXX = g++
 CXXFLAGS = -g -O2 --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-implicit-templates -fno-default-inline -pipe -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE -D_BSD_SOURCE
-LIBS = -lutil -lssl -lrt -lm -lprotobuf-lite
+LIBS = -lutil -lcrypto -lrt -lm -lprotobuf-lite
 PROTOC = protoc
 
 all: $(executables)
