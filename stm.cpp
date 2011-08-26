@@ -105,6 +105,22 @@ void client( const char *ip, int port, const char *key )
     return;
   }
 
+  /* establish fd for shutdown signals */
+  assert( sigemptyset( &signal_mask ) == 0 );
+  assert( sigaddset( &signal_mask, SIGTERM ) == 0 );
+  assert( sigaddset( &signal_mask, SIGINT ) == 0 );
+  assert( sigaddset( &signal_mask, SIGHUP ) == 0 );
+  assert( sigaddset( &signal_mask, SIGPIPE ) == 0 );
+
+  /* don't let signals kill us */
+  assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
+
+  int shutdown_signal_fd = signalfd( -1, &signal_mask, 0 );
+  if ( shutdown_signal_fd < 0 ) {
+    perror( "signalfd" );
+    return;
+  }
+
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -128,7 +144,7 @@ void client( const char *ip, int port, const char *key )
   network.get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
 
   /* prepare to poll for events */
-  struct pollfd pollfds[ 3 ];
+  struct pollfd pollfds[ 4 ];
 
   pollfds[ 0 ].fd = network.fd();
   pollfds[ 0 ].events = POLLIN;
@@ -139,11 +155,14 @@ void client( const char *ip, int port, const char *key )
   pollfds[ 2 ].fd = winch_fd;
   pollfds[ 2 ].events = POLLIN;
 
+  pollfds[ 3 ].fd = shutdown_signal_fd;
+  pollfds[ 3 ].events = POLLIN;
+
   uint64_t last_remote_num = network.get_remote_state_num();
 
   while ( 1 ) {
     try {
-      int active_fds = poll( pollfds, 3, network.wait_time() );
+      int active_fds = poll( pollfds, 4, network.wait_time() );
       if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;
@@ -205,6 +224,15 @@ void client( const char *ip, int port, const char *key )
 	      i != network.end();
 	      i++ ) {
 	  i->state.act( &res );
+	}
+      }
+
+      if ( pollfds[ 3 ].revents & POLLIN ) {
+	/* shutdown signal */
+	if ( network.attached() ) {
+	  network.start_shutdown();
+	} else {
+	  break;
 	}
       }
 

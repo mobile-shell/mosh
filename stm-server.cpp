@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <typeinfo>
+#include <signal.h>
+#include <sys/signalfd.h>
 
 #include "networktransport.hpp"
 #include "completeterminal.hpp"
@@ -99,6 +101,24 @@ int main( void )
 
 void serve( int host_fd )
 {
+  /* establish fd for shutdown signals */
+  sigset_t signal_mask;
+
+  assert( sigemptyset( &signal_mask ) == 0 );
+  assert( sigaddset( &signal_mask, SIGTERM ) == 0 );
+  assert( sigaddset( &signal_mask, SIGINT ) == 0 );
+  assert( sigaddset( &signal_mask, SIGHUP ) == 0 );
+  assert( sigaddset( &signal_mask, SIGPIPE ) == 0 );
+
+  /* don't let signals kill us */
+  assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
+
+  int shutdown_signal_fd = signalfd( -1, &signal_mask, 0 );
+  if ( shutdown_signal_fd < 0 ) {
+    perror( "signalfd" );
+    return;
+  }
+
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -124,7 +144,7 @@ void serve( int host_fd )
   printf( "key= %s port= %d\n", network.get_key().c_str(), network.port() );
 
   /* prepare to poll for events */
-  struct pollfd pollfds[ 2 ];
+  struct pollfd pollfds[ 3 ];
 
   pollfds[ 0 ].fd = network.fd();
   pollfds[ 0 ].events = POLLIN;
@@ -132,11 +152,14 @@ void serve( int host_fd )
   pollfds[ 1 ].fd = host_fd;
   pollfds[ 1 ].events = POLLIN;
 
+  pollfds[ 2 ].fd = shutdown_signal_fd;
+  pollfds[ 2 ].events = POLLIN;
+
   uint64_t last_remote_num = network.get_remote_state_num();
 
   while ( 1 ) {
     try {
-      int active_fds = poll( pollfds, 2, network.wait_time() );
+      int active_fds = poll( pollfds, 3, network.wait_time() );
       if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;
@@ -202,6 +225,15 @@ void serve( int host_fd )
 
 	/* write any writeback octets back to the host */
 	if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
+	  break;
+	}
+      }
+
+      if ( pollfds[ 2 ].revents & POLLIN ) {
+	/* shutdown signal */
+	if ( network.attached() ) {
+	  network.start_shutdown();
+	} else {
 	  break;
 	}
       }
