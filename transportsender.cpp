@@ -14,6 +14,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     next_ack_time( timestamp() ),
     next_send_time( timestamp() ),
     verbose( false ),
+    shutdown_in_progress( false ),
     ack_num( 0 )
 {
 }
@@ -50,10 +51,15 @@ int TransportSender<MyState>::wait_time( void )
     if ( next_send_time < sent_states.back().timestamp + send_interval() ) {
       next_send_time = sent_states.back().timestamp + send_interval();
     }
+  }
 
-    if ( next_send_time < next_wakeup ) {
-      next_wakeup = next_send_time;
-    }
+  /* speed up shutdown sequence */
+  if ( shutdown_in_progress || (ack_num == uint64_t(-1)) ) {
+    next_ack_time = sent_states.back().timestamp + send_interval();
+  }
+
+  if ( next_send_time < next_wakeup ) {
+    next_wakeup = next_send_time;
   }
 
   if ( !connection->get_attached() ) {
@@ -110,6 +116,11 @@ void TransportSender<MyState>::send_empty_ack( void )
 
   uint64_t new_num = sent_states.back().num + 1;
 
+  /* special case for shutdown sequence */
+  if ( shutdown_in_progress ) {
+    new_num = uint64_t( -1 );
+  }
+
   send_in_fragments( "", new_num, false );
   sent_states.push_back( TimestampedState<MyState>( sent_states.back().timestamp, new_num, current_state ) );
   next_ack_time = timestamp() + ACK_INTERVAL;
@@ -123,6 +134,11 @@ void TransportSender<MyState>::send_to_receiver( string diff )
     new_num = sent_states.back().num;
   } else { /* new state */
     new_num = sent_states.back().num + 1;
+  }
+
+  /* special case for shutdown sequence */
+  if ( shutdown_in_progress ) {
+    new_num = uint64_t( -1 );
   }
 
   bool done = false;
@@ -157,7 +173,7 @@ void TransportSender<MyState>::send_to_receiver( string diff )
   assumed_receiver_state = sent_states.end();
   assumed_receiver_state--;
   next_ack_time = timestamp() + ACK_INTERVAL;
-  next_send_time = -1;
+  next_send_time = uint64_t(-1);
 }
 
 template <class MyState>

@@ -53,6 +53,7 @@ namespace Network {
     uint64_t next_send_time;
 
     bool verbose;
+    bool shutdown_in_progress;
 
     /* information about receiver state */
     uint64_t ack_num;
@@ -67,14 +68,23 @@ namespace Network {
     /* Returns the number of ms to wait until next possible event. */
     int wait_time( void );
 
-    /* executed upon receipt of ack */
+    /* Executed upon receipt of ack */
     void process_acknowledgment_through( uint64_t ack_num );
 
-    /* getters and setters */
-    MyState &get_current_state( void ) { return current_state; }
-    void set_current_state( const MyState &x ) { current_state = x; }
-    void set_verbose( void ) { verbose = true; }
+    /* Executed upon entry to new receiver state */
     void set_ack_num( uint64_t s_ack_num ) { ack_num = s_ack_num; }
+
+    /* Starts shutdown sequence */
+    void start_shutdown( void ) { shutdown_in_progress = true; }
+    bool get_shutdown_in_progress( void ) { return shutdown_in_progress; }
+    bool get_shutdown_acknowledged( void ) { return sent_states.front().num == uint64_t(-1); }
+    bool get_counterparty_shutdown_acknowledged( void ) { return last_instruction_sent.ack_num() == uint64_t(-1); }
+
+    /* Misc. getters and setters */
+    /* Cannot modify current_state while shutdown in progress */
+    MyState &get_current_state( void ) { assert( !shutdown_in_progress ); return current_state; }
+    void set_current_state( const MyState &x ) { assert( !shutdown_in_progress ); current_state = x; }
+    void set_verbose( void ) { verbose = true; }
 
     /* nonexistent methods to satisfy -Weffc++ */
     TransportSender( const TransportSender &x );

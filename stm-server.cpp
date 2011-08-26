@@ -168,7 +168,9 @@ void serve( int host_fd )
 	  }
 
 	  /* update client with new state of terminal */
-	  network.set_current_state( terminal );
+	  if ( !network.shutdown_in_progress() ) {
+	    network.set_current_state( terminal );
+	  }
 	  
 	  /* write any writeback octets back to the host */
 	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
@@ -194,16 +196,35 @@ void serve( int host_fd )
 	string terminal_to_host = terminal.act( string( buf, bytes_read ) );
 	
 	/* update client with new state of terminal */
-	network.set_current_state( terminal );
-	
+	if ( !network.shutdown_in_progress() ) {
+	  network.set_current_state( terminal );
+	}
+
 	/* write any writeback octets back to the host */
 	if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	  break;
 	}
       }
       
-      if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
+      if ( (pollfds[ 0 ].revents)
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+	/* network problem */
+	break;
+      }
+
+      if ( (pollfds[ 1 ].revents)
+	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+	/* host problem */
+	network.start_shutdown();
+      }
+
+      /* quit if our shutdown has been acknowledged */
+      if ( network.shutdown_in_progress() && network.shutdown_acknowledged() ) {
+	break;
+      }
+
+      /* quit if we received and acknowledged a shutdown request */
+      if ( network.counterparty_shutdown_ack_sent() ) {
 	break;
       }
 

@@ -174,8 +174,10 @@ void client( const char *ip, int port, const char *key )
 	  return;
 	}
 
-	for ( int i = 0; i < bytes_read; i++ ) {
-	  network.get_current_state().push_back( Parser::UserByte( buf[ i ] ) );
+	if ( !network.shutdown_in_progress() ) {
+	  for ( int i = 0; i < bytes_read; i++ ) {
+	    network.get_current_state().push_back( Parser::UserByte( buf[ i ] ) );
+	  }
 	}
       }
 
@@ -193,8 +195,10 @@ void client( const char *ip, int port, const char *key )
 	
 	/* tell remote emulator */
 	Parser::Resize res( window_size.ws_col, window_size.ws_row );
-	
-	network.get_current_state().push_back( res );
+
+	if ( !network.shutdown_in_progress() ) {
+	  network.get_current_state().push_back( res );
+	}
 
 	/* tell local emulator -- there is probably a safer way to do this */
 	for ( list< Network::TimestampedState<Terminal::Complete> >::iterator i = network.begin();
@@ -204,8 +208,25 @@ void client( const char *ip, int port, const char *key )
 	}
       }
 
-      if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
+      if ( (pollfds[ 0 ].revents)
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+	/* network problem */
+	break;
+      }
+
+      if ( (pollfds[ 1 ].revents)
+	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+	/* user problem */
+	network.start_shutdown();
+      }
+
+      /* quit if our shutdown has been acknowledged */
+      if ( network.shutdown_in_progress() && network.shutdown_acknowledged() ) {
+	break;
+      }
+
+      /* quit if we received and acknowledged a shutdown request */
+      if ( network.counterparty_shutdown_ack_sent() ) {
 	break;
       }
 

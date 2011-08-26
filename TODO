@@ -4,7 +4,7 @@
 
 [DONE] Figure out packet double-sending issue [if delay > 1/50 sec?]
 
-Graceful exit / server shutdown
+[DONE] Graceful exit / server shutdown
 
 Make roaming much smoother (with error message placement)
 

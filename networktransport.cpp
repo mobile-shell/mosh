@@ -12,7 +12,8 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
     last_receiver_state( initial_remote ),
-    fragments()
+    fragments(),
+    verbose( false )
 {
   /* server */
 }
@@ -24,7 +25,8 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
     last_receiver_state( initial_remote ),
-    fragments()
+    fragments(),
+    verbose( false )
 {
   /* client */
 }
@@ -82,11 +84,9 @@ void Transport<MyState, RemoteState>::recv( void )
 	return;
       }
     }
-    /*
     if ( verbose )
       fprintf( stderr, "[%d] Received state %d [ack %d]\n",
-	       (int)timestamp() % 100000, (int)new_state.num, (int)inst.ack_num );
-    */
+	       (int)timestamp() % 100000, (int)new_state.num, (int)inst.ack_num() );
     received_states.push_back( new_state );
     sender.set_ack_num( received_states.back().num );
   }
@@ -128,4 +128,3 @@ string Transport<MyState, RemoteState>::get_remote_diff( void )
 
   return ret;
 }
-

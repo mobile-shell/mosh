@@ -30,8 +30,8 @@ namespace Network {
     /* simple receiver */
     list< TimestampedState<RemoteState> > received_states;
     RemoteState last_receiver_state; /* the state we were in when user last queried state */
-
     FragmentAssembly fragments;
+    bool verbose;
 
   public:
     Transport( MyState &initial_state, RemoteState &initial_remote );
@@ -47,13 +47,23 @@ namespace Network {
     /* Blocks waiting for a packet. */
     void recv( void );
 
+    /* Find diff between last receiver state and current remote state, then rationalize states. */
+    string get_remote_diff( void );
+
+    /* Shut down other side of connection. */
+    /* Illegal to change current_state after this. */
+    void start_shutdown( void ) { sender.start_shutdown(); }
+    bool shutdown_in_progress( void ) { return sender.get_shutdown_in_progress(); }
+    bool shutdown_acknowledged( void ) { return sender.get_shutdown_acknowledged(); }
+
+    /* Other side has requested shutdown and we have sent one ACK */
+    bool counterparty_shutdown_ack_sent( void ) { return sender.get_counterparty_shutdown_acknowledged(); }
+
     int port( void ) { return connection.port(); }
     string get_key( void ) { return connection.get_key(); }
 
     MyState &get_current_state( void ) { return sender.get_current_state(); }
     void set_current_state( const MyState &x ) { sender.set_current_state( x ); }
-
-    string get_remote_diff( void );
 
     typename list< TimestampedState<RemoteState > >::iterator begin( void ) { return received_states.begin(); }
     typename list< TimestampedState<RemoteState > >::iterator end( void ) { return received_states.end(); }
@@ -62,7 +72,7 @@ namespace Network {
 
     int fd( void ) { return connection.fd(); }
 
-    void set_verbose( void ) { sender.set_verbose(); }
+    void set_verbose( void ) { sender.set_verbose(); verbose = true; }
   };
 }
 
