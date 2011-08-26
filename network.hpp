@@ -15,6 +15,8 @@ using namespace Crypto;
 
 namespace Network {
   uint64_t timestamp( void );
+  uint16_t timestamp16( void );
+  uint16_t timestamp_diff( uint16_t tsnew, uint16_t tsold );
 
   class MTUException {
   public:
@@ -38,11 +40,11 @@ namespace Network {
   public:
     uint64_t seq;
     Direction direction;
-    uint64_t timestamp, timestamp_reply;
+    uint16_t timestamp, timestamp_reply;
     string payload;
     
     Packet( uint64_t s_seq, Direction s_direction,
-	    uint64_t s_timestamp, uint64_t s_timestamp_reply, string s_payload )
+	    uint16_t s_timestamp, uint16_t s_timestamp_reply, string s_payload )
       : seq( s_seq ), direction( s_direction ),
 	timestamp( s_timestamp ), timestamp_reply( s_timestamp_reply ), payload( s_payload )
     {}
@@ -74,7 +76,7 @@ namespace Network {
 
     Direction direction;
     uint64_t next_seq;
-    uint64_t saved_timestamp;
+    uint16_t saved_timestamp;
     uint64_t expected_receiver_seq;
 
     bool RTT_hit;
@@ -98,7 +100,7 @@ namespace Network {
 
     uint64_t timeout( void );
     double get_SRTT( void ) { return SRTT; }
-    bool pending_timestamp( void ) { return ( saved_timestamp != uint64_t(-1) ); }
+    bool pending_timestamp( void ) { return ( saved_timestamp != uint16_t(-1) ); }
   };
 }
 

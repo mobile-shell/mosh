@@ -26,13 +26,13 @@ Packet::Packet( string coded_packet, Session *session )
   direction = (message.nonce.val() & 0x8000000000000000) ? TO_CLIENT : TO_SERVER;
   seq = message.nonce.val() & 0x7FFFFFFFFFFFFFFF;
 
-  assert( message.text.size() >= 2 * sizeof( uint64_t ) );
+  assert( message.text.size() >= 2 * sizeof( uint16_t ) );
 
-  uint64_t *data = (uint64_t *)message.text.data();
-  timestamp = be64toh( data[ 0 ] );
-  timestamp_reply = be64toh( data[ 1 ] );
+  uint16_t *data = (uint16_t *)message.text.data();
+  timestamp = be16toh( data[ 0 ] );
+  timestamp_reply = be16toh( data[ 1 ] );
 
-  payload = string( message.text.begin() + 2 * sizeof( uint64_t ), message.text.end() );
+  payload = string( message.text.begin() + 2 * sizeof( uint16_t ), message.text.end() );
 }
 
 /* Output coded string from packet */
@@ -40,16 +40,16 @@ string Packet::tostring( Session *session )
 {
   uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & 0x7FFFFFFFFFFFFFFF);
 
-  uint64_t ts_net[ 2 ] = { htobe64( timestamp ), htobe64( timestamp_reply ) };
+  uint16_t ts_net[ 2 ] = { htobe16( timestamp ), htobe16( timestamp_reply ) };
 
-  string timestamps = string( (char *)ts_net, 2 * sizeof( uint64_t ) );
+  string timestamps = string( (char *)ts_net, 2 * sizeof( uint16_t ) );
 
   return session->encrypt( Message( Nonce( direction_seq ), timestamps + payload ) );
 }
 
 Packet Connection::new_packet( string &s_payload )
 {
-  Packet p( next_seq++, direction, timestamp(), saved_timestamp, s_payload );
+  Packet p( next_seq++, direction, timestamp16(), saved_timestamp, s_payload );
 
   saved_timestamp = -1;
 
@@ -223,14 +223,13 @@ string Connection::recv( void )
     expected_receiver_seq = p.seq + 1; /* this is security-sensitive because a replay attack could otherwise
 					  screw up the timestamp and targeting */
 
-    if ( p.timestamp != uint64_t(-1) ) {
+    if ( p.timestamp != uint16_t(-1) ) {
       saved_timestamp = p.timestamp;
     }
 
-    if ( p.timestamp_reply != uint64_t(-1) ) {
-      uint64_t now = timestamp();
-      assert( now >= p.timestamp_reply );
-      double R = now - p.timestamp_reply;
+    if ( p.timestamp_reply != uint16_t(-1) ) {
+      uint16_t now = timestamp16();
+      double R = timestamp_diff( now, p.timestamp_reply );
 
       if ( R < 5000 ) { /* ignore large values, e.g. server was Ctrl-Zed */
 	if ( !RTT_hit ) { /* first measurement */
@@ -288,6 +287,24 @@ uint64_t Network::timestamp( void )
   millis += uint64_t( tp.tv_sec ) * 1000;
 
   return millis;
+}
+
+uint16_t Network::timestamp16( void )
+{
+  return timestamp() % 65536;
+}
+
+uint16_t Network::timestamp_diff( uint16_t tsnew, uint16_t tsold )
+{
+  int diff = tsnew - tsold;
+  if ( diff < 0 ) {
+    diff += 65536;
+  }
+  
+  assert( diff >= 0 );
+  assert( diff <= 65535 );
+
+  return diff;
 }
 
 uint64_t Connection::timeout( void )
