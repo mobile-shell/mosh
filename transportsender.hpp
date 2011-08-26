@@ -76,15 +76,16 @@ namespace Network {
 
     /* Starts shutdown sequence */
     void start_shutdown( void ) { shutdown_in_progress = true; }
-    bool get_shutdown_in_progress( void ) { return shutdown_in_progress; }
-    bool get_shutdown_acknowledged( void ) { return sent_states.front().num == uint64_t(-1); }
-    bool get_counterparty_shutdown_acknowledged( void ) { return last_instruction_sent.ack_num() == uint64_t(-1); }
 
     /* Misc. getters and setters */
     /* Cannot modify current_state while shutdown in progress */
     MyState &get_current_state( void ) { assert( !shutdown_in_progress ); return current_state; }
     void set_current_state( const MyState &x ) { assert( !shutdown_in_progress ); current_state = x; }
     void set_verbose( void ) { verbose = true; }
+
+    bool get_shutdown_in_progress( void ) { return shutdown_in_progress; }
+    bool get_shutdown_acknowledged( void ) { return sent_states.front().num == uint64_t(-1); }
+    bool get_counterparty_shutdown_acknowledged( void ) { return last_instruction_sent.ack_num() == uint64_t(-1); }
 
     /* nonexistent methods to satisfy -Weffc++ */
     TransportSender( const TransportSender &x );

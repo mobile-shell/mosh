@@ -84,7 +84,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  printf( "[stm is exiting.]\n" );
+  printf( "\n[stm is exiting.]\n" );
 
   return 0;
 }
