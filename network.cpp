@@ -169,7 +169,7 @@ void Connection::update_MTU( void )
   }
 }
 
-void Connection::send( string &s, bool send_timestamp )
+void Connection::send( string s, bool send_timestamp )
 {
   assert( attached );
 

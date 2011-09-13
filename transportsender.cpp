@@ -9,8 +9,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     current_state( initial_state ),
     sent_states( 1, TimestampedState<MyState>( timestamp(), 0, initial_state ) ),
     assumed_receiver_state( sent_states.begin() ),
-    next_instruction_id( -1 ),
-    last_instruction_sent(),
+    fragmenter(),
     next_ack_time( timestamp() ),
     next_send_time( timestamp() ),
     verbose( false ),
@@ -225,51 +224,20 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num,
   inst.set_throwaway_num( sent_states.front().num );
   inst.set_diff( diff );
 
-  if ( (inst.old_num() != last_instruction_sent.old_num())
-       || (inst.new_num() != last_instruction_sent.new_num())
-       || (inst.ack_num() != last_instruction_sent.ack_num())
-       || (inst.throwaway_num() != last_instruction_sent.throwaway_num()) ) {
-    next_instruction_id++; /* make sure this happens before the first send in case of exception */
-    last_instruction_sent = inst;
-  } else {
-    assert( inst.diff() == last_instruction_sent.diff() );
-  }
+  vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU() );
 
-  string payload = inst.SerializeAsString();
-
-  uint16_t fragment_num = 0;
-
-  do {
-    string this_fragment;
-    
-    assert( fragment_num <= 32767 );
-
-    bool final = false;
-
-    int MTU = connection->get_MTU();
-
-    if ( int( payload.size() + HEADER_LEN ) > MTU ) {
-      this_fragment = string( payload.begin(), payload.begin() + MTU - HEADER_LEN );
-      payload = string( payload.begin() + MTU - HEADER_LEN, payload.end() );
-    } else {
-      this_fragment = payload;
-      payload.clear();
-      final = true;
-    }
-
-    Fragment frag( next_instruction_id, fragment_num++, final, this_fragment );
-    string s = frag.tostring();
-
-    connection->send( s, send_timestamp );
+  for ( auto i = fragments.begin(); i != fragments.end(); i++ ) {
+    connection->send( i->tostring(), send_timestamp );
 
     if ( verbose ) {
       fprintf( stderr, "[%d] Sent [%d=>%d] id %d, frag %d ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d\n",
-	       (int)(timestamp() % 100000), (int)inst.old_num(), (int)inst.new_num(), (int)frag.id, (int)frag.fragment_num,
-	       (int)inst.ack_num(), (int)inst.throwaway_num(), (int)frag.contents.size(),
+	       (int)(timestamp() % 100000), (int)inst.old_num(), (int)inst.new_num(), (int)i->id, (int)i->fragment_num,
+	       (int)inst.ack_num(), (int)inst.throwaway_num(), (int)i->contents.size(),
 	       1000.0 / (double)send_interval(),
 	       (int)connection->timeout() );
     }
-  } while ( !payload.empty() );
+
+  }
 }
 
 template <class MyState>

@@ -13,6 +13,12 @@ static string network_order_string( uint16_t host_order )
   return string( (char *)&net_int, sizeof( net_int ) );
 }
 
+static string network_order_string( uint64_t host_order )
+{
+  uint64_t net_int = htobe64( host_order );
+  return string( (char *)&net_int, sizeof( net_int ) );
+}
+
 string Fragment::tostring( void )
 {
   assert( initialized );
@@ -38,9 +44,10 @@ Fragment::Fragment( string &x )
 {
   assert( x.size() >= frag_header_len );
 
+  uint64_t *data64 = (uint64_t *)x.data();
   uint16_t *data16 = (uint16_t *)x.data();
-  id = be16toh( data16[ 0 ] );
-  fragment_num = be16toh( data16[ 1 ] );
+  id = be64toh( data64[ 0 ] );
+  fragment_num = be16toh( data16[ 4 ] );
   final = ( fragment_num & 0x8000 ) >> 15;
   fragment_num &= 0x7FFF;
 }
@@ -109,4 +116,45 @@ bool Fragment::operator==( const Fragment &x )
 {
   return ( id == x.id ) && ( fragment_num == x.fragment_num ) && ( final == x.final )
     && ( initialized == x.initialized ) && ( contents == x.contents );
+}
+
+vector<Fragment> Fragmenter::make_fragments( Instruction &inst, int MTU )
+{
+  if ( (inst.old_num() != last_instruction.old_num())
+       || (inst.new_num() != last_instruction.new_num())
+       || (inst.ack_num() != last_instruction.ack_num())
+       || (inst.throwaway_num() != last_instruction.throwaway_num())
+       || (last_MTU != MTU) ) {
+    next_instruction_id++;
+  }
+
+  if ( (inst.old_num() == last_instruction.old_num())
+       && (inst.new_num() == last_instruction.new_num()) ) {
+    assert( inst.diff() == last_instruction.diff() );
+  }
+
+  last_instruction = inst;
+  last_MTU = MTU;
+
+  string payload = inst.SerializeAsString();
+  uint16_t fragment_num = 0;
+  vector<Fragment> ret;
+
+  while ( !payload.empty() ) {
+    string this_fragment;
+    bool final = false;
+
+    if ( int( payload.size() + HEADER_LEN ) > MTU ) {
+      this_fragment = string( payload.begin(), payload.begin() + MTU - HEADER_LEN );
+      payload = string( payload.begin() + MTU - HEADER_LEN, payload.end() );
+    } else {
+      this_fragment = payload;
+      payload.clear();
+      final = true;
+    }
+
+    ret.push_back( Fragment( next_instruction_id, fragment_num++, final, this_fragment ) );
+  }
+
+  return ret;
 }

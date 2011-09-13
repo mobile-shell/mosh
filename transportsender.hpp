@@ -8,6 +8,7 @@
 #include "network.hpp"
 #include "transportinstruction.pb.h"
 #include "transportstate.hpp"
+#include "transportfragment.hpp"
 
 using namespace std;
 using namespace TransportBuffers;
@@ -23,7 +24,6 @@ namespace Network {
     static const int ACK_INTERVAL = 1000; /* ms between empty acks */
     static const int ACK_DELAY = 10; /* ms before delayed ack */
     static const int SEND_MINDELAY = 20; /* ms to collect all input */
-    static const int HEADER_LEN = 60;
 
     /* helper methods for tick() */
     unsigned int send_interval( void );
@@ -46,8 +46,7 @@ namespace Network {
     typename list< TimestampedState<MyState> >::iterator assumed_receiver_state;
 
     /* for fragment creation */
-    uint16_t next_instruction_id;
-    Instruction last_instruction_sent;
+    Fragmenter fragmenter;
 
     /* timing state */
     uint64_t next_ack_time;
@@ -86,7 +85,7 @@ namespace Network {
 
     bool get_shutdown_in_progress( void ) { return shutdown_in_progress; }
     bool get_shutdown_acknowledged( void ) { return sent_states.front().num == uint64_t(-1); }
-    bool get_counterparty_shutdown_acknowledged( void ) { return last_instruction_sent.ack_num() == uint64_t(-1); }
+    bool get_counterparty_shutdown_acknowledged( void ) { return fragmenter.last_ack_sent() == uint64_t(-1); }
 
     /* nonexistent methods to satisfy -Weffc++ */
     TransportSender( const TransportSender &x );
