@@ -14,7 +14,8 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     next_send_time( timestamp() ),
     verbose( false ),
     shutdown_in_progress( false ),
-    ack_num( 0 )
+    ack_num( 0 ),
+    pending_data_ack( false )
 {
 }
 
@@ -36,7 +37,7 @@ unsigned int TransportSender<MyState>::send_interval( void )
 template <class MyState>
 int TransportSender<MyState>::wait_time( void )
 {
-  if ( connection->pending_timestamp() && ( next_ack_time > timestamp() + ACK_DELAY ) ) {
+  if ( pending_data_ack && (next_ack_time > timestamp() + ACK_DELAY) ) {
     next_ack_time = timestamp() + ACK_DELAY;
   }
 
@@ -120,7 +121,7 @@ void TransportSender<MyState>::send_empty_ack( void )
     new_num = uint64_t( -1 );
   }
 
-  send_in_fragments( "", new_num, false );
+  send_in_fragments( "", new_num );
   sent_states.push_back( TimestampedState<MyState>( sent_states.back().timestamp, new_num, current_state ) );
   next_ack_time = timestamp() + ACK_INTERVAL;
 }
@@ -215,7 +216,7 @@ void TransportSender<MyState>::rationalize_states( void )
 }
 
 template <class MyState>
-void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num, bool send_timestamp )
+void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num )
 {
   Instruction inst;
   inst.set_old_num( assumed_receiver_state->num );
@@ -227,7 +228,7 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num,
   vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU() );
 
   for ( auto i = fragments.begin(); i != fragments.end(); i++ ) {
-    connection->send( i->tostring(), send_timestamp );
+    connection->send( i->tostring() );
 
     if ( verbose ) {
       fprintf( stderr, "[%d] Sent [%d=>%d] id %d, frag %d ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d\n",
@@ -238,6 +239,8 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num,
     }
 
   }
+
+  pending_data_ack = false;
 }
 
 template <class MyState>

@@ -49,9 +49,16 @@ string Packet::tostring( Session *session )
 
 Packet Connection::new_packet( string &s_payload )
 {
-  Packet p( next_seq++, direction, timestamp16(), saved_timestamp, s_payload );
+  uint16_t outgoing_timestamp_reply = -1;
 
-  saved_timestamp = -1;
+  if ( timestamp() - saved_timestamp_received_at < 25 ) {
+    /* we have a recent received timestamp */
+    outgoing_timestamp_reply = saved_timestamp;
+    saved_timestamp = -1;
+    saved_timestamp_received_at = 0;
+  }
+
+  Packet p( next_seq++, direction, timestamp16(), outgoing_timestamp_reply, s_payload );
 
   return p;
 }
@@ -83,6 +90,7 @@ Connection::Connection() /* server */
     direction( TO_CLIENT ),
     next_seq( 0 ),
     saved_timestamp( -1 ),
+    saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
     RTT_hit( false ),
     SRTT( 1000 ),
@@ -112,6 +120,7 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     direction( TO_SERVER ),
     next_seq( 0 ),
     saved_timestamp( -1 ),
+    saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
     RTT_hit( false ),
     SRTT( 1000 ),
@@ -169,15 +178,11 @@ void Connection::update_MTU( void )
   }
 }
 
-void Connection::send( string s, bool send_timestamp )
+void Connection::send( string s )
 {
   assert( attached );
 
   Packet px = new_packet( s );
-
-  if ( !send_timestamp ) {
-    px.timestamp = -1;
-  }
 
   string p = px.tostring( &session );
 
@@ -225,6 +230,7 @@ string Connection::recv( void )
 
     if ( p.timestamp != uint16_t(-1) ) {
       saved_timestamp = p.timestamp;
+      saved_timestamp_received_at = timestamp();
     }
 
     if ( p.timestamp_reply != uint16_t(-1) ) {
@@ -291,7 +297,11 @@ uint64_t Network::timestamp( void )
 
 uint16_t Network::timestamp16( void )
 {
-  return timestamp() % 65536;
+  uint16_t ts = timestamp() % 65536;
+  if ( ts == uint16_t(-1) ) {
+    ts++;
+  }
+  return ts;
 }
 
 uint16_t Network::timestamp_diff( uint16_t tsnew, uint16_t tsold )

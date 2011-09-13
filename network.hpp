@@ -78,6 +78,7 @@ namespace Network {
     Direction direction;
     uint64_t next_seq;
     uint16_t saved_timestamp;
+    uint64_t saved_timestamp_received_at;
     uint64_t expected_receiver_seq;
 
     bool RTT_hit;
@@ -90,7 +91,7 @@ namespace Network {
     Connection();
     Connection( const char *key_str, const char *ip, int port );
     
-    void send( string s, bool send_timestamp = true );
+    void send( string s );
     string recv( void );
     int fd( void ) { return sock; }
     int get_MTU( void ) { return MTU; }
@@ -101,7 +102,7 @@ namespace Network {
 
     uint64_t timeout( void );
     double get_SRTT( void ) { return SRTT; }
-    bool pending_timestamp( void ) { return ( saved_timestamp != uint16_t(-1) ); }
+    //    bool pending_timestamp( void ) { return ( saved_timestamp != uint16_t(-1) ); }
   };
 }
 

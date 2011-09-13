@@ -31,7 +31,7 @@ namespace Network {
     void rationalize_states( void );
     void send_to_receiver( string diff );
     void send_empty_ack( void );
-    void send_in_fragments( string diff, uint64_t new_num, bool send_timestamp = true );
+    void send_in_fragments( string diff, uint64_t new_num );
 
     /* state of sender */
     Connection *connection;
@@ -57,6 +57,7 @@ namespace Network {
 
     /* information about receiver state */
     uint64_t ack_num;
+    bool pending_data_ack;
 
   public:
     /* constructor */
@@ -73,6 +74,9 @@ namespace Network {
 
     /* Executed upon entry to new receiver state */
     void set_ack_num( uint64_t s_ack_num ) { ack_num = s_ack_num; }
+
+    /* Accelerate reply ack */
+    void set_data_ack( void ) { pending_data_ack = true; }
 
     /* Starts shutdown sequence */
     void start_shutdown( void ) { shutdown_in_progress = true; }

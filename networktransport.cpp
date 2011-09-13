@@ -71,8 +71,11 @@ void Transport<MyState, RemoteState>::recv( void )
     TimestampedState<RemoteState> new_state = *reference_state;
     new_state.timestamp = timestamp();
     new_state.num = inst.new_num();
-    new_state.state.apply_string( inst.diff() );
-    
+
+    if ( !inst.diff().empty() ) {
+      new_state.state.apply_string( inst.diff() );
+    }
+
     process_throwaway_until( inst.throwaway_num() );
 
     /* Insert new state in sorted place */
@@ -81,14 +84,23 @@ void Transport<MyState, RemoteState>::recv( void )
 	  i++ ) {
       if ( i->num > new_state.num ) {
 	received_states.insert( i, new_state );
+	if ( verbose ) {
+	  fprintf( stderr, "[%d] Received OUT-OF-ORDER state %d [ack %d]\n",
+		   (int)timestamp() % 100000, (int)new_state.num, (int)inst.ack_num() );
+	}
 	return;
       }
     }
-    if ( verbose )
+    if ( verbose ) {
       fprintf( stderr, "[%d] Received state %d [ack %d]\n",
 	       (int)timestamp() % 100000, (int)new_state.num, (int)inst.ack_num() );
+    }
     received_states.push_back( new_state );
     sender.set_ack_num( received_states.back().num );
+
+    if ( !inst.diff().empty() ) {
+      sender.set_data_ack();
+    }
   }
 }
 
