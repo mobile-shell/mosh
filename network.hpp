@@ -58,6 +58,7 @@ namespace Network {
   private:
     static const int RECEIVE_MTU = 2048;
     static const uint64_t MIN_RTO = 50; /* ms */
+    static const uint64_t MAX_RTO = 1000; /* ms */
 
     int sock;
     struct sockaddr_in remote_addr;

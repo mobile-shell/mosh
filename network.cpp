@@ -312,6 +312,8 @@ uint64_t Connection::timeout( void )
   uint64_t RTO = lrint( ceil( SRTT + 4 * RTTVAR ) );
   if ( RTO < MIN_RTO ) {
     RTO = MIN_RTO;
+  } else if ( RTO > MAX_RTO ) {
+    RTO = MAX_RTO;
   }
   return RTO;
 }
