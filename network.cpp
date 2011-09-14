@@ -13,6 +13,9 @@ using namespace std;
 using namespace Network;
 using namespace Crypto;
 
+const uint64_t DIRECTION_MASK = uint64_t(1) << 63;
+const uint64_t SEQUENCE_MASK = uint64_t(-1) ^ DIRECTION_MASK;
+
 /* Read in packet from coded string */
 Packet::Packet( string coded_packet, Session *session )
   : seq( -1 ),
@@ -23,8 +26,8 @@ Packet::Packet( string coded_packet, Session *session )
 {
   Message message = session->decrypt( coded_packet );
 
-  direction = (message.nonce.val() & 0x8000000000000000) ? TO_CLIENT : TO_SERVER;
-  seq = message.nonce.val() & 0x7FFFFFFFFFFFFFFF;
+  direction = (message.nonce.val() & DIRECTION_MASK) ? TO_CLIENT : TO_SERVER;
+  seq = message.nonce.val() & SEQUENCE_MASK;
 
   assert( message.text.size() >= 2 * sizeof( uint16_t ) );
 
@@ -38,7 +41,7 @@ Packet::Packet( string coded_packet, Session *session )
 /* Output coded string from packet */
 string Packet::tostring( Session *session )
 {
-  uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & 0x7FFFFFFFFFFFFFFF);
+  uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & SEQUENCE_MASK);
 
   uint16_t ts_net[ 2 ] = { htobe16( timestamp ), htobe16( timestamp_reply ) };
 

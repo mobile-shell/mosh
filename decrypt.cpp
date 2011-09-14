@@ -49,7 +49,7 @@ int main( int argc, char *argv[] )
     Message message = session.decrypt( ciphertext );
 
     fprintf( stderr, "Nonce = %ld\n",
-	     message.nonce.val() );
+	     (long)message.nonce.val() );
     cout << message.text;
   } catch ( CryptoException e ) {
     cerr << e.text << endl;
