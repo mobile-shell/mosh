@@ -141,22 +141,13 @@ void TransportSender<MyState>::send_to_receiver( string diff )
     new_num = uint64_t( -1 );
   }
 
-  bool done = false;
   int MTU_tries = 0;
-  while ( !done ) {
+  while ( 1 ) {
     MTU_tries++;
 
     if ( MTU_tries > 20 ) {
       fprintf( stderr, "Error, could not send fragments after 20 tries (MTU = %d).\n",
 	       connection->get_MTU() );
-    }
-
-    try {
-      send_in_fragments( diff, new_num );
-      done = true;
-    } catch ( MTUException m ) {
-      fprintf( stderr, "Caught Path MTU exception, MTU now = %d\n", connection->get_MTU() );
-      done = false;
     }
 
     if ( new_num == sent_states.back().num ) {
@@ -165,7 +156,13 @@ void TransportSender<MyState>::send_to_receiver( string diff )
       sent_states.push_back( TimestampedState<MyState>( timestamp(), new_num, current_state ) );
     }
 
-    new_num++;
+    try {
+      send_in_fragments( diff, new_num ); // Can throw NetworkException
+      break;
+    } catch ( MTUException m ) {
+      fprintf( stderr, "Caught Path MTU exception, MTU now = %d\n", connection->get_MTU() );
+      new_num++;
+    }
   }
 
   /* successfully sent, probably */
