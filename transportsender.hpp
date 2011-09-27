@@ -32,6 +32,7 @@ namespace Network {
     void send_to_receiver( string diff );
     void send_empty_ack( void );
     void send_in_fragments( string diff, uint64_t new_num );
+    void add_sent_state( uint64_t the_timestamp, uint64_t num, MyState &state );
 
     /* state of sender */
     Connection *connection;

@@ -6,7 +6,7 @@
 
 [DONE] Graceful exit / server shutdown
 
-Don't let sent_states grow without bound for long-sleeping clients
+[DONE] Don't let sent_states grow without bound for long-sleeping clients
 
 Make roaming much smoother (with error message placement)
 

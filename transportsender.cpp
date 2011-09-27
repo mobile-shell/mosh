@@ -121,9 +121,23 @@ void TransportSender<MyState>::send_empty_ack( void )
     new_num = uint64_t( -1 );
   }
 
+  //  sent_states.push_back( TimestampedState<MyState>( sent_states.back().timestamp, new_num, current_state ) );
+  add_sent_state( sent_states.back().timestamp, new_num, current_state );
   send_in_fragments( "", new_num );
-  sent_states.push_back( TimestampedState<MyState>( sent_states.back().timestamp, new_num, current_state ) );
+
   next_ack_time = timestamp() + ACK_INTERVAL;
+}
+
+template <class MyState>
+void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t num, MyState &state )
+{
+  sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
+  if ( sent_states.size() > 32 ) { /* limit on state queue */
+    auto last = sent_states.end();
+    last--;
+    last--;
+    sent_states.erase( last ); /* erase penultimate state */
+  }
 }
 
 template <class MyState>
@@ -153,7 +167,8 @@ void TransportSender<MyState>::send_to_receiver( string diff )
     if ( new_num == sent_states.back().num ) {
       sent_states.back().timestamp = timestamp();
     } else {
-      sent_states.push_back( TimestampedState<MyState>( timestamp(), new_num, current_state ) );
+      //      sent_states.push_back( TimestampedState<MyState>( timestamp(), new_num, current_state ) );
+      add_sent_state( timestamp(), new_num, current_state );
     }
 
     try {
@@ -243,6 +258,13 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
 template <class MyState>
 void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num )
 {
+  /* Check if state being acknowledged is one we have culled */
+  assert( !sent_states.empty() );
+
+  if ( sent_states.back().num < ack_num ) {
+    return;
+  }
+
   typename list< TimestampedState<MyState> >::iterator i = sent_states.begin();
   while ( i != sent_states.end() ) {
     typename list< TimestampedState<MyState> >::iterator inext = i;
@@ -253,6 +275,6 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
     i = inext;
   }
 
-  assert( sent_states.size() > 0 );
+  assert( !sent_states.empty() );
 }
 
