@@ -162,6 +162,7 @@ void TransportSender<MyState>::send_to_receiver( string diff )
     if ( MTU_tries > 20 ) {
       fprintf( stderr, "Error, could not send fragments after 20 tries (MTU = %d).\n",
 	       connection->get_MTU() );
+      return;
     }
 
     if ( new_num == sent_states.back().num ) {
