@@ -256,7 +256,7 @@ void serve( int host_fd )
       if ( (pollfds[ 1 ].revents)
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	/* host problem */
-	if ( network.attached() && (!network.shutdown_in_progress()) ) {
+	if ( network.attached() ) {
 	  network.start_shutdown();
 	} else {
 	  break;

@@ -24,6 +24,7 @@ namespace Network {
     static const int ACK_INTERVAL = 1000; /* ms between empty acks */
     static const int ACK_DELAY = 10; /* ms before delayed ack */
     static const int SEND_MINDELAY = 20; /* ms to collect all input */
+    static const int SHUTDOWN_RETRIES = 3; /* number of shutdown packets to send before giving up */
 
     /* helper methods for tick() */
     unsigned int send_interval( void );
@@ -55,7 +56,7 @@ namespace Network {
 
     bool verbose;
     bool shutdown_in_progress;
-    uint64_t shutdown_timestamp;
+    int shutdown_tries;
 
     /* information about receiver state */
     uint64_t ack_num;
@@ -81,7 +82,7 @@ namespace Network {
     void set_data_ack( void ) { pending_data_ack = true; }
 
     /* Starts shutdown sequence */
-    void start_shutdown( void ) { shutdown_in_progress = true; shutdown_timestamp = timestamp(); }
+    void start_shutdown( void ) { shutdown_in_progress = true; }
 
     /* Misc. getters and setters */
     /* Cannot modify current_state while shutdown in progress */

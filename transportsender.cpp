@@ -14,7 +14,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     next_send_time( timestamp() ),
     verbose( false ),
     shutdown_in_progress( false ),
-    shutdown_timestamp( -1 ),
+    shutdown_tries( 0 ),
     ack_num( 0 ),
     pending_data_ack( false )
 {
@@ -42,8 +42,6 @@ int TransportSender<MyState>::wait_time( void )
     next_ack_time = timestamp() + ACK_DELAY;
   }
 
-  uint64_t next_wakeup = next_ack_time;
-
   if ( !(current_state == sent_states.back().state) ) { /* pending data to send */
     if ( next_send_time > timestamp() + SEND_MINDELAY ) {
       next_send_time = timestamp() + SEND_MINDELAY;
@@ -58,6 +56,8 @@ int TransportSender<MyState>::wait_time( void )
   if ( shutdown_in_progress || (ack_num == uint64_t(-1)) ) {
     next_ack_time = sent_states.back().timestamp + send_interval();
   }
+
+  uint64_t next_wakeup = next_ack_time;
 
   if ( next_send_time < next_wakeup ) {
     next_wakeup = next_send_time;
@@ -244,6 +244,10 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
   for ( auto i = fragments.begin(); i != fragments.end(); i++ ) {
     connection->send( i->tostring() );
 
+    if ( new_num == uint64_t(-1) ) {
+      shutdown_tries++;
+    }
+
     if ( verbose ) {
       fprintf( stderr, "[%d] Sent [%d=>%d] id %d, frag %d ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d\n",
 	       (int)(timestamp() % 100000), (int)inst.old_num(), (int)inst.new_num(), (int)i->id, (int)i->fragment_num,
@@ -280,17 +284,9 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
   assert( !sent_states.empty() );
 }
 
-/* give up on getting acknowledgement for shutdown after 5 RTTs */
+/* give up on getting acknowledgement for shutdown */
 template <class MyState>
 bool TransportSender<MyState>::shutdown_ack_timed_out( void )
 {
-  if ( !shutdown_in_progress ) {
-    return false;
-  }
-
-  if ( timestamp() - shutdown_timestamp > 5 * connection->get_SRTT() ) {
-    return true;
-  }
-
-  return false;
+  return shutdown_tries >= SHUTDOWN_RETRIES;
 }
