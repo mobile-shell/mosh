@@ -14,6 +14,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     next_send_time( timestamp() ),
     verbose( false ),
     shutdown_in_progress( false ),
+    shutdown_timestamp( -1 ),
     ack_num( 0 ),
     pending_data_ack( false )
 {
@@ -279,3 +280,17 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
   assert( !sent_states.empty() );
 }
 
+/* give up on getting acknowledgement for shutdown after 5 RTTs */
+template <class MyState>
+bool TransportSender<MyState>::shutdown_ack_timed_out( void )
+{
+  if ( !shutdown_in_progress ) {
+    return false;
+  }
+
+  if ( timestamp() - shutdown_timestamp > 5 * connection->get_SRTT() ) {
+    return true;
+  }
+
+  return false;
+}

@@ -55,6 +55,7 @@ namespace Network {
 
     bool verbose;
     bool shutdown_in_progress;
+    uint64_t shutdown_timestamp;
 
     /* information about receiver state */
     uint64_t ack_num;
@@ -80,7 +81,7 @@ namespace Network {
     void set_data_ack( void ) { pending_data_ack = true; }
 
     /* Starts shutdown sequence */
-    void start_shutdown( void ) { shutdown_in_progress = true; }
+    void start_shutdown( void ) { shutdown_in_progress = true; shutdown_timestamp = timestamp(); }
 
     /* Misc. getters and setters */
     /* Cannot modify current_state while shutdown in progress */
@@ -91,6 +92,7 @@ namespace Network {
     bool get_shutdown_in_progress( void ) { return shutdown_in_progress; }
     bool get_shutdown_acknowledged( void ) { return sent_states.front().num == uint64_t(-1); }
     bool get_counterparty_shutdown_acknowledged( void ) { return fragmenter.last_ack_sent() == uint64_t(-1); }
+    bool shutdown_ack_timed_out( void );
 
     /* nonexistent methods to satisfy -Weffc++ */
     TransportSender( const TransportSender &x );

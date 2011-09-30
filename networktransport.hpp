@@ -55,6 +55,7 @@ namespace Network {
     void start_shutdown( void ) { sender.start_shutdown(); }
     bool shutdown_in_progress( void ) { return sender.get_shutdown_in_progress(); }
     bool shutdown_acknowledged( void ) { return sender.get_shutdown_acknowledged(); }
+    bool shutdown_ack_timed_out( void ) { return sender.shutdown_ack_timed_out(); }
     bool attached( void ) { return connection.get_attached(); }
 
     /* Other side has requested shutdown and we have sent one ACK */
