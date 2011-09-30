@@ -8,6 +8,7 @@
 #include "completeterminal.hpp"
 #include "networktransport.hpp"
 #include "user.hpp"
+#include "terminaloverlay.hpp"
 
 class STMClient {
 private:
@@ -20,7 +21,8 @@ private:
   int winch_fd, shutdown_signal_fd;
   struct winsize window_size;
 
-  Terminal::Complete *local_terminal;
+  Terminal::Framebuffer *local_framebuffer;
+  Overlay::OverlayManager overlays;
   Network::Transport< Network::UserStream, Terminal::Complete > *network;
   uint64_t last_remote_num;
 
@@ -29,13 +31,16 @@ private:
   bool process_user_input( int fd );
   bool process_resize( void );
 
+  void output_new_frame( void );
+
 public:
   STMClient( const char *s_ip, int s_port, const char *s_key )
     : ip( s_ip ), port( s_port ), key( s_key ),
       saved_termios(), raw_termios(),
       winch_fd(), shutdown_signal_fd(),
       window_size(),
-      local_terminal( NULL ),
+      local_framebuffer( NULL ),
+      overlays(),
       network( NULL ),
       last_remote_num( -1 )
   {}
@@ -46,8 +51,8 @@ public:
 
   ~STMClient()
   {
-    if ( local_terminal != NULL ) {
-      delete local_terminal;
+    if ( local_framebuffer != NULL ) {
+      delete local_framebuffer;
     }
 
     if ( network != NULL ) {

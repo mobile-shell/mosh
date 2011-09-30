@@ -84,11 +84,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
       if ( lines_scrolled ) {
 	if ( frame.cursor_y != f.ds.get_height() - 1 ) {
-	  snprintf( tmp, 64, "\033[%d;%dH", f.ds.get_height(), 1 );
-	  frame.append( tmp );
-
-	  frame.cursor_y = f.ds.get_height() - 1;
-	  frame.cursor_x = 0;
+	  frame.append_silent_move( f.ds.get_height() - 1, 0 );
 	}
 
 	if ( frame.current_rendition_string != "\033[0m" ) {
@@ -194,10 +190,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
   }
 
   if ( (frame.x != frame.cursor_x) || (frame.y != frame.cursor_y) ) {
-    snprintf( tmp, 64, "\033[%d;%dH", frame.y + 1, frame.x + 1 );
-    frame.append( tmp );
-    frame.cursor_x = frame.x;
-    frame.cursor_y = frame.y;
+    frame.append_silent_move( frame.y, frame.x );
   }
 
   std::string rendition_str = cell->renditions.sgr();
@@ -242,4 +235,20 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
   frame.x += cell->width;
   frame.cursor_x += cell->width;
+}
+
+void FrameState::append_silent_move( int y, int x )
+{
+  char tmp[ 64 ];
+
+  /* turn off cursor if necessary before moving cursor */
+  if ( last_frame.ds.cursor_visible ) {
+    append( "\033[?25l" );
+    last_frame.ds.cursor_visible = false;
+  }
+
+  snprintf( tmp, 64, "\033[%d;%dH", y + 1, x + 1 );
+  append( tmp );
+  cursor_x = x;
+  cursor_y = y;
 }

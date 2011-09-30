@@ -6,6 +6,7 @@
 
 #include "terminal.hpp"
 #include "completeterminal.hpp"
+#include "terminaloverlay.hpp"
 
 #include "user.hpp"
 #include "networktransport.cpp"
@@ -19,6 +20,7 @@ namespace Parser {
 using namespace std;
 using namespace Terminal;
 using namespace Network;
+using namespace Overlay;
 
 template class list<Parser::Action *>;
 template class vector<Cell>;
@@ -38,3 +40,4 @@ template class TransportSender<UserStream>;
 template class TransportSender<Complete>;
 
 template class deque<UserEvent>;
+template class list<OverlayElement *>;

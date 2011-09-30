@@ -11,12 +11,14 @@
 #include <pwd.h>
 #include <signal.h>
 #include <sys/signalfd.h>
+#include <time.h>
 
 #include "stmclient.hpp"
 #include "swrite.hpp"
 #include "networktransport.hpp"
 #include "completeterminal.hpp"
 #include "user.hpp"
+#include "network.hpp"
 
 void STMClient::init( void )
 {
@@ -100,33 +102,44 @@ void STMClient::main_init( void )
   }  
 
   /* local state */
-  local_terminal = new Terminal::Complete( window_size.ws_col, window_size.ws_row );
+  local_framebuffer = new Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
 
   /* initialize screen */
-  string init = Terminal::Display::new_frame( false, local_terminal->get_fb(), local_terminal->get_fb() );
+  string init = Terminal::Display::new_frame( false, *local_framebuffer, *local_framebuffer );
   swrite( STDOUT_FILENO, init.data(), init.size() );
 
   /* open network */
   Network::UserStream blank;
-  network = new Network::Transport< Network::UserStream, Terminal::Complete >( blank, *local_terminal,
+  Terminal::Complete local_terminal( window_size.ws_col, window_size.ws_row );
+  network = new Network::Transport< Network::UserStream, Terminal::Complete >( blank, local_terminal,
 									       key.c_str(), ip.c_str(), port );
 
   /* tell server the size of the terminal */
   network->get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
 }
 
+void STMClient::output_new_frame( void )
+{
+  /* fetch target state */
+  Terminal::Framebuffer new_state( network->get_latest_remote_state().state.get_fb() );
+
+  /* apply local overlays */
+  overlays.get_notification_engine().render_notification();
+  overlays.apply( new_state );
+
+  /* calculate minimal difference from where we are */
+  string diff = Terminal::Display::new_frame( true,
+					      *local_framebuffer,
+					      new_state );
+  swrite( STDOUT_FILENO, diff.data(), diff.size() );
+  *local_framebuffer = new_state;  
+}
+
 bool STMClient::process_network_input( void )
 {
   network->recv();
   
-  /* is a new frame available from the terminal? */
-  if ( network->get_remote_state_num() != last_remote_num ) {
-    string diff = Terminal::Display::new_frame( true,
-						local_terminal->get_fb(),
-						network->get_latest_remote_state().state.get_fb() );
-    swrite( STDOUT_FILENO, diff.data(), diff.size() );
-    *local_terminal = network->get_latest_remote_state().state;
-  }
+  overlays.get_notification_engine().server_ping( network->get_latest_remote_state().timestamp );
 
   return true;
 }
@@ -147,7 +160,8 @@ bool STMClient::process_user_input( int fd )
 
   if ( !network->shutdown_in_progress() ) {
     for ( int i = 0; i < bytes_read; i++ ) {
-      network->get_current_state().push_back( Parser::UserByte( buf[ i ] ) );
+      char the_byte = buf[ i ];
+      network->get_current_state().push_back( Parser::UserByte( the_byte ) );
     }
   }
 
@@ -207,6 +221,8 @@ void STMClient::main( void )
 
   while ( 1 ) {
     try {
+      output_new_frame();
+
       int active_fds = poll( pollfds, 4, network->wait_time() );
       if ( active_fds < 0 ) {
 	perror( "poll" );
@@ -240,6 +256,7 @@ void STMClient::main( void )
 	}
 
 	if ( network->attached() && (!network->shutdown_in_progress()) ) {
+	  overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ) );
 	  network->start_shutdown();
 	} else {
 	  break;
@@ -256,6 +273,7 @@ void STMClient::main( void )
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	/* user problem */
 	if ( network->attached() && (!network->shutdown_in_progress()) ) {
+	  overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ) );
 	  network->start_shutdown();
 	} else {
 	  break;
@@ -279,8 +297,14 @@ void STMClient::main( void )
 
       network->tick();
     } catch ( Network::NetworkException e ) {
-      fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
-      sleep( 1 );
+      wchar_t tmp[ 128 ];
+      swprintf( tmp, 128, L"%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
+      overlays.get_notification_engine().set_notification_string( wstring( tmp ) );
+      struct timespec req;
+      req.tv_sec = 0;
+      req.tv_nsec = 200000000; /* 0.2 sec */
+      nanosleep( &req, NULL );
     }
   }
 }
+

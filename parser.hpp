@@ -18,7 +18,7 @@
 #endif
 
 namespace Parser {
-  static StateFamily family;
+  static const StateFamily family;
 
   class Parser {
   private:
@@ -37,6 +37,8 @@ namespace Parser {
     {
       return state == x.state;
     }
+
+    bool is_grounded( void ) const { return state == &family.s_Ground; }
   };
 
   static const size_t BUF_SIZE = 8;
@@ -57,6 +59,8 @@ namespace Parser {
     {
       return parser == x.parser;
     }
+
+    bool is_grounded( void ) const { return parser.is_grounded(); }
   };
 }
 
