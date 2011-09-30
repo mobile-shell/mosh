@@ -26,10 +26,12 @@ namespace Terminal {
 
   class Function {
   public:
-    Function() : function( NULL ) {}
+    Function() : function( NULL ), clears_wrap_state( true ) {}
     Function( Function_Type type, std::string dispatch_chars,
-	      void (*s_function)( Framebuffer *, Dispatcher * ) );
+	      void (*s_function)( Framebuffer *, Dispatcher * ),
+	      bool s_clears_wrap_state = true );
     void (*function)( Framebuffer *, Dispatcher * );
+    bool clears_wrap_state;
   };
 
   typedef std::map<std::string, Function> dispatch_map_t;

@@ -4,6 +4,7 @@
 
 #include "terminaldispatcher.hpp"
 #include "parseraction.hpp"
+#include "terminalframebuffer.hpp"
 
 using namespace Terminal;
 
@@ -135,8 +136,9 @@ static void register_function( Function_Type type,
 }
 
 Function::Function( Function_Type type, std::string dispatch_chars,
-		    void (*s_function)( Framebuffer *, Dispatcher * ) )
-  : function( s_function )
+		    void (*s_function)( Framebuffer *, Dispatcher * ),
+		    bool s_clears_wrap_state )
+  : function( s_function ), clears_wrap_state( s_clears_wrap_state )
 {
   register_function( type, dispatch_chars, *this );
 }
@@ -163,14 +165,19 @@ void Dispatcher::dispatch( Function_Type type, const Parser::Action *act, Frameb
   if ( type == CONTROL ) {
     assert( act->ch <= 255 );
     char ctrlstr[ 2 ] = { (char)act->ch, 0 };
-    key = std::string( ctrlstr );
+    key = std::string( ctrlstr, 1 );
   }
 
   dispatch_map_t::const_iterator i = map->find( key );
   if ( i == map->end() ) {
+    /* unknown function */
+    fb->ds.next_print_will_wrap = false;
     return;
   } else {
     act->handled = true;
+    if ( i->second.clears_wrap_state ) {
+      fb->ds.next_print_will_wrap = false;
+    }
     return i->second.function( fb, this );
   }
 }

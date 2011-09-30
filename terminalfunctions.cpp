@@ -318,7 +318,7 @@ void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
   }
 }
 
-static Function func_CSI_SGR( CSI, "m", CSI_SGR );
+static Function func_CSI_SGR( CSI, "m", CSI_SGR, false ); /* changing renditions doesn't clear wrap flag */
 
 /* save and restore cursor */
 void Esc_DECSC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
