@@ -100,15 +100,15 @@ void STMClient::main_init( void )
   }  
 
   /* local state */
-  Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
+  local_terminal = new Terminal::Complete( window_size.ws_col, window_size.ws_row );
 
   /* initialize screen */
-  string init = Terminal::Display::new_frame( false, terminal.get_fb(), terminal.get_fb() );
+  string init = Terminal::Display::new_frame( false, local_terminal->get_fb(), local_terminal->get_fb() );
   swrite( STDOUT_FILENO, init.data(), init.size() );
 
   /* open network */
   Network::UserStream blank;
-  network = new Network::Transport< Network::UserStream, Terminal::Complete >( blank, terminal,
+  network = new Network::Transport< Network::UserStream, Terminal::Complete >( blank, *local_terminal,
 									       key.c_str(), ip.c_str(), port );
 
   /* tell server the size of the terminal */

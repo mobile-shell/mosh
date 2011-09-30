@@ -20,6 +20,7 @@ private:
   int winch_fd, shutdown_signal_fd;
   struct winsize window_size;
 
+  Terminal::Complete *local_terminal;
   Network::Transport< Network::UserStream, Terminal::Complete > *network;
   uint64_t last_remote_num;
 
@@ -34,6 +35,7 @@ public:
       saved_termios(), raw_termios(),
       winch_fd(), shutdown_signal_fd(),
       window_size(),
+      local_terminal( NULL ),
       network( NULL ),
       last_remote_num( -1 )
   {}
@@ -44,6 +46,10 @@ public:
 
   ~STMClient()
   {
+    if ( local_terminal != NULL ) {
+      delete local_terminal;
+    }
+
     if ( network != NULL ) {
       delete network;
     }
