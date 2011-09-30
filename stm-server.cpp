@@ -231,7 +231,16 @@ void serve( int host_fd )
 
       if ( pollfds[ 2 ].revents & POLLIN ) {
 	/* shutdown signal */
-	if ( network.attached() ) {
+	struct signalfd_siginfo the_siginfo;
+	ssize_t bytes_read = read( pollfds[ 2 ].fd, &the_siginfo, sizeof( the_siginfo ) );
+	if ( bytes_read == 0 ) {
+	  break;
+	} else if ( bytes_read < 0 ) {
+	  perror( "read" );
+	  break;
+	}
+
+	if ( network.attached() && (!network.shutdown_in_progress()) ) {
 	  network.start_shutdown();
 	} else {
 	  break;
@@ -247,11 +256,20 @@ void serve( int host_fd )
       if ( (pollfds[ 1 ].revents)
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	/* host problem */
-	network.start_shutdown();
+	if ( network.attached() && (!network.shutdown_in_progress()) ) {
+	  network.start_shutdown();
+	} else {
+	  break;
+	}
       }
 
       /* quit if our shutdown has been acknowledged */
       if ( network.shutdown_in_progress() && network.shutdown_acknowledged() ) {
+	break;
+      }
+
+      /* quit after shutdown acknowledgement timeout */
+      if ( network.shutdown_in_progress() && network.shutdown_ack_timed_out() ) {
 	break;
       }
 
