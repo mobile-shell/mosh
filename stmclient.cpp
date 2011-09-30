@@ -121,8 +121,11 @@ bool STMClient::process_network_input( void )
   
   /* is a new frame available from the terminal? */
   if ( network->get_remote_state_num() != last_remote_num ) {
-    string diff = network->get_remote_diff();
+    string diff = Terminal::Display::new_frame( true,
+						local_terminal->get_fb(),
+						network->get_latest_remote_state().state.get_fb() );
     swrite( STDOUT_FILENO, diff.data(), diff.size() );
+    *local_terminal = network->get_latest_remote_state().state;
   }
 
   return true;

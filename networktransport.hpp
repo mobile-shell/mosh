@@ -72,6 +72,8 @@ namespace Network {
 
     uint64_t get_remote_state_num( void ) { return received_states.back().num; }
 
+    const TimestampedState<RemoteState> & get_latest_remote_state( void ) const { return received_states.back(); }
+
     int fd( void ) { return connection.fd(); }
 
     void set_verbose( void ) { sender.set_verbose(); verbose = true; }
