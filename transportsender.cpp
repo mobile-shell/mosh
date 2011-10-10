@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "transportsender.hpp"
 #include "transportfragment.hpp"
 
@@ -135,9 +137,8 @@ void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t 
   sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
   if ( sent_states.size() > 32 ) { /* limit on state queue */
     auto last = sent_states.end();
-    last--;
-    last--;
-    sent_states.erase( last ); /* erase penultimate state */
+    for ( int i = 0; i < 16; i++ ) { last--; }
+    sent_states.erase( last ); /* erase state from middle of queue */
   }
 }
 
@@ -264,21 +265,11 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
 template <class MyState>
 void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num )
 {
-  /* Check if state being acknowledged is one we have culled */
-  assert( !sent_states.empty() );
+  /* Ignore ack if we have culled the state it's acknowledging */
 
-  if ( sent_states.back().num < ack_num ) {
-    return;
-  }
-
-  typename list< TimestampedState<MyState> >::iterator i = sent_states.begin();
-  while ( i != sent_states.end() ) {
-    typename list< TimestampedState<MyState> >::iterator inext = i;
-    inext++;
-    if ( i->num < ack_num ) {
-      sent_states.erase( i );
-    }
-    i = inext;
+  if ( sent_states.end() != find_if( sent_states.begin(), sent_states.end(),
+				     [ack_num]( TimestampedState<MyState> x ) { return x.num == ack_num; } ) ) {
+    sent_states.remove_if( [ack_num]( TimestampedState<MyState> x ) { return x.num < ack_num; } );
   }
 
   assert( !sent_states.empty() );
