@@ -7,7 +7,7 @@
 namespace Terminal {
   class UserInput {
   private:
-    short last_byte;
+    wchar_t last_byte;
 
   public:
     UserInput()

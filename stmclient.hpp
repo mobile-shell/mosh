@@ -26,6 +26,8 @@ private:
   Network::Transport< Network::UserStream, Terminal::Complete > *network;
   uint64_t last_remote_num;
 
+  bool repaint_requested, quit_sequence_started;
+
   void main_init( void );
   bool process_network_input( void );
   bool process_user_input( int fd );
@@ -42,7 +44,9 @@ public:
       local_framebuffer( NULL ),
       overlays(),
       network( NULL ),
-      last_remote_num( -1 )
+      last_remote_num( -1 ),
+      repaint_requested( false ),
+      quit_sequence_started( false )
   {}
 
   void init( void );

@@ -128,11 +128,13 @@ void STMClient::output_new_frame( void )
   overlays.apply( new_state );
 
   /* calculate minimal difference from where we are */
-  string diff = Terminal::Display::new_frame( true,
+  string diff = Terminal::Display::new_frame( !repaint_requested,
 					      *local_framebuffer,
 					      new_state );
   swrite( STDOUT_FILENO, diff.data(), diff.size() );
   *local_framebuffer = new_state;  
+
+  repaint_requested = false;
 }
 
 bool STMClient::process_network_input( void )
@@ -161,7 +163,39 @@ bool STMClient::process_user_input( int fd )
   if ( !network->shutdown_in_progress() ) {
     for ( int i = 0; i < bytes_read; i++ ) {
       char the_byte = buf[ i ];
-      network->get_current_state().push_back( Parser::UserByte( the_byte ) );
+
+      if ( quit_sequence_started ) {
+	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
+	  if ( network->attached() && (!network->shutdown_in_progress()) ) {
+	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting on user request..." ) );
+	    network->start_shutdown();
+	    return true;
+	  } else {
+	    return false;
+	  }
+	} else if ( the_byte == '^' ) {
+	  /* Emulation sequence to type Ctrl-^ is Ctrl-^ ^ */
+	  network->get_current_state().push_back( Parser::UserByte( 0x1E ) );
+	} else {
+	  /* Ctrl-^ followed by anything other than . and ^ gets sent literally */
+	  network->get_current_state().push_back( Parser::UserByte( 0x1E ) );
+	  network->get_current_state().push_back( Parser::UserByte( the_byte ) );	  
+	}
+
+	quit_sequence_started = false;
+	continue;
+      }
+
+      quit_sequence_started = (the_byte == 0x1E);
+      if ( quit_sequence_started ) {
+	continue;
+      }
+
+      if ( the_byte == 0x0C ) { /* Ctrl-L */
+	repaint_requested = true;
+      }
+
+      network->get_current_state().push_back( Parser::UserByte( the_byte ) );		
     }
   }
 
