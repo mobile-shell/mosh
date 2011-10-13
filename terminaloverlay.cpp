@@ -154,7 +154,9 @@ void NotificationEngine::render_notification( void )
   bool dirty = false;
   OverlayCell template_cell( now + 1100, 0 /* row */, -1 /* col */, 0 /* background_color */ );
 
-  template_cell.replacement.renditions.inverse = true;
+  template_cell.replacement.renditions.bold = true;
+  template_cell.replacement.renditions.foreground_color = 37;
+  template_cell.replacement.renditions.background_color = 44;
 
   OverlayCell current( template_cell );
 
@@ -218,7 +220,8 @@ void NotificationEngine::apply( Framebuffer &fb ) const
   assert( fb.ds.get_height() > 0 );
 
   Cell notification_bar( 0 );
-  notification_bar.renditions.inverse = true;
+  notification_bar.renditions.foreground_color = 37;
+  notification_bar.renditions.background_color = 44;
   notification_bar.contents.push_back( 0x20 );
 
   for ( int i = 0; i < fb.ds.get_width(); i++ ) {
