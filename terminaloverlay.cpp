@@ -92,10 +92,29 @@ void OverlayEngine::apply( Framebuffer &fb ) const
 	    [&fb]( OverlayElement *x ) { x->apply( fb ); } );
 }
 
-void OverlayEngine::cull( const Framebuffer &fb )
+void PredictionEngine::cull( const Framebuffer &fb )
 {
+  uint64_t now = timestamp();
+
   auto i = elements.begin();
   while ( i != elements.end() ) {
+    /* update echo timeout state */
+    if ( (*i)->get_validity( fb ) == Correct ) {
+      double R = now - (*i)->prediction_time;
+      if ( !RTT_hit ) { /* first measurement */
+	SRTT = R;
+	RTTVAR = R / 2;
+	RTT_hit = true;
+      } else {
+	const double alpha = 1.0 / 8.0;
+	const double beta = 1.0 / 4.0;
+	
+	RTTVAR = (1 - beta) * RTTVAR + ( beta * fabs( SRTT - R ) );
+	SRTT = (1 - alpha) * SRTT + ( alpha * R );
+      }
+    }
+
+    /* eliminate predictions proven correct or incorrect */
     if ( (*i)->get_validity( fb ) != Pending ) {
       delete (*i);
       i = elements.erase( i );
@@ -263,6 +282,8 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 void OverlayManager::apply( Framebuffer &fb )
 {
   predictions.calculate_score( fb );
+
+  /* eliminate predictions proven correct or incorrect and update echo timers */
   predictions.cull( fb );
 
   if ( predictions.get_score() > 3 ) {
@@ -289,14 +310,14 @@ void PredictionEngine::calculate_score( const Framebuffer &fb )
   }
 }
 
-void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb, int prediction_len )
+void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 {
   uint64_t now = timestamp();
 
   if ( elements.empty() ) {
     /* starting from scratch */
     
-    elements.push_front( new ConditionalCursorMove( now + prediction_len,
+    elements.push_front( new ConditionalCursorMove( now + prediction_len(),
 						    fb.ds.get_cursor_row(),
 						    fb.ds.get_cursor_col() ) );
   }
@@ -313,7 +334,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb, int 
 
     const Cell *existing_cell = fb.get_cell( ccm->new_row, ccm->new_col );
 
-    ConditionalOverlayCell *coc = new ConditionalOverlayCell( now + prediction_len,
+    ConditionalOverlayCell *coc = new ConditionalOverlayCell( now + prediction_len(),
 							      ccm->new_row, ccm->new_col,
 							      existing_cell->renditions.background_color,
 							      *existing_cell );
@@ -323,7 +344,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb, int 
     coc->replacement.contents.push_back( the_byte );
 
     ccm->new_col++;
-    ccm->expiration_time = now + prediction_len;
+    ccm->expiration_time = now + prediction_len();
 
     elements.push_back( coc );
   } else {
@@ -356,4 +377,15 @@ int OverlayManager::wait_time( void )
   } else {
     return ret;
   }
+}
+
+int PredictionEngine::prediction_len( void )
+{
+  uint64_t RTO = lrint( ceil( SRTT + 4 * RTTVAR ) );
+  if ( RTO < 20 ) {
+    RTO = 20;
+  } else if ( RTO > 2000 ) {
+    RTO = 2000;
+  }
+  return RTO;
 }

@@ -77,8 +77,6 @@ namespace Network {
     int fd( void ) { return connection.fd(); }
 
     void set_verbose( void ) { sender.set_verbose(); verbose = true; }
-
-    uint64_t timeout( void ) { return connection.timeout(); }
   };
 }
 

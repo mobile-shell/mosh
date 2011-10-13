@@ -20,12 +20,13 @@ namespace Overlay {
   /* The individual elements of an overlay -- cursor movements and replaced cells */
   class OverlayElement {
   public:
-    uint64_t expiration_time;
+    uint64_t prediction_time, expiration_time;
 
     virtual void apply( Framebuffer &fb ) const = 0;
     virtual Validity get_validity( const Framebuffer & ) const;
 
-    OverlayElement( uint64_t s_expiration_time ) : expiration_time( s_expiration_time ) {}
+    OverlayElement( uint64_t s_expiration_time ) : prediction_time( timestamp() ),
+						   expiration_time( s_expiration_time ) {}
     virtual ~OverlayElement() {}
   };
 
@@ -75,7 +76,6 @@ namespace Overlay {
     list<OverlayElement *> elements;
 
   public:
-    void cull( const Framebuffer &fb );
     virtual void apply( Framebuffer &fb ) const;
     void clear( void );
 
@@ -109,11 +109,18 @@ namespace Overlay {
   private:
     int score;
 
+    /* use the TCP timeout algorithm to measure appropriate echo prediction timeout */
+    bool RTT_hit;
+    double SRTT, RTTVAR;
+    int prediction_len( void );
+
   public:
-    void new_user_byte( char the_byte, const Framebuffer &fb, int prediction_len );
+    void cull( const Framebuffer &fb );
+    void new_user_byte( char the_byte, const Framebuffer &fb );
     void calculate_score( const Framebuffer &fb );
 
-    PredictionEngine() : score( 0 ) {}
+    PredictionEngine() : score( 0 ), RTT_hit( false ), SRTT( 1000 ), RTTVAR( 500 ) {}
+
     int get_score( void ) { return score; }
   };
 
