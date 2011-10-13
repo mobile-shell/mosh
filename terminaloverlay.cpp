@@ -55,6 +55,11 @@ void CursorMove::apply( Framebuffer &fb ) const
 
 Validity ConditionalCursorMove::get_validity( const Framebuffer &fb ) const
 {
+  if ( (new_row >= fb.ds.get_height())
+       || (new_col >= fb.ds.get_width()) ) {
+    return IncorrectOrExpired;
+  }
+
   if ( timestamp() < expiration_time ) {
     return Pending;
   }
