@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <wchar.h>
 #include <list>
+#include <typeinfo>
 
 #include "terminaloverlay.hpp"
 
@@ -19,6 +20,7 @@ void OverlayCell::apply( Framebuffer &fb ) const
   }
 
   *(fb.get_mutable_cell( row, col )) = replacement;
+  fb.get_mutable_cell( row, col )->renditions.bold = true; /* XXX */
 }
 
 Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb ) const
@@ -29,7 +31,7 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb ) const
   }
 
   const Cell &current = *( fb.get_cell( row, col ) );
-  
+
   if ( (timestamp() < expiration_time) && (current == original_contents) ) {
     return Pending;
   }
@@ -84,11 +86,23 @@ void OverlayEngine::apply( Framebuffer &fb ) const
 
 void OverlayEngine::cull( const Framebuffer &fb )
 {
-  elements.remove_if( [fb]( OverlayElement *x ) { return IncorrectOrExpired == x->get_validity( fb ); } );
+  auto i = elements.begin();
+  while ( i != elements.end() ) {
+    if ( (*i)->get_validity( fb ) != Pending ) {
+      delete (*i);
+      i = elements.erase( i );
+    } else {
+      i++;
+    }
+  }
 }
 
 OverlayCell::OverlayCell( uint64_t expiration_time, int s_row, int s_col, int background_color )
   : OverlayElement( expiration_time ), row( s_row ), col( s_col ), replacement( background_color )
+{}
+
+CursorMove::CursorMove( uint64_t expiration_time, int s_new_row, int s_new_col )
+  : OverlayElement( expiration_time ), new_row( s_new_row ), new_col( s_new_col )
 {}
 
 NotificationEngine::NotificationEngine()
@@ -238,7 +252,76 @@ void NotificationEngine::apply( Framebuffer &fb ) const
   OverlayEngine::apply( fb );
 }
 
-void OverlayManager::apply( Framebuffer &fb ) const
+void OverlayManager::apply( Framebuffer &fb )
 {
+  calculate_score( fb );
+  predictions.cull( fb );
+
+  if ( prediction_score > 3 ) {
+    predictions.apply( fb );
+  } else if ( prediction_score == -1 ) {
+    predictions.clear();
+    prediction_score = 0;
+  }
+
   notifications.apply( fb );
+}
+
+void OverlayManager::calculate_score( const Framebuffer &fb )
+{
+  for ( auto i = predictions.begin(); i != predictions.end(); i++ ) {
+    switch( (*i)->get_validity( fb ) ) {
+    case Pending:
+      break;
+    case Correct:
+      prediction_score++;
+      break;
+    case IncorrectOrExpired:
+      prediction_score = -1;
+      return;
+    }
+  }
+}
+
+void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
+{
+  uint64_t now = timestamp();
+  int prediction_len = 1000; /* XXX */
+
+  if ( elements.empty() ) {
+    /* starting from scratch */
+    
+    elements.push_front( new ConditionalCursorMove( now + prediction_len,
+						    fb.ds.get_cursor_row(),
+						    fb.ds.get_cursor_col() ) );
+  }
+
+  assert( typeid( ConditionalCursorMove ) == typeid( *elements.front() ) );
+  ConditionalCursorMove *ccm = static_cast<ConditionalCursorMove *>( elements.front() );
+
+  if ( (ccm->new_row >= fb.ds.get_height()) || (ccm->new_col >= fb.ds.get_width()) ) {
+    return;
+  }
+
+  if ( (the_byte >= 0x20) && (the_byte <= 0x7E) ) {
+    /* XXX need to kill existing prediction if present */
+
+    const Cell *existing_cell = fb.get_cell( ccm->new_row, ccm->new_col );
+
+    ConditionalOverlayCell *coc = new ConditionalOverlayCell( now + prediction_len,
+							      ccm->new_row, ccm->new_col,
+							      existing_cell->renditions.background_color,
+							      *existing_cell );
+  
+    coc->replacement = *existing_cell;
+    coc->replacement.contents.clear();
+    coc->replacement.contents.push_back( the_byte );
+
+    ccm->new_col++;
+    ccm->expiration_time = now + prediction_len;
+
+    elements.push_back( coc );
+  } else {
+    clear();
+  }
 }

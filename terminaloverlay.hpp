@@ -43,6 +43,12 @@ namespace Overlay {
     Cell original_contents;
 
     Validity get_validity( const Framebuffer &fb ) const;
+
+    ConditionalOverlayCell( uint64_t expiration_time, int s_row, int s_col, int background_color,
+			    Cell s_original_contents )
+      : OverlayCell( expiration_time, s_row, s_col, background_color ),
+	original_contents( s_original_contents )
+    {}
   };
 
   class CursorMove : public OverlayElement {
@@ -50,11 +56,17 @@ namespace Overlay {
     int new_row, new_col;
 
     void apply( Framebuffer &fb ) const;
+
+    CursorMove( uint64_t expiration_time, int s_new_row, int s_new_col );
   };
 
   class ConditionalCursorMove : public CursorMove {
   public:
     Validity get_validity( const Framebuffer &fb ) const;
+
+    ConditionalCursorMove( uint64_t expiration_time, int s_new_row, int s_new_col )
+      : CursorMove( expiration_time, s_new_row, s_new_col )
+    {}
   };
 
   /* the various overlays -- some predictive and some for local notifications */
@@ -66,6 +78,9 @@ namespace Overlay {
     void cull( const Framebuffer &fb );
     virtual void apply( Framebuffer &fb ) const;
     void clear( void );
+
+    typename list<OverlayElement *>::const_iterator begin( void ) { return elements.begin(); }
+    typename list<OverlayElement *>::const_iterator end( void ) { return elements.end(); }
 
     OverlayEngine() : elements() {}
     virtual ~OverlayEngine();
@@ -90,17 +105,28 @@ namespace Overlay {
     NotificationEngine();
   };
 
+  class PredictionEngine : public OverlayEngine {
+  public:
+    void new_user_byte( char the_byte, const Framebuffer &fb );
+  };
+
   /* the overlay manager */
   class OverlayManager {
   private:
     NotificationEngine notifications;
+    PredictionEngine predictions;
+
+    int prediction_score;
+
+    void calculate_score( const Framebuffer &fb );
 
   public:
-    void apply( Framebuffer &fb ) const;
+    void apply( Framebuffer &fb );
 
     NotificationEngine & get_notification_engine( void ) { return notifications; }
+    PredictionEngine & get_prediction_engine( void ) { return predictions; }
 
-    OverlayManager() : notifications() {} 
+    OverlayManager() : notifications(), predictions(), prediction_score( 0 ) {} 
   };
 }
 
