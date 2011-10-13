@@ -8,9 +8,9 @@
 
 [DONE] Don't let sent_states grow without bound for long-sleeping clients
 
-Make roaming much smoother (with error message placement)
+[DONE] Make roaming much smoother (with error message placement)
 
-Notify if lost contact with server
+[DONE] Notify if lost contact with server
 
 Speculative local echo
 
