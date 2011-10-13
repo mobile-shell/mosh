@@ -329,7 +329,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
     return;
   }
 
-  if ( (the_byte >= 0x20) && (the_byte <= 0x7E) ) {
+  if ( (the_byte >= 0x20) && (the_byte <= 0x7E) && (ccm->new_col < fb.ds.get_width() - 2) ) {
     /* XXX need to kill existing prediction if present */
 
     const Cell *existing_cell = fb.get_cell( ccm->new_row, ccm->new_col );
