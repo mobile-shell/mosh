@@ -26,6 +26,14 @@ namespace Network {
     UserEvent( Parser::UserByte s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 ) {}
     UserEvent( Parser::Resize s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ) {}
 
+    UserEvent() /* default constructor required by C++11 STL */
+      : type( UserByteType ),
+	userbyte( 0 ),
+	resize( -1, -1 )
+    {
+      assert( false );
+    }
+
     bool operator==( const UserEvent &x ) const { return ( type == x.type ) && ( userbyte == x.userbyte ) && ( resize == x.resize ); }
   };
 

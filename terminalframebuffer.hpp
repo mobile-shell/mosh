@@ -43,6 +43,15 @@ namespace Terminal {
 	renditions( background_color )
     {}
 
+    Cell() /* default constructor required by C++11 STL */
+      : contents(),
+	fallback( false ),
+	width( 1 ),
+	renditions( 0 )
+    {
+      assert( false );
+    }
+
     void reset( int background_color );
 
     bool operator==( const Cell &x ) const
@@ -62,6 +71,12 @@ namespace Terminal {
     Row( size_t s_width, int background_color )
       : cells( s_width, Cell( background_color ) ), wrap( false )
     {}
+
+    Row() /* default constructor required by C++11 STL */
+      : cells( 1, Cell() ), wrap( false )
+    {
+      assert( false );
+    }
 
     void insert_cell( int col, int background_color );
     void delete_cell( int col, int background_color );
