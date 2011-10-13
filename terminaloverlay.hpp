@@ -106,8 +106,15 @@ namespace Overlay {
   };
 
   class PredictionEngine : public OverlayEngine {
+  private:
+    int score;
+
   public:
     void new_user_byte( char the_byte, const Framebuffer &fb, int prediction_len );
+    void calculate_score( const Framebuffer &fb );
+
+    PredictionEngine() : score( 0 ) {}
+    int get_score( void ) { return score; }
   };
 
   /* the overlay manager */
@@ -116,18 +123,13 @@ namespace Overlay {
     NotificationEngine notifications;
     PredictionEngine predictions;
 
-    int prediction_score;
-
-    void calculate_score( const Framebuffer &fb );
-
   public:
     void apply( Framebuffer &fb );
 
     NotificationEngine & get_notification_engine( void ) { return notifications; }
     PredictionEngine & get_prediction_engine( void ) { return predictions; }
 
-    OverlayManager() : notifications(), predictions(),
-		       prediction_score( 0 ) {}
+    OverlayManager() : notifications(), predictions() {}
 
     int wait_time( void );
   };

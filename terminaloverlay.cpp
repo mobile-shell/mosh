@@ -262,30 +262,28 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 
 void OverlayManager::apply( Framebuffer &fb )
 {
-  calculate_score( fb );
+  predictions.calculate_score( fb );
   predictions.cull( fb );
 
-  if ( prediction_score > 3 ) {
+  if ( predictions.get_score() > 3 ) {
     predictions.apply( fb );
-  } else if ( prediction_score == -1 ) {
-    predictions.clear();
-    prediction_score = 0;
   }
 
   notifications.apply( fb );
 }
 
-void OverlayManager::calculate_score( const Framebuffer &fb )
+void PredictionEngine::calculate_score( const Framebuffer &fb )
 {
-  for ( auto i = predictions.begin(); i != predictions.end(); i++ ) {
+  for ( auto i = begin(); i != end(); i++ ) {
     switch( (*i)->get_validity( fb ) ) {
     case Pending:
       break;
     case Correct:
-      prediction_score++;
+      score++;
       break;
     case IncorrectOrExpired:
-      prediction_score = -1;
+      score = 0;
+      clear();
       return;
     }
   }
@@ -330,6 +328,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb, int 
     elements.push_back( coc );
   } else {
     clear();
+    score = 0;
   }
 }
 
