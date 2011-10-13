@@ -164,7 +164,8 @@ bool STMClient::process_user_input( int fd )
     for ( int i = 0; i < bytes_read; i++ ) {
       char the_byte = buf[ i ];
 
-      overlays.get_prediction_engine().new_user_byte( the_byte, *local_framebuffer );
+      overlays.get_prediction_engine().new_user_byte( the_byte, *local_framebuffer,
+						      network->timeout() );
 
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
@@ -259,7 +260,7 @@ void STMClient::main( void )
     try {
       output_new_frame();
 
-      int active_fds = poll( pollfds, 4, network->wait_time() );
+      int active_fds = poll( pollfds, 4, min( network->wait_time(), overlays.wait_time() ) );
       if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;

@@ -2,6 +2,7 @@
 #include <wchar.h>
 #include <list>
 #include <typeinfo>
+#include <limits.h>
 
 #include "terminaloverlay.hpp"
 
@@ -19,8 +20,10 @@ void OverlayCell::apply( Framebuffer &fb ) const
     return;
   }
 
-  *(fb.get_mutable_cell( row, col )) = replacement;
-  fb.get_mutable_cell( row, col )->renditions.bold = true; /* XXX */
+  if ( !(*(fb.get_mutable_cell( row, col )) == replacement) ) {
+    *(fb.get_mutable_cell( row, col )) = replacement;
+    fb.get_mutable_cell( row, col )->renditions.bold = true; /* XXX */
+  }
 }
 
 Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb ) const
@@ -288,10 +291,9 @@ void OverlayManager::calculate_score( const Framebuffer &fb )
   }
 }
 
-void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
+void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb, int prediction_len )
 {
   uint64_t now = timestamp();
-  int prediction_len = 1000; /* XXX */
 
   if ( elements.empty() ) {
     /* starting from scratch */
@@ -328,5 +330,31 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
     elements.push_back( coc );
   } else {
     clear();
+  }
+}
+
+int OverlayManager::wait_time( void )
+{
+  uint64_t now = timestamp();
+
+  uint64_t next_expiry = uint64_t( -1 );
+
+  for ( auto i = notifications.begin(); i != notifications.end(); i++ ) {
+    if ( (*i)->expiration_time < next_expiry ) {
+      next_expiry = (*i)->expiration_time;
+    }
+  }
+
+  for ( auto i = predictions.begin(); i != predictions.end(); i++ ) {
+    if ( (*i)->expiration_time < next_expiry ) {
+      next_expiry = (*i)->expiration_time;
+    }
+  }
+
+  int ret = next_expiry - now;
+  if ( ret < 0 ) {
+    return INT_MAX;
+  } else {
+    return ret;
   }
 }

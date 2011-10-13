@@ -107,7 +107,7 @@ namespace Overlay {
 
   class PredictionEngine : public OverlayEngine {
   public:
-    void new_user_byte( char the_byte, const Framebuffer &fb );
+    void new_user_byte( char the_byte, const Framebuffer &fb, int prediction_len );
   };
 
   /* the overlay manager */
@@ -126,7 +126,10 @@ namespace Overlay {
     NotificationEngine & get_notification_engine( void ) { return notifications; }
     PredictionEngine & get_prediction_engine( void ) { return predictions; }
 
-    OverlayManager() : notifications(), predictions(), prediction_score( 0 ) {} 
+    OverlayManager() : notifications(), predictions(),
+		       prediction_score( 0 ) {}
+
+    int wait_time( void );
   };
 }
 
