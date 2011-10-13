@@ -92,6 +92,10 @@ int main( void )
   } else {
     /* parent */
     serve( master );
+    if ( close( master ) < 0 ) {
+      perror( "close" );
+      exit( 1 );
+    }
   }
 
   printf( "[stm-server is exiting.]\n" );
