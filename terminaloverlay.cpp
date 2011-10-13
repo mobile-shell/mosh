@@ -381,7 +381,7 @@ int OverlayManager::wait_time( void )
 
 int PredictionEngine::prediction_len( void )
 {
-  uint64_t RTO = lrint( ceil( SRTT + 4 * RTTVAR ) );
+  uint64_t RTO = lrint( ceil( 1.25 * SRTT + 8 * RTTVAR ) );
   if ( RTO < 20 ) {
     RTO = 20;
   } else if ( RTO > 2000 ) {
