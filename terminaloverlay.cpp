@@ -219,6 +219,8 @@ void NotificationEngine::apply( Framebuffer &fb ) const
   assert( fb.ds.get_width() > 0 );
   assert( fb.ds.get_height() > 0 );
 
+
+  /* draw bar across top of screen */
   Cell notification_bar( 0 );
   notification_bar.renditions.foreground_color = 37;
   notification_bar.renditions.background_color = 44;
@@ -226,6 +228,11 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 
   for ( int i = 0; i < fb.ds.get_width(); i++ ) {
     *(fb.get_mutable_cell( 0, i )) = notification_bar;
+  }
+
+  /* hide cursor if necessary */
+  if ( fb.ds.get_cursor_row() == 0 ) {
+    fb.ds.cursor_visible = false;
   }
 
   OverlayEngine::apply( fb );
