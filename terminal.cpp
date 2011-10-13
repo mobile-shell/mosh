@@ -140,8 +140,7 @@ std::string Emulator::open( void )
 
 std::string Emulator::close( void )
 {
-  char ansimode[ 6 ] = { 0x1b, '[', '?', '1', 'l', 0 };
-  return std::string( ansimode );
+  return std::string( "\033[?1l\033[!p" );
 }
 
 void Emulator::resize( size_t s_width, size_t s_height )

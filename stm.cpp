@@ -28,7 +28,7 @@ int main( int argc, char *argv[] )
   client.main();
 
   client.shutdown();
-  printf( "\033[!p\n[stm is exiting.]\n" );
+  printf( "\n[stm is exiting.]\n" );
 
   return 0;
 }
