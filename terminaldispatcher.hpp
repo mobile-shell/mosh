@@ -45,7 +45,7 @@ namespace Terminal {
     DispatchRegistry() : escape(), CSI(), control() {}
   };
 
-  static DispatchRegistry global_dispatch_registry;
+  DispatchRegistry & get_global_dispatch_registry( void );
 
   class Dispatcher {
   private:

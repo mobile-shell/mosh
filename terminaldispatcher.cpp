@@ -118,19 +118,26 @@ std::string Dispatcher::str( void )
   return std::string( assum );
 }
 
+/* construct on first use to avoid static initialization order crash */
+DispatchRegistry & Terminal::get_global_dispatch_registry( void )
+{
+  static DispatchRegistry global_dispatch_registry;
+  return global_dispatch_registry;
+}
+
 static void register_function( Function_Type type,
 			       std::string dispatch_chars,
 			       Function f )
 {
   switch ( type ) {
   case ESCAPE:
-    global_dispatch_registry.escape.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
+    get_global_dispatch_registry().escape.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
     break;
   case CSI:
-    global_dispatch_registry.CSI.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
+    get_global_dispatch_registry().CSI.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
     break;
   case CONTROL:
-    global_dispatch_registry.control.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
+    get_global_dispatch_registry().control.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
     break;
   }
 }
@@ -156,9 +163,9 @@ void Dispatcher::dispatch( Function_Type type, const Parser::Action *act, Frameb
 
   dispatch_map_t *map = NULL;
   switch ( type ) {
-  case ESCAPE:  map = &global_dispatch_registry.escape;  break;
-  case CSI:     map = &global_dispatch_registry.CSI;     break;
-  case CONTROL: map = &global_dispatch_registry.control; break;
+  case ESCAPE:  map = &get_global_dispatch_registry().escape;  break;
+  case CSI:     map = &get_global_dispatch_registry().CSI;     break;
+  case CONTROL: map = &get_global_dispatch_registry().control; break;
   }
 
   std::string key = dispatch_chars;
