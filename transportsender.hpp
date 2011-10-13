@@ -21,7 +21,7 @@ namespace Network {
     /* timing parameters */
     static const int SEND_INTERVAL_MIN = 20; /* ms between frames */
     static const int SEND_INTERVAL_MAX = 250; /* ms between frames */
-    static const int ACK_INTERVAL = 1000; /* ms between empty acks */
+    static const int ACK_INTERVAL = 3000; /* ms between empty acks */
     static const int ACK_DELAY = 10; /* ms before delayed ack */
     static const int SEND_MINDELAY = 20; /* ms to collect all input */
     static const int SHUTDOWN_RETRIES = 3; /* number of shutdown packets to send before giving up */
