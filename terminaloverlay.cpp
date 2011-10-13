@@ -22,7 +22,9 @@ void OverlayCell::apply( Framebuffer &fb ) const
 
   if ( !(*(fb.get_mutable_cell( row, col )) == replacement) ) {
     *(fb.get_mutable_cell( row, col )) = replacement;
-    fb.get_mutable_cell( row, col )->renditions.bold = true; /* XXX */
+    if ( flag ) {
+      fb.get_mutable_cell( row, col )->renditions.underlined = true;
+    }
   }
 }
 
@@ -122,6 +124,9 @@ void PredictionEngine::cull( const Framebuffer &fb )
       i++;
     }
   }
+
+  if ( SRTT > 150 ) flagging = true; /* start underlining predicted chars */
+  if ( SRTT < 100 ) flagging = false; /* use some hysterisis to avoid annoying flicker */
 }
 
 OverlayCell::OverlayCell( uint64_t expiration_time, int s_row, int s_col, int background_color )
@@ -342,6 +347,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
     coc->replacement = *existing_cell;
     coc->replacement.contents.clear();
     coc->replacement.contents.push_back( the_byte );
+    coc->flag = flagging;
 
     ccm->new_col++;
     ccm->expiration_time = now + prediction_len();
