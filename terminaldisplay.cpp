@@ -170,7 +170,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   /* have renditions changed? */
   if ( (!initialized)
        || (f.ds.get_renditions().sgr() != frame.current_rendition_string) ) {
-    frame.append( f.ds.get_renditions().sgr() );
+    frame.appendstring( f.ds.get_renditions().sgr() );
     frame.current_rendition_string = f.ds.get_renditions().sgr();
   }
 
@@ -197,7 +197,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
   if ( frame.current_rendition_string != rendition_str ) {
     /* print renditions */
-    frame.append( rendition_str );
+    frame.appendstring( rendition_str );
     frame.current_rendition_string = rendition_str;
   }
 

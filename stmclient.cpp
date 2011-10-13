@@ -128,9 +128,9 @@ void STMClient::output_new_frame( void )
   overlays.apply( new_state );
 
   /* calculate minimal difference from where we are */
-  string diff = Terminal::Display::new_frame( !repaint_requested,
-					      *local_framebuffer,
-					      new_state );
+  const string diff( Terminal::Display::new_frame( !repaint_requested,
+						   *local_framebuffer,
+						   new_state ) );
   swrite( STDOUT_FILENO, diff.data(), diff.size() );
   *local_framebuffer = new_state;  
 
