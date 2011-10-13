@@ -125,8 +125,8 @@ void PredictionEngine::cull( const Framebuffer &fb )
     }
   }
 
-  if ( SRTT > 150 ) flagging = true; /* start underlining predicted chars */
-  if ( SRTT < 100 ) flagging = false; /* use some hysterisis to avoid annoying flicker */
+  if ( SRTT > 500 ) flagging = true; /* start underlining predicted chars */
+  if ( SRTT < 150 ) flagging = false; /* use some hysterisis to avoid flapping */
 }
 
 OverlayCell::OverlayCell( uint64_t expiration_time, int s_row, int s_col, int background_color )
