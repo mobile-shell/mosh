@@ -20,6 +20,8 @@ Alternate screen
 
 256color mode
 
+Terminal bell
+
 Write startup script
 
 screen -r
