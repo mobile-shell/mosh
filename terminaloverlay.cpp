@@ -109,8 +109,8 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	RTTVAR = R / 2;
 	RTT_hit = true;
       } else {
-	const double alpha = 1.0 / 8.0;
-	const double beta = 1.0 / 4.0;
+	const double alpha = 1.0 / 32.0;
+	const double beta = 1.0 / 16.0;
 	
 	RTTVAR = (1 - beta) * RTTVAR + ( beta * fabs( SRTT - R ) );
 	SRTT = (1 - alpha) * SRTT + ( alpha * R );
@@ -340,20 +340,33 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 
     const Cell *existing_cell = fb.get_cell( ccm->new_row, ccm->new_col );
 
-    ConditionalOverlayCell *coc = new ConditionalOverlayCell( now + prediction_len(),
-							      ccm->new_row, ccm->new_col,
-							      existing_cell->renditions.background_color,
-							      *existing_cell );
+    if ( (existing_cell->contents.size() == 1)
+	 && (existing_cell->contents.front() == the_byte) ) {
+      /* do nothing */
+    } else if ( (existing_cell->contents.empty() || ((existing_cell->contents.size() == 1)
+						     && ( (existing_cell->contents.front() == 0x20)
+							  || (existing_cell->contents.front() == 0xA0) )))
+		&& ( the_byte == 0x20 ) ) {
+      /* don't attempt to change existing blank or space cells if user has typed space */
+    } else {
+      Renditions current_renditions = fb.ds.get_renditions();
+
+      ConditionalOverlayCell *coc = new ConditionalOverlayCell( now + prediction_len(),
+								ccm->new_row, ccm->new_col,
+								current_renditions.background_color,
+								*existing_cell );
   
-    coc->replacement = *existing_cell;
-    coc->replacement.contents.clear();
-    coc->replacement.contents.push_back( the_byte );
-    coc->flag = flagging;
+      coc->replacement = *existing_cell;
+      coc->replacement.renditions = current_renditions;
+      coc->replacement.contents.clear();
+      coc->replacement.contents.push_back( the_byte );
+      coc->flag = flagging;
+
+      elements.push_back( coc );
+    }
 
     ccm->new_col++;
     ccm->expiration_time = now + prediction_len();
-
-    elements.push_back( coc );
   } else {
     clear();
     score = 0;
@@ -388,11 +401,11 @@ int OverlayManager::wait_time( void )
 
 int PredictionEngine::prediction_len( void )
 {
-  uint64_t RTO = lrint( ceil( 1.5 * SRTT + 10 * RTTVAR ) );
+  uint64_t RTO = lrint( ceil( 1.5 * SRTT + 8 * RTTVAR ) );
   if ( RTO < 20 ) {
     RTO = 20;
-  } else if ( RTO > 2000 ) {
-    RTO = 2000;
+  } else if ( RTO > 4000 ) {
+    RTO = 4000;
   }
   return RTO;
 }
