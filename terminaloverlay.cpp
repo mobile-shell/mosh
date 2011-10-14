@@ -101,7 +101,8 @@ void PredictionEngine::cull( const Framebuffer &fb )
   auto i = elements.begin();
   while ( i != elements.end() ) {
     /* update echo timeout state */
-    if ( (*i)->get_validity( fb ) == Correct ) {
+    if ( (typeid( ConditionalOverlayCell ) == typeid( **i ))
+	 && ((*i)->get_validity( fb ) == Correct) ) {
       double R = now - (*i)->prediction_time;
       if ( !RTT_hit ) { /* first measurement */
 	SRTT = R;
@@ -125,8 +126,8 @@ void PredictionEngine::cull( const Framebuffer &fb )
     }
   }
 
-  if ( SRTT > 500 ) flagging = true; /* start underlining predicted chars */
-  if ( SRTT < 150 ) flagging = false; /* use some hysterisis to avoid flapping */
+  if ( SRTT > 150 ) flagging = true; /* start underlining predicted chars */
+  if ( SRTT + 4 * RTTVAR < 100 ) flagging = false; /* use some hysterisis to avoid flapping */
 }
 
 OverlayCell::OverlayCell( uint64_t expiration_time, int s_row, int s_col, int background_color )
@@ -387,7 +388,7 @@ int OverlayManager::wait_time( void )
 
 int PredictionEngine::prediction_len( void )
 {
-  uint64_t RTO = lrint( ceil( 1.25 * SRTT + 8 * RTTVAR ) );
+  uint64_t RTO = lrint( ceil( 1.5 * SRTT + 10 * RTTVAR ) );
   if ( RTO < 20 ) {
     RTO = 20;
   } else if ( RTO > 2000 ) {
