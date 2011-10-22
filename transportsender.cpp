@@ -246,10 +246,6 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
   for ( auto i = fragments.begin(); i != fragments.end(); i++ ) {
     connection->send( i->tostring() );
 
-    if ( new_num == uint64_t(-1) ) {
-      shutdown_tries++;
-    }
-
     if ( verbose ) {
       fprintf( stderr, "[%d] Sent [%d=>%d] id %d, frag %d ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d\n",
 	       (int)(timestamp() % 100000), (int)inst.old_num(), (int)inst.new_num(), (int)i->id, (int)i->fragment_num,
@@ -258,6 +254,10 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
 	       (int)connection->timeout() );
     }
 
+  }
+
+  if ( new_num == uint64_t(-1) ) {
+    shutdown_tries++;
   }
 
   pending_data_ack = false;
