@@ -77,6 +77,8 @@ namespace Network {
     int fd( void ) { return connection.fd(); }
 
     void set_verbose( void ) { sender.set_verbose(); verbose = true; }
+
+    void set_send_delay( int new_delay ) { sender.set_send_delay( new_delay ); }
   };
 }
 

@@ -19,7 +19,8 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     shutdown_in_progress( false ),
     shutdown_tries( 0 ),
     ack_num( 0 ),
-    pending_data_ack( false )
+    pending_data_ack( false ),
+    SEND_MINDELAY( 15 )
 {
 }
 

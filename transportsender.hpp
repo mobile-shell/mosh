@@ -22,8 +22,7 @@ namespace Network {
     static const int SEND_INTERVAL_MIN = 20; /* ms between frames */
     static const int SEND_INTERVAL_MAX = 250; /* ms between frames */
     static const int ACK_INTERVAL = 3000; /* ms between empty acks */
-    static const int ACK_DELAY = 20; /* ms before delayed ack */
-    static const int SEND_MINDELAY = 20; /* ms to collect all input */
+    static const int ACK_DELAY = 100; /* ms before delayed ack */
     static const int SHUTDOWN_RETRIES = 3; /* number of shutdown packets to send before giving up */
 
     /* helper methods for tick() */
@@ -62,6 +61,8 @@ namespace Network {
     uint64_t ack_num;
     bool pending_data_ack;
 
+    int SEND_MINDELAY; /* ms to collect all input */
+
   public:
     /* constructor */
     TransportSender( Connection *s_connection, MyState &initial_state );
@@ -94,6 +95,8 @@ namespace Network {
     bool get_shutdown_acknowledged( void ) { return sent_states.front().num == uint64_t(-1); }
     bool get_counterparty_shutdown_acknowledged( void ) { return fragmenter.last_ack_sent() == uint64_t(-1); }
     bool shutdown_ack_timed_out( void );
+
+    void set_send_delay( int new_delay ) { SEND_MINDELAY = new_delay; }
 
     /* nonexistent methods to satisfy -Weffc++ */
     TransportSender( const TransportSender &x );
