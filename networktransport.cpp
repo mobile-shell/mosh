@@ -85,15 +85,15 @@ void Transport<MyState, RemoteState>::recv( void )
       if ( i->num > new_state.num ) {
 	received_states.insert( i, new_state );
 	if ( verbose ) {
-	  fprintf( stderr, "[%d] Received OUT-OF-ORDER state %d [ack %d]\n",
-		   (int)timestamp() % 100000, (int)new_state.num, (int)inst.ack_num() );
+	  fprintf( stderr, "[%u] Received OUT-OF-ORDER state %d [ack %d]\n",
+		   (unsigned int)(timestamp() % 100000), (int)new_state.num, (int)inst.ack_num() );
 	}
 	return;
       }
     }
     if ( verbose ) {
-      fprintf( stderr, "[%d] Received state %d [ack %d]\n",
-	       (int)timestamp() % 100000, (int)new_state.num, (int)inst.ack_num() );
+      fprintf( stderr, "[%u] Received state %d [ack %d]\n",
+	       (unsigned int)(timestamp() % 100000), (int)new_state.num, (int)inst.ack_num() );
     }
     received_states.push_back( new_state );
     sender.set_ack_num( received_states.back().num );
