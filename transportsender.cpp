@@ -242,6 +242,10 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
   inst.set_throwaway_num( sent_states.front().num );
   inst.set_diff( diff );
 
+  if ( new_num == uint64_t(-1) ) {
+    shutdown_tries++;
+  }
+
   vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU() );
 
   for ( auto i = fragments.begin(); i != fragments.end(); i++ ) {
@@ -255,10 +259,6 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
 	       (int)connection->timeout(), connection->get_SRTT() );
     }
 
-  }
-
-  if ( new_num == uint64_t(-1) ) {
-    shutdown_tries++;
   }
 
   pending_data_ack = false;

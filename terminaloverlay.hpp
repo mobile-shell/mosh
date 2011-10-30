@@ -101,6 +101,7 @@ namespace Overlay {
   public:
     void apply( Framebuffer &fb ) const;
     void set_notification_string( const wstring s_message );
+    const wstring &get_notification_string( void ) { return message; }
     void server_ping( uint64_t s_last_word );
     void render_notification( void );
 

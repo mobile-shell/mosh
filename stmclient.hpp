@@ -24,7 +24,6 @@ private:
   Terminal::Framebuffer *local_framebuffer;
   Overlay::OverlayManager overlays;
   Network::Transport< Network::UserStream, Terminal::Complete > *network;
-  uint64_t last_remote_num;
 
   bool repaint_requested, quit_sequence_started;
 
@@ -44,7 +43,6 @@ public:
       local_framebuffer( NULL ),
       overlays(),
       network( NULL ),
-      last_remote_num( -1 ),
       repaint_requested( false ),
       quit_sequence_started( false )
   {}

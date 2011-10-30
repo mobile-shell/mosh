@@ -255,8 +255,6 @@ void STMClient::main( void )
   pollfds[ 3 ].fd = shutdown_signal_fd;
   pollfds[ 3 ].events = POLLIN;
 
-  last_remote_num = network->get_remote_state_num();
-
   while ( 1 ) {
     try {
       output_new_frame();
@@ -333,11 +331,23 @@ void STMClient::main( void )
 	break;
       }
 
+      static const wstring connecting_notification( L"Connecting..." );
+      if ( (network->get_remote_state_num() == 0) && (!network->shutdown_in_progress()) ) {
+	overlays.get_notification_engine().set_notification_string( connecting_notification );
+      } else if ( (network->get_remote_state_num() != 0)
+		  && (overlays.get_notification_engine().get_notification_string()
+		      == connecting_notification) ) {
+	overlays.get_notification_engine().set_notification_string( L"" );
+      }
+
       network->tick();
     } catch ( Network::NetworkException e ) {
-      wchar_t tmp[ 128 ];
-      swprintf( tmp, 128, L"%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
-      overlays.get_notification_engine().set_notification_string( wstring( tmp ) );
+      if ( !network->shutdown_in_progress() ) {
+	wchar_t tmp[ 128 ];
+	swprintf( tmp, 128, L"%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
+	overlays.get_notification_engine().set_notification_string( wstring( tmp ) );
+      }
+
       struct timespec req;
       req.tv_sec = 0;
       req.tv_nsec = 200000000; /* 0.2 sec */
