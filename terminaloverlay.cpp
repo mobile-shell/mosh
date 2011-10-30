@@ -187,11 +187,11 @@ void NotificationEngine::render_notification( void )
   if ( message.empty() && (!time_expired) ) {
     return;
   } else if ( message.empty() && time_expired ) {
-    swprintf( tmp, 128, L"[stm] No contact for %.0f seconds. [To quit: Ctrl-^ .]", (double)(now - last_word) / 1000.0 );
+    swprintf( tmp, 128, L"[stm] Last contact %.0f seconds ago. [To quit: Ctrl-^ .]", (double)(now - last_word) / 1000.0 );
   } else if ( (!message.empty()) && (!time_expired) ) {
-    swprintf( tmp, 128, L"[stm] %ls", message.c_str() );
+    swprintf( tmp, 128, L"[stm] %ls [To quit: Ctrl-^ .]", message.c_str() );
   } else {
-    swprintf( tmp, 128, L"[stm] %ls [To quit: Ctrl-^ .] (No contact for %.0f seconds.)", message.c_str(),
+    swprintf( tmp, 128, L"[stm] %ls (%.0f s without contact.) [To quit: Ctrl-^ .]", message.c_str(),
 	      (double)(now - last_word) / 1000.0 );
   }
 
