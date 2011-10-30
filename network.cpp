@@ -54,9 +54,11 @@ Packet Connection::new_packet( string &s_payload )
 {
   uint16_t outgoing_timestamp_reply = -1;
 
-  if ( timestamp() - saved_timestamp_received_at < 25 ) {
-    /* we have a recent received timestamp */
-    outgoing_timestamp_reply = saved_timestamp;
+  uint64_t now = timestamp();
+
+  if ( now - saved_timestamp_received_at < 1000 ) { /* we have a recent received timestamp */
+    /* send "corrected" timestamp advanced by how long we held it */
+    outgoing_timestamp_reply = saved_timestamp + (now - saved_timestamp_received_at);
     saved_timestamp = -1;
     saved_timestamp_received_at = 0;
   }

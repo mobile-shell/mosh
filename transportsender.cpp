@@ -28,7 +28,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
 template <class MyState>
 unsigned int TransportSender<MyState>::send_interval( void )
 {
-  int SEND_INTERVAL = lrint( ceil( (connection->get_SRTT() - ACK_DELAY) / 2.0 ) );
+  int SEND_INTERVAL = lrint( ceil( connection->get_SRTT() / 2.0 ) );
   if ( SEND_INTERVAL < SEND_INTERVAL_MIN ) {
     SEND_INTERVAL = SEND_INTERVAL_MIN;
   } else if ( SEND_INTERVAL > SEND_INTERVAL_MAX ) {
