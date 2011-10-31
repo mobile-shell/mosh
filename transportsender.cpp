@@ -270,8 +270,8 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
   /* Ignore ack if we have culled the state it's acknowledging */
 
   if ( sent_states.end() != find_if( sent_states.begin(), sent_states.end(),
-				     [ack_num]( TimestampedState<MyState> x ) { return x.num == ack_num; } ) ) {
-    sent_states.remove_if( [ack_num]( TimestampedState<MyState> x ) { return x.num < ack_num; } );
+				     [&]( TimestampedState<MyState> x ) { return x.num == ack_num; } ) ) {
+    sent_states.remove_if( [&]( TimestampedState<MyState> x ) { return x.num < ack_num; } );
   }
 
   assert( !sent_states.empty() );
