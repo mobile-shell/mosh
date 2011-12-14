@@ -94,6 +94,9 @@ namespace Network {
     bool get_shutdown_in_progress( void ) { return shutdown_in_progress; }
     bool get_shutdown_acknowledged( void ) { return sent_states.front().num == uint64_t(-1); }
     bool get_counterparty_shutdown_acknowledged( void ) { return fragmenter.last_ack_sent() == uint64_t(-1); }
+    uint64_t get_sent_state_acked( void ) { return sent_states.front().num; }
+    uint64_t get_sent_state_last( void ) { return sent_states.back().num; }
+
     bool shutdown_ack_timed_out( void );
 
     void set_send_delay( int new_delay ) { SEND_MINDELAY = new_delay; }

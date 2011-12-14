@@ -24,7 +24,7 @@ void STMClient::init( void )
 {
   /* Verify locale calls for UTF-8 */
   if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
-    fprintf( stderr, "stm requires a UTF-8 locale.\n" );
+    fprintf( stderr, "mosh requires a UTF-8 locale.\n" );
     exit( 1 );
   }
 
@@ -50,10 +50,19 @@ void STMClient::init( void )
 
   /* Put terminal in application-cursor-key mode */
   swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
+
+  /* Add our name to window title */
+  overlays.set_title_prefix( wstring( L"[mosh] " ) );
 }
 
 void STMClient::shutdown( void )
 {
+  /* Restore screen state */
+  overlays.get_notification_engine().set_notification_string( wstring( L"" ) );
+  overlays.get_notification_engine().server_heard( timestamp() );
+  overlays.set_title_prefix( wstring( L"" ) );
+  output_new_frame();
+
   /* Restore terminal and terminal-driver state */
   swrite( STDOUT_FILENO, Terminal::Emulator::close().c_str() );
   
@@ -126,7 +135,6 @@ void STMClient::output_new_frame( void )
   Terminal::Framebuffer new_state( network->get_latest_remote_state().state.get_fb() );
 
   /* apply local overlays */
-  overlays.get_notification_engine().render_notification();
   overlays.apply( new_state );
 
   /* calculate minimal difference from where we are */
@@ -143,7 +151,9 @@ bool STMClient::process_network_input( void )
 {
   network->recv();
   
-  overlays.get_notification_engine().server_ping( network->get_latest_remote_state().timestamp );
+  overlays.get_notification_engine().server_heard( network->get_latest_remote_state().timestamp );
+
+  overlays.get_prediction_engine().set_local_frame_acked( network->get_sent_state_acked() );
 
   return true;
 }
@@ -163,6 +173,8 @@ bool STMClient::process_user_input( int fd )
   }
 
   if ( !network->shutdown_in_progress() ) {
+    overlays.get_prediction_engine().set_local_frame_sent( network->get_sent_state_last() );
+
     for ( int i = 0; i < bytes_read; i++ ) {
       char the_byte = buf[ i ];
 
@@ -231,6 +243,9 @@ bool STMClient::process_resize( void )
 	i++ ) {
     i->state.act( &res );
   }
+
+  /* tell prediction engine */
+  overlays.get_prediction_engine().reset();
 
   return true;
 }

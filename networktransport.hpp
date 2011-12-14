@@ -79,6 +79,9 @@ namespace Network {
     void set_verbose( void ) { sender.set_verbose(); verbose = true; }
 
     void set_send_delay( int new_delay ) { sender.set_send_delay( new_delay ); }
+
+    uint64_t get_sent_state_acked( void ) { return sender.get_sent_state_acked(); }
+    uint64_t get_sent_state_last( void ) { return sender.get_sent_state_last(); }
   };
 }
 

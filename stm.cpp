@@ -28,7 +28,7 @@ int main( int argc, char *argv[] )
   client.main();
 
   client.shutdown();
-  printf( "\n[stm is exiting.]\n" );
+  printf( "\n[mosh is exiting.]\n" );
 
   return 0;
 }

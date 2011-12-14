@@ -17,8 +17,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
        || (f.get_window_title() != frame.last_frame.get_window_title()) ) {
       /* set window title */
     frame.append( "\033]0;" );
-    std::vector<wchar_t> window_title = f.get_window_title();
-    for ( std::vector<wchar_t>::iterator i = window_title.begin();
+    const std::deque<wchar_t> &window_title( f.get_window_title() );
+    for ( auto i = window_title.begin();
 	  i != window_title.end();
 	  i++ ) {
       snprintf( tmp, 64, "%lc", *i );

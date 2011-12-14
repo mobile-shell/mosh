@@ -406,3 +406,19 @@ void Row::reset( int background_color )
     i->reset( background_color );
   }
 }
+
+void Framebuffer::prefix_window_title( const std::deque<wchar_t> &s )
+{
+  for ( auto i = s.rbegin(); i != s.rend(); i++ ) {
+    window_title.push_front( *i );
+  }
+}
+
+wchar_t Cell::debug_contents( void ) const
+{
+  if ( contents.empty() ) {
+    return '_';
+  } else {
+    return contents.front();
+  }
+}

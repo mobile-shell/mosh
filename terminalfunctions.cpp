@@ -466,7 +466,7 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
   if ( OSC_string.size() >= 2 ) {
     if ( (OSC_string[ 0 ] == L'0')
 	 && (OSC_string[ 1 ] == L';') ) {
-      std::vector<wchar_t> newtitle = OSC_string;
+      std::deque<wchar_t> newtitle( OSC_string.begin(), OSC_string.end() );
       newtitle.erase( newtitle.begin() );
       newtitle.erase( newtitle.begin() );
       fb->set_window_title( newtitle );
