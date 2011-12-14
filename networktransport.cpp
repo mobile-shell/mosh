@@ -3,6 +3,8 @@
 
 #include "networktransport.hpp"
 
+#include "transportsender.cpp"
+
 using namespace Network;
 using namespace std;
 

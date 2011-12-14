@@ -15,10 +15,10 @@
 
 #include "stmclient.hpp"
 #include "swrite.hpp"
-#include "networktransport.hpp"
 #include "completeterminal.hpp"
 #include "user.hpp"
-#include "network.hpp"
+
+#include "networktransport.cpp"
 
 void STMClient::init( void )
 {

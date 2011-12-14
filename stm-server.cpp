@@ -14,10 +14,11 @@
 #include <signal.h>
 #include <sys/signalfd.h>
 
-#include "networktransport.hpp"
 #include "completeterminal.hpp"
 #include "swrite.hpp"
 #include "user.hpp"
+
+#include "networktransport.cpp"
 
 void serve( int host_fd );
 

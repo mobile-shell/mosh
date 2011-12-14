@@ -3,7 +3,7 @@
 #include <poll.h>
 
 #include "user.hpp"
-#include "networktransport.hpp"
+#include "networktransport.cpp"
 
 using namespace Network;
 
