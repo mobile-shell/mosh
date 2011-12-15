@@ -49,11 +49,11 @@ namespace Overlay {
     Validity get_validity( const Framebuffer &fb, uint64_t current_frame ) const;
 
     ConditionalCursorMove( uint64_t s_exp, int s_row, int s_col )
-      : ConditionalOverlay( s_exp, s_col ), row( s_row ), frozen_col( -1 ), frozen_row( -1 ),
+      : ConditionalOverlay( s_exp, s_col ), row( s_row ), frozen_col( 0 ), frozen_row( 0 ),
 	show_frozen_cursor( false )
     {}
 
-    void freeze( void ) { if ( show_frozen_cursor ) { return; } frozen_col = col; frozen_row = row; show_frozen_cursor = true; }
+    void freeze( void ) { frozen_col = col; frozen_row = row; show_frozen_cursor = true; }
     void thaw( void ) { show_frozen_cursor = false; }
     void reset( void ) { active = false; thaw(); }
   };

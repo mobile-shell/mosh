@@ -56,7 +56,7 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row, u
   }
 
   /* special case deletion */
-  if ( current.contents.empty() && (replacement.contents.size() == 1) && (replacement.contents.front() == 0x20) ) {
+  if ( replacement.contents.empty() && (current.contents.size() == 1) && (current.contents.front() == 0x20) ) {
     return Correct;
   }
 
@@ -70,6 +70,7 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row, u
 Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t current_frame ) const
 {
   if ( !active ) {
+    assert( !show_frozen_cursor );
     return Inactive;
   }
 
@@ -85,9 +86,8 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t cu
   } else if ( current_frame < expiration_frame ) {
     return Pending;
   } else {
-
-    fprintf( stderr, "Bad cursor in %d (i thought %d vs %d).\n", (int)current_frame,
-    	     col, fb.ds.get_cursor_col() );
+    fprintf( stderr, "Bad cursor in %d (I thought (%d,%d) vs actual (%d,%d)).\n", (int)current_frame,
+    	     row, col, fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
     return IncorrectOrExpired;
   }
 }
@@ -309,25 +309,25 @@ void PredictionEngine::cull( const Framebuffer &fb )
       switch ( j->get_validity( fb, i->row_num, local_frame_acked ) ) {
       case IncorrectOrExpired:
 	if ( j->tentative ) {
-	  fprintf( stderr, "Bad tentative prediction in row %d, col %d (thought %lc, was %lc)\n",
-		   i->row_num, j->col,
-		   j->replacement.debug_contents(), fb.get_cell( i->row_num, j->col )->debug_contents() );
+	  fprintf( stderr, "Bad tentative prediction in row %d, col %d\n",
+		   i->row_num, j->col );
 	  j->reset();
 	  become_tentative();
 	  if ( j->display_time != uint64_t(-1) ) {
 	    fprintf( stderr, "TIMING %ld - %ld (TENT)\n", time(NULL), now - j->display_time );
 	  }
 	} else {
-	  fprintf( stderr, "[%d=>%d] (score=%d) Killing prediction in row %d, col %d (thought %lc, was %lc)\n",
+	  fprintf( stderr, "[%d=>%d] (score=%d) Killing prediction in row %d, col %d\n",
 		   (int)local_frame_acked, (int)j->expiration_frame,
 		   score,
-		   i->row_num, j->col,
-		   j->replacement.debug_contents(), fb.get_cell( i->row_num, j->col )->debug_contents() );
-	  reset();
+		   i->row_num, j->col );
 	  if ( j->display_time != uint64_t(-1) ) {
 	    fprintf( stderr, "TIMING %ld - %ld\n", time(NULL), now - j->display_time );
 	  }
-	  return;
+	  j->reset();
+	  become_tentative();
+	  cursor.reset();
+	  /* should reset and return here */
 	}
 	break;
       case Correct:
@@ -387,21 +387,22 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
   for ( auto it = actions.begin(); it != actions.end(); it++ ) {
     Parser::Action *act = *it;
 
+    if ( !cursor.active ) {
+      /* initialize new cursor prediction */
+      cursor.row = fb.ds.get_cursor_row();
+      cursor.col = fb.ds.get_cursor_col();
+      cursor.active = true;
+      cursor.prediction_time = now;
+      cursor.expiration_frame = local_frame_sent + 1;
+      assert( !cursor.show_frozen_cursor );
+    }
+
     if ( typeid( *act ) == typeid( Parser::Print ) ) {
       /* make new prediction */
 
       wchar_t ch = act->ch;
       /* XXX handle wide characters */
 
-      if ( !cursor.active ) {
-	/* initialize new cursor prediction */
-	cursor.row = fb.ds.get_cursor_row();
-	cursor.col = fb.ds.get_cursor_col();
-	cursor.active = true;
-	cursor.prediction_time = now;
-	cursor.expiration_frame = local_frame_sent + 1;
-      }
-      
       if ( ch == 0x7f ) { /* backspace */
 	//	fprintf( stderr, "Backspace.\n" );
 	if ( cursor.col > 0 ) {
@@ -417,12 +418,12 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	  cell.expiration_frame = local_frame_sent + 1;
 	  cell.replacement.renditions = fb.ds.get_renditions();
 	  cell.replacement.contents.clear();
-	  cell.replacement.contents.push_back( 0x20 );
 	  cell.display_time = -1;
 	}
       } else if ( (ch < 0x20) || (ch > 0x7E) ) {
 	/* unknown print */
 	become_tentative();
+	fprintf( stderr, "Unknown print 0x%x\n", ch );
       } else {
 	/* don't attempt to change existing blank or space cells if user has typed space */
 	const Cell *existing_cell = fb.get_cell( cursor.row, cursor.col );
@@ -490,6 +491,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
     } else if ( typeid( *act ) == typeid( Parser::Execute ) ) {
       become_tentative();
       cursor.freeze();
+      fprintf( stderr, "Execute 0x%x\n", act->ch );
     }
 
     delete act;
