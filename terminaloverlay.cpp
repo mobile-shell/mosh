@@ -60,6 +60,10 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row, u
     return Correct;
   }
 
+  if ( replacement.contents.empty() && current.contents.empty() ) {
+    return Correct;
+  }
+
   if ( current == replacement ) {
     return Correct;
   } else {
@@ -289,6 +293,9 @@ void PredictionEngine::cull( const Framebuffer &fb )
     become_tentative();
     return;
     break;
+  case Correct:
+    cursor.thaw();
+    break;
   default:
     break;
   }
@@ -324,10 +331,8 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	  if ( j->display_time != uint64_t(-1) ) {
 	    fprintf( stderr, "TIMING %ld - %ld\n", time(NULL), now - j->display_time );
 	  }
-	  j->reset();
-	  become_tentative();
-	  cursor.reset();
-	  /* should reset and return here */
+	  reset();
+	  return;
 	}
 	break;
       case Correct:
@@ -335,10 +340,12 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	  fprintf( stderr, "TIMING %ld + %ld\n", now, now - j->display_time );
 	}
 
-	j->reset();
 	if ( j->prediction_time > prediction_checkpoint ) {
 	  score++;
 	}
+
+	j->reset();
+
 	break;
       case Pending:
 	max_delay = max( max_delay, now - j->prediction_time );
@@ -492,6 +499,10 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
       become_tentative();
       cursor.freeze();
       fprintf( stderr, "Execute 0x%x\n", act->ch );
+    } else if ( typeid( *act ) == typeid( Parser::Esc_Dispatch ) ) {
+      fprintf( stderr, "Escape sequence\n" );
+    } else if ( typeid( *act ) == typeid( Parser::CSI_Dispatch ) ) {
+      fprintf( stderr, "CSI sequence\n" );
     }
 
     delete act;
