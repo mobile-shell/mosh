@@ -71,8 +71,6 @@ namespace Network {
     Base64Key key;
     Session session;
 
-    void update_MTU( void );
-
     void setup( void );
 
     Direction direction;
@@ -94,6 +92,7 @@ namespace Network {
     void send( string s );
     string recv( void );
     int fd( void ) { return sock; }
+    void update_MTU( void );
     int get_MTU( void ) { return MTU; }
 
     int port( void );
