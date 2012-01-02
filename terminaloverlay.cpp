@@ -80,7 +80,7 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t cu
 
   if ( (row >= fb.ds.get_height())
        || (col >= fb.ds.get_width()) ) {
-    fprintf( stderr, "Crazy cursor (%d,%d)!\n", row, col );
+    //    fprintf( stderr, "Crazy cursor (%d,%d)!\n", row, col );
     return IncorrectOrExpired;
   }
 
@@ -90,8 +90,10 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t cu
   } else if ( current_frame < expiration_frame ) {
     return Pending;
   } else {
+    /*
     fprintf( stderr, "Bad cursor in %d (I thought (%d,%d) vs actual (%d,%d)).\n", (int)current_frame,
     	     row, col, fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
+    */
     return IncorrectOrExpired;
   }
 }
@@ -316,14 +318,19 @@ void PredictionEngine::cull( const Framebuffer &fb )
       switch ( j->get_validity( fb, i->row_num, local_frame_acked ) ) {
       case IncorrectOrExpired:
 	if ( j->tentative ) {
+	  /*
 	  fprintf( stderr, "Bad tentative prediction in row %d, col %d\n",
 		   i->row_num, j->col );
+	  */
 	  j->reset();
 	  become_tentative();
+	  /*
 	  if ( j->display_time != uint64_t(-1) ) {
 	    fprintf( stderr, "TIMING %ld - %ld (TENT)\n", time(NULL), now - j->display_time );
 	  }
+	  */
 	} else {
+	  /*
 	  fprintf( stderr, "[%d=>%d] (score=%d) Killing prediction in row %d, col %d\n",
 		   (int)local_frame_acked, (int)j->expiration_frame,
 		   score,
@@ -331,14 +338,17 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	  if ( j->display_time != uint64_t(-1) ) {
 	    fprintf( stderr, "TIMING %ld - %ld\n", time(NULL), now - j->display_time );
 	  }
+	  */
 	  reset();
 	  return;
 	}
 	break;
       case Correct:
+	/*
 	if ( j->display_time != uint64_t(-1) ) {
 	  fprintf( stderr, "TIMING %ld + %ld\n", now, now - j->display_time );
 	}
+	*/
 
 	if ( j->prediction_time > prediction_checkpoint ) {
 	  score++;
@@ -430,7 +440,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
       } else if ( (ch < 0x20) || (ch > 0x7E) ) {
 	/* unknown print */
 	become_tentative();
-	fprintf( stderr, "Unknown print 0x%x\n", ch );
+	//	fprintf( stderr, "Unknown print 0x%x\n", ch );
       } else {
 	/* don't attempt to change existing blank or space cells if user has typed space */
 	const Cell *existing_cell = fb.get_cell( cursor.row, cursor.col );
@@ -498,11 +508,11 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
     } else if ( typeid( *act ) == typeid( Parser::Execute ) ) {
       become_tentative();
       cursor.freeze();
-      fprintf( stderr, "Execute 0x%x\n", act->ch );
+      //      fprintf( stderr, "Execute 0x%x\n", act->ch );
     } else if ( typeid( *act ) == typeid( Parser::Esc_Dispatch ) ) {
-      fprintf( stderr, "Escape sequence\n" );
+      //      fprintf( stderr, "Escape sequence\n" );
     } else if ( typeid( *act ) == typeid( Parser::CSI_Dispatch ) ) {
-      fprintf( stderr, "CSI sequence\n" );
+      //      fprintf( stderr, "CSI sequence\n" );
     }
 
     delete act;
