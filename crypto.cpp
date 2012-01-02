@@ -74,7 +74,7 @@ Base64Key::Base64Key()
   }
 }
 
-string Base64Key::printable_key( void )
+string Base64Key::printable_key( void ) const
 {
   char base64[ 25 ];
   

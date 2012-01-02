@@ -18,12 +18,6 @@ namespace Network {
   uint16_t timestamp16( void );
   uint16_t timestamp_diff( uint16_t tsnew, uint16_t tsold );
 
-  class MTUException {
-  public:
-    int MTU;
-    MTUException( int s_MTU ) : MTU( s_MTU ) {};
-  };
-
   class NetworkException {
   public:
     string function;
@@ -57,6 +51,7 @@ namespace Network {
   class Connection {
   private:
     static const int RECEIVE_MTU = 2048;
+    static const int SEND_MTU = 1400;
     static const uint64_t MIN_RTO = 50; /* ms */
     static const uint64_t MAX_RTO = 1000; /* ms */
 
@@ -65,8 +60,6 @@ namespace Network {
 
     bool server;
     bool attached;
-
-    int MTU;
 
     Base64Key key;
     Session session;
@@ -91,17 +84,15 @@ namespace Network {
     
     void send( string s );
     string recv( void );
-    int fd( void ) { return sock; }
-    void update_MTU( void );
-    int get_MTU( void ) { return MTU; }
+    int fd( void ) const { return sock; }
+    int get_MTU( void ) const { return SEND_MTU; }
 
-    int port( void );
-    string get_key( void ) { return key.printable_key(); }
-    bool get_attached( void ) { return attached; }
+    int port( void ) const;
+    string get_key( void ) const { return key.printable_key(); }
+    bool get_attached( void ) const { return attached; }
 
-    uint64_t timeout( void );
-    double get_SRTT( void ) { return SRTT; }
-    //    bool pending_timestamp( void ) { return ( saved_timestamp != uint16_t(-1) ); }
+    uint64_t timeout( void ) const;
+    double get_SRTT( void ) const { return SRTT; }
   };
 }
 

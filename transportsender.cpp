@@ -159,31 +159,13 @@ void TransportSender<MyState>::send_to_receiver( string diff )
     new_num = uint64_t( -1 );
   }
 
-  int MTU_tries = 0;
-  while ( 1 ) {
-    MTU_tries++;
-
-    if ( MTU_tries > 20 ) {
-      fprintf( stderr, "Error, could not send fragments after 20 tries (MTU = %d).\n",
-	       connection->get_MTU() );
-      return;
-    }
-
-    if ( new_num == sent_states.back().num ) {
-      sent_states.back().timestamp = timestamp();
-    } else {
-      //      sent_states.push_back( TimestampedState<MyState>( timestamp(), new_num, current_state ) );
-      add_sent_state( timestamp(), new_num, current_state );
-    }
-
-    try {
-      send_in_fragments( diff, new_num ); // Can throw NetworkException
-      break;
-    } catch ( MTUException m ) {
-      fprintf( stderr, "Caught Path MTU exception, MTU now = %d\n", connection->get_MTU() );
-      new_num++;
-    }
+  if ( new_num == sent_states.back().num ) {
+    sent_states.back().timestamp = timestamp();
+  } else {
+    add_sent_state( timestamp(), new_num, current_state );
   }
+
+  send_in_fragments( diff, new_num ); // Can throw NetworkException
 
   /* successfully sent, probably */
   /* ("probably" because the FIRST size-exceeded datagram doesn't get an error) */
@@ -246,7 +228,6 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
     shutdown_tries++;
   }
 
-  connection->update_MTU();
   vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU() );
 
   for ( auto i = fragments.begin(); i != fragments.end(); i++ ) {

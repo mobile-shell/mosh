@@ -23,7 +23,7 @@ namespace Crypto {
   public:
     Base64Key(); /* random key */
     Base64Key( string printable_key );
-    string printable_key( void );
+    string printable_key( void ) const;
     unsigned char *data( void ) { return key; }
   };
 

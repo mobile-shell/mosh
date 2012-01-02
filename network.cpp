@@ -75,13 +75,6 @@ void Connection::setup( void )
   if ( sock < 0 ) {
     throw NetworkException( "socket", errno );
   }
-
-  /* Enable path MTU discovery */
-  char flag = IP_PMTUDISC_DO;
-  socklen_t optlen = sizeof( flag );
-  if ( setsockopt( sock, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
-    throw NetworkException( "setsockopt", errno );
-  }  
 }
 
 Connection::Connection() /* server */
@@ -89,7 +82,6 @@ Connection::Connection() /* server */
     remote_addr(),
     server( true ),
     attached( false ),
-    MTU( RECEIVE_MTU ),
     key(),
     session( key ),
     direction( TO_CLIENT ),
@@ -119,7 +111,6 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     remote_addr(),
     server( false ),
     attached( false ),
-    MTU( RECEIVE_MTU ),
     key( key_str ),
     session( key ),
     direction( TO_SERVER ),
@@ -152,37 +143,6 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
   attached = true;
 }
 
-void Connection::update_MTU( void )
-{
-  if ( !attached ) {
-    return;
-  }
-
-  /* We don't want to use our main socket because we don't want to have to connect it */
-  int path_MTU_socket = socket( AF_INET, SOCK_DGRAM, 0 );
-  if ( path_MTU_socket < 0 ) {
-    throw NetworkException( "socket", errno );
-  }
-
-  /* Connect socket so we can retrieve path MTU */
-  if ( connect( path_MTU_socket, (sockaddr *)&remote_addr, sizeof( remote_addr ) ) < 0 ) {
-    throw NetworkException( "connect", errno );
-  }
-
-  socklen_t optlen = sizeof( MTU );
-  if ( getsockopt( path_MTU_socket, IPPROTO_IP, IP_MTU, &MTU, &optlen ) < 0 ) {
-    throw NetworkException( "getsockopt", errno );
-  }
-
-  if ( optlen != sizeof( MTU ) ) {
-    throw NetworkException( "Error getting path MTU", errno );
-  }
-
-  if ( close( path_MTU_socket ) < 0 ) {
-    throw NetworkException( "close", errno );
-  }
-}
-
 void Connection::send( string s )
 {
   assert( attached );
@@ -194,10 +154,7 @@ void Connection::send( string s )
   ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
 
-  if ( (bytes_sent < 0) && (errno == EMSGSIZE) ) {
-    update_MTU();
-    throw MTUException( MTU );
-  } else if ( bytes_sent == static_cast<int>( p.size() ) ) {
+  if ( bytes_sent == static_cast<int>( p.size() ) ) {
     return;
   } else {
     throw NetworkException( "sendto", errno );
@@ -274,7 +231,7 @@ string Connection::recv( void )
   return p.payload; /* we do return out-of-order or duplicated packets to caller */
 }
 
-int Connection::port( void )
+int Connection::port( void ) const
 {
   struct sockaddr_in local_addr;
   socklen_t addrlen = sizeof( local_addr );
@@ -322,7 +279,7 @@ uint16_t Network::timestamp_diff( uint16_t tsnew, uint16_t tsold )
   return diff;
 }
 
-uint64_t Connection::timeout( void )
+uint64_t Connection::timeout( void ) const
 {
   uint64_t RTO = lrint( ceil( SRTT + 4 * RTTVAR ) );
   if ( RTO < MIN_RTO ) {
