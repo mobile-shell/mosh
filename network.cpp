@@ -75,6 +75,13 @@ void Connection::setup( void )
   if ( sock < 0 ) {
     throw NetworkException( "socket", errno );
   }
+
+  /* Enable path MTU discovery */
+  char flag = IP_PMTUDISC_WANT;
+  socklen_t optlen = sizeof( flag );
+  if ( setsockopt( sock, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
+    throw NetworkException( "setsockopt", errno );
+  }
 }
 
 Connection::Connection() /* server */
