@@ -236,14 +236,9 @@ bool STMClient::process_resize( void )
   if ( !network->shutdown_in_progress() ) {
     network->get_current_state().push_back( res );
   }
-  
-  /* tell local emulator -- there is probably a safer way to do this */
-  for ( auto i = network->begin();
-	i != network->end();
-	i++ ) {
-    i->state.act( &res );
-  }
 
+  /* note remote emulator will probably reply with its own Resize to adjust our state */
+  
   /* tell prediction engine */
   overlays.get_prediction_engine().reset();
 

@@ -14,6 +14,8 @@ using namespace std;
 using namespace Crypto;
 
 namespace Network {
+  static const unsigned int MOSH_PROTOCOL_VERSION = 1;
+
   uint64_t timestamp( void );
   uint16_t timestamp16( void );
   uint16_t timestamp_diff( uint16_t tsnew, uint16_t tsold );

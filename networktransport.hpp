@@ -67,9 +67,6 @@ namespace Network {
     MyState &get_current_state( void ) { return sender.get_current_state(); }
     void set_current_state( const MyState &x ) { sender.set_current_state( x ); }
 
-    typename list< TimestampedState<RemoteState > >::iterator begin( void ) { return received_states.begin(); }
-    typename list< TimestampedState<RemoteState > >::iterator end( void ) { return received_states.end(); }
-
     uint64_t get_remote_state_num( void ) { return received_states.back().num; }
 
     const TimestampedState<RemoteState> & get_latest_remote_state( void ) const { return received_states.back(); }

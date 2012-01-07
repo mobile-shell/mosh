@@ -73,6 +73,12 @@ int main( void )
       exit( 1 );
     }
 
+    /* clear STY environment variable so GNU screen regards us as top level */
+    if ( unsetenv( "STY" ) < 0 ) {
+      perror( "unsetenv" );
+      exit( 1 );
+    }
+
     /* get shell name */
     struct passwd *pw = getpwuid( geteuid() );
     if ( pw == NULL ) {
@@ -84,7 +90,7 @@ int main( void )
     my_argv[ 0 ] = strdup( pw->pw_shell );
     assert( my_argv[ 0 ] );
     my_argv[ 1 ] = NULL;
-
+    
     if ( execve( pw->pw_shell, my_argv, environ ) < 0 ) {
       perror( "execve" );
       exit( 1 );

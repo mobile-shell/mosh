@@ -218,6 +218,7 @@ template <class MyState>
 void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num )
 {
   Instruction inst;
+  inst.set_protocol_version( MOSH_PROTOCOL_VERSION );
   inst.set_old_num( assumed_receiver_state->num );
   inst.set_new_num( new_num );
   inst.set_ack_num( ack_num );

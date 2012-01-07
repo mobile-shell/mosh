@@ -1,0 +1,25 @@
+option optimize_for = LITE_RUNTIME;
+
+package HostBuffers;
+
+message HostMessage {
+  repeated Instruction instruction = 1;
+}
+
+message Instruction {
+  extensions 2 to max;
+}
+
+message HostBytes {
+  optional bytes hoststring = 4;
+}
+
+message ResizeMessage {
+  optional int32 width = 5;
+  optional int32 height = 6;
+}
+
+extend Instruction {
+  optional HostBytes hostbytes = 2;
+  optional ResizeMessage resize = 3;
+}
