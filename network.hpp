@@ -63,6 +63,8 @@ namespace Network {
     bool server;
     bool attached;
 
+    int MTU;
+
     Base64Key key;
     Session session;
 
@@ -80,6 +82,8 @@ namespace Network {
 
     Packet new_packet( string &s_payload );
 
+    void update_MTU( void );
+
   public:
     Connection();
     Connection( const char *key_str, const char *ip, int port );
@@ -87,7 +91,7 @@ namespace Network {
     void send( string s );
     string recv( void );
     int fd( void ) const { return sock; }
-    int get_MTU( void ) const { return SEND_MTU; }
+    int get_MTU( void ) const { return MTU; }
 
     int port( void ) const;
     string get_key( void ) const { return key.printable_key(); }
