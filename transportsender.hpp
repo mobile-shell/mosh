@@ -60,8 +60,9 @@ namespace Network {
     /* information about receiver state */
     uint64_t ack_num;
     bool pending_data_ack;
+    uint64_t ack_timestamp;
 
-    int SEND_MINDELAY; /* ms to collect all input */
+    unsigned int SEND_MINDELAY; /* ms to collect all input */
 
   public:
     /* constructor */
@@ -77,7 +78,7 @@ namespace Network {
     void process_acknowledgment_through( uint64_t ack_num );
 
     /* Executed upon entry to new receiver state */
-    void set_ack_num( uint64_t s_ack_num ) { ack_num = s_ack_num; }
+    void set_ack_num( uint64_t s_ack_num );
 
     /* Accelerate reply ack */
     void set_data_ack( void ) { pending_data_ack = true; }

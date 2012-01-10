@@ -63,6 +63,13 @@ namespace Terminal {
     }
 
     wchar_t debug_contents( void ) const;
+
+    bool is_blank( void ) const
+    {
+      return ( contents.empty()
+	       || ( (contents.size() == 1) && ( (contents.front() == 0x20)
+						|| (contents.front() == 0xA0) ) ) );
+    }
   };
 
   class Row {

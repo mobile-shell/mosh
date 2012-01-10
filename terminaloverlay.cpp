@@ -8,7 +8,16 @@
 
 using namespace Overlay;
 
-void ConditionalOverlayCell::apply( Framebuffer &fb, bool show_tentative, int row, bool flag ) const
+bool ConditionalOverlay::start_clock( uint64_t local_frame_acked, uint64_t now )
+{
+  if ( (local_frame_acked >= expiration_frame) && (expiration_time == uint64_t(-1)) ) {
+    expiration_time = now + 25;
+    return true;
+  }
+  return false;
+}
+
+void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const
 {
   if ( (!active)
        || (row >= fb.ds.get_height())
@@ -16,7 +25,12 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, bool show_tentative, int ro
     return;
   }
 
-  if ( tentative && (!show_tentative) ) {
+  if ( tentative( confirmed_epoch ) ) {
+    return;
+  }
+
+  if ( unknown ) {
+    fb.get_mutable_cell( row, col )->contents.clear();
     return;
   }
 
@@ -37,7 +51,7 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, bool show_tentative, int ro
   }
 }
 
-Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row, uint64_t current_frame ) const
+Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row, uint64_t current_frame, uint64_t now ) const
 {
   if ( !active ) {
     return Inactive;
@@ -51,44 +65,58 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row, u
   const Cell &current = *( fb.get_cell( row, col ) );
 
   /* see if it hasn't been updated yet */
-  if ( (current_frame < expiration_frame) ) {
+  if ( current_frame < expiration_frame ) {
+    return Pending;
+  }
+
+  assert( expiration_time != uint64_t(-1) );
+
+  if ( now < expiration_time ) {
     return Pending;
   }
 
   /* special case deletion */
-  if ( replacement.contents.empty() && (current.contents.size() == 1) && (current.contents.front() == 0x20) ) {
-    return Correct;
+  if ( current.is_blank() && replacement.is_blank() ) {
+    return CorrectNoCredit;
   }
 
-  if ( replacement.contents.empty() && current.contents.empty() ) {
-    return Correct;
+  if ( unknown ) {
+    return CorrectNoCredit;
   }
 
-  if ( current == replacement ) {
+  if ( current.contents == replacement.contents ) {
     return Correct;
   } else {
     return IncorrectOrExpired;
   }
 }
 
-Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t current_frame ) const
+Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t current_frame, uint64_t now ) const
 {
   if ( !active ) {
-    assert( !show_frozen_cursor );
     return Inactive;
   }
 
   if ( (row >= fb.ds.get_height())
        || (col >= fb.ds.get_width()) ) {
+    assert( false );
     //    fprintf( stderr, "Crazy cursor (%d,%d)!\n", row, col );
     return IncorrectOrExpired;
+  }
+
+  if ( current_frame < expiration_frame ) {
+    return Pending;
+  }
+
+  assert( expiration_time != uint64_t(-1) );
+
+  if ( now < expiration_time ) {
+    return Pending;
   }
 
   if ( (fb.ds.get_cursor_col() == col)
        && (fb.ds.get_cursor_row() == row) ) {
     return Correct;
-  } else if ( current_frame < expiration_frame ) {
-    return Pending;
   } else {
     /*
     fprintf( stderr, "Bad cursor in %d (I thought (%d,%d) vs actual (%d,%d)).\n", (int)current_frame,
@@ -98,26 +126,22 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t cu
   }
 }
 
-void ConditionalCursorMove::apply( Framebuffer &fb ) const
+void ConditionalCursorMove::apply( Framebuffer &fb, uint64_t confirmed_epoch ) const
 {
   if ( !active ) {
     return;
   }
 
-  int target_row = row;
-  int target_col = col;
-
-  if ( show_frozen_cursor ) {
-    target_row = frozen_row;
-    target_col = frozen_col;
+  if ( tentative( confirmed_epoch ) ) {
+    return;
   }
 
-  assert( target_row < fb.ds.get_height() );
-  assert( target_col < fb.ds.get_width() );
+  assert( row < fb.ds.get_height() );
+  assert( col < fb.ds.get_width() );
   assert( !fb.ds.origin_mode );
 
-  fb.ds.move_row( target_row, false );
-  fb.ds.move_col( target_col, false, false );
+  fb.ds.move_row( row, false );
+  fb.ds.move_col( col, false, false );
 }
 
 NotificationEngine::NotificationEngine()
@@ -242,14 +266,20 @@ int OverlayManager::wait_time( void )
 {
   uint64_t next_expiry = INT_MAX;
 
-  uint64_t message_delay = notifications.get_message_expiration() - timestamp();
+  uint64_t now = timestamp();
+
+  uint64_t message_delay = notifications.get_message_expiration() - now;
 
   if ( message_delay < next_expiry ) {
     next_expiry = message_delay;
   }
 
-  if ( notifications.need_countup( timestamp() ) && ( next_expiry > 1000 ) ) {
+  if ( notifications.need_countup( now ) && ( next_expiry > 1000 ) ) {
     next_expiry = 1000;
+  }
+
+  if ( predictions.active() && ( next_expiry > 10 ) ) {
+    next_expiry = 10;
   }
 
   return next_expiry;
@@ -260,47 +290,66 @@ void TitleEngine::set_prefix( const wstring s )
   prefix = deque<wchar_t>( s.begin(), s.end() );
 }
 
-void ConditionalOverlayRow::apply( Framebuffer &fb, bool show_tentative, bool flag ) const
+void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const
 {
-  for_each( overlay_cells.begin(), overlay_cells.end(), [&]( const ConditionalOverlayCell &x ) { x.apply( fb, show_tentative, row_num, flag ); } );
+  for_each( overlay_cells.begin(), overlay_cells.end(), [&]( const ConditionalOverlayCell &x ) { x.apply( fb, confirmed_epoch, row_num, flag ); } );
 }
 
 void PredictionEngine::apply( Framebuffer &fb ) const
 {
-  if ( (score > 0) || cursor.show_frozen_cursor ) {
-    cursor.apply( fb );
+  for_each( cursors.begin(), cursors.end(), [&]( const ConditionalCursorMove &x ) { x.apply( fb, confirmed_epoch ); } );
+
+  for_each( overlays.begin(), overlays.end(), [&]( const ConditionalOverlayRow &x ){ x.apply( fb, confirmed_epoch, flagging ); } );
+}
+
+void PredictionEngine::kill_epoch( uint64_t epoch, const Framebuffer &fb )
+{
+  cursors.remove_if( [&]( ConditionalCursorMove &x ) { return x.tentative( epoch - 1 ); } );
+
+  cursors.push_back( ConditionalCursorMove( local_frame_sent + 1,
+					    fb.ds.get_cursor_row(),
+					    fb.ds.get_cursor_col(),
+					    prediction_epoch ) );
+  cursor().active = true;
+
+  for ( auto i = overlays.begin(); i != overlays.end(); i++ ) {
+    for ( auto j = i->overlay_cells.begin(); j != i->overlay_cells.end(); j++ ) {
+      if ( j->tentative( epoch - 1 ) ) {
+	j->reset();
+      }
+    }
   }
-  for_each( overlays.begin(), overlays.end(), [&]( const ConditionalOverlayRow &x ){ x.apply( fb, score > 0, flagging ); } );
+
+  become_tentative();
 }
 
 void PredictionEngine::reset( void )
 {
+  cursors.clear();
   overlays.clear();
-  cursor.reset();
   become_tentative();
+
+  //  fprintf( stderr, "RESETTING\n" );
+}
+
+void PredictionEngine::init_cursor( const Framebuffer &fb )
+{
+  if ( cursors.empty() ) {
+    /* initialize new cursor prediction */
+    
+    cursors.push_back( ConditionalCursorMove( local_frame_sent + 1,
+					      fb.ds.get_cursor_row(),
+					      fb.ds.get_cursor_col(),
+					      prediction_epoch ) );
+    cursor().active = true;
+  }
 }
 
 void PredictionEngine::cull( const Framebuffer &fb )
 {
-  if ( score > 0 ) {
-    cursor.thaw();
-  }
-
   uint64_t now = timestamp();
 
-  /* don't increment score just for correct cursor position */
-  switch ( cursor.get_validity( fb, local_frame_acked) ) {
-  case IncorrectOrExpired:
-    cursor.reset();
-    become_tentative();
-    return;
-    break;
-  case Correct:
-    cursor.thaw();
-    break;
-  default:
-    break;
-  }
+  /* go through cell predictions */
 
   uint64_t max_delay = 0;
 
@@ -314,16 +363,34 @@ void PredictionEngine::cull( const Framebuffer &fb )
       continue;
     }
 
+    /* smash through "shell prompt" barrier if host has let us */
+    if ( fb.ds.get_cursor_row() == i->row_num ) {
+      if ( i->first_col != INT_MAX ) {
+	if ( fb.ds.get_cursor_col() < i->first_col ) {
+	  i->first_col = 0;
+	}
+      } else {
+	i->first_col = fb.ds.get_cursor_col();
+      }
+    }
+
     for ( auto j = i->overlay_cells.begin(); j != i->overlay_cells.end(); j++ ) {
-      switch ( j->get_validity( fb, i->row_num, local_frame_acked ) ) {
+      if ( j->start_clock( local_frame_acked, now  ) ) {
+	last_scheduled_timeout = max( last_scheduled_timeout, j->expiration_time );
+      }
+      switch ( j->get_validity( fb, i->row_num, local_frame_acked, now ) ) {
       case IncorrectOrExpired:
-	if ( j->tentative ) {
+	if ( j->tentative( confirmed_epoch ) ) {
+
 	  /*
-	  fprintf( stderr, "Bad tentative prediction in row %d, col %d\n",
-		   i->row_num, j->col );
+	  fprintf( stderr, "Bad tentative prediction in row %d, col %d (think %lc, actually %lc)\n",
+		   i->row_num, j->col,
+		   j->replacement.debug_contents(),
+		   fb.get_cell( i->row_num, j->col )->debug_contents()
+		   );
 	  */
-	  j->reset();
-	  become_tentative();
+
+	  kill_epoch( j->tentative_until_epoch, fb );
 	  /*
 	  if ( j->display_time != uint64_t(-1) ) {
 	    fprintf( stderr, "TIMING %ld - %ld (TENT)\n", time(NULL), now - j->display_time );
@@ -331,14 +398,16 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	  */
 	} else {
 	  /*
-	  fprintf( stderr, "[%d=>%d] (score=%d) Killing prediction in row %d, col %d\n",
+	  fprintf( stderr, "[%d=>%d] Killing prediction in row %d, col %d (think %lc, actually %lc)\n",
 		   (int)local_frame_acked, (int)j->expiration_frame,
-		   score,
-		   i->row_num, j->col );
+		   i->row_num, j->col,
+		   j->replacement.debug_contents(),
+		   fb.get_cell( i->row_num, j->col )->debug_contents() );
 	  if ( j->display_time != uint64_t(-1) ) {
 	    fprintf( stderr, "TIMING %ld - %ld\n", time(NULL), now - j->display_time );
 	  }
 	  */
+
 	  reset();
 	  return;
 	}
@@ -350,15 +419,31 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	}
 	*/
 
-	if ( j->prediction_time > prediction_checkpoint ) {
-	  score++;
+	if ( j->tentative_until_epoch > confirmed_epoch ) {
+	  confirmed_epoch = j->tentative_until_epoch;
+	  /*
+	  fprintf( stderr, "Confirmed epoch %lu (predicting in epoch %lu)\n",
+		   confirmed_epoch, prediction_epoch );
+	  */
+	}
+
+	/* no break */
+      case CorrectNoCredit:
+	if ( i->first_col != INT_MAX ) {
+	  if ( j->col < i->first_col ) {
+	    i->first_col = 0;
+	  }
+	} else {
+	  i->first_col = j->col;
 	}
 
 	j->reset();
 
 	break;
       case Pending:
-	max_delay = max( max_delay, now - j->prediction_time );
+	if ( j->display_time != uint64_t(-1) ) {
+	  max_delay = max( max_delay, now - j->display_time );
+	}
 	break;
       default:
 	break;
@@ -373,6 +458,30 @@ void PredictionEngine::cull( const Framebuffer &fb )
   } else if ( max_delay < 50 ) {
     flagging = false;
   }
+
+  /* go through cursor predictions */
+  for ( auto it = cursors.begin(); it != cursors.end(); it++ ) {
+    if ( it->start_clock( local_frame_acked, now ) ) {
+      last_scheduled_timeout = max( last_scheduled_timeout, it->expiration_time );    }
+  }
+
+  if ( !cursors.empty() ) {
+    if ( cursor().get_validity( fb, local_frame_acked, now ) == IncorrectOrExpired ) {
+      /*
+      fprintf( stderr, "Sadly, we're predicting (%d,%d) vs. (%d,%d) [tau: %ld, expiration_time=%ld, now=%ld]\n",
+	       cursor().row, cursor().col,
+	       fb.ds.get_cursor_row(),
+	       fb.ds.get_cursor_col(),
+	       cursor().tentative_until_epoch,
+	       cursor().expiration_time,
+	       now );
+      */
+      reset();
+      return;
+    }
+  }
+
+  cursors.remove_if( [&]( ConditionalCursorMove &x ) { return (x.get_validity( fb, local_frame_acked, now ) != Pending); } );
 }
 
 ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_cols )
@@ -387,7 +496,7 @@ ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_
     ConditionalOverlayRow r( row_num );
     r.overlay_cells.reserve( num_cols );
     for ( int i = 0; i < num_cols; i++ ) {
-      r.overlay_cells.push_back( ConditionalOverlayCell( i ) );
+      r.overlay_cells.push_back( ConditionalOverlayCell( 0, i, prediction_epoch ) );
       assert( r.overlay_cells[ i ].col == i );
     }
     overlays.push_back( r );
@@ -397,130 +506,222 @@ ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_
 
 void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 {
-  list<Parser::Action *> actions( parser.input( the_byte ) );
+  cull( fb );
 
-  uint64_t now = timestamp();
+  init_cursor( fb );
+
+  assert( !cursors.empty() );
+
+  /* translate application-mode cursor control function to ANSI cursor control sequence */
+  if ( (last_byte == 0x1b)
+       && (the_byte == 'O') ) {
+    the_byte = '[';
+  }
+  last_byte = the_byte;
+
+  list<Parser::Action *> actions( parser.input( the_byte ) );
 
   for ( auto it = actions.begin(); it != actions.end(); it++ ) {
     Parser::Action *act = *it;
 
-    if ( !cursor.active ) {
-      /* initialize new cursor prediction */
-      cursor.row = fb.ds.get_cursor_row();
-      cursor.col = fb.ds.get_cursor_col();
-      cursor.active = true;
-      cursor.prediction_time = now;
-      cursor.expiration_frame = local_frame_sent + 1;
-      assert( !cursor.show_frozen_cursor );
-    }
+    /*
+    fprintf( stderr, "Action: %s (%lc)\n",
+	     act->name().c_str(), act->char_present ? act->ch : L'_' );
+    */
 
     if ( typeid( *act ) == typeid( Parser::Print ) ) {
       /* make new prediction */
+
+      assert( act->char_present );
 
       wchar_t ch = act->ch;
       /* XXX handle wide characters */
 
       if ( ch == 0x7f ) { /* backspace */
 	//	fprintf( stderr, "Backspace.\n" );
-	if ( cursor.col > 0 ) {
-	  cursor.col--;
-
-	  cursor.prediction_time = now;
-	  cursor.expiration_frame = local_frame_sent + 1;
-
-	  ConditionalOverlayCell &cell = get_or_make_row( cursor.row, fb.ds.get_width() ).overlay_cells[ cursor.col ];
-	  cell.active = true;
-	  cell.tentative = (score <= 0);
-	  cell.prediction_time = now;
-	  cell.expiration_frame = local_frame_sent + 1;
-	  cell.replacement.renditions = fb.ds.get_renditions();
-	  cell.replacement.contents.clear();
-	  cell.display_time = -1;
+	ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
+	if ( cursor().col <= the_row.first_col ) {
+	  become_tentative();
 	}
-      } else if ( (ch < 0x20) || (ch > 0x7E) ) {
+
+	if ( cursor().col > 0 ) {
+	  cursor().col--;
+	  cursor().expire( local_frame_sent + 1 );
+
+	  for ( int i = cursor().col; i < fb.ds.get_width(); i++ ) {
+	    ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
+	    cell.reset();
+	    cell.active = true;
+	    cell.tentative_until_epoch = prediction_epoch;
+	    cell.expire( local_frame_sent + 1 );
+	  
+	    if ( i + 2 < fb.ds.get_width() ) {
+	      ConditionalOverlayCell &next_cell = the_row.overlay_cells[ i + 1 ];
+	      const Cell *next_cell_actual = fb.get_cell( cursor().row, i + 1 );
+
+	      if ( next_cell.active ) {
+		if ( next_cell.unknown ) {
+		  cell.unknown = true;
+		} else {
+		  cell.unknown = false;
+		  cell.replacement = next_cell.replacement;
+		}
+	      } else {
+		cell.unknown = false;
+		cell.replacement = *next_cell_actual;
+	      }
+	    } else {
+	      cell.unknown = true;
+	    }
+	  }
+	}
+      } else if ( (ch < 0x20) || (wcwidth( ch ) != 1) ) {
 	/* unknown print */
 	become_tentative();
 	//	fprintf( stderr, "Unknown print 0x%x\n", ch );
       } else {
-	/* don't attempt to change existing blank or space cells if user has typed space */
-	const Cell *existing_cell = fb.get_cell( cursor.row, cursor.col );
-	if ( ( existing_cell->contents.empty() || ((existing_cell->contents.size() == 1)
-						   && ( (existing_cell->contents.front() == 0x20)
-							|| (existing_cell->contents.front() == 0xA0) )))
-	     && ( ch == 0x20 ) ) {
-	  /* do nothing */
-	} else {
-	  assert( cursor.row >= 0 );
-	  assert( cursor.col >= 0 );
-	  assert( cursor.row < fb.ds.get_height() );
-	  assert( cursor.col < fb.ds.get_width() );
+	assert( cursor().row >= 0 );
+	assert( cursor().col >= 0 );
+	assert( cursor().row < fb.ds.get_height() );
+	assert( cursor().col < fb.ds.get_width() );
 
-	  if ( cursor.col + 1 >= fb.ds.get_width() ) {
-	    /* prediction in the last column is tricky */
-	    /* e.g., emacs will show wrap character, shell will just put the character there */
-	    become_tentative();
-	    cursor.freeze();
-	  }
+	ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
 
-	  ConditionalOverlayCell &cell = get_or_make_row( cursor.row, fb.ds.get_width() ).overlay_cells[ cursor.col ];
-	  cell.active = true;
-	  cell.tentative = (score <= 0);
-	  cell.prediction_time = now;
-	  cell.expiration_frame = local_frame_sent + 1;
-	  cell.replacement.renditions = fb.ds.get_renditions();
-	  cell.replacement.contents.clear();
-	  cell.replacement.contents.push_back( ch );
-	  cell.display_time = -1;
-
-	  /*
-	  fprintf( stderr, "[%d=>%d] Predicting %lc in row %d, col %d\n",
-		   (int)local_frame_acked, (int)cell.expiration_frame,
-		   ch, cursor.row, cursor.col );
-	  */
+	if ( cursor().col + 1 >= fb.ds.get_width() ) {
+	  /* prediction in the last column is tricky */
+	  /* e.g., emacs will show wrap character, shell will just put the character there */
+	  become_tentative();
 	}
 
-	cursor.prediction_time = now;
-	cursor.expiration_frame = local_frame_sent + 1;
-	cursor.col++;
+	/* do the insert */
+	for ( int i = fb.ds.get_width() - 1; i > cursor().col; i-- ) {
+	  ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
+	  cell.reset();
+	  cell.active = true;
+	  cell.tentative_until_epoch = prediction_epoch;
+	  cell.expire( local_frame_sent + 1 );
 
-	/* do we need to wrap? */
-	if ( cursor.col >= fb.ds.get_width() ) {
-	  become_tentative();
-	  cursor.col--;
-	  cursor.freeze();
-	  cursor.col = 0;
-	  if ( cursor.row == fb.ds.get_height() - 1 ) {
-	    for ( auto i = overlays.begin(); i != overlays.end(); i++ ) {
-	      i->row_num--;
-	      for ( auto j = i->overlay_cells.begin(); j != i->overlay_cells.end(); j++ ) {
-		if ( j->active ) {
-		  //		  j->tentative = (score <= 0);
-		  j->prediction_time = now;
-		  j->expiration_frame = local_frame_sent + 1;
-		}
-	      }
+	  ConditionalOverlayCell &prev_cell = the_row.overlay_cells[ i - 1 ];
+	  const Cell *prev_cell_actual = fb.get_cell( cursor().row, i - 1 );
+
+	  if ( i == fb.ds.get_width() - 1 ) {
+	    cell.unknown = true;
+	  } else if ( prev_cell.active ) {
+	    if ( prev_cell.unknown ) {
+	      cell.unknown = true;
+	    } else {
+	      cell.unknown = false;
+	      cell.replacement = prev_cell.replacement;
 	    }
 	  } else {
-	    cursor.row++;
+	    cell.unknown = false;
+	    cell.replacement = *prev_cell_actual;
 	  }
+	}
+	
+	ConditionalOverlayCell &cell = the_row.overlay_cells[ cursor().col ];
+	cell.reset();
+	cell.active = true;
+	cell.tentative_until_epoch = prediction_epoch;
+	cell.expire( local_frame_sent + 1 );
+	cell.replacement.renditions = fb.ds.get_renditions();
+	cell.replacement.contents.clear();
+	cell.replacement.contents.push_back( ch );
+
+	/*
+	fprintf( stderr, "[%d=>%d] Predicting %lc in row %d, col %d [tue: %lu]\n",
+		 (int)local_frame_acked, (int)cell.expiration_frame,
+		 ch, cursor().row, cursor().col,
+		 cell.tentative_until_epoch );
+	*/
+
+	cursor().expire( local_frame_sent + 1 );
+	cursor().col++;
+
+	/* do we need to wrap? */
+	if ( cursor().col >= fb.ds.get_width() ) {
+	  newline_carriage_return( fb );
 	}
       }
     } else if ( typeid( *act ) == typeid( Parser::Execute ) ) {
-      become_tentative();
-      cursor.freeze();
-      //      fprintf( stderr, "Execute 0x%x\n", act->ch );
+      if ( act->char_present && (act->ch == 0x0d) /* CR */ ) {
+	become_tentative();
+	newline_carriage_return( fb );
+      } else {
+	//	fprintf( stderr, "Execute 0x%x\n", act->ch );
+	become_tentative();	
+      }
     } else if ( typeid( *act ) == typeid( Parser::Esc_Dispatch ) ) {
       //      fprintf( stderr, "Escape sequence\n" );
+      become_tentative();
     } else if ( typeid( *act ) == typeid( Parser::CSI_Dispatch ) ) {
-      //      fprintf( stderr, "CSI sequence\n" );
+      if ( act->char_present && (act->ch == L'C') ) { /* right arrow */
+	if ( cursor().col < fb.ds.get_width() - 1 ) {
+	  cursor().col++;
+	  cursor().expire( local_frame_sent + 1 );
+	}
+      } else if ( act->char_present && (act->ch == L'D') ) { /* left arrow */
+	ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
+	if ( cursor().col <= the_row.first_col ) {
+	  become_tentative();	    
+	}
+	
+	if ( cursor().col > 0 ) {
+	  cursor().col--;
+	  cursor().expire( local_frame_sent + 1 );
+	}
+      } else {
+	//	fprintf( stderr, "CSI sequence %lc\n", act->ch );
+	become_tentative();
+      }
+    } else if ( typeid( *act ) == typeid( Parser::Clear ) ) {
+
     }
 
     delete act;
   }
 }
 
+void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
+{
+  cursor().col = 0;
+  if ( cursor().row == fb.ds.get_height() - 1 ) {
+    for ( auto i = overlays.begin(); i != overlays.end(); i++ ) {
+      i->row_num--;
+      for ( auto j = i->overlay_cells.begin(); j != i->overlay_cells.end(); j++ ) {
+	if ( j->active ) {
+	  j->expire( local_frame_sent + 1 );
+	}
+      }
+    }
+
+    /* make blank prediction for last row */
+    ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
+    for ( auto j = the_row.overlay_cells.begin(); j != the_row.overlay_cells.end(); j++ ) {
+      j->active = true;
+      j->tentative_until_epoch = prediction_epoch;
+      j->expire( local_frame_sent + 1 );
+      j->replacement.contents.clear();
+    }
+  } else {
+    cursor().row++;
+  }
+}
+
 void PredictionEngine::become_tentative( void )
 {
-  prediction_checkpoint = timestamp();
-  score = 0;
+  prediction_epoch++;
+
+  if ( !cursors.empty() ) {
+    cursors.push_back( ConditionalCursorMove( local_frame_sent + 1,
+					      cursor().row,
+					      cursor().col,
+					      prediction_epoch ) );
+    cursor().active = true;
+  }
+
+  /*
+  fprintf( stderr, "Now tentative in epoch %lu (confirmed=%lu)\n",
+	   prediction_epoch, confirmed_epoch );
+  */
 }

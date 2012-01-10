@@ -20,6 +20,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     shutdown_tries( 0 ),
     ack_num( 0 ),
     pending_data_ack( false ),
+    ack_timestamp( 0 ),
     SEND_MINDELAY( 15 )
 {
 }
@@ -218,6 +219,9 @@ template <class MyState>
 void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num )
 {
   Instruction inst;
+
+  uint64_t now = timestamp();
+
   inst.set_protocol_version( MOSH_PROTOCOL_VERSION );
   inst.set_old_num( assumed_receiver_state->num );
   inst.set_new_num( new_num );
@@ -235,11 +239,12 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
     connection->send( i->tostring() );
 
     if ( verbose ) {
-      fprintf( stderr, "[%u] Sent [%d=>%d] id %d, frag %d ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d, srtt=%.1f\n",
+      fprintf( stderr, "[%u] Sent [%d=>%d] id %d, frag %d ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d, srtt=%.1f age=%lu\n",
 	       (unsigned int)(timestamp() % 100000), (int)inst.old_num(), (int)inst.new_num(), (int)i->id, (int)i->fragment_num,
 	       (int)inst.ack_num(), (int)inst.throwaway_num(), (int)i->contents.size(),
 	       1000.0 / (double)send_interval(),
-	       (int)connection->timeout(), connection->get_SRTT() );
+	       (int)connection->timeout(), connection->get_SRTT(),
+	       now - ack_timestamp );
     }
 
   }
@@ -253,8 +258,8 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
   /* Ignore ack if we have culled the state it's acknowledging */
 
   if ( sent_states.end() != find_if( sent_states.begin(), sent_states.end(),
-				     [&]( TimestampedState<MyState> x ) { return x.num == ack_num; } ) ) {
-    sent_states.remove_if( [&]( TimestampedState<MyState> x ) { return x.num < ack_num; } );
+				     [&]( TimestampedState<MyState> &x ) { return x.num == ack_num; } ) ) {
+    sent_states.remove_if( [&]( TimestampedState<MyState> &x ) { return x.num < ack_num; } );
   }
 
   assert( !sent_states.empty() );
@@ -265,4 +270,12 @@ template <class MyState>
 bool TransportSender<MyState>::shutdown_ack_timed_out( void )
 {
   return shutdown_tries >= SHUTDOWN_RETRIES;
+}
+
+/* Executed upon entry to new receiver state */
+template <class MyState>
+void TransportSender<MyState>::set_ack_num( uint64_t s_ack_num )
+{
+  ack_num = s_ack_num;
+  ack_timestamp = timestamp();
 }

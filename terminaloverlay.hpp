@@ -15,75 +15,76 @@ namespace Overlay {
   enum Validity {
     Pending,
     Correct,
+    CorrectNoCredit,
     IncorrectOrExpired,
     Inactive
   };
 
   class ConditionalOverlay {
   public:
-    uint64_t prediction_time, expiration_frame;
+    uint64_t expiration_frame;
+    uint64_t expiration_time; /* after frame is hit */
     int col;
     bool active; /* represents a prediction at all */
-    bool tentative; /* whether to hide when score < 0 */
+    uint64_t tentative_until_epoch; /* when to show */
 
-    ConditionalOverlay( uint64_t s_exp, int s_col )
-      : prediction_time( timestamp() ),
-	expiration_frame( s_exp ), col( s_col ),
+    ConditionalOverlay( uint64_t s_exp, int s_col, uint64_t s_tentative )
+      : expiration_frame( s_exp ), expiration_time( -1 ), col( s_col ),
 	active( false ),
-	tentative( false )
+	tentative_until_epoch( s_tentative )
     {}
 
     virtual ~ConditionalOverlay() {}
+
+    bool tentative( uint64_t confirmed_epoch ) const { return tentative_until_epoch > confirmed_epoch; }
+    void reset( void ) { expiration_frame = expiration_time = tentative_until_epoch = -1; active = false; }
+    bool start_clock( uint64_t local_frame_acked, uint64_t now );
+    void expire( uint64_t s_exp ) { expiration_frame = s_exp; expiration_time = uint64_t(-1); }
   };
 
   class ConditionalCursorMove : public ConditionalOverlay {
   public:
     int row;
 
-    int frozen_col, frozen_row; /* after a control character */
+    void apply( Framebuffer &fb, uint64_t confirmed_epoch ) const;
 
-    bool show_frozen_cursor;
+    Validity get_validity( const Framebuffer &fb, uint64_t current_frame, uint64_t now ) const;
 
-    void apply( Framebuffer &fb ) const;
-
-    Validity get_validity( const Framebuffer &fb, uint64_t current_frame ) const;
-
-    ConditionalCursorMove( uint64_t s_exp, int s_row, int s_col )
-      : ConditionalOverlay( s_exp, s_col ), row( s_row ), frozen_col( 0 ), frozen_row( 0 ),
-	show_frozen_cursor( false )
+    ConditionalCursorMove( uint64_t s_exp, int s_row, int s_col, uint64_t s_tentative )
+      : ConditionalOverlay( s_exp, s_col, s_tentative ), row( s_row )
     {}
-
-    void freeze( void ) { frozen_col = col; frozen_row = row; show_frozen_cursor = true; }
-    void thaw( void ) { show_frozen_cursor = false; }
-    void reset( void ) { active = false; thaw(); }
   };
 
   class ConditionalOverlayCell : public ConditionalOverlay {
   public:
     Cell replacement;
+    bool unknown;
 
     mutable uint64_t display_time;
 
-    void apply( Framebuffer &fb, bool show_tentative, int row, bool flag ) const;
-    Validity get_validity( const Framebuffer &fb, int row, uint64_t current_frame ) const;
+    void apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const;
+    Validity get_validity( const Framebuffer &fb, int row, uint64_t current_frame, uint64_t now ) const;
 
-    ConditionalOverlayCell( int s_col )
-      : ConditionalOverlay( 0, s_col ),
+    ConditionalOverlayCell( uint64_t s_exp, int s_col, uint64_t s_tentative )
+      : ConditionalOverlay( s_exp, s_col, s_tentative ),
 	replacement( 0 ),
+	unknown( false ),
 	display_time( -1 )
     {}
 
-    void reset( void ) { active = false; display_time = -1; }
+    void reset( void ) { unknown = false; display_time = -1; ConditionalOverlay::reset(); }
   };
 
   class ConditionalOverlayRow {
   public:
     int row_num;
+    int first_col;
+
     vector<ConditionalOverlayCell> overlay_cells;
 
-    void apply( Framebuffer &fb, bool show_tentative, bool flag ) const;
+    void apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const;
 
-    ConditionalOverlayRow( int s_row_num ) : row_num( s_row_num ), overlay_cells() {}
+    ConditionalOverlayRow( int s_row_num ) : row_num( s_row_num ), first_col( INT_MAX ), overlay_cells() {}
   };
 
   /* the various overlays */
@@ -107,23 +108,33 @@ namespace Overlay {
 
   class PredictionEngine {
   private:
+    char last_byte;
     Parser::UTF8Parser parser;
 
     list<ConditionalOverlayRow> overlays;
 
-    ConditionalCursorMove cursor;
-
-    int score;
+    list<ConditionalCursorMove> cursors;
 
     uint64_t local_frame_sent, local_frame_acked;
 
     ConditionalOverlayRow & get_or_make_row( int row_num, int num_cols );
 
-    uint64_t prediction_checkpoint;
+    uint64_t prediction_epoch;
+    uint64_t confirmed_epoch;
 
     void become_tentative( void );
 
+    void newline_carriage_return( const Framebuffer &fb );
+
     bool flagging;
+
+    ConditionalCursorMove & cursor( void ) { return cursors.back(); }
+
+    void kill_epoch( uint64_t epoch, const Framebuffer &fb );
+
+    void init_cursor( const Framebuffer &fb );
+
+    uint64_t last_scheduled_timeout;
 
   public:
     void apply( Framebuffer &fb ) const;
@@ -132,14 +143,16 @@ namespace Overlay {
 
     void reset( void );
 
+    bool active( void ) { return timestamp() <= last_scheduled_timeout; }
+
     void set_local_frame_sent( uint64_t x ) { local_frame_sent = x; }
     void set_local_frame_acked( uint64_t x ) { local_frame_acked = x; }
 
-    PredictionEngine( void ) : parser(), overlays(), cursor( 0, 0, 0 ), score( 0 ),
+    PredictionEngine( void ) : last_byte( 0 ), parser(), overlays(), cursors(),
 			       local_frame_sent( 0 ), local_frame_acked( 0 ),
-			       prediction_checkpoint( timestamp() ), flagging( false )
+			       prediction_epoch( 0 ), confirmed_epoch( 0 ),
+			       flagging( false ), last_scheduled_timeout( 0 )
     {
-      become_tentative();
     }
   };
 
