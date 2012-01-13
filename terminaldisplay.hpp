@@ -35,6 +35,7 @@ namespace Terminal {
 
   public:
     static std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f );
+    static void debug_print( const Framebuffer &fb );
   };
 }
 

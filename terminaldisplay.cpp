@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <sys/time.h>
+#include <wchar.h>
 
 #include "terminaldisplay.hpp"
 
@@ -251,4 +253,34 @@ void FrameState::append_silent_move( int y, int x )
   append( tmp );
   cursor_x = x;
   cursor_y = y;
+}
+
+void Display::debug_print( const Framebuffer &fb )
+{
+  struct timeval tv;
+  gettimeofday( &tv, NULL );
+
+  double the_time = tv.tv_sec * 1000 + double(tv.tv_usec) / 1000.0;
+
+  fprintf( stderr, "%f ", the_time );
+  
+  for ( int y = 0; y < fb.ds.get_height(); y++ ) {
+    for ( int x = 0; x < fb.ds.get_width(); x++ ) {
+      const Cell *cell = fb.get_cell( y, x );
+      
+      if ( cell->contents.empty() ) {
+	fprintf( stderr, "_" );
+      } else {
+	wchar_t first = cell->contents.front();
+	if ( (first > 254) || (first < 0x20) ) {
+	  fprintf( stderr, "&" );
+	} else {
+	  fprintf( stderr, "%c", (char)first );
+	}
+      }
+    }
+  }
+
+  fprintf( stderr, "\n" );
+  fflush( stderr );
 }
