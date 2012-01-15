@@ -24,7 +24,7 @@ void serve( int host_fd );
 
 using namespace std;
 
-int main( void )
+int main( int argc, char *argv[] )
 {
   int master;
   struct termios child_termios;
@@ -80,20 +80,36 @@ int main( void )
     }
 
     /* get shell name */
-    struct passwd *pw = getpwuid( geteuid() );
-    if ( pw == NULL ) {
-      perror( "getpwuid" );
-      exit( 1 );
-    }
+    if ( argc <= 1 ) {
+      struct passwd *pw = getpwuid( geteuid() );
+      if ( pw == NULL ) {
+	perror( "getpwuid" );
+	exit( 1 );
+      }
 
-    char *my_argv[ 2 ];
-    my_argv[ 0 ] = strdup( pw->pw_shell );
-    assert( my_argv[ 0 ] );
-    my_argv[ 1 ] = NULL;
-    
-    if ( execve( pw->pw_shell, my_argv, environ ) < 0 ) {
-      perror( "execve" );
-      exit( 1 );
+      char *my_argv[ 2 ];
+      my_argv[ 0 ] = strdup( pw->pw_shell );
+      assert( my_argv[ 0 ] );
+      my_argv[ 1 ] = NULL;
+
+      if ( execve( pw->pw_shell, my_argv, environ ) < 0 ) {
+	perror( "execve" );
+	exit( 1 );
+      }
+    } else {
+      char **my_argv = (char **)malloc( (argc - 1) * sizeof( char * ) );
+      assert( my_argv );
+
+      for ( int i = 0; i < argc - 1; i++ ) {
+	my_argv[ i ] = strdup( argv[ i + 1 ] );
+	assert( my_argv[ i ] );
+	my_argv[ argc - 1 ] = NULL;
+      }
+
+      if ( execve( my_argv[ 0 ], my_argv, environ ) < 0 ) {
+	perror( "execve" );
+	exit( 1 );
+      }
     }
     exit( 0 );
   } else {
