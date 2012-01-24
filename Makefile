@@ -1,7 +1,7 @@
 proto = userinput.proto hostinput.proto transportinstruction.proto
-source = parse.cpp parserstate.cpp parser.cpp terminal.cpp termemu.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp terminaluserinput.cpp terminaldisplay.cpp network.cpp ntester.cpp ocb.cpp base64.cpp encrypt.cpp decrypt.cpp crypto.cpp networktransport.cpp transportfragment.cpp user.cpp userinput.pb.cc completeterminal.cpp stm-server.cpp stm.cpp transportinstruction.pb.cc transportsender.cpp stmclient.cpp terminaloverlay.cpp hostinput.pb.cc screencap.cpp
+source = parse.cpp parserstate.cpp parser.cpp terminal.cpp termemu.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp terminaluserinput.cpp terminaldisplay.cpp network.cpp ntester.cpp ocb.cpp base64.cpp encrypt.cpp decrypt.cpp crypto.cpp networktransport.cpp transportfragment.cpp user.cpp userinput.pb.cc completeterminal.cpp stm-server.cpp stm.cpp transportinstruction.pb.cc transportsender.cpp stmclient.cpp terminaloverlay.cpp hostinput.pb.cc
 objects = parserstate.o parser.o terminal.o parseraction.o terminalfunctions.o swrite.o terminalframebuffer.o terminaldispatcher.o terminaluserinput.o terminaldisplay.o network.o ocb.o base64.o crypto.o networktransport.o transportfragment.o user.o userinput.pb.o completeterminal.o transportinstruction.pb.o transportsender.o stmclient.o terminaloverlay.o hostinput.pb.o
-executables = parse termemu ntester encrypt decrypt stm-server stm screencap
+executables = parse termemu ntester encrypt decrypt stm-server stm
 
 CXX = g++
 CXXFLAGS = -g -O2 --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE -D_BSD_SOURCE
@@ -15,9 +15,6 @@ parse: parse.o $(objects)
 
 termemu: termemu.o $(objects)
 	$(CXX) $(CXXFLAGS) -o $@ termemu.o $(objects) $(LIBS)
-
-screencap: screencap.o $(objects)
-	$(CXX) $(CXXFLAGS) -o $@ screencap.o $(objects) $(LIBS)
 
 ntester: ntester.o $(objects)
 	$(CXX) $(CXXFLAGS) -o $@ ntester.o $(objects) $(LIBS)
