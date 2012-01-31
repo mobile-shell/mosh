@@ -303,9 +303,10 @@ void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
 
 static Function func_CSI_DECSTMB( CSI, "r", CSI_DECSTBM );
 
-/* terminal bell -- ignored for now */
-void Ctrl_BEL( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch __attribute((unused)) )
-{}
+/* terminal bell */
+void Ctrl_BEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) ) {
+  fb->ring_bell();
+}
 
 static Function func_Ctrl_BEL( CONTROL, "\x07", Ctrl_BEL );
 

@@ -189,6 +189,7 @@ namespace Terminal {
   private:
     std::deque<Row> rows;
     std::deque<wchar_t> window_title;
+    unsigned int bell_count;
 
     Row newrow( void ) { return Row( ds.get_width(), ds.get_background_rendition() ); }
 
@@ -262,9 +263,12 @@ namespace Terminal {
     void reset_cell( Cell *c ) { c->reset( ds.get_background_rendition() ); }
     void reset_row( Row *r ) { r->reset( ds.get_background_rendition() ); }
 
+    void ring_bell( void ) { bell_count++; }
+    unsigned int get_bell_count( void ) const { return bell_count; }
+
     bool operator==( const Framebuffer &x ) const
     {
-      return ( rows == x.rows ) && ( window_title == x.window_title ) && ( ds == x.ds );
+      return ( rows == x.rows ) && ( window_title == x.window_title ) && ( bell_count == x.bell_count ) && ( ds == x.ds );
     }
   };
 }

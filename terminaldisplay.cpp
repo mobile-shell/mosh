@@ -12,6 +12,11 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
   char tmp[ 64 ];
 
+  /* has bell been rung? */
+  if ( f.get_bell_count() != frame.last_frame.get_bell_count() ) {
+    frame.append( "\x07" );
+  }
+
   /* has window title changed? */
   if ( (!initialized)
        || (f.get_window_title() != frame.last_frame.get_window_title()) ) {

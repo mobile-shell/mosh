@@ -28,7 +28,7 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows( s_height, Row( s_width, 0 ) ), window_title(), ds( s_width, s_height )
+  : rows( s_height, Row( s_width, 0 ) ), window_title(), bell_count( 0 ), ds( s_width, s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
@@ -286,6 +286,7 @@ void Framebuffer::reset( void )
   ds = DrawState( width, height );
   rows = std::deque<Row>( height, newrow() );
   window_title.clear();
+  /* do not reset bell_count */
 }
 
 void Framebuffer::soft_reset( void )
