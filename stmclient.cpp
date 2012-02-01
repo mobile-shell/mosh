@@ -94,6 +94,9 @@ void STMClient::main_init( void )
   assert( sigaddset( &signal_mask, SIGINT ) == 0 );
   assert( sigaddset( &signal_mask, SIGHUP ) == 0 );
   assert( sigaddset( &signal_mask, SIGPIPE ) == 0 );
+  assert( sigaddset( &signal_mask, SIGTSTP ) == 0 );
+  assert( sigaddset( &signal_mask, SIGSTOP ) == 0 );
+  assert( sigaddset( &signal_mask, SIGCONT ) == 0 );
 
   /* don't let signals kill us */
   assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
@@ -282,7 +285,14 @@ void STMClient::main( void )
     
       if ( pollfds[ 1 ].revents & POLLIN ) {
 	/* input from the user needs to be fed to the network */
-	if ( !process_user_input( pollfds[ 1 ].fd ) ) { return; }
+	if ( !process_user_input( pollfds[ 1 ].fd ) ) {
+	  if ( !network->attached() ) {
+	    break;
+	  } else if ( !network->shutdown_in_progress() ) {
+	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ) );
+	    network->start_shutdown();
+	  }
+	}
       }
 
       if ( pollfds[ 2 ].revents & POLLIN ) {
@@ -301,11 +311,11 @@ void STMClient::main( void )
 	  break;
 	}
 
-	if ( network->attached() && (!network->shutdown_in_progress()) ) {
+	if ( !network->attached() ) {
+	  break;
+	} else if ( !network->shutdown_in_progress() ) {
 	  overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ) );
 	  network->start_shutdown();
-	} else {
-	  break;
 	}
       }
 
@@ -318,11 +328,11 @@ void STMClient::main( void )
       if ( (pollfds[ 1 ].revents)
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	/* user problem */
-	if ( network->attached() && (!network->shutdown_in_progress()) ) {
+	if ( !network->attached() ) {
+	  break;
+	} else if ( !network->shutdown_in_progress() ) {
 	  overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ) );
 	  network->start_shutdown();
-	} else {
-	  break;
 	}
       }
 

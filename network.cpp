@@ -340,5 +340,5 @@ void Connection::update_MTU( void )
     throw NetworkException( "Error getting path MTU", errno );
   }
 
-  MTU = min( PMTU, SEND_MTU );
+  MTU = min( PMTU, int(SEND_MTU) ); /* need cast to compile without optimization! XXX */
 }

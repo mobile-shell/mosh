@@ -120,6 +120,9 @@ void serve( int host_fd )
   assert( sigaddset( &signal_mask, SIGINT ) == 0 );
   assert( sigaddset( &signal_mask, SIGHUP ) == 0 );
   assert( sigaddset( &signal_mask, SIGPIPE ) == 0 );
+  assert( sigaddset( &signal_mask, SIGTSTP ) == 0 );
+  assert( sigaddset( &signal_mask, SIGSTOP ) == 0 );
+  assert( sigaddset( &signal_mask, SIGCONT ) == 0 );
 
   /* don't let signals kill us */
   assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
