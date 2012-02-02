@@ -29,7 +29,7 @@ Packet::Packet( string coded_packet, Session *session )
   direction = (message.nonce.val() & DIRECTION_MASK) ? TO_CLIENT : TO_SERVER;
   seq = message.nonce.val() & SEQUENCE_MASK;
 
-  assert( message.text.size() >= 2 * sizeof( uint16_t ) );
+  dos_assert( message.text.size() >= 2 * sizeof( uint16_t ) );
 
   uint16_t *data = (uint16_t *)message.text.data();
   timestamp = be16toh( data[ 0 ] );
@@ -220,13 +220,13 @@ string Connection::recv( void )
       }
     }
 
-    /* server auto-adjusts to client */
-    if ( server ) {
-      attached = true;
+    /* auto-adjust to remote host */
+    attached = true;
 
-      if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
-	   || (remote_addr.sin_port != packet_remote_addr.sin_port) ) {
-	remote_addr = packet_remote_addr;
+    if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
+	 || (remote_addr.sin_port != packet_remote_addr.sin_port) ) {
+      remote_addr = packet_remote_addr;
+      if ( server ) {
 	fprintf( stderr, "Server now attached to client at %s:%d\n",
 		 inet_ntoa( remote_addr.sin_addr ),
 		 ntohs( remote_addr.sin_port ) );

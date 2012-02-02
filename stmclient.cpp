@@ -364,7 +364,7 @@ void STMClient::main( void )
     } catch ( Network::NetworkException e ) {
       if ( !network->shutdown_in_progress() ) {
 	wchar_t tmp[ 128 ];
-	swprintf( tmp, 128, L"%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
+	swprintf( tmp, 128, L"%s: %s", e.function.c_str(), strerror( e.the_errno ) );
 	overlays.get_notification_engine().set_notification_string( wstring( tmp ) );
       }
 
@@ -372,6 +372,10 @@ void STMClient::main( void )
       req.tv_sec = 0;
       req.tv_nsec = 200000000; /* 0.2 sec */
       nanosleep( &req, NULL );
+    } catch ( Crypto::CryptoException e ) {
+      wchar_t tmp[ 128 ];
+      swprintf( tmp, 128, L"Crypto exception: %s", e.text.c_str() );
+      overlays.get_notification_engine().set_notification_string( wstring( tmp ) );
     }
   }
 }

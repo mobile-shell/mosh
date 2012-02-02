@@ -294,8 +294,10 @@ void serve( int host_fd )
 
       network.tick();
     } catch ( Network::NetworkException e ) {
-      fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
+      fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );
       sleep( 1 );
+    } catch ( Crypto::CryptoException e ) {
+      fprintf( stderr, "Crypto exception: %s\n", e.text.c_str() );
     }
   }
 }
