@@ -118,16 +118,14 @@ void serve( int host_fd )
   assert( sigemptyset( &signal_mask ) == 0 );
   assert( sigaddset( &signal_mask, SIGTERM ) == 0 );
   assert( sigaddset( &signal_mask, SIGINT ) == 0 );
-  /*
-  assert( sigaddset( &signal_mask, SIGHUP ) == 0 );
-  assert( sigaddset( &signal_mask, SIGPIPE ) == 0 );
-  assert( sigaddset( &signal_mask, SIGTSTP ) == 0 );
-  assert( sigaddset( &signal_mask, SIGSTOP ) == 0 );
-  assert( sigaddset( &signal_mask, SIGCONT ) == 0 );
-  */
+
+  sigset_t signals_to_block = signal_mask;
+
+  assert( sigaddset( &signals_to_block, SIGHUP ) == 0 );
+  assert( sigaddset( &signals_to_block, SIGPIPE ) == 0 );
 
   /* don't let signals kill us */
-  assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
+  assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
 
   int shutdown_signal_fd = signalfd( -1, &signal_mask, 0 );
   if ( shutdown_signal_fd < 0 ) {
