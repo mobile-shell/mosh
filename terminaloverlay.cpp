@@ -31,6 +31,7 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
 
   if ( unknown ) {
     //    fb.get_mutable_cell( row, col )->contents.clear();
+    fb.get_mutable_cell( row, col )->renditions.underlined = true;
     return;
   }
 
@@ -114,22 +115,22 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t cu
     return Pending;
   }
 
+  if ( (fb.ds.get_cursor_col() == col)
+       && (fb.ds.get_cursor_row() == row) ) {
+    return Correct;
+  }
+
   assert( expiration_time != uint64_t(-1) );
 
   if ( now < expiration_time ) {
     return Pending;
   }
 
-  if ( (fb.ds.get_cursor_col() == col)
-       && (fb.ds.get_cursor_row() == row) ) {
-    return Correct;
-  } else {
-    /*
+  /*
     fprintf( stderr, "Bad cursor in %d (I thought (%d,%d) vs actual (%d,%d)).\n", (int)current_frame,
-    	     row, col, fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
-    */
-    return IncorrectOrExpired;
-  }
+    row, col, fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
+  */
+  return IncorrectOrExpired;
 }
 
 void ConditionalCursorMove::apply( Framebuffer &fb, uint64_t confirmed_epoch ) const
