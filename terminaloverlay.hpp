@@ -62,6 +62,9 @@ namespace Overlay {
 
     mutable uint64_t display_time;
 
+    vector<Cell> original_contents; /* we don't give credit for correct predictions
+				       that match the original contents */
+
     void apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const;
     Validity get_validity( const Framebuffer &fb, int row, uint64_t current_frame, uint64_t now ) const;
 
@@ -69,10 +72,22 @@ namespace Overlay {
       : ConditionalOverlay( s_exp, s_col, s_tentative ),
 	replacement( 0 ),
 	unknown( false ),
-	display_time( -1 )
+	display_time( uint64_t(-1) ),
+	original_contents()
     {}
 
-    void reset( void ) { unknown = false; display_time = -1; ConditionalOverlay::reset(); }
+    void reset( void ) { unknown = false; display_time = uint64_t(-1); original_contents.clear(); ConditionalOverlay::reset(); }
+    void reset_with_orig( void ) {
+      if ( (!active) || unknown ) {
+	reset();
+	return;
+      }
+
+      vector<Cell> new_orig( original_contents );
+      new_orig.push_back( replacement );
+      reset();
+      original_contents = new_orig;
+    }
   };
 
   class ConditionalOverlayRow {
@@ -126,9 +141,9 @@ namespace Overlay {
 
     void newline_carriage_return( const Framebuffer &fb );
 
-    bool flagging;
+    int flagging;
 
-    ConditionalCursorMove & cursor( void ) { return cursors.back(); }
+    ConditionalCursorMove & cursor( void ) { assert( !cursors.empty() ); return cursors.back(); }
 
     void kill_epoch( uint64_t epoch, const Framebuffer &fb );
 
@@ -150,8 +165,8 @@ namespace Overlay {
 
     PredictionEngine( void ) : last_byte( 0 ), parser(), overlays(), cursors(),
 			       local_frame_sent( 0 ), local_frame_acked( 0 ),
-			       prediction_epoch( 0 ), confirmed_epoch( 0 ),
-			       flagging( false ), last_scheduled_timeout( 0 )
+			       prediction_epoch( 1 ), confirmed_epoch( 0 ),
+			       flagging( 0 ), last_scheduled_timeout( 0 )
     {
     }
   };
