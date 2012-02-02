@@ -47,7 +47,7 @@ int main( int argc, char *argv[] )
 
   /* Verify locale calls for UTF-8 */
   if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
-    fprintf( stderr, "stm requires a UTF-8 locale.\n" );
+    fprintf( stderr, "mosh requires a UTF-8 locale.\n" );
     exit( 1 );
   }
 
@@ -115,7 +115,7 @@ int main( int argc, char *argv[] )
     }
   }
 
-  printf( "[stm-server is exiting.]\n" );
+  printf( "[mosh-server is exiting.]\n" );
 
   return 0;
 }
