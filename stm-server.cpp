@@ -20,12 +20,22 @@
 
 #include "networktransport.cpp"
 
-void serve( int host_fd );
+void serve( int host_fd, const char *desired_ip );
 
 using namespace std;
 
-int main( void )
+int main( int argc, char *argv[] )
 {
+  char *desired_ip = NULL;
+  if ( argc == 1 ) {
+    desired_ip = NULL;
+  } else if ( argc == 2 ) {
+    desired_ip = argv[ 1 ];
+  } else {
+    fprintf( stderr, "Usage: %s [LOCALADDR]\n", argv[ 0 ] );
+    exit( 1 );
+  }
+
   int master;
   struct termios child_termios;
 
@@ -98,7 +108,7 @@ int main( void )
     exit( 0 );
   } else {
     /* parent */
-    serve( master );
+    serve( master, desired_ip );
     if ( close( master ) < 0 ) {
       perror( "close" );
       exit( 1 );
@@ -110,7 +120,7 @@ int main( void )
   return 0;
 }
 
-void serve( int host_fd )
+void serve( int host_fd, const char *desired_ip )
 {
   /* establish fd for shutdown signals */
   sigset_t signal_mask;
@@ -151,7 +161,7 @@ void serve( int host_fd )
 
   /* open network */
   Network::UserStream blank;
-  Network::Transport< Terminal::Complete, Network::UserStream > network( terminal, blank );
+  Network::Transport< Terminal::Complete, Network::UserStream > network( terminal, blank, desired_ip );
 
   network.set_verbose();
 

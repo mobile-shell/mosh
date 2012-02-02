@@ -9,8 +9,9 @@ using namespace Network;
 using namespace std;
 
 template <class MyState, class RemoteState>
-Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState &initial_remote )
-  : connection(),
+Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState &initial_remote,
+					    const char *desired_ip )
+  : connection( desired_ip ),
     sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
     last_receiver_state( initial_remote ),

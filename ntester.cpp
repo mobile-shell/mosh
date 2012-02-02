@@ -29,7 +29,7 @@ int main( int argc, char *argv[] )
       
       n = new Transport<UserStream, UserStream>( me, remote, key, ip, port );
     } else {
-      n = new Transport<UserStream, UserStream>( me, remote );
+      n = new Transport<UserStream, UserStream>( me, remote, NULL );
     }
   } catch ( CryptoException e ) {
     fprintf( stderr, "Fatal error: %s\n", e.text.c_str() );

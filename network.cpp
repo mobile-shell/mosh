@@ -84,7 +84,7 @@ void Connection::setup( void )
   }
 }
 
-Connection::Connection() /* server */
+Connection::Connection( const char *desired_ip ) /* server */
   : sock( -1 ),
     remote_addr(),
     server( true ),
@@ -103,11 +103,26 @@ Connection::Connection() /* server */
 {
   setup();
 
-  /* Bind to free local port.
+  /* Attempt to bind free local port, with
+     address client used to connect to us.
+
      This usage does not seem to be endorsed by POSIX. */
+
   struct sockaddr_in local_addr;
   local_addr.sin_family = AF_INET;
   local_addr.sin_port = htons( 0 );
+  if ( desired_ip
+       && inet_aton( desired_ip, &local_addr.sin_addr )
+       && (bind( sock, (sockaddr *)&local_addr, sizeof( local_addr ) ) == 0) ) {
+    return;
+  }
+
+  if ( desired_ip ) {
+    fprintf( stderr, "Could not bind to desired local address %s.\n", desired_ip );
+  }
+
+  /* Could not bind to that IP (maybe we are behind NAT).
+     Try again with any IP. */
   local_addr.sin_addr.s_addr = INADDR_ANY;
   if ( bind( sock, (sockaddr *)&local_addr, sizeof( local_addr ) ) < 0 ) {
     throw NetworkException( "bind", errno );
