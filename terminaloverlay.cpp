@@ -30,8 +30,9 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
   }
 
   if ( unknown ) {
-    //    fb.get_mutable_cell( row, col )->contents.clear();
-    fb.get_mutable_cell( row, col )->renditions.underlined = true;
+    if ( flag && ( col != fb.ds.get_width() - 1 ) ) {
+      fb.get_mutable_cell( row, col )->renditions.underlined = true;
+    }
     return;
   }
 
