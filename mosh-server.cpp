@@ -58,7 +58,8 @@ int main( int argc, char *argv[] )
   }
 
   if ( !(child_termios.c_iflag & IUTF8) ) {
-    fprintf( stderr, "Warning: Locale is UTF-8 but termios IUTF8 flag not set. Setting IUTF8 flag.\n" );
+    /* SSH should also convey IUTF8 across connection. */
+    //    fprintf( stderr, "Warning: Locale is UTF-8 but termios IUTF8 flag not set. Setting IUTF8 flag.\n" );
     child_termios.c_iflag |= IUTF8;
   }
 
@@ -115,7 +116,7 @@ int main( int argc, char *argv[] )
     }
   }
 
-  printf( "[mosh-server is exiting.]\n" );
+  printf( "\n[mosh-server is exiting.]\n" );
 
   return 0;
 }
