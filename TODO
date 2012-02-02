@@ -14,13 +14,15 @@
 
 [DONE] Speculative local echo
 
-Speculative Cursor movements and delete and insertion
+[DONE] Speculative Cursor movements and delete and insertion
+
+Use branching to follow more than one prediction path at a time.
 
 Alternate screen
 
 256color mode
 
-Terminal bell
+[DONE] Terminal bell
 
 Write startup script
 
