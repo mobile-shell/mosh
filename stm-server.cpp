@@ -163,9 +163,10 @@ void serve( int host_fd, const char *desired_ip )
   Network::UserStream blank;
   Network::Transport< Terminal::Complete, Network::UserStream > network( terminal, blank, desired_ip );
 
-  network.set_verbose();
+  /* network.set_verbose(); */
 
-  printf( "key= %s port= %d\n", network.get_key().c_str(), network.port() );
+  printf( "CONNECT %d %s\n", network.port(), network.get_key().c_str() );
+  fflush( stdout );
 
   /* prepare to poll for events */
   struct pollfd pollfds[ 3 ];
