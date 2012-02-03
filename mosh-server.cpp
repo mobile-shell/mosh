@@ -166,7 +166,7 @@ void serve( int host_fd, const char *desired_ip )
 
   /* network.set_verbose(); */
 
-  printf( "CONNECT %d %s\n", network.port(), network.get_key().c_str() );
+  printf( "MOSH CONNECT %d %s\n", network.port(), network.get_key().c_str() );
   fflush( stdout );
 
   /* prepare to poll for events */
