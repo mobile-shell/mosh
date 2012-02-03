@@ -124,6 +124,8 @@ vector<Fragment> Fragmenter::make_fragments( Instruction &inst, int MTU )
        || (inst.new_num() != last_instruction.new_num())
        || (inst.ack_num() != last_instruction.ack_num())
        || (inst.throwaway_num() != last_instruction.throwaway_num())
+       || (inst.late_ack_num() != last_instruction.late_ack_num())
+       || (inst.protocol_version() != last_instruction.protocol_version())
        || (last_MTU != MTU) ) {
     next_instruction_id++;
   }

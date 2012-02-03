@@ -21,13 +21,14 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     ack_num( 0 ),
     pending_data_ack( false ),
     ack_timestamp( 0 ),
+    ack_history(),
     SEND_MINDELAY( 15 )
 {
 }
 
 /* Try to send roughly two frames per RTT, bounded by limits on frame rate */
 template <class MyState>
-unsigned int TransportSender<MyState>::send_interval( void )
+unsigned int TransportSender<MyState>::send_interval( void ) const
 {
   int SEND_INTERVAL = lrint( ceil( connection->get_SRTT() / 2.0 ) );
   if ( SEND_INTERVAL < SEND_INTERVAL_MIN ) {
@@ -227,6 +228,7 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
   inst.set_new_num( new_num );
   inst.set_ack_num( ack_num );
   inst.set_throwaway_num( sent_states.front().num );
+  inst.set_late_ack_num( get_late_ack( now ) );
   inst.set_diff( diff );
 
   if ( new_num == uint64_t(-1) ) {
@@ -258,8 +260,8 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
   /* Ignore ack if we have culled the state it's acknowledging */
 
   if ( sent_states.end() != find_if( sent_states.begin(), sent_states.end(),
-				     [&]( TimestampedState<MyState> &x ) { return x.num == ack_num; } ) ) {
-    sent_states.remove_if( [&]( TimestampedState<MyState> &x ) { return x.num < ack_num; } );
+				     [&]( const TimestampedState<MyState> &x ) { return x.num == ack_num; } ) ) {
+    sent_states.remove_if( [&]( const TimestampedState<MyState> &x ) { return x.num < ack_num; } );
   }
 
   assert( !sent_states.empty() );
@@ -267,7 +269,7 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
 
 /* give up on getting acknowledgement for shutdown */
 template <class MyState>
-bool TransportSender<MyState>::shutdown_ack_timed_out( void )
+bool TransportSender<MyState>::shutdown_ack_timed_out( void ) const
 {
   return shutdown_tries >= SHUTDOWN_RETRIES;
 }
@@ -278,4 +280,17 @@ void TransportSender<MyState>::set_ack_num( uint64_t s_ack_num )
 {
   ack_num = s_ack_num;
   ack_timestamp = timestamp();
+  ack_history.push_back( make_pair( ack_num, ack_timestamp ) );
+}
+
+/* The "late" ack is for the input state that has had enough time on the host to have been echoed */
+template <class MyState>
+uint64_t TransportSender<MyState>::get_late_ack( uint64_t now )
+{
+  ack_history.remove_if( [&]( const pair<uint64_t, uint64_t> &x ) { return x.second < now - ECHO_TIMEOUT; } );
+  if ( !ack_history.empty() ) {
+    return ack_history.front().first - 1;
+  } else { /* every ack has gone past the echo timeout */
+    return ack_num;
+  }
 }

@@ -9,6 +9,7 @@ message Instruction {
   optional uint64 new_num = 3;
   optional uint64 ack_num = 4;
   optional uint64 throwaway_num = 5;
+  optional uint64 late_ack_num = 7;
 
   optional bytes diff = 6;
 }

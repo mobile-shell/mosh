@@ -30,6 +30,7 @@ namespace Network {
     /* simple receiver */
     list< TimestampedState<RemoteState> > received_states;
     RemoteState last_receiver_state; /* the state we were in when user last queried state */
+    uint64_t sent_state_late_acked;
     FragmentAssembly fragments;
     bool verbose;
 
@@ -53,32 +54,35 @@ namespace Network {
     /* Shut down other side of connection. */
     /* Illegal to change current_state after this. */
     void start_shutdown( void ) { sender.start_shutdown(); }
-    bool shutdown_in_progress( void ) { return sender.get_shutdown_in_progress(); }
-    bool shutdown_acknowledged( void ) { return sender.get_shutdown_acknowledged(); }
-    bool shutdown_ack_timed_out( void ) { return sender.shutdown_ack_timed_out(); }
-    bool attached( void ) { return connection.get_attached(); }
+    bool shutdown_in_progress( void ) const { return sender.get_shutdown_in_progress(); }
+    bool shutdown_acknowledged( void ) const { return sender.get_shutdown_acknowledged(); }
+    bool shutdown_ack_timed_out( void ) const { return sender.shutdown_ack_timed_out(); }
+    bool attached( void ) const { return connection.get_attached(); }
 
     /* Other side has requested shutdown and we have sent one ACK */
-    bool counterparty_shutdown_ack_sent( void ) { return sender.get_counterparty_shutdown_acknowledged(); }
+    bool counterparty_shutdown_ack_sent( void ) const { return sender.get_counterparty_shutdown_acknowledged(); }
 
-    int port( void ) { return connection.port(); }
-    string get_key( void ) { return connection.get_key(); }
+    int port( void ) const { return connection.port(); }
+    string get_key( void ) const { return connection.get_key(); }
 
     MyState &get_current_state( void ) { return sender.get_current_state(); }
     void set_current_state( const MyState &x ) { sender.set_current_state( x ); }
 
-    uint64_t get_remote_state_num( void ) { return received_states.back().num; }
+    uint64_t get_remote_state_num( void ) const { return received_states.back().num; }
 
     const TimestampedState<RemoteState> & get_latest_remote_state( void ) const { return received_states.back(); }
 
-    int fd( void ) { return connection.fd(); }
+    int fd( void ) const { return connection.fd(); }
 
     void set_verbose( void ) { sender.set_verbose(); verbose = true; }
 
     void set_send_delay( int new_delay ) { sender.set_send_delay( new_delay ); }
 
-    uint64_t get_sent_state_acked( void ) { return sender.get_sent_state_acked(); }
-    uint64_t get_sent_state_last( void ) { return sender.get_sent_state_last(); }
+    uint64_t get_sent_state_acked( void ) const { return sender.get_sent_state_acked(); }
+    uint64_t get_sent_state_last( void ) const { return sender.get_sent_state_last(); }
+    uint64_t get_sent_state_late_acked( void ) const { return sent_state_late_acked; }
+
+    unsigned int send_interval( void ) const { return sender.send_interval(); }
   };
 }
 

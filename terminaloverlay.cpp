@@ -8,10 +8,10 @@
 
 using namespace Overlay;
 
-bool ConditionalOverlay::start_clock( uint64_t local_frame_acked, uint64_t now )
+bool ConditionalOverlay::start_clock( uint64_t local_frame_acked, uint64_t now, unsigned int send_interval )
 {
   if ( (local_frame_acked >= expiration_frame) && (expiration_time == uint64_t(-1)) ) {
-    expiration_time = now + 50;
+    expiration_time = now + 25 + 125 * send_interval / 100;
     return true;
   }
   return false;
@@ -53,7 +53,9 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
   }
 }
 
-Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row, uint64_t current_frame, uint64_t now ) const
+Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
+					       uint64_t sent_frame, uint64_t early_ack, uint64_t late_ack,
+					       uint64_t now ) const
 {
   if ( !active ) {
     return Inactive;
@@ -67,7 +69,7 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row, u
   const Cell &current = *( fb.get_cell( row, col ) );
 
   /* see if it hasn't been updated yet */
-  if ( current_frame < expiration_frame ) {
+  if ( early_ack < expiration_frame ) {
     return Pending;
   }
 
@@ -92,14 +94,15 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row, u
 
   assert( expiration_time != uint64_t(-1) );
 
-  if ( now < expiration_time ) {
-    return Pending;
+  if ( (late_ack >= expiration_frame)
+       || ( (sent_frame <= early_ack) && (expiration_time >= now) ) ) {
+    return IncorrectOrExpired;
   }
 
-  return IncorrectOrExpired;
+  return Pending;
 }
 
-Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t current_frame, uint64_t now ) const
+Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t sent_frame, uint64_t early_ack, uint64_t late_ack, uint64_t now ) const
 {
   if ( !active ) {
     return Inactive;
@@ -112,7 +115,7 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t cu
     return IncorrectOrExpired;
   }
 
-  if ( current_frame < expiration_frame ) {
+  if ( early_ack < expiration_frame ) {
     return Pending;
   }
 
@@ -123,15 +126,12 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t cu
 
   assert( expiration_time != uint64_t(-1) );
 
-  if ( now < expiration_time ) {
-    return Pending;
+  if ( (late_ack >= expiration_frame)
+       || ( (sent_frame <= early_ack) && (expiration_time >= now) ) ) {
+    return IncorrectOrExpired;
   }
 
-  /*
-    fprintf( stderr, "Bad cursor in %d (I thought (%d,%d) vs actual (%d,%d)).\n", (int)current_frame,
-    row, col, fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
-  */
-  return IncorrectOrExpired;
+  return Pending;
 }
 
 void ConditionalCursorMove::apply( Framebuffer &fb, uint64_t confirmed_epoch ) const
@@ -349,6 +349,14 @@ void PredictionEngine::init_cursor( const Framebuffer &fb )
 					      fb.ds.get_cursor_row(),
 					      fb.ds.get_cursor_col(),
 					      prediction_epoch ) );
+
+    cursor().active = true;
+  } else if ( cursor().tentative_until_epoch != prediction_epoch ) {
+    cursors.push_back( ConditionalCursorMove( local_frame_sent + 1,
+					      cursor().row,
+					      cursor().col,
+					      prediction_epoch ) );
+
     cursor().active = true;
   }
 }
@@ -369,22 +377,13 @@ void PredictionEngine::cull( const Framebuffer &fb )
       continue;
     }
 
-    /* smash through "shell prompt" barrier if host has let us */
-    if ( fb.ds.get_cursor_row() == i->row_num ) {
-      if ( i->first_col != INT_MAX ) {
-	if ( fb.ds.get_cursor_col() < i->first_col ) {
-	  i->first_col = 0;
-	}
-      } else {
-	i->first_col = fb.ds.get_cursor_col();
-      }
-    }
-
     for ( auto j = i->overlay_cells.begin(); j != i->overlay_cells.end(); j++ ) {
-      if ( j->start_clock( local_frame_acked, now  ) ) {
+      if ( j->start_clock( local_frame_acked, now, send_interval ) ) {
 	last_scheduled_timeout = max( last_scheduled_timeout, j->expiration_time );
       }
-      switch ( j->get_validity( fb, i->row_num, local_frame_acked, now ) ) {
+      switch ( j->get_validity( fb, i->row_num,
+				local_frame_sent, local_frame_acked, local_frame_late_acked,
+				now ) ) {
       case IncorrectOrExpired:
 	if ( j->tentative( confirmed_epoch ) ) {
 
@@ -440,29 +439,23 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
 	if ( j->display_time != uint64_t(-1) ) {
 	  if ( now - j->display_time < 75 ) {
-	    if ( flagging > 0 ) {
-	      flagging--;
+	    if ( flag_score > -10 ) {
+	      flag_score--;
 	    }
 	  }
 	}
 
 	/* no break */
       case CorrectNoCredit:
-	if ( i->first_col != INT_MAX ) {
-	  if ( j->col < i->first_col ) {
-	    i->first_col = 0;
-	  }
-	} else {
-	  i->first_col = j->col;
-	}
-
 	j->reset();
 
 	break;
       case Pending:
 	if ( j->display_time != uint64_t(-1) ) {
-	  if ( now - j->display_time >= 150 ) {
-	    flagging = 10;
+	  if ( now - j->display_time > 150 ) {
+	    if ( flag_score < 10 ) {
+	      flag_score++;
+	    }
 	  }
 	}
 	break;
@@ -474,15 +467,24 @@ void PredictionEngine::cull( const Framebuffer &fb )
     i = inext;
   }
 
+  /* control flagging with hysteresis */
+  if ( flag_score > 5 ) {
+    flagging = true;
+  } else if ( flag_score < -5 ) {
+    flagging = false;
+  }
+
   /* go through cursor predictions */
   for ( auto it = cursors.begin(); it != cursors.end(); it++ ) {
-    if ( it->start_clock( local_frame_acked, now ) ) {
+    if ( it->start_clock( local_frame_acked, now, send_interval ) ) {
       last_scheduled_timeout = max( last_scheduled_timeout, it->expiration_time );
     }
   }
 
   if ( !cursors.empty() ) {
-    if ( cursor().get_validity( fb, local_frame_acked, now ) == IncorrectOrExpired ) {
+    if ( cursor().get_validity( fb,
+				local_frame_sent, local_frame_acked, local_frame_late_acked,
+				now ) == IncorrectOrExpired ) {
       /*
       fprintf( stderr, "Sadly, we're predicting (%d,%d) vs. (%d,%d) [tau: %ld, expiration_time=%ld, now=%ld]\n",
 	       cursor().row, cursor().col,
@@ -497,7 +499,10 @@ void PredictionEngine::cull( const Framebuffer &fb )
     }
   }
 
-  cursors.remove_if( [&]( ConditionalCursorMove &x ) { return (x.get_validity( fb, local_frame_acked, now ) != Pending); } );
+  cursors.remove_if( [&]( const ConditionalCursorMove &x ) {
+      return (x.get_validity( fb,
+			      local_frame_sent, local_frame_acked, local_frame_late_acked,
+			      now ) != Pending); } );
 }
 
 ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_cols )
@@ -554,9 +559,6 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
       if ( ch == 0x7f ) { /* backspace */
 	//	fprintf( stderr, "Backspace.\n" );
 	ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
-	if ( cursor().col <= the_row.first_col ) {
-	  become_tentative();
-	}
 
 	if ( cursor().col > 0 ) {
 	  cursor().col--;
@@ -654,10 +656,12 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	*/
 
 	cursor().expire( local_frame_sent + 1 );
-	cursor().col++;
 
 	/* do we need to wrap? */
-	if ( cursor().col >= fb.ds.get_width() ) {
+	if ( cursor().col < fb.ds.get_width() - 1 ) {
+	  cursor().col++;
+	} else {
+	  become_tentative();
 	  newline_carriage_return( fb );
 	}
       }
@@ -681,10 +685,6 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	}
       } else if ( act->char_present && (act->ch == L'D') ) { /* left arrow */
 	init_cursor( fb );
-	ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
-	if ( cursor().col <= the_row.first_col ) {
-	  become_tentative();	    
-	}
 	
 	if ( cursor().col > 0 ) {
 	  cursor().col--;
@@ -733,13 +733,6 @@ void PredictionEngine::become_tentative( void )
 {
   prediction_epoch++;
 
-  if ( !cursors.empty() ) {
-    cursors.push_back( ConditionalCursorMove( local_frame_sent + 1,
-					      cursor().row,
-					      cursor().col,
-					      prediction_epoch ) );
-    cursor().active = true;
-  }
   /*
   fprintf( stderr, "Now tentative in epoch %lu (confirmed=%lu)\n",
 	   prediction_epoch, confirmed_epoch );
