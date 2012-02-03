@@ -24,6 +24,6 @@ Alternate screen
 
 [DONE] Terminal bell
 
-Write startup script
+[DONE] Write startup script
 
 screen -r
