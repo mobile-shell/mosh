@@ -42,7 +42,7 @@ if ( $pid == 0 ) { # child
   LINE: while ( <$pty> ) {
     chomp;
     if ( m{^MOSH CONNECT} ) {
-      if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) (.{22})} ) {
+      if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) ([A-Za-z0-9/+]{22})\s*$} ) {
 	last LINE;
       } else {
 	die "Bad MOSH CONNECT string: $_\n";
