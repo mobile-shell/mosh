@@ -169,6 +169,16 @@ void serve( int host_fd, const char *desired_ip )
   printf( "MOSH CONNECT %d %s\n", network.port(), network.get_key().c_str() );
   fflush( stdout );
 
+  /* detach from terminal */
+  pid_t the_pid = fork();
+  if ( the_pid < 0 ) {
+    perror( "fork" );
+  } else if ( the_pid > 0 ) {
+    _exit( 0 );
+  }
+
+  fprintf( stderr, "[mosh-server detached, pid=%d.]\n", (int)getpid() );
+
   /* prepare to poll for events */
   struct pollfd pollfds[ 3 ];
 

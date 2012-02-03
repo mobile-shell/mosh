@@ -30,7 +30,6 @@ my $pid = fork;
 die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
   close $pty;
-  open STDIN, "<&", $pty_slave->fileno() or die;
   open STDOUT, ">&", $pty_slave->fileno() or die;
   open STDERR, ">&", $pty_slave->fileno() or die;
   close $pty_slave;
@@ -44,10 +43,9 @@ if ( $pid == 0 ) { # child
     chomp;
     if ( m{^MOSH CONNECT} ) {
       if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) (.{22})} ) {
-	print $pty "\n~."; # Tear down SSH connection
 	last LINE;
       } else {
-	die "Bad MOSH CONNECT string\n";
+	die "Bad MOSH CONNECT string: $_\n";
       }
     } else {
       print "$_\n";
