@@ -1,0 +1,65 @@
+#!/usr/bin/env perl
+
+use warnings;
+use strict;
+use Socket;
+use IO::Pty;
+
+$|=1;
+
+if ( scalar @ARGV != 3 ) {
+  die "Usage: $0 HOST MOSHCLIENT MOSHSERVER\n";
+}
+
+my ( $host, $client, $server ) = @ARGV;
+
+# Resolve hostname
+my $packed_ip = gethostbyname $host;
+if ( not defined $packed_ip ) {
+  die "$0: Could not resolve hostname $host\n";
+}
+my $ip = inet_ntoa $packed_ip;
+
+# Run SSH and read password
+my $pty = new IO::Pty;
+my $pty_slave = $pty->slave;
+
+$pty_slave->clone_winsize_from( \*STDIN );
+
+my $pid = fork;
+die "$0: fork: $!\n" unless ( defined $pid );
+if ( $pid == 0 ) { # child
+  close $pty;
+  open STDIN, "<&", $pty_slave->fileno() or die;
+  open STDOUT, ">&", $pty_slave->fileno() or die;
+  open STDERR, ">&", $pty_slave->fileno() or die;
+  close $pty_slave;
+
+  exec {'ssh'} ('ssh', '-t', $ip, $server, $ip);
+  die "Cannot exec ssh: $!\n";
+} else { # server
+  my ( $port, $key );
+  $pty->close_slave();
+  LINE: while ( <$pty> ) {
+    chomp;
+    if ( m{^MOSH CONNECT} ) {
+      if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) (.{22})} ) {
+	print $pty "\n~."; # Tear down SSH connection
+	last LINE;
+      } else {
+	die "Bad MOSH CONNECT string\n";
+      }
+    } else {
+      print "$_\n";
+    }
+  }
+  waitpid $pid, 0;
+
+  if ( not defined $port ) {
+    die "$0: Did not find mosh server startup message.\n";
+  }
+
+  # Now start real mosh client
+  $ENV{ 'MOSH_KEY' } = $key;
+  exec {$client} ($client, $ip, $port);
+}

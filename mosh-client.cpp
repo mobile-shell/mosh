@@ -1,7 +1,8 @@
+#include <stdlib.h>
+#include <string.h>
+
 #include "stmclient.hpp"
 #include "crypto.hpp"
-
-#include <iostream>
 
 int main( int argc, char *argv[] )
 {
@@ -17,10 +18,23 @@ int main( int argc, char *argv[] )
   ip = argv[ 1 ];
   port = myatoi( argv[ 2 ] );
 
-  /* Read key from standard input */
-  cout << "Key: ";
-  string key;
-  cin >> key;
+  /* Read key from environment */
+  char *env_key = getenv( "MOSH_KEY" );
+  if ( env_key == NULL ) {
+    fprintf( stderr, "MOSH_KEY environment variable not found.\n" );
+    exit( 1 );
+  }
+
+  char *key = strdup( env_key );
+  if ( key == NULL ) {
+    perror( "strdup" );
+    exit( 1 );
+  }
+
+  if ( unsetenv( "MOSH_KEY" ) < 0 ) {
+    perror( "unsetenv" );
+    exit( 1 );
+  }
 
   /* Adopt native locale */
   if ( NULL == setlocale( LC_ALL, "" ) ) {
@@ -28,7 +42,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  STMClient client( ip, port, key.c_str() );
+  STMClient client( ip, port, key );
 
   client.init();
 
@@ -37,6 +51,8 @@ int main( int argc, char *argv[] )
   client.shutdown();
 
   printf( "\n[mosh is exiting.]\n" );
+
+  free( key );
 
   return 0;
 }
