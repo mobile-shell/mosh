@@ -36,18 +36,17 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
     return;
   }
 
-  /*
-  fprintf( stderr, "APPLYING char %lc to (%d, %d)\n",
-	   replacement.debug_contents(), row, col );
-  */
-
   if ( !(*(fb.get_cell( row, col )) == replacement) ) {
+    if ( replacement.is_blank() && fb.get_cell( row, col )->is_blank() ) {
+      return;
+    }
+
     *(fb.get_mutable_cell( row, col )) = replacement;
     uint64_t now = timestamp();
     if ( display_time >= now ) {
       display_time = now;
     }
-    if ( flag && (!replacement.is_blank()) ) {
+    if ( flag ) {
       fb.get_mutable_cell( row, col )->renditions.underlined = true;
     }
   }
@@ -66,6 +65,10 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
     return IncorrectOrExpired;
   }
 
+  if ( unknown ) {
+    return CorrectNoCredit;
+  }
+
   const Cell &current = *( fb.get_cell( row, col ) );
 
   /* see if it hasn't been updated yet */
@@ -73,30 +76,26 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
     return Pending;
   }
 
-  /* special case deletion */
-  if ( current.is_blank() && replacement.is_blank() ) {
-    return CorrectNoCredit;
-  }
-
-  if ( unknown ) {
-    return CorrectNoCredit;
-  }
-
-  if ( current.contents == replacement.contents ) {
-    auto it = find_if( original_contents.begin(), original_contents.end(),
-		       [&]( const Cell &x ) { return replacement.contents == x.contents; } );
-    if ( it == original_contents.end() ) {
-      return Correct;
-    } else {
-      return CorrectNoCredit;
-    }
-  }
-
   assert( expiration_time != uint64_t(-1) );
 
   if ( (late_ack >= expiration_frame)
        || ( (sent_frame <= early_ack) && (expiration_time <= now) ) ) {
-    return IncorrectOrExpired;
+    /* special case deletion */
+    if ( current.is_blank() && replacement.is_blank() ) {
+      return CorrectNoCredit;
+    }
+
+    if ( current.contents == replacement.contents ) {
+      auto it = find_if( original_contents.begin(), original_contents.end(),
+			 [&]( const Cell &x ) { return replacement.contents == x.contents; } );
+      if ( it == original_contents.end() ) {
+	return Correct;
+      } else {
+	return CorrectNoCredit;
+      }
+    } else {
+      return IncorrectOrExpired;
+    }
   }
 
   return Pending;
@@ -119,16 +118,16 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t se
     return Pending;
   }
 
-  if ( (fb.ds.get_cursor_col() == col)
-       && (fb.ds.get_cursor_row() == row) ) {
-    return Correct;
-  }
-
   assert( expiration_time != uint64_t(-1) );
 
   if ( (late_ack >= expiration_frame)
        || ( (sent_frame <= early_ack) && (expiration_time <= now) ) ) {
-    return IncorrectOrExpired;
+    if ( (fb.ds.get_cursor_col() == col)
+	 && (fb.ds.get_cursor_row() == row) ) {
+      return Correct;
+    } else {
+      return IncorrectOrExpired;
+    }
   }
 
   return Pending;
