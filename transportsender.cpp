@@ -287,10 +287,15 @@ void TransportSender<MyState>::set_ack_num( uint64_t s_ack_num )
 template <class MyState>
 uint64_t TransportSender<MyState>::get_late_ack( uint64_t now )
 {
-  ack_history.remove_if( [&]( const pair<uint64_t, uint64_t> &x ) { return x.second < now - ECHO_TIMEOUT; } );
-  if ( !ack_history.empty() ) {
-    return ack_history.front().first - 1;
-  } else { /* every ack has gone past the echo timeout */
-    return ack_num;
+  uint64_t newest_echo_ack = 0;
+
+  for ( auto i = ack_history.begin(); i != ack_history.end(); i++ ) {
+    if ( i->second < now - ECHO_TIMEOUT ) {
+      newest_echo_ack = i->first;
+    }
   }
+
+  ack_history.remove_if( [&]( const pair<uint64_t, uint64_t> &x ) { return x.first < newest_echo_ack; } );
+
+  return newest_echo_ack;
 }
