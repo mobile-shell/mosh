@@ -42,10 +42,6 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
     }
 
     *(fb.get_mutable_cell( row, col )) = replacement;
-    uint64_t now = timestamp();
-    if ( display_time >= now ) {
-      display_time = now;
-    }
     if ( flag ) {
       fb.get_mutable_cell( row, col )->renditions.underlined = true;
     }
@@ -364,6 +360,13 @@ void PredictionEngine::cull( const Framebuffer &fb )
 {
   uint64_t now = timestamp();
 
+  /* control flagging with hysteresis */
+  if ( send_interval > 80 ) {
+    flagging = true;
+  } else if ( send_interval < 50 ) {
+    flagging = false;
+  }
+
   /* go through cell predictions */
 
   auto i = overlays.begin();
@@ -436,27 +439,12 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
 	}
 
-	if ( j->display_time != uint64_t(-1) ) {
-	  if ( now - j->display_time < 75 ) {
-	    if ( flag_score > -10 ) {
-	      flag_score--;
-	    }
-	  }
-	}
-
 	/* no break */
       case CorrectNoCredit:
 	j->reset();
 
 	break;
       case Pending:
-	if ( j->display_time != uint64_t(-1) ) {
-	  if ( now - j->display_time > 150 ) {
-	    if ( flag_score < 10 ) {
-	      flag_score++;
-	    }
-	  }
-	}
 	break;
       default:
 	break;
@@ -464,13 +452,6 @@ void PredictionEngine::cull( const Framebuffer &fb )
     }
 
     i = inext;
-  }
-
-  /* control flagging with hysteresis */
-  if ( flag_score > 5 ) {
-    flagging = true;
-  } else if ( flag_score < -5 ) {
-    flagging = false;
   }
 
   /* go through cursor predictions */

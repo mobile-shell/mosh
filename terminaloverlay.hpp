@@ -60,8 +60,6 @@ namespace Overlay {
     Cell replacement;
     bool unknown;
 
-    mutable uint64_t display_time;
-
     vector<Cell> original_contents; /* we don't give credit for correct predictions
 				       that match the original contents */
 
@@ -72,11 +70,10 @@ namespace Overlay {
       : ConditionalOverlay( s_exp, s_col, s_tentative ),
 	replacement( 0 ),
 	unknown( false ),
-	display_time( uint64_t(-1) ),
 	original_contents()
     {}
 
-    void reset( void ) { unknown = false; display_time = uint64_t(-1); original_contents.clear(); ConditionalOverlay::reset(); }
+    void reset( void ) { unknown = false; original_contents.clear(); ConditionalOverlay::reset(); }
     void reset_with_orig( void ) {
       if ( (!active) || unknown ) {
 	reset();
@@ -140,7 +137,6 @@ namespace Overlay {
 
     void newline_carriage_return( const Framebuffer &fb );
 
-    int flag_score;
     bool flagging;
 
     ConditionalCursorMove & cursor( void ) { assert( !cursors.empty() ); return cursors.back(); }
@@ -172,7 +168,7 @@ namespace Overlay {
 			       local_frame_sent( 0 ), local_frame_acked( 0 ),
 			       local_frame_late_acked( 0 ),
 			       prediction_epoch( 1 ), confirmed_epoch( 0 ),
-			       flag_score( 0 ), flagging( false ), last_scheduled_timeout( 0 ),
+			       flagging( false ), last_scheduled_timeout( 0 ),
 			       send_interval( 250 )
     {
     }
