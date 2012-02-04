@@ -8,10 +8,20 @@ use IO::Pty;
 $|=1;
 
 if ( scalar @ARGV != 3 ) {
-  die "Usage: $0 HOST MOSHCLIENT MOSHSERVER\n";
+  die "Usage: $0 [user@]host mosh-client-command mosh-server-command\n";
 }
 
-my ( $host, $client, $server ) = @ARGV;
+my ( $userhost, $client, $server ) = @ARGV;
+
+my ( $user, $host );
+
+# Get username
+if ( $userhost =~ m'(.*?@)(.*)' ) {
+  ( $user, $host ) = ( $1, $2 );
+} else {
+  $user = "";
+  $host = $userhost;
+}
 
 # Resolve hostname
 my $packed_ip = gethostbyname $host;
@@ -34,7 +44,7 @@ if ( $pid == 0 ) { # child
   open STDERR, ">&", $pty_slave->fileno() or die;
   close $pty_slave;
 
-  exec {'ssh'} ('ssh', '-t', $ip, $server, $ip);
+  exec {'ssh'} ('ssh', '-t', $user . $ip, $server, $ip);
   die "Cannot exec ssh: $!\n";
 } else { # server
   my ( $port, $key );
