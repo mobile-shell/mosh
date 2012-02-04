@@ -241,9 +241,9 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
     connection->send( i->tostring() );
 
     if ( verbose ) {
-      fprintf( stderr, "[%u] Sent [%d=>%d] id %d, frag %d ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d, srtt=%.1f age=%llu\n",
+      fprintf( stderr, "[%u] Sent [%d=>%d] id %d, frag %d ack=%d, late_ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d, srtt=%.1f age=%llu\n",
 	       (unsigned int)(timestamp() % 100000), (int)inst.old_num(), (int)inst.new_num(), (int)i->id, (int)i->fragment_num,
-	       (int)inst.ack_num(), (int)inst.throwaway_num(), (int)i->contents.size(),
+	       (int)inst.ack_num(), (int)inst.late_ack_num(), (int)inst.throwaway_num(), (int)i->contents.size(),
 	       1000.0 / (double)send_interval(),
 	       (int)connection->timeout(), connection->get_SRTT(),
 	       (long long)(now - ack_timestamp) );

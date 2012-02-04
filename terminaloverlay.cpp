@@ -11,7 +11,7 @@ using namespace Overlay;
 bool ConditionalOverlay::start_clock( uint64_t local_frame_acked, uint64_t now, unsigned int send_interval )
 {
   if ( (local_frame_acked >= expiration_frame) && (expiration_time == uint64_t(-1)) ) {
-    expiration_time = now + 25 + 125 * send_interval / 100;
+    expiration_time = now + 50 + 125 * send_interval / 100;
     return true;
   }
   return false;
@@ -95,7 +95,7 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
   assert( expiration_time != uint64_t(-1) );
 
   if ( (late_ack >= expiration_frame)
-       || ( (sent_frame <= early_ack) && (expiration_time >= now) ) ) {
+       || ( (sent_frame <= early_ack) && (expiration_time <= now) ) ) {
     return IncorrectOrExpired;
   }
 
@@ -127,7 +127,7 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t se
   assert( expiration_time != uint64_t(-1) );
 
   if ( (late_ack >= expiration_frame)
-       || ( (sent_frame <= early_ack) && (expiration_time >= now) ) ) {
+       || ( (sent_frame <= early_ack) && (expiration_time <= now) ) ) {
     return IncorrectOrExpired;
   }
 
