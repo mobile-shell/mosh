@@ -1,17 +1,22 @@
 source = userinput.proto hostinput.proto transportinstruction.proto
 
 PROTOC = protoc
-AM_CXXFLAGS = `pkg-config --cflags protobuf-lite`
+AM_CXXFLAGS = `pkg-config --cflags protobuf-lite` -g -O2 --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe
 
 userinput.pb.cc: userinput.proto
-	$(PROTOC) --cpp_out=$(builddir) $<
+	$(PROTOC) --cpp_out=$(builddir) -I$(srcdir) $<
 hostinput.pb.cc: hostinput.proto
-	$(PROTOC) --cpp_out=$(builddir) $<
+	$(PROTOC) --cpp_out=$(builddir) -I$(srcdir) $<
 transportinstruction.pb.cc: transportinstruction.proto
-	$(PROTOC) --cpp_out=$(builddir) $<
+	$(PROTOC) --cpp_out=$(builddir) -I$(srcdir) $<
+
+.o.cc:
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
 noinst_LIBRARIES = libmoshprotos.a
 
-libmoshprotos_a_SOURCES = $(builddir)/userinput.pb.cc $(builddir)/hostinput.pb.cc $(builddir)/transportinstruction.pb.cc
+libmoshprotos_a_SOURCES = userinput.proto hostinput.proto transportinstruction.proto
 
-CLEANFILES = $(builddir)/userinput.pb.cc $(builddir)/hostinput.pb.cc $(builddir)/transportinstruction.pb.cc $(builddir)/userinput.pb.h $(builddir)/hostinput.pb.h $(builddir)/transportinstruction.pb.h
+libmoshprotos_a_LIBADD = userinput.pb.$(OBJEXT) hostinput.pb.$(OBJEXT) transportinstruction.pb.$(OBJEXT)
+
+CLEANFILES = userinput.pb.cc hostinput.pb.cc transportinstruction.pb.cc userinput.pb.h hostinput.pb.h transportinstruction.pb.h

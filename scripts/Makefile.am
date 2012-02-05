@@ -1,1 +1,1 @@
-bin_SCRIPTS = mosh
+dist_bin_SCRIPTS = mosh
