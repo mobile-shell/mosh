@@ -1,0 +1,2 @@
+SUBDIRS = protobufs src scripts
+
