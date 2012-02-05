@@ -1,0 +1,19 @@
+Source: mosh
+Section: net
+Priority: optional
+Maintainer: Keith Winstein <keithw@mit.edu>
+Build-Depends: debhelper (>= 8.0.0), autotools-dev, protobuf-compiler, libprotobuf-dev
+Standards-Version: 3.9.2
+Homepage: http://mosh.mit.edu
+Vcs-Git: git://github.com/keithw/mosh.git
+Vcs-Browser: http://github.com/keithw/mosh
+
+Package: mosh
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libprotobuf-lite7
+Description: Remote terminal with local echo and IP roaming
+ Mosh is a remote terminal application that supports:
+   - intermittent network connectivity,
+   - roaming to different IP address without dropping the connection, and
+   - intelligent local echo and line editing to reduce the effects
+     of "network lag" on high-latency connections.
