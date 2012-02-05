@@ -5,8 +5,8 @@ LDADD = -lutil -lcrypto -lrt -lm $(top_builddir)/protobufs/libmoshprotos.a
 
 bin_PROGRAMS = mosh-client mosh-server
 
-source = parser.cpp parserstate.cpp terminal.cpp parseraction.cpp terminalfunctions.cpp swrite.cpp terminalframebuffer.cpp terminaldispatcher.cpp terminaluserinput.cpp terminaldisplay.cpp network.cpp ocb.cpp base64.cpp crypto.cpp networktransport.cpp transportfragment.cpp user.cpp completeterminal.cpp transportsender.cpp stmclient.cpp terminaloverlay.cpp
+source = parser.cc parserstate.cc terminal.cc parseraction.cc terminalfunctions.cc swrite.cc terminalframebuffer.cc terminaldispatcher.cc terminaluserinput.cc terminaldisplay.cc network.cc ocb.cc base64.cc crypto.cc networktransport.cc transportfragment.cc user.cc completeterminal.cc transportsender.cc stmclient.cc terminaloverlay.cc
 
-mosh_client_SOURCES = mosh-client.cpp $(source)
+mosh_client_SOURCES = mosh-client.cc $(source)
 
-mosh_server_SOURCES = mosh-server.cpp $(source)
+mosh_server_SOURCES = mosh-server.cc $(source)
