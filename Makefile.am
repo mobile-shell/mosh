@@ -1,2 +1,2 @@
 SUBDIRS = src scripts
-EXTRA_DIST = grant.htm debian
+EXTRA_DIST = ocb-license.html debian
