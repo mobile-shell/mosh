@@ -1,0 +1,6 @@
+Initial release (0.9):
+----------------------
+
+* Supports intermittent connectivity
+* Supports client and server IP roaming
+* Local echo supports typing and the left and right arrow keys
