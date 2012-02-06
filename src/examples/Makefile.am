@@ -2,7 +2,7 @@ AM_CXXFLAGS = --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-default-
 
 noinst_PROGRAMS = encrypt decrypt ntester parse termemu
 
-LIBS = `pkg-config --libs protobuf-lite`
+LIBS = $(protobuf_lite_LIBS)
 
 encrypt_SOURCES = encrypt.cc
 encrypt_CPPFLAGS = -I$(srcdir)/../crypto

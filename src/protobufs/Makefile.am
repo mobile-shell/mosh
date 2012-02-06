@@ -1,7 +1,8 @@
 source = userinput.proto hostinput.proto transportinstruction.proto
 
 PROTOC = protoc
-AM_CXXFLAGS = `pkg-config --cflags protobuf-lite` -g -O2 --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe
+AM_CPPFLAGS = $(protobuf_lite_CFLAGS)
+AM_CXXFLAGS = -g -O2 --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe
 
 userinput.pb.cc: userinput.proto
 	$(PROTOC) --cpp_out=$(builddir) -I$(srcdir) $<
