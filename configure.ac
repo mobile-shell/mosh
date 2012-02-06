@@ -6,7 +6,7 @@ AC_INIT(mosh, 0.9, mosh-devel@mit.edu)
 AM_INIT_AUTOMAKE(mosh, 0.9)
 AC_CONFIG_SRCDIR([src/transportfragment.h])
 AC_CONFIG_HEADERS([config.h])
-AC_OUTPUT(Makefile src/Makefile protobufs/Makefile scripts/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/protobufs/Makefile scripts/Makefile)
 
 # Checks for programs.
 AC_PROG_CXX

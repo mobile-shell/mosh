@@ -1,7 +1,9 @@
-AM_CPPFLAGS = -I$(top_builddir)/protobufs/ -D_XOPEN_SOURCE=500 -D_GNU_SOURCE -D_BSD_SOURCE
+SUBDIRS = protobufs .
+
+AM_CPPFLAGS = -Iprotobufs -D_XOPEN_SOURCE=500 -D_GNU_SOURCE -D_BSD_SOURCE
 AM_CXXFLAGS = -g -O2 --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe
 LIBS = `pkg-config --libs protobuf-lite`
-LDADD = -lutil -lrt -lm $(top_builddir)/protobufs/libmoshprotos.a
+LDADD = -lutil -lrt -lm protobufs/libmoshprotos.a
 
 bin_PROGRAMS = mosh-client mosh-server
 

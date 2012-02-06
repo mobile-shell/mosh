@@ -10,4 +10,4 @@
 #export DH_VERBOSE=1
 
 %:
-	dh $@ 
+	dh $@ --with autoreconf

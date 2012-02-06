@@ -1,2 +1,2 @@
-SUBDIRS = protobufs src scripts
-EXTRA_DIST = grant.htm
+SUBDIRS = src scripts
+EXTRA_DIST = grant.htm debian
