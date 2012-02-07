@@ -4,14 +4,26 @@ use warnings;
 use strict;
 use Socket;
 use IO::Pty;
+use Getopt::Long;
 
 $|=1;
 
-if ( scalar @ARGV != 3 ) {
-  die "Usage: $0 [user@]host mosh-client-command mosh-server-command\n";
+my $client = 'mosh-client';
+my $server = 'mosh-server';
+
+my $usage =
+qq{Usage: $0 [options] [user@]host
+   --client=PATH        mosh client on local machine  (default: "mosh-client")
+   --server=PATH        mosh server on remote machine (default: "mosh-server")\n};
+
+GetOptions( 'client=s' => \$client,
+	    'server=s' => \$server ) or die $usage;
+
+if ( scalar @ARGV != 1 ) {
+  die $usage;
 }
 
-my ( $userhost, $client, $server ) = @ARGV;
+my $userhost = $ARGV[ 0 ];
 
 my ( $user, $host );
 
