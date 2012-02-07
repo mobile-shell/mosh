@@ -21,9 +21,9 @@
 #include <pwd.h>
 #include <sys/time.h>
 
-#include "parser.hpp"
-#include "completeterminal.hpp"
-#include "swrite.hpp"
+#include "parser.h"
+#include "completeterminal.h"
+#include "swrite.h"
 
 const size_t buf_size = 16384;
 

@@ -2,8 +2,8 @@
 #include <unistd.h>
 #include <poll.h>
 
-#include "user.hpp"
-#include "networktransport.cpp"
+#include "user.h"
+#include "networktransport.cc"
 
 using namespace Network;
 

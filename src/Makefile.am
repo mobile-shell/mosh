@@ -1,1 +1,1 @@
-SUBDIRS = protobufs util crypto terminal network statesync frontend
+SUBDIRS = protobufs util crypto terminal network statesync frontend examples

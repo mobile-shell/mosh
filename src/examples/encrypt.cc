@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <iostream>
 
-#include "crypto.hpp"
+#include "crypto.h"
 
 using namespace Crypto;
 

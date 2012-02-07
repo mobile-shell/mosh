@@ -6,7 +6,7 @@ AC_INIT(mosh, 0.9, mosh-devel@mit.edu)
 AM_INIT_AUTOMAKE(mosh, 0.9)
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
 AC_CONFIG_HEADERS([config.h])
-AC_OUTPUT(Makefile src/Makefile src/crypto/Makefile src/frontend/Makefile src/network/Makefile src/protobufs/Makefile src/statesync/Makefile src/terminal/Makefile src/util/Makefile scripts/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/crypto/Makefile src/frontend/Makefile src/network/Makefile src/protobufs/Makefile src/statesync/Makefile src/terminal/Makefile src/util/Makefile scripts/Makefile src/examples/Makefile)
 
 # Checks for programs.
 AC_PROG_CXX

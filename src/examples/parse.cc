@@ -14,8 +14,8 @@
 #include <iostream>
 #include <typeinfo>
 
-#include "parser.hpp"
-#include "swrite.hpp"
+#include "parser.h"
+#include "swrite.h"
 
 const size_t buf_size = 1024;
 
