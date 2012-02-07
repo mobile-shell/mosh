@@ -2,11 +2,10 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT(mosh, 0.9a, mosh-devel@mit.edu)
-AM_INIT_AUTOMAKE(mosh, 0.9a)
+AC_INIT([mosh], [0.9a], [mosh-devel@mit.edu])
+AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
 AC_CONFIG_HEADERS([config.h])
-AC_OUTPUT(Makefile src/Makefile src/crypto/Makefile src/frontend/Makefile src/network/Makefile src/protobufs/Makefile src/statesync/Makefile src/terminal/Makefile src/util/Makefile scripts/Makefile src/examples/Makefile)
 
 # Checks for programs.
 AC_PROG_CXX
@@ -40,4 +39,5 @@ AC_CHECK_FUNCS([clock_gettime gettimeofday inet_ntoa iswprint memchr memset nl_l
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf_lite], [protobuf-lite])
 
+AC_CONFIG_FILES([Makefile src/Makefile src/crypto/Makefile src/frontend/Makefile src/network/Makefile src/protobufs/Makefile src/statesync/Makefile src/terminal/Makefile src/util/Makefile scripts/Makefile src/examples/Makefile])
 AC_OUTPUT
