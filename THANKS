@@ -1,0 +1,14 @@
+* Hari Balakrishnan, who advised this work and came up with the name.
+
+* Anders Kaseorg for help with the conversion to autoconf/automake.
+
+* Paul Williams (www.vt100.net), whose reverse-engineered vt500 state
+  diagram is the basis for the Mosh parser.
+
+* The anonymous users who contributed session logs for tuning and
+  measuring Mosh's predictive echo.
+
+* Nickolai Zeldovich for helpful comments on the Mosh research paper.
+
+* Richard Stallman for helpful discussion about the capabilities of
+  the SUPDUP Local Editing Protocol.
