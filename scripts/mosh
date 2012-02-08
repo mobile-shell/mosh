@@ -33,30 +33,52 @@ qq{Usage: $0 [options] [user@]host
    --server=PATH        mosh server on remote machine (default: "mosh-server")\n};
 
 GetOptions( 'client=s' => \$client,
-	    'server=s' => \$server ) or die $usage;
+	    'server=s' => \$server,
+	    'fake-proxy!' => \my $fake_proxy ) or die $usage;
+
+if ( defined $fake_proxy ) {
+  use Errno qw(EINTR);
+  use IO::Socket::INET;
+  use threads;
+
+  my ( $host, $port ) = @ARGV;
+
+  # Resolve hostname
+  my $packed_ip = gethostbyname $host;
+  if ( not defined $packed_ip ) {
+    die "$0: Could not resolve hostname $host\n";
+  }
+  my $ip = inet_ntoa $packed_ip;
+
+  print STDERR "MOSH IP $ip\n";
+
+  # Act like netcat
+  my $sock = IO::Socket::INET->new( PeerAddr => $ip,
+				    PeerPort => $port,
+				    Proto => "tcp" )
+    or die "$0: connect to host $ip port $port: $!\n";
+
+  sub cat {
+    my ( $from, $to ) = @_;
+    while ( my $n = $from->sysread( my $buf, 4096 ) ) {
+      next if ( $n == -1 && $! == EINTR );
+      $n >= 0 or die "$0: read: $!\n";
+      $to->write( $buf ) or die "$0: write: $!\n";
+    }
+  }
+
+  my $thr = threads->create(sub { cat $sock, \*STDOUT; $sock->shutdown( 0 ); })
+    or die "$0: create thread: $!\n";
+  cat \*STDIN, $sock; $sock->shutdown( 1 );
+  $thr->join;
+  exit;
+}
 
 if ( scalar @ARGV != 1 ) {
   die $usage;
 }
 
 my $userhost = $ARGV[ 0 ];
-
-my ( $user, $host );
-
-# Get username
-if ( $userhost =~ m'(.*?@)(.*)' ) {
-  ( $user, $host ) = ( $1, $2 );
-} else {
-  $user = "";
-  $host = $userhost;
-}
-
-# Resolve hostname
-my $packed_ip = gethostbyname $host;
-if ( not defined $packed_ip ) {
-  die "$0: Could not resolve hostname $host\n";
-}
-my $ip = inet_ntoa $packed_ip;
 
 # Run SSH and read password
 my $pty = new IO::Pty;
@@ -72,14 +94,17 @@ if ( $pid == 0 ) { # child
   open STDERR, ">&", $pty_slave->fileno() or die;
   close $pty_slave;
 
-  exec {'ssh'} ('ssh', '-t', $user . $ip, $server, $ip);
+  my $s = q{sh -c 'exec "$@" "`set -- $SSH_CONNECTION; echo $3`"' -- } . $server;
+  exec 'ssh', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', $s;
   die "Cannot exec ssh: $!\n";
 } else { # server
-  my ( $port, $key );
+  my ( $ip, $port, $key );
   $pty->close_slave();
   LINE: while ( <$pty> ) {
     chomp;
-    if ( m{^MOSH CONNECT} ) {
+    if ( m{^MOSH IP } ) {
+      ( $ip ) = m{^MOSH IP (\S+)\s*$} or die "Bad MOSH IP string: $_\n";
+    } elsif ( m{^MOSH CONNECT } ) {
       if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) ([A-Za-z0-9/+]{22})\s*$} ) {
 	last LINE;
       } else {
@@ -91,7 +116,7 @@ if ( $pid == 0 ) { # child
   }
   waitpid $pid, 0;
 
-  if ( not defined $port ) {
+  if ( not defined $ip or not defined $port ) {
     die "$0: Did not find mosh server startup message.\n";
   }
 
