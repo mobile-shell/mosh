@@ -14,7 +14,7 @@ mosh (0.91-0ubuntu1) oneiric; urgency=low
     show server echos, while maintaining prediction overlay in the
     background in case it is needed.
 
--- Keith Winstein <keithw@mit.edu> Thu, 09 Feb 2012 03:05:45 -0500
+ -- Keith Winstein <keithw@mit.edu>  Thu, 09 Feb 2012 03:05:45 -0500
 
 mosh (0.9b-0ubuntu1) oneiric; urgency=low
 
