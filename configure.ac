@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT([mosh], [0.9b], [mosh-devel@mit.edu])
+AC_INIT([mosh], [0.91a], [mosh-devel@mit.edu])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
 AC_CONFIG_HEADERS([config.h])

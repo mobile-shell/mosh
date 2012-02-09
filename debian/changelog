@@ -1,3 +1,9 @@
+mosh (0.91a-0ubuntu1) oneiric; urgency=low
+
+  * Add missing dependencies to debian/control
+
+ -- Keith Winstein <keithw@mit.edu>  Thu, 09 Feb 2012 09:34:18 -0500
+
 mosh (0.91-0ubuntu1) oneiric; urgency=low
 
   * Version 0.91 released.
