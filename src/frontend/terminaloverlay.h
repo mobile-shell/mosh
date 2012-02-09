@@ -45,11 +45,12 @@ namespace Overlay {
     int col;
     bool active; /* represents a prediction at all */
     uint64_t tentative_until_epoch; /* when to show */
+    uint64_t prediction_time; /* used to find long-pending predictions */
 
     ConditionalOverlay( uint64_t s_exp, int s_col, uint64_t s_tentative )
-      : expiration_frame( s_exp ), expiration_time( -1 ), col( s_col ),
+      : expiration_frame( s_exp ), expiration_time( uint64_t( -1 ) ), col( s_col ),
 	active( false ),
-	tentative_until_epoch( s_tentative )
+	tentative_until_epoch( s_tentative ), prediction_time( uint64_t( -1 ) )
     {}
 
     virtual ~ConditionalOverlay() {}
@@ -57,7 +58,10 @@ namespace Overlay {
     bool tentative( uint64_t confirmed_epoch ) const { return tentative_until_epoch > confirmed_epoch; }
     void reset( void ) { expiration_frame = expiration_time = tentative_until_epoch = -1; active = false; }
     bool start_clock( uint64_t local_frame_acked, uint64_t now, unsigned int send_interval );
-    void expire( uint64_t s_exp ) { expiration_frame = s_exp; expiration_time = uint64_t(-1); }
+    void expire( uint64_t s_exp, uint64_t now )
+    {
+      expiration_frame = s_exp; expiration_time = uint64_t(-1); prediction_time = now;
+    }
   };
 
   class ConditionalCursorMove : public ConditionalOverlay {
@@ -137,6 +141,16 @@ namespace Overlay {
 
   class PredictionEngine {
   private:
+    static const uint64_t SRTT_TRIGGER_LOW = 20; /* <= ms cures SRTT trigger to show predictions */
+    static const uint64_t SRTT_TRIGGER_HIGH = 30; /* > ms starts SRTT trigger */
+
+    static const uint64_t FLAG_TRIGGER_LOW = 50; /* <= ms cures flagging */
+    static const uint64_t FLAG_TRIGGER_HIGH = 80; /* > ms starts flagging */
+
+    static const uint64_t GLITCH_THRESHOLD = 250; /* prediction outstanding this long is glitch */
+    static const uint64_t GLITCH_REPAIR_COUNT = 10; /* non-glitches required to cure glitch trigger */
+    static const uint64_t GLITCH_REPAIR_MININTERVAL = 150; /* required time in between non-glitches */
+
     char last_byte;
     Parser::UTF8Parser parser;
 
@@ -155,7 +169,10 @@ namespace Overlay {
 
     void newline_carriage_return( const Framebuffer &fb );
 
-    bool flagging;
+    bool flagging; /* whether we are underlining predictions */
+    bool srtt_trigger; /* show predictions because of slow round trip time */
+    int glitch_trigger; /* show predictions temporarily because of long-pending prediction */
+    uint64_t last_quick_confirmation;
 
     ConditionalCursorMove & cursor( void ) { assert( !cursors.empty() ); return cursors.back(); }
 
@@ -186,7 +203,11 @@ namespace Overlay {
 			       local_frame_sent( 0 ), local_frame_acked( 0 ),
 			       local_frame_late_acked( 0 ),
 			       prediction_epoch( 1 ), confirmed_epoch( 0 ),
-			       flagging( false ), last_scheduled_timeout( 0 ),
+			       flagging( false ),
+			       srtt_trigger( false ),
+			       glitch_trigger( 0 ),
+			       last_quick_confirmation( 0 ),
+			       last_scheduled_timeout( 0 ),
 			       send_interval( 250 )
     {
     }

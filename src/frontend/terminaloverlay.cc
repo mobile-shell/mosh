@@ -29,7 +29,7 @@ using namespace Overlay;
 bool ConditionalOverlay::start_clock( uint64_t local_frame_acked, uint64_t now, unsigned int send_interval )
 {
   if ( (local_frame_acked >= expiration_frame) && (expiration_time == uint64_t(-1)) ) {
-    expiration_time = now + 50 + 125 * send_interval / 100;
+    expiration_time = now + 75 + 125 * send_interval / 100;
     return true;
   }
   return false;
@@ -318,9 +318,13 @@ void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bo
 
 void PredictionEngine::apply( Framebuffer &fb ) const
 {
-  for_each( cursors.begin(), cursors.end(), [&]( const ConditionalCursorMove &x ) { x.apply( fb, confirmed_epoch ); } );
+  bool show = srtt_trigger || glitch_trigger;
 
-  for_each( overlays.begin(), overlays.end(), [&]( const ConditionalOverlayRow &x ){ x.apply( fb, confirmed_epoch, flagging ); } );
+  if ( show ) {
+    for_each( cursors.begin(), cursors.end(), [&]( const ConditionalCursorMove &x ) { x.apply( fb, confirmed_epoch ); } );
+
+    for_each( overlays.begin(), overlays.end(), [&]( const ConditionalOverlayRow &x ){ x.apply( fb, confirmed_epoch, flagging ); } );
+  }
 }
 
 void PredictionEngine::kill_epoch( uint64_t epoch, const Framebuffer &fb )
@@ -378,10 +382,17 @@ void PredictionEngine::cull( const Framebuffer &fb )
 {
   uint64_t now = timestamp();
 
+  /* control srtt_trigger with hysteresis */
+  if ( send_interval > SRTT_TRIGGER_HIGH ) {
+    srtt_trigger = true;
+  } else if ( send_interval <= SRTT_TRIGGER_LOW ) { /* 20 ms is current minimum value */
+    srtt_trigger = false;
+  }
+
   /* control flagging with hysteresis */
-  if ( send_interval > 80 ) {
+  if ( send_interval > FLAG_TRIGGER_HIGH ) {
     flagging = true;
-  } else if ( send_interval < 50 ) {
+  } else if ( send_interval <= FLAG_TRIGGER_LOW ) {
     flagging = false;
   }
 
@@ -457,12 +468,26 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
 	}
 
+	/* When predictions come in quickly, slowly take away the glitch trigger. */
+	if ( (now - j->prediction_time) < GLITCH_THRESHOLD ) {
+	  if ( (glitch_trigger > 0) && (now - GLITCH_REPAIR_MININTERVAL >= last_quick_confirmation) ) {
+	    glitch_trigger--;
+	    last_quick_confirmation = now;
+	  }
+	}
+
 	/* no break */
       case CorrectNoCredit:
 	j->reset();
 
 	break;
       case Pending:
+	/* When a prediction takes a long time to be confirmed, we
+	   activate the predictions even if SRTT is low */
+	if ( (now - j->prediction_time) >= GLITCH_THRESHOLD ) {
+	  glitch_trigger = GLITCH_REPAIR_COUNT;
+	}
+
 	break;
       default:
 	break;
@@ -527,6 +552,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 {
   cull( fb );
 
+  uint64_t now = timestamp();
+
   /* translate application-mode cursor control function to ANSI cursor control sequence */
   if ( (last_byte == 0x1b)
        && (the_byte == 'O') ) {
@@ -560,7 +587,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 
 	if ( cursor().col > 0 ) {
 	  cursor().col--;
-	  cursor().expire( local_frame_sent + 1 );
+	  cursor().expire( local_frame_sent + 1, now );
 
 	  for ( int i = cursor().col; i < fb.ds.get_width(); i++ ) {
 	    ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
@@ -568,7 +595,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	    cell.reset_with_orig();
 	    cell.active = true;
 	    cell.tentative_until_epoch = prediction_epoch;
-	    cell.expire( local_frame_sent + 1 );
+	    cell.expire( local_frame_sent + 1, now );
 	    cell.original_contents.push_back( *fb.get_cell( cursor().row, i ) );
 	  
 	    if ( i + 2 < fb.ds.get_width() ) {
@@ -615,7 +642,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	  cell.reset_with_orig();
 	  cell.active = true;
 	  cell.tentative_until_epoch = prediction_epoch;
-	  cell.expire( local_frame_sent + 1 );
+	  cell.expire( local_frame_sent + 1, now );
 	  cell.original_contents.push_back( *fb.get_cell( cursor().row, i ) );
 
 	  ConditionalOverlayCell &prev_cell = the_row.overlay_cells[ i - 1 ];
@@ -640,7 +667,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	cell.reset_with_orig();
 	cell.active = true;
 	cell.tentative_until_epoch = prediction_epoch;
-	cell.expire( local_frame_sent + 1 );
+	cell.expire( local_frame_sent + 1, now );
 	cell.replacement.renditions = fb.ds.get_renditions();
 	cell.replacement.contents.clear();
 	cell.replacement.contents.push_back( ch );
@@ -653,7 +680,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 		 cell.tentative_until_epoch );
 	*/
 
-	cursor().expire( local_frame_sent + 1 );
+	cursor().expire( local_frame_sent + 1, now );
 
 	/* do we need to wrap? */
 	if ( cursor().col < fb.ds.get_width() - 1 ) {
@@ -679,14 +706,14 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	init_cursor( fb );
 	if ( cursor().col < fb.ds.get_width() - 1 ) {
 	  cursor().col++;
-	  cursor().expire( local_frame_sent + 1 );
+	  cursor().expire( local_frame_sent + 1, now );
 	}
       } else if ( act->char_present && (act->ch == L'D') ) { /* left arrow */
 	init_cursor( fb );
 	
 	if ( cursor().col > 0 ) {
 	  cursor().col--;
-	  cursor().expire( local_frame_sent + 1 );
+	  cursor().expire( local_frame_sent + 1, now );
 	}
       } else {
 	//	fprintf( stderr, "CSI sequence %lc\n", act->ch );
@@ -702,6 +729,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 
 void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
 {
+  uint64_t now = timestamp();
   init_cursor( fb );
   cursor().col = 0;
   if ( cursor().row == fb.ds.get_height() - 1 ) {
@@ -709,7 +737,7 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
       i->row_num--;
       for ( auto j = i->overlay_cells.begin(); j != i->overlay_cells.end(); j++ ) {
 	if ( j->active ) {
-	  j->expire( local_frame_sent + 1 );
+	  j->expire( local_frame_sent + 1, now );
 	}
       }
     }
@@ -719,7 +747,7 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
     for ( auto j = the_row.overlay_cells.begin(); j != the_row.overlay_cells.end(); j++ ) {
       j->active = true;
       j->tentative_until_epoch = prediction_epoch;
-      j->expire( local_frame_sent + 1 );
+      j->expire( local_frame_sent + 1, now );
       j->replacement.contents.clear();
     }
   } else {
