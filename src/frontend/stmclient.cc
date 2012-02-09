@@ -153,6 +153,10 @@ void STMClient::main_init( void )
 
 void STMClient::output_new_frame( void )
 {
+  if ( !network ) { /* clean shutdown even when not initialized */
+    return;
+  }
+
   /* fetch target state */
   Terminal::Framebuffer new_state( network->get_latest_remote_state().state.get_fb() );
 

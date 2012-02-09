@@ -127,7 +127,16 @@ int main( int argc, char *argv[] )
     exit( 0 );
   } else {
     /* parent */
-    serve( master, desired_ip );
+    try {
+      serve( master, desired_ip );
+    } catch ( Network::NetworkException e ) {
+      fprintf( stderr, "Network exception: %s: %s\n",
+	       e.function.c_str(), strerror( e.the_errno ) );
+    } catch ( Crypto::CryptoException e ) {
+      fprintf( stderr, "Crypto exception: %s\n",
+	       e.text.c_str() );
+    }
+
     if ( close( master ) < 0 ) {
       perror( "close" );
       exit( 1 );

@@ -60,13 +60,28 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  STMClient client( ip, port, key );
+  try {
+    STMClient client( ip, port, key );
+    client.init();
 
-  client.init();
+    try {
+      client.main();
+    } catch ( Network::NetworkException e ) {
+      fprintf( stderr, "Network exception: %s: %s\r\n",
+	       e.function.c_str(), strerror( e.the_errno ) );
+    } catch ( Crypto::CryptoException e ) {
+      fprintf( stderr, "Crypto exception: %s\r\n",
+	       e.text.c_str() );
+    }
 
-  client.main();
-
-  client.shutdown();
+    client.shutdown();
+  } catch ( Network::NetworkException e ) {
+    fprintf( stderr, "Network exception: %s: %s\r\n",
+	     e.function.c_str(), strerror( e.the_errno ) );
+  } catch ( Crypto::CryptoException e ) {
+    fprintf( stderr, "Crypto exception: %s\r\n",
+	     e.text.c_str() );
+  }
 
   printf( "\n[mosh is exiting.]\n" );
 
