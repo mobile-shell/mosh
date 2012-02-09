@@ -94,8 +94,8 @@ void Connection::setup( void )
     throw NetworkException( "socket", errno );
   }
 
-  /* Enable path MTU discovery */
-  char flag = IP_PMTUDISC_DO;
+  /* Disable path MTU discovery */
+  char flag = IP_PMTUDISC_DONT;
   socklen_t optlen = sizeof( flag );
   if ( setsockopt( sock, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
     throw NetworkException( "setsockopt", errno );
