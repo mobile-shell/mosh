@@ -1,3 +1,24 @@
+2011-02-09 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 0.91 released.
+
+	* Startup script support SSH options and aliases (Anders Kaseorg)
+
+	* End use of Path MTU discovery and allow IP fragmentation because,
+	e.g., Cisco VPN has MTU of 1200 and does not pass ICMP too-big.
+
+	* Better exception and error handling.
+
+	* Restrict predictive local echo display to long-delay links
+	(>60 ms RTT) or for temporarily after a "glitch." Otherwise simply
+	show server echos, while maintaining prediction overlay in the
+	background in case it is needed.
+
+2011-02-07 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 0.9b released.
+	* Improvements to build system (Anders Kaseorg)
+
 2011-02-06 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.9 released.

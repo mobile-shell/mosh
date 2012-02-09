@@ -1,3 +1,21 @@
+mosh (0.91-0ubuntu1) oneiric; urgency=low
+
+  * Version 0.91 released.
+
+  * Startup script support SSH options and aliases (Anders Kaseorg)
+
+  * End use of Path MTU discovery and allow IP fragmentation because,
+    e.g., Cisco VPN has MTU of 1200 and does not pass ICMP too-big.
+
+  * Better exception and error handling.
+
+  * Restrict predictive local echo display to long-delay links
+    (>60 ms RTT) or for temporarily after a "glitch." Otherwise simply
+    show server echos, while maintaining prediction overlay in the
+    background in case it is needed.
+
+-- Keith Winstein <keithw@mit.edu> Thu, 09 Feb 2012 03:05:45 -0500
+
 mosh (0.9b-0ubuntu1) oneiric; urgency=low
 
   * Merged Anders Kaseorg fixes to build system
