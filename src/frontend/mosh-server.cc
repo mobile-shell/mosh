@@ -38,7 +38,11 @@
 
 #include "networktransport.cc"
 
-void serve( int host_fd, const char *desired_ip );
+typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConnection;
+
+void serve( int host_fd,
+	    Terminal::Complete &terminal,
+	    ServerConnection &network );
 
 using namespace std;
 
@@ -54,9 +58,6 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  int master;
-  struct termios child_termios;
-
   /* Adopt implementation locale */
   if ( NULL == setlocale( LC_ALL, "" ) ) {
     perror( "setlocale" );
@@ -69,11 +70,54 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  /* Verify terminal configuration */
+  /* get initial window size */
+  struct winsize window_size;
+  if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
+    perror( "ioctl TIOCGWINSZ" );
+    exit( 1 );
+  }
+
+  /* open parser and terminal */
+  Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
+
+  /* open network */
+  Network::UserStream blank;
+  ServerConnection network( terminal, blank, desired_ip );
+
+  /* network.set_verbose(); */
+
+  printf( "MOSH CONNECT %d %s\n", network.port(), network.get_key().c_str() );
+  fflush( stdout );
+
+  /* don't let signals kill us */
+  sigset_t signals_to_block;
+
+  assert( sigemptyset( &signals_to_block ) == 0 );
+  assert( sigaddset( &signals_to_block, SIGTERM ) == 0 );
+  assert( sigaddset( &signals_to_block, SIGINT ) == 0 );
+  assert( sigaddset( &signals_to_block, SIGHUP ) == 0 );
+  assert( sigaddset( &signals_to_block, SIGPIPE ) == 0 );
+  assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
+
+  struct termios child_termios;
+
+  /* Get terminal configuration */
   if ( tcgetattr( STDIN_FILENO, &child_termios ) < 0 ) {
     perror( "tcgetattr" );
     exit( 1 );
   }
+
+  /* detach from terminal */
+  pid_t the_pid = fork();
+  if ( the_pid < 0 ) {
+    perror( "fork" );
+  } else if ( the_pid > 0 ) {
+    _exit( 0 );
+  }
+
+  fprintf( stderr, "[mosh-server detached, pid=%d.]\n", (int)getpid() );
+
+  int master;
 
   if ( !(child_termios.c_iflag & IUTF8) ) {
     /* SSH should also convey IUTF8 across connection. */
@@ -91,6 +135,13 @@ int main( int argc, char *argv[] )
 
   if ( child == 0 ) {
     /* child */
+
+    /* unblock signals */
+    sigset_t signals_to_block;
+    assert( sigemptyset( &signals_to_block ) == 0 );
+    assert( sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) == 0 );
+
+    /* set TERM */
     if ( setenv( "TERM", "xterm", true ) < 0 ) {
       perror( "setenv" );
       exit( 1 );
@@ -128,7 +179,7 @@ int main( int argc, char *argv[] )
   } else {
     /* parent */
     try {
-      serve( master, desired_ip );
+      serve( master, terminal, network );
     } catch ( Network::NetworkException e ) {
       fprintf( stderr, "Network exception: %s: %s\n",
 	       e.function.c_str(), strerror( e.the_errno ) );
@@ -148,7 +199,7 @@ int main( int argc, char *argv[] )
   return 0;
 }
 
-void serve( int host_fd, const char *desired_ip )
+void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
 {
   /* establish fd for shutdown signals */
   sigset_t signal_mask;
@@ -157,54 +208,11 @@ void serve( int host_fd, const char *desired_ip )
   assert( sigaddset( &signal_mask, SIGTERM ) == 0 );
   assert( sigaddset( &signal_mask, SIGINT ) == 0 );
 
-  sigset_t signals_to_block = signal_mask;
-
-  assert( sigaddset( &signals_to_block, SIGHUP ) == 0 );
-  assert( sigaddset( &signals_to_block, SIGPIPE ) == 0 );
-
-  /* don't let signals kill us */
-  assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
-
   int shutdown_signal_fd = signalfd( -1, &signal_mask, 0 );
   if ( shutdown_signal_fd < 0 ) {
     perror( "signalfd" );
     return;
   }
-
-  /* get initial window size */
-  struct winsize window_size;
-  if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
-    perror( "ioctl TIOCGWINSZ" );
-    return;
-  }
-
-  /* tell child process */
-  if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
-    perror( "ioctl TIOCSWINSZ" );
-    return;
-  }
-
-  /* open parser and terminal */
-  Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
-
-  /* open network */
-  Network::UserStream blank;
-  Network::Transport< Terminal::Complete, Network::UserStream > network( terminal, blank, desired_ip );
-
-  /* network.set_verbose(); */
-
-  printf( "MOSH CONNECT %d %s\n", network.port(), network.get_key().c_str() );
-  fflush( stdout );
-
-  /* detach from terminal */
-  pid_t the_pid = fork();
-  if ( the_pid < 0 ) {
-    perror( "fork" );
-  } else if ( the_pid > 0 ) {
-    _exit( 0 );
-  }
-
-  fprintf( stderr, "[mosh-server detached, pid=%d.]\n", (int)getpid() );
 
   /* prepare to poll for events */
   struct pollfd pollfds[ 3 ];
@@ -244,6 +252,7 @@ void serve( int host_fd, const char *desired_ip )
 	    if ( typeid( *us.get_action( i ) ) == typeid( Parser::Resize ) ) {
 	      /* tell child process of resize */
 	      const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
+	      struct winsize window_size;
 	      window_size.ws_col = res->width;
 	      window_size.ws_row = res->height;
 	      if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
