@@ -26,7 +26,8 @@ $|=1;
 
 my $client = 'mosh-client';
 my $server = 'mosh-server';
-my $predict = 'adaptive';
+
+my $predict = undef;
 
 my $usage =
 qq{Usage: $0 [options] [user@]host
@@ -40,6 +41,17 @@ qq{Usage: $0 [options] [user@]host
 Please report bugs to mosh-devel\@mit.edu.
 Mosh home page: http://mosh.mit.edu\n};
 
+sub predict_check {
+  my ( $predict, $env_set ) = @_;
+
+  if ( not exists { adaptive => 0, always => 0, never => 0 }->{ $predict } ) {
+    my $explanation = $env_set ? " (MOSH_PREDICTION_DISPLAY in environment)" : "";
+    print STDERR qq{$0: Unknown mode \"$predict\"$explanation.\n\n};
+
+    die $usage;
+  }
+}
+
 GetOptions( 'client=s' => \$client,
 	    'server=s' => \$server,
 	    'predict=s' => \$predict,
@@ -47,9 +59,17 @@ GetOptions( 'client=s' => \$client,
 	    'n' => sub { $predict = 'never' },
 	    'fake-proxy!' => \my $fake_proxy ) or die $usage;
 
-if ( not exists { adaptive => 0, always => 0, never => 0 }->{ $predict } ) {
-  die $usage;
+if ( defined $predict ) {
+  predict_check( $predict, 0 );
+} elsif ( defined $ENV{ 'MOSH_PREDICTION_DISPLAY' } ) {
+  $predict = $ENV{ 'MOSH_PREDICTION_DISPLAY' };
+  predict_check( $predict, 1 );
+} else {
+  $predict = 'adaptive';
+  predict_check( $predict, 0 );
 }
+
+delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
 
 if ( defined $fake_proxy ) {
   use Errno qw(EINTR);
@@ -137,5 +157,6 @@ if ( $pid == 0 ) { # child
 
   # Now start real mosh client
   $ENV{ 'MOSH_KEY' } = $key;
-  exec {$client} ($client, $ip, $port, $predict);
+  $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
+  exec {$client} ($client, $ip, $port);
 }

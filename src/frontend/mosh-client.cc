@@ -23,7 +23,7 @@
 #include "crypto.h"
 
 void usage( const char *argv0 ) {
-  fprintf( stderr, "Usage: %s IP PORT [always|never|adaptive]\n", argv0 );
+  fprintf( stderr, "Usage: %s IP PORT\n", argv0 );
 }
 
 int main( int argc, char *argv[] )
@@ -32,14 +32,8 @@ int main( int argc, char *argv[] )
   char *ip;
   int port;
 
-  char *predict_mode = NULL;
-
-  if ( argc == 4 ) {
-    predict_mode = argv[ 3 ];
-  } else if ( argc == 3 ) {
-    /* do nothing */
-  } else {
-    usage( argv[ 0 ]);
+  if ( argc != 3 ) {
+    usage( argv[ 0 ] );
     exit( 1 );
   }
 
@@ -52,6 +46,10 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "MOSH_KEY environment variable not found.\n" );
     exit( 1 );
   }
+
+  /* Read prediction preference */
+  char *predict_mode = getenv( "MOSH_PREDICTION_DISPLAY" );
+  /* can be NULL */
 
   char *key = strdup( env_key );
   if ( key == NULL ) {
