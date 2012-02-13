@@ -94,14 +94,11 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
 
   if ( (late_ack >= expiration_frame)
        || ( (sent_frame <= early_ack) && (expiration_time <= now) ) ) {
-    /* special case deletion */
-    if ( current.is_blank() && replacement.is_blank() ) {
-      return CorrectNoCredit;
-    }
-
-    if ( current.contents == replacement.contents ) {
+    if ( (current.contents == replacement.contents)
+	 || (current.is_blank() && replacement.is_blank()) ) {
       auto it = find_if( original_contents.begin(), original_contents.end(),
-			 [&]( const Cell &x ) { return replacement.contents == x.contents; } );
+			 [&]( const Cell &x ) { return ( (replacement.is_blank() && x.is_blank())
+							 || (replacement.contents == x.contents) ); } );
       if ( it == original_contents.end() ) {
 	return Correct;
       } else {
