@@ -315,7 +315,9 @@ void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bo
 
 void PredictionEngine::apply( Framebuffer &fb ) const
 {
-  bool show = srtt_trigger || glitch_trigger;
+  bool show = (display_preference != Never) && ( srtt_trigger
+						 || glitch_trigger
+						 || (display_preference == Always) );
 
   if ( show ) {
     for_each( cursors.begin(), cursors.end(), [&]( const ConditionalCursorMove &x ) { x.apply( fb, confirmed_epoch ); } );
@@ -377,6 +379,10 @@ void PredictionEngine::init_cursor( const Framebuffer &fb )
 
 void PredictionEngine::cull( const Framebuffer &fb )
 {
+  if ( display_preference == Never ) {
+    return;
+  }
+
   uint64_t now = timestamp();
 
   /* control srtt_trigger with hysteresis */
@@ -547,6 +553,10 @@ ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_
 
 void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 {
+  if ( display_preference == Never ) {
+    return;
+  }
+
   cull( fb );
 
   uint64_t now = timestamp();

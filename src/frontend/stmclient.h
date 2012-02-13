@@ -53,7 +53,7 @@ private:
   void output_new_frame( void );
 
 public:
-  STMClient( const char *s_ip, int s_port, const char *s_key )
+  STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode )
     : ip( s_ip ), port( s_port ), key( s_key ),
       saved_termios(), raw_termios(),
       winch_fd(), shutdown_signal_fd(),
@@ -63,7 +63,20 @@ public:
       network( NULL ),
       repaint_requested( false ),
       quit_sequence_started( false )
-  {}
+  {
+    if ( predict_mode ) {
+      if ( !strcmp( predict_mode, "always" ) ) {
+	overlays.get_prediction_engine().set_display_preference( Overlay::PredictionEngine::Always );
+      } else if ( !strcmp( predict_mode, "never" ) ) {
+	overlays.get_prediction_engine().set_display_preference( Overlay::PredictionEngine::Never );
+      } else if ( !strcmp( predict_mode, "adaptive" ) ) {
+	overlays.get_prediction_engine().set_display_preference( Overlay::PredictionEngine::Adaptive );
+      } else {
+	fprintf( stderr, "Unknown prediction mode %s.\n", predict_mode );
+	exit( 1 );
+      }
+    }
+  }
 
   void init( void );
   void shutdown( void );

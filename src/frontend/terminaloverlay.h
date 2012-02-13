@@ -185,6 +185,18 @@ namespace Overlay {
     unsigned int send_interval;
 
   public:
+    enum DisplayPreference {
+      Always,
+      Never,
+      Adaptive
+    };
+
+  private:
+    DisplayPreference display_preference;
+
+  public:
+    void set_display_preference( DisplayPreference s_pref ) { display_preference = s_pref; }
+
     void apply( Framebuffer &fb ) const;
     void new_user_byte( char the_byte, const Framebuffer &fb );
     void cull( const Framebuffer &fb );
@@ -208,7 +220,8 @@ namespace Overlay {
 			       glitch_trigger( 0 ),
 			       last_quick_confirmation( 0 ),
 			       last_scheduled_timeout( 0 ),
-			       send_interval( 250 )
+			       send_interval( 250 ),
+			       display_preference( Adaptive )
     {
     }
   };

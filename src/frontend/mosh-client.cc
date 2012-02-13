@@ -22,14 +22,24 @@
 #include "stmclient.h"
 #include "crypto.h"
 
+void usage( const char *argv0 ) {
+  fprintf( stderr, "Usage: %s IP PORT [always|never|adaptive]\n", argv0 );
+}
+
 int main( int argc, char *argv[] )
 {
   /* Get arguments */
   char *ip;
   int port;
 
-  if ( argc != 3 ) {
-    fprintf( stderr, "Usage: %s IP PORT\n", argv[ 0 ] );
+  char *predict_mode = NULL;
+
+  if ( argc == 4 ) {
+    predict_mode = argv[ 3 ];
+  } else if ( argc == 3 ) {
+    /* do nothing */
+  } else {
+    usage( argv[ 0 ]);
     exit( 1 );
   }
 
@@ -61,7 +71,7 @@ int main( int argc, char *argv[] )
   }
 
   try {
-    STMClient client( ip, port, key );
+    STMClient client( ip, port, key, predict_mode );
     client.init();
 
     try {
