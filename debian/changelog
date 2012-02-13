@@ -1,3 +1,15 @@
+mosh (0.92-1) unstable; urgency=low
+
+  * Version 0.92 released.
+
+  * Allows user to select prediction mode (always/never/adaptive)
+
+  * Fix bug in server startup on slow hosts
+
+  * Better prediction when deleting at line ending
+
+ -- Keith Winstein <keithw@mit.edu>  Mon, 13 Feb 2012 03:53:31 -0500
+
 mosh (0.91a-0ubuntu1) oneiric; urgency=low
 
   * Add missing dependencies to debian/control

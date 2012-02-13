@@ -1,3 +1,13 @@
+2011-02-13 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 0.92 released.
+
+	* Allows user to select prediction mode (always/never/adaptive)
+
+	* Fix bug in server startup on slow hosts
+
+	* Better prediction when deleting at line ending
+
 2011-02-09 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.91 released.
