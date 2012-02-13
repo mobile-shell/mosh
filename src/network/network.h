@@ -117,6 +117,8 @@ namespace Network {
 
     uint64_t timeout( void ) const;
     double get_SRTT( void ) const { return SRTT; }
+
+    const struct in_addr & get_remote_ip( void ) const { return remote_addr.sin_addr; }
   };
 }
 

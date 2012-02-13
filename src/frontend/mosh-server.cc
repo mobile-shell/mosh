@@ -31,6 +31,10 @@
 #include <typeinfo>
 #include <signal.h>
 #include <sys/signalfd.h>
+#include <utempter.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "completeterminal.h"
 #include "swrite.h"
@@ -126,7 +130,7 @@ int main( int argc, char *argv[] )
   }
 
   /* Fork child process */
-  pid_t child = forkpty( &master, NULL, &child_termios, NULL );
+  pid_t child = forkpty( &master, NULL, &child_termios, &window_size );
 
   if ( child == -1 ) {
     perror( "forkpty" );
@@ -178,6 +182,11 @@ int main( int argc, char *argv[] )
     exit( 0 );
   } else {
     /* parent */
+    /* make utmp entry */
+    char tmp[ 64 ];
+    snprintf( tmp, 64, "mosh [%d]", getpid() );
+    utempter_add_record( master, tmp );
+
     try {
       serve( master, terminal, network );
     } catch ( Network::NetworkException e ) {
@@ -192,6 +201,8 @@ int main( int argc, char *argv[] )
       perror( "close" );
       exit( 1 );
     }
+
+    utempter_remove_added_record();
   }
 
   printf( "\n[mosh-server is exiting.]\n" );
@@ -227,6 +238,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   pollfds[ 2 ].events = POLLIN;
 
   uint64_t last_remote_num = network.get_remote_state_num();
+
+  bool connected_utmp = false;
+  struct in_addr saved_addr;
+  saved_addr.s_addr = 0;
 
   while ( 1 ) {
     try {
@@ -270,6 +285,20 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  /* write any writeback octets back to the host */
 	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	    break;
+	  }
+
+	  /* update utmp entry if we have become "connected" */
+	  if ( (!connected_utmp)
+	       || ( saved_addr.s_addr != network.get_remote_ip().s_addr ) ) {
+	    utempter_remove_added_record();
+
+	    saved_addr = network.get_remote_ip();
+
+	    char tmp[ 64 ];
+	    snprintf( tmp, 64, "%s via mosh [%d]", inet_ntoa( saved_addr ), getpid() );
+	    utempter_add_record( host_fd, tmp );
+
+	    connected_utmp = true;
 	  }
 	}
       }
@@ -348,6 +377,19 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       /* quit if we received and acknowledged a shutdown request */
       if ( network.counterparty_shutdown_ack_sent() ) {
 	break;
+      }
+
+      /* update utmp if has been more than 10 seconds since heard from client */
+      if ( connected_utmp ) {
+	if ( network.get_latest_remote_state().timestamp < Network::timestamp() - 10000 ) {
+	  utempter_remove_added_record();
+
+	  char tmp[ 64 ];
+	  snprintf( tmp, 64, "mosh [%d]", getpid() );
+	  utempter_add_record( host_fd, tmp );
+
+	  connected_utmp = false;
+	}
       }
 
       network.tick();

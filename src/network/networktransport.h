@@ -101,6 +101,8 @@ namespace Network {
     uint64_t get_sent_state_late_acked( void ) const { return sent_state_late_acked; }
 
     unsigned int send_interval( void ) const { return sender.send_interval(); }
+
+    const struct in_addr & get_remote_ip( void ) const { return connection.get_remote_ip(); }
   };
 }
 

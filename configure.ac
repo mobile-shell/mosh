@@ -12,6 +12,7 @@ AC_PROG_CXX
 AC_PROG_RANLIB
 
 # Checks for libraries.
+AC_SEARCH_LIBS([utempter_remove_added_record], [utempter], , AC_MSG_ERROR([Unable to find libutempter.]))
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h termios.h unistd.h wchar.h wctype.h])
