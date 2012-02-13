@@ -1,5 +1,11 @@
 2011-02-13 Keith Winstein <mosh-devel@mit.edu>
 
+	* Version 0.93 released.
+
+	* Make utmp entries
+
+2011-02-13 Keith Winstein <mosh-devel@mit.edu>
+
 	* Version 0.92 released.
 
 	* Allows user to select prediction mode (always/never/adaptive)
