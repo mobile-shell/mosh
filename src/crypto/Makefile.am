@@ -1,4 +1,4 @@
-AM_CXXFLAGS = --std=c++0x -pedantic -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe
+AM_CXXFLAGS = --std=c++0x -pedantic -Wall -Wextra -Weffc++ -fno-default-inline -pipe
 
 noinst_LIBRARIES = libmoshcrypto.a
 
