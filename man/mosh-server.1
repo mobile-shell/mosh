@@ -1,0 +1,71 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH MOSH 1 "February 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+mosh-server \- server-side helper for mosh
+.SH SYNOPSIS
+.B mosh-server
+[IP address to bind]
+.br
+.SH DESCRIPTION
+\fBmosh-server\fP is a helper program for the 
+.BR mosh(1)
+remote terminal application.
+
+\fBmosh-server\fP binds to a high UDP port and chooses an encryption
+key to protect the session. It prints both on standard output,
+detaches from the terminal, and waits for the \fBmosh-client\fP to
+establish a connection via UDP.
+
+\fBmosh-server\fP maintains an entry in the
+.BR utmp(5)
+file to indicate its process ID, whether the session is connected,
+and the client's current IP address.
+
+\fBmosh-server\fP exits when the client terminates the connection.
+
+.SH EXAMPLE
+
+$ mosh-server
+.br
+MOSH CONNECT 41105 Olf895dcSnf7ojL4s6Qlhw
+.br
+[mosh-server detached, pid=16929.]
+.br
+$
+
+.SH SEE ALSO
+.BR mosh (1),
+.BR mosh-client (1).
+
+Project home page:
+.I http://mosh.mit.edu
+
+.br
+.SH AUTHOR
+mosh was written by Keith Winstein <mosh-devel@mit.edu>.
+.SH BUGS
+\fBmosh\fP is beta software. Please report bugs to \fImosh-devel@mit.edu\fP. Users may also subscribe
+to the
+.nh
+.I mosh-users@mit.edu
+.hy
+mailing list, at
+.nh
+.I http://mailman.mit.edu/mailman/listinfo/mosh-users
+.hy
+.

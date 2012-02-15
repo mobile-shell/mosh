@@ -1,0 +1,66 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH MOSH 1 "February 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+mosh-client \- client-side helper for mosh
+.SH SYNOPSIS
+MOSH_KEY=KEY
+.B mosh-client 
+IP PORT
+.br
+.SH DESCRIPTION
+\fBmosh-client\fP is a helper program for the 
+.BR mosh(1)
+remote terminal application.
+
+\fBmosh\fP itself is a setup script that establishes an SSH
+connection, runs the server-side helper \fBmosh-server\fP,
+and collects the server's port number and session key.
+
+\fBmosh\fP then executes \fBmosh-client\fP with the server's IP
+address, port, and session key. \fBmosh-client\fP runs for
+the lifetime of the connection.
+
+The 22-byte base64 session key given by \fBmosh-server\fP is supplied
+in the MOSH_KEY environment variable. This represents a 128-bit AES
+key that protects the integrity and confidentiality of the session.
+
+For constructing new setup wrappers for remote execution facilities
+other than SSH, it may be necessary to invoke \fBmosh-client\fP
+directly.
+
+.SH SEE ALSO
+.BR mosh (1),
+.BR mosh-server (1).
+
+Project home page:
+.I http://mosh.mit.edu
+
+.br
+.SH AUTHOR
+mosh was written by Keith Winstein <mosh-devel@mit.edu>.
+.SH BUGS
+\fBmosh\fP is beta software. Please report bugs to \fImosh-devel@mit.edu\fP. Users may also subscribe
+to the
+.nh
+.I mosh-users@mit.edu
+.hy
+mailing list, at
+.nh
+.I http://mailman.mit.edu/mailman/listinfo/mosh-users
+.hy
+.

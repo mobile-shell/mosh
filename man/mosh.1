@@ -1,0 +1,109 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH MOSH 1 "February 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+mosh \- mobile shell with roaming and intelligent local echo
+.SH SYNOPSIS
+.B mosh
+.RI [ options ]
+[user@]host
+.br
+.SH DESCRIPTION
+\fBmosh\fP (mobile shell) is a remote terminal application that
+supports intermittent connectivity, allows roaming, and provides
+speculative local echo and line editing of user keystrokes.
+
+Compared with \fBssh\fP, \fBmosh\fP is more robust \(em its
+connections stay up across sleeps and changes in the client's IP
+address \(em and more responsive, because the protocol is tolerant of
+packet loss and the client can echo most keystrokes immediately,
+without waiting for a network round-trip.
+
+\fBmosh\fP uses \fBssh\fP to establish a connection to the remote host
+and authenticate with existing means (e.g., public-key authentication
+or a password). \fBmosh\fP executes the unprivileged \fBmosh-server\fP
+helper program on the server, then closes the SSH connection and
+starts the \fBmosh-client\fP, which establishes a long-lived datagram
+connection over UDP.
+
+To improve responsiveness, \fBmosh\fP runs a predictive model of the
+server's behavior in the background, trying to guess the effect of
+each keystroke on the screen. It makes predictions for normal typing,
+backspace, and the left- and right-arrow keys. When it is confident,
+\fBmosh\fP displays the predictions without waiting for the
+server. The predictive model must prove itself anew on each row of the
+terminal and after each control character, so \fBmosh\fP avoids
+echoing passwords or non-echoing editor commands.
+
+By default, \fBmosh\fP shows its predictions only on high-latency
+connections and to smooth out network glitches. (On longer-latency
+links, the predicted cells are underlined until confirmed by the
+server.) Occasional echo mistakes are corrected within a network
+round-trip and do not cause lasting effect.
+
+\fBmosh\fP does not support X forwarding or the non-interactive uses
+of SSH, including port forwarding or sshfs. \fBmosh\fP works through
+typical client-side network address translators but requires high-port
+UDP to pass between client and server.
+
+.SH OPTIONS
+.TP
+.B \-\-client=\fIPATH\fP
+path to client helper on local machine (default: "mosh-client")
+
+.TP
+.B \-\-server=\fIPATH\fP
+path to server helper on remote machine (default: "mosh-server")
+
+The server helper is unprivileged and can be installed in the user's
+home directory.
+
+.TP
+.B \-\-predict=\fIWHEN\fP
+Controls use of speculative local echo. WHEN defaults to `adaptive'
+(show predictions on slower links and to smooth out network glitches)
+and can also be `always` or `never'.
+
+The MOSH_PREDICTION_DISPLAY environment variable controls this setting
+permanently and can adopt the same three values.
+
+Even on `always', \fBmosh\fP will only show predictions when it is
+confident. This generally means a previous prediction on the same row
+of the terminal has been confirmed by the server, without any
+intervening control character keystrokes.
+
+.SH SEE ALSO
+.BR mosh-client (1),
+.BR mosh-server (1).
+
+Project home page:
+.I http://mosh.mit.edu
+
+.br
+.SH AUTHOR
+mosh was written by Keith Winstein <mosh-devel@mit.edu>.
+.SH BUGS
+\fBmosh\fP is beta software. Please report bugs to \fImosh-devel@mit.edu\fP. Users may also subscribe
+to the
+.nh
+.I mosh-users@mit.edu
+.hy
+mailing list, at
+.nh
+.I http://mailman.mit.edu/mailman/listinfo/mosh-users
+.hy
+.
