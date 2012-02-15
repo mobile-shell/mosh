@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <typeinfo>
 #include <langinfo.h>
+#include <sys/errno.h>
 
 #include "parser.h"
 

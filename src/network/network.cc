@@ -21,7 +21,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
-#include <endian.h>
+#include <sys/errno.h>
+#ifdef linux
+#  include <endian.h>
+#else
+#  include <sys/endian.h>
+#endif
 
 #include "dos_assert.h"
 #include "network.h"
@@ -94,12 +99,14 @@ void Connection::setup( void )
     throw NetworkException( "socket", errno );
   }
 
+#ifdef linux
   /* Disable path MTU discovery */
   char flag = IP_PMTUDISC_DONT;
   socklen_t optlen = sizeof( flag );
   if ( setsockopt( sock, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
     throw NetworkException( "setsockopt", errno );
   }
+#endif
 }
 
 Connection::Connection( const char *desired_ip ) /* server */
@@ -355,6 +362,7 @@ void Connection::update_MTU( void )
     return;
   }
 
+#ifdef linux
   /* We don't want to use our main socket because we don't want to have to connect it */
   Socket path_MTU_socket( AF_INET, SOCK_DGRAM, 0 );
 
@@ -374,4 +382,7 @@ void Connection::update_MTU( void )
   }
 
   MTU = min( PMTU, int(SEND_MTU) ); /* need cast to compile without optimization! XXX */
+#else
+  MTU=576; /* TCP guarantees at least this. */
+#endif
 }

@@ -2,7 +2,7 @@ source = userinput.proto hostinput.proto transportinstruction.proto
 
 PROTOC = protoc
 AM_CPPFLAGS = $(protobuf_lite_CFLAGS)
-AM_CXXFLAGS = --std=c++0x -pedantic -Werror -Wall -Wextra -fno-default-inline -pipe
+AM_CXXFLAGS = --std=c++0x -pedantic -Wall -Wextra -fno-default-inline -pipe
 
 SUFFIXES = .proto .pb.cc
 
