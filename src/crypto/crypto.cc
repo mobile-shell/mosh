@@ -18,6 +18,8 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <sys/errno.h>
+#include <sys/endian.h>
 
 #include "crypto.h"
 #include "base64.h"
