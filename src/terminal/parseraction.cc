@@ -28,7 +28,10 @@ std::string Action::str( void )
 {
   char thechar[ 10 ] = { 0 };
   if ( char_present ) {
-    snprintf( thechar, 10, iswprint( ch ) ? "(%lc)" : "(0x%x)", ch );
+    if ( iswprint( ch ) )
+      snprintf( thechar, 10, "(%lc)", ch );
+    else
+      snprintf( thechar, 10, "(0x%x)", (unsigned int)ch );
   }
 
   return name() + std::string( thechar );

@@ -246,7 +246,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
   /* cells that begin with combining character get combiner attached to no-break space */
   if ( cell->fallback ) {
-    snprintf( tmp, 64, "%lc", 0xA0 );
+    snprintf( tmp, 64, "%lc", L'\xA0' );
     frame.append( tmp );
   }
 
