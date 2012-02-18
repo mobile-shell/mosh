@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <boost/lambda/lambda.hpp>
 #include <algorithm>
 #include <list>
 #include <stdio.h>
@@ -23,6 +24,7 @@
 #include "transportsender.h"
 #include "transportfragment.h"
 
+using namespace boost::lambda;
 using namespace Network;
 using namespace std;
 
@@ -280,8 +282,8 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
   /* Ignore ack if we have culled the state it's acknowledging */
 
   if ( sent_states.end() != find_if( sent_states.begin(), sent_states.end(),
-				     [&]( const TimestampedState<MyState> &x ) { return x.num == ack_num; } ) ) {
-    sent_states.remove_if( [&]( const TimestampedState<MyState> &x ) { return x.num < ack_num; } );
+				     (&_1)->*&TimestampedState<MyState>::num == ack_num ) ) {
+    sent_states.remove_if( (&_1)->*&TimestampedState<MyState>::num < ack_num );
   }
 
   assert( !sent_states.empty() );
@@ -315,7 +317,7 @@ uint64_t TransportSender<MyState>::get_late_ack( uint64_t now )
     }
   }
 
-  ack_history.remove_if( [&]( const pair<uint64_t, uint64_t> &x ) { return x.first < newest_echo_ack; } );
+  ack_history.remove_if( (&_1)->*&pair<uint64_t, uint64_t>::first < newest_echo_ack );
 
   return newest_echo_ack;
 }

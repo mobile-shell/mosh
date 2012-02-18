@@ -16,6 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <boost/lambda/lambda.hpp>
+#include <boost/lambda/bind.hpp>
 #include <algorithm>
 #include <wchar.h>
 #include <list>
@@ -24,6 +26,7 @@
 
 #include "terminaloverlay.h"
 
+using namespace boost::lambda;
 using namespace Overlay;
 using std::max;
 
@@ -98,8 +101,8 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
     if ( (current.contents == replacement.contents)
 	 || (current.is_blank() && replacement.is_blank()) ) {
       auto it = find_if( original_contents.begin(), original_contents.end(),
-			 [&]( const Cell &x ) { return ( (replacement.is_blank() && x.is_blank())
-							 || (replacement.contents == x.contents) ); } );
+			 (replacement.is_blank() && bind( &Cell::is_blank, _1 ))
+			 || replacement.contents == (&_1)->*&Cell::contents );
       if ( it == original_contents.end() ) {
 	return Correct;
       } else {
@@ -311,7 +314,7 @@ void TitleEngine::set_prefix( const wstring s )
 
 void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const
 {
-  for_each( overlay_cells.begin(), overlay_cells.end(), [&]( const ConditionalOverlayCell &x ) { x.apply( fb, confirmed_epoch, row_num, flag ); } );
+  for_each( overlay_cells.begin(), overlay_cells.end(), bind( &ConditionalOverlayCell::apply, _1, var(fb), confirmed_epoch, row_num, flag ) );
 }
 
 void PredictionEngine::apply( Framebuffer &fb ) const
@@ -321,15 +324,15 @@ void PredictionEngine::apply( Framebuffer &fb ) const
 						 || (display_preference == Always) );
 
   if ( show ) {
-    for_each( cursors.begin(), cursors.end(), [&]( const ConditionalCursorMove &x ) { x.apply( fb, confirmed_epoch ); } );
+    for_each( cursors.begin(), cursors.end(), bind( &ConditionalCursorMove::apply, _1, var(fb), confirmed_epoch ) );
 
-    for_each( overlays.begin(), overlays.end(), [&]( const ConditionalOverlayRow &x ){ x.apply( fb, confirmed_epoch, flagging ); } );
+    for_each( overlays.begin(), overlays.end(), bind( &ConditionalOverlayRow::apply, _1, var(fb), confirmed_epoch, flagging ) );
   }
 }
 
 void PredictionEngine::kill_epoch( uint64_t epoch, const Framebuffer &fb )
 {
-  cursors.remove_if( [&]( ConditionalCursorMove &x ) { return x.tentative( epoch - 1 ); } );
+  cursors.remove_if( bind( &ConditionalCursorMove::tentative, _1, epoch - 1 ) );
 
   cursors.push_back( ConditionalCursorMove( local_frame_sent + 1,
 					    fb.ds.get_cursor_row(),
@@ -526,16 +529,15 @@ void PredictionEngine::cull( const Framebuffer &fb )
     }
   }
 
-  cursors.remove_if( [&]( const ConditionalCursorMove &x ) {
-      return (x.get_validity( fb,
-			      local_frame_sent, local_frame_acked, local_frame_late_acked,
-			      now ) != Pending); } );
+  cursors.remove_if( bind( &ConditionalCursorMove::get_validity, _1, var(fb),
+			   local_frame_sent, local_frame_acked, local_frame_late_acked,
+			   now ) != Pending );
 }
 
 ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_cols )
 {
   auto it = find_if( overlays.begin(), overlays.end(),
-		     [&]( const ConditionalOverlayRow &x ) { return x.row_num == row_num; } );
+		     (&_1)->*&ConditionalOverlayRow::row_num == row_num );
 
   if ( it != overlays.end() ) {
     return *it;
