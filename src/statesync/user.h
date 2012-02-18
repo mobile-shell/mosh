@@ -26,7 +26,9 @@
 
 #include "parseraction.h"
 
-using namespace std;
+using std::deque;
+using std::list;
+using std::string;
 
 namespace Network {
   enum UserEventType {

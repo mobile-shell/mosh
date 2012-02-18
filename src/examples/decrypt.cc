@@ -27,6 +27,7 @@
 #include "crypto.h"
 
 using namespace Crypto;
+using namespace std;
 
 int main( int argc, char *argv[] )
 {

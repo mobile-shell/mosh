@@ -28,7 +28,6 @@
 
 #include "crypto.h"
 
-using namespace std;
 using namespace Crypto;
 
 namespace Network {

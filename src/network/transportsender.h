@@ -28,7 +28,8 @@
 #include "transportstate.h"
 #include "transportfragment.h"
 
-using namespace std;
+using std::list;
+using std::pair;
 using namespace TransportBuffers;
 
 namespace Network {

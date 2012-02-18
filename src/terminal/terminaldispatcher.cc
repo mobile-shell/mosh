@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <errno.h>
+#include <stdlib.h>
 
 #include "terminaldispatcher.h"
 #include "parseraction.h"

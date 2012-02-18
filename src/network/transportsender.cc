@@ -16,13 +16,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <boost/lambda/lambda.hpp>
+#include <boost/typeof/typeof.hpp>
 #include <algorithm>
 #include <list>
+#include <stdio.h>
 
 #include "transportsender.h"
 #include "transportfragment.h"
 
+using namespace boost::lambda;
 using namespace Network;
+using namespace std;
 
 template <class MyState>
 TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &initial_state )
@@ -158,7 +163,7 @@ void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t 
 {
   sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
   if ( sent_states.size() > 32 ) { /* limit on state queue */
-    auto last = sent_states.end();
+    BOOST_AUTO( last, sent_states.end() );
     for ( int i = 0; i < 16; i++ ) { last--; }
     sent_states.erase( last ); /* erase state from middle of queue */
   }
@@ -255,7 +260,7 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
 
   vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU() );
 
-  for ( auto i = fragments.begin(); i != fragments.end(); i++ ) {
+  for ( BOOST_AUTO( i, fragments.begin() ); i != fragments.end(); i++ ) {
     connection->send( i->tostring() );
 
     if ( verbose ) {
@@ -278,8 +283,8 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
   /* Ignore ack if we have culled the state it's acknowledging */
 
   if ( sent_states.end() != find_if( sent_states.begin(), sent_states.end(),
-				     [&]( const TimestampedState<MyState> &x ) { return x.num == ack_num; } ) ) {
-    sent_states.remove_if( [&]( const TimestampedState<MyState> &x ) { return x.num < ack_num; } );
+				     (&_1)->*&TimestampedState<MyState>::num == ack_num ) ) {
+    sent_states.remove_if( (&_1)->*&TimestampedState<MyState>::num < ack_num );
   }
 
   assert( !sent_states.empty() );
@@ -307,13 +312,13 @@ uint64_t TransportSender<MyState>::get_late_ack( uint64_t now )
 {
   uint64_t newest_echo_ack = 0;
 
-  for ( auto i = ack_history.begin(); i != ack_history.end(); i++ ) {
+  for ( BOOST_AUTO( i, ack_history.begin() ); i != ack_history.end(); i++ ) {
     if ( i->second < now - ECHO_TIMEOUT ) {
       newest_echo_ack = i->first;
     }
   }
 
-  ack_history.remove_if( [&]( const pair<uint64_t, uint64_t> &x ) { return x.first < newest_echo_ack; } );
+  ack_history.remove_if( (&_1)->*&pair<uint64_t, uint64_t>::first < newest_echo_ack );
 
   return newest_echo_ack;
 }

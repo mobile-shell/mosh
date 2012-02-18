@@ -28,7 +28,10 @@
 namespace Overlay {
   using namespace Terminal;
   using namespace Network;
-  using namespace std;
+  using std::deque;
+  using std::list;
+  using std::vector;
+  using std::wstring;
 
   enum Validity {
     Pending,
