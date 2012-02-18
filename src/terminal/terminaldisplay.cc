@@ -17,6 +17,7 @@
 */
 
 #include <assert.h>
+#include <stdio.h>
 
 #include "terminaldisplay.h"
 

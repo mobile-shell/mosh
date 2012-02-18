@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <list>
+#include <stdio.h>
 
 #include "transportsender.h"
 #include "transportfragment.h"

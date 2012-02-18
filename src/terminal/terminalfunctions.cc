@@ -18,6 +18,7 @@
 
 #include <unistd.h>
 #include <string>
+#include <stdio.h>
 
 #include "terminaldispatcher.h"
 #include "terminalframebuffer.h"
