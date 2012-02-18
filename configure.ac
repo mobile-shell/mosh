@@ -5,6 +5,7 @@ AC_PREREQ([2.67])
 AC_INIT([mosh], [0.93], [mosh-devel@mit.edu])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
