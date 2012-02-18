@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <boost/typeof/typeof.hpp>
 #include <assert.h>
 #include <stdio.h>
 
@@ -429,7 +430,7 @@ void Row::reset( int background_color )
 
 void Framebuffer::prefix_window_title( const std::deque<wchar_t> &s )
 {
-  for ( auto i = s.rbegin(); i != s.rend(); i++ ) {
+  for ( BOOST_AUTO( i, s.rbegin() ); i != s.rend(); i++ ) {
     window_title.push_front( *i );
   }
 }

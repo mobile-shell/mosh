@@ -18,6 +18,7 @@
 
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
+#include <boost/typeof/typeof.hpp>
 #include <algorithm>
 #include <wchar.h>
 #include <list>
@@ -100,9 +101,9 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
        || ( (sent_frame <= early_ack) && (expiration_time <= now) ) ) {
     if ( (current.contents == replacement.contents)
 	 || (current.is_blank() && replacement.is_blank()) ) {
-      auto it = find_if( original_contents.begin(), original_contents.end(),
-			 (replacement.is_blank() && bind( &Cell::is_blank, _1 ))
-			 || replacement.contents == (&_1)->*&Cell::contents );
+      BOOST_AUTO( it, find_if( original_contents.begin(), original_contents.end(),
+			       (replacement.is_blank() && bind( &Cell::is_blank, _1 ))
+			       || replacement.contents == (&_1)->*&Cell::contents ) );
       if ( it == original_contents.end() ) {
 	return Correct;
       } else {
@@ -340,8 +341,8 @@ void PredictionEngine::kill_epoch( uint64_t epoch, const Framebuffer &fb )
 					    prediction_epoch ) );
   cursor().active = true;
 
-  for ( auto i = overlays.begin(); i != overlays.end(); i++ ) {
-    for ( auto j = i->overlay_cells.begin(); j != i->overlay_cells.end(); j++ ) {
+  for ( BOOST_AUTO( i, overlays.begin() ); i != overlays.end(); i++ ) {
+    for ( BOOST_AUTO( j, i->overlay_cells.begin() ); j != i->overlay_cells.end(); j++ ) {
       if ( j->tentative( epoch - 1 ) ) {
 	j->reset();
       }
@@ -405,9 +406,9 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
   /* go through cell predictions */
 
-  auto i = overlays.begin();
+  BOOST_AUTO( i, overlays.begin() );
   while ( i != overlays.end() ) {
-    auto inext = i;
+    BOOST_AUTO( inext, i );
     inext++;
     if ( (i->row_num < 0) || (i->row_num >= fb.ds.get_height()) ) {
       overlays.erase( i );
@@ -415,7 +416,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
       continue;
     }
 
-    for ( auto j = i->overlay_cells.begin(); j != i->overlay_cells.end(); j++ ) {
+    for ( BOOST_AUTO( j, i->overlay_cells.begin() ); j != i->overlay_cells.end(); j++ ) {
       if ( j->start_clock( local_frame_acked, now, send_interval ) ) {
 	last_scheduled_timeout = max( last_scheduled_timeout, j->expiration_time );
       }
@@ -505,7 +506,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
   }
 
   /* go through cursor predictions */
-  for ( auto it = cursors.begin(); it != cursors.end(); it++ ) {
+  for ( BOOST_AUTO( it, cursors.begin() ); it != cursors.end(); it++ ) {
     if ( it->start_clock( local_frame_acked, now, send_interval ) ) {
       last_scheduled_timeout = max( last_scheduled_timeout, it->expiration_time );
     }
@@ -536,8 +537,8 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
 ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_cols )
 {
-  auto it = find_if( overlays.begin(), overlays.end(),
-		     (&_1)->*&ConditionalOverlayRow::row_num == row_num );
+  BOOST_AUTO( it, find_if( overlays.begin(), overlays.end(),
+			   (&_1)->*&ConditionalOverlayRow::row_num == row_num ) );
 
   if ( it != overlays.end() ) {
     return *it;
@@ -573,7 +574,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 
   list<Parser::Action *> actions( parser.input( the_byte ) );
 
-  for ( auto it = actions.begin(); it != actions.end(); it++ ) {
+  for ( BOOST_AUTO( it, actions.begin() ); it != actions.end(); it++ ) {
     Parser::Action *act = *it;
 
     /*
@@ -743,9 +744,9 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
   init_cursor( fb );
   cursor().col = 0;
   if ( cursor().row == fb.ds.get_height() - 1 ) {
-    for ( auto i = overlays.begin(); i != overlays.end(); i++ ) {
+    for ( BOOST_AUTO( i, overlays.begin() ); i != overlays.end(); i++ ) {
       i->row_num--;
-      for ( auto j = i->overlay_cells.begin(); j != i->overlay_cells.end(); j++ ) {
+      for ( BOOST_AUTO( j, i->overlay_cells.begin() ); j != i->overlay_cells.end(); j++ ) {
 	if ( j->active ) {
 	  j->expire( local_frame_sent + 1, now );
 	}
@@ -754,7 +755,7 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
 
     /* make blank prediction for last row */
     ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
-    for ( auto j = the_row.overlay_cells.begin(); j != the_row.overlay_cells.end(); j++ ) {
+    for ( BOOST_AUTO( j, the_row.overlay_cells.begin() ); j != the_row.overlay_cells.end(); j++ ) {
       j->active = true;
       j->tentative_until_epoch = prediction_epoch;
       j->expire( local_frame_sent + 1, now );
