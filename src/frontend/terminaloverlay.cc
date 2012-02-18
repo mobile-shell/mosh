@@ -225,7 +225,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 
     wchar_t ch = *i;
     int chwidth = ch == L'\0' ? -1 : wcwidth( ch );
-    Cell *this_cell = nullptr;
+    Cell *this_cell = 0;
 
     switch ( chwidth ) {
     case 1: /* normal character */
