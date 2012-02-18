@@ -24,6 +24,7 @@
 #include "transportfragment.h"
 
 using namespace Network;
+using namespace std;
 
 template <class MyState>
 TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &initial_state )

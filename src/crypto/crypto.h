@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdint.h>
 
-using namespace std;
+using std::string;
 
 long int myatoi( char *str );
 

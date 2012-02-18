@@ -25,7 +25,8 @@
 
 #include "transportinstruction.pb.h"
 
-using namespace std;
+using std::vector;
+using std::string;
 using namespace TransportBuffers;
 
 namespace Network {

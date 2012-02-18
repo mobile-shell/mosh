@@ -29,7 +29,6 @@
 #include "transportsender.h"
 #include "transportfragment.h"
 
-using namespace std;
 
 namespace Network {
   template <class MyState, class RemoteState>

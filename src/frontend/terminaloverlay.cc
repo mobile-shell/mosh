@@ -25,6 +25,7 @@
 #include "terminaloverlay.h"
 
 using namespace Overlay;
+using std::max;
 
 bool ConditionalOverlay::start_clock( uint64_t local_frame_acked, uint64_t now, unsigned int send_interval )
 {
