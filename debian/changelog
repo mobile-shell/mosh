@@ -4,6 +4,11 @@ mosh (0.94-1) unstable; urgency=low
 
   * Make man pages.
 
+  * Replace C++11 features (lambda and auto) with boost equivalents
+	        (Anders Kaseorg)
+
+  * Now builds with g++ or clang (with libstdc++)
+
  -- Keith Winstein <keithw@mit.edu>  Wed, 15 Feb 2012 13:56:11 -0500
 
 mosh (0.93-1) unstable; urgency=low

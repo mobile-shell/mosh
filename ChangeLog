@@ -4,6 +4,11 @@
 
 	* Make man pages
 
+	* Replace C++11 features (lambda and auto) with boost equivalents
+	(Anders Kaseorg)
+
+	* Now builds with g++ or clang (with libstdc++)
+
 2011-02-13 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.93 released.
