@@ -1,3 +1,9 @@
+mosh (0.94b-1) unstable; urgency=low
+
+  * Relax autoconf dependency
+
+ -- Keith Winstein <keithw@mit.edu>  Sun, 19 Feb 2012 22:55:53 -0500
+
 mosh (0.94a-1) unstable; urgency=low
 
   * Relax debhelper dependency to make build on Ubuntu 10.04 LTS lucid
