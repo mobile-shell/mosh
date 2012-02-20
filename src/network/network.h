@@ -99,8 +99,6 @@ namespace Network {
 
     Packet new_packet( string &s_payload );
 
-    void update_MTU( void );
-
   public:
     Connection( const char *desired_ip ); /* server */
     Connection( const char *key_str, const char *ip, int port ); /* client */

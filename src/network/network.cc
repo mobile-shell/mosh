@@ -191,10 +191,7 @@ void Connection::send( string s )
   ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
 
-  if ( (bytes_sent < 0) && (errno == EMSGSIZE) ) {
-    update_MTU();
-    throw NetworkException( "Path MTU Discovery", EMSGSIZE );
-  } else if ( bytes_sent == static_cast<int>( p.size() ) ) {
+  if ( bytes_sent == static_cast<ssize_t>( p.size() ) ) {
     return;
   } else {
     throw NetworkException( "sendto", errno );
@@ -349,30 +346,3 @@ public:
     }
   }
 };
-
-void Connection::update_MTU( void )
-{
-  if ( !attached ) {
-    return;
-  }
-
-  /* We don't want to use our main socket because we don't want to have to connect it */
-  Socket path_MTU_socket( AF_INET, SOCK_DGRAM, 0 );
-
-  /* Connect socket so we can retrieve path MTU */
-  if ( connect( path_MTU_socket.fd, (sockaddr *)&remote_addr, sizeof( remote_addr ) ) < 0 ) {
-    throw NetworkException( "connect", errno );
-  }
-
-  int PMTU;
-  socklen_t optlen = sizeof( PMTU );
-  if ( getsockopt( path_MTU_socket.fd, IPPROTO_IP, IP_MTU, &PMTU, &optlen ) < 0 ) {
-    throw NetworkException( "getsockopt", errno );
-  }
-
-  if ( optlen != sizeof( PMTU ) ) {
-    throw NetworkException( "Error getting path MTU", errno );
-  }
-
-  MTU = min( PMTU, int(SEND_MTU) ); /* need cast to compile without optimization! XXX */
-}

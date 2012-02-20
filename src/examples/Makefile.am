@@ -2,7 +2,7 @@ AM_CXXFLAGS = -pedantic -Wno-long-long -Werror -Wall -Wextra -Weffc++ -fno-defau
 
 noinst_PROGRAMS = encrypt decrypt ntester parse termemu
 
-LIBS = $(protobuf_lite_LIBS)
+LIBS = $(protobuf_LIBS)
 
 encrypt_SOURCES = encrypt.cc
 encrypt_CPPFLAGS = -I$(srcdir)/../crypto

@@ -40,7 +40,7 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime gettimeofday inet_ntoa iswprint memchr memset nl_langinfo setenv setlocale socket strchr strdup strerror strtol wcwidth])
 
 # Checks for protobuf
-PKG_CHECK_MODULES([protobuf_lite], [protobuf-lite])
+PKG_CHECK_MODULES([protobuf], [protobuf])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/crypto/Makefile src/frontend/Makefile src/network/Makefile src/protobufs/Makefile src/statesync/Makefile src/terminal/Makefile src/util/Makefile scripts/Makefile src/examples/Makefile man/Makefile])
 AC_OUTPUT
