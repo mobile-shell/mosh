@@ -178,14 +178,12 @@ string Session::encrypt( Message plaintext )
 
   memcpy( pt, plaintext.text.data(), plaintext.text.size() );
 
-  Nonce __attribute__((__aligned__ (16))) nonce( plaintext.nonce );
-
-  if ( (uint64_t( nonce.data() ) & 0xf) != 0 ) {
+  if ( (uint64_t( plaintext.nonce.data() ) & 0xf) != 0 ) {
     throw CryptoException( "Bad alignment." );
   }
 
   if ( ciphertext_len != ae_encrypt( ctx,                                     /* ctx */
-				     nonce.data(),                            /* nonce */
+				     plaintext.nonce.data(),                  /* nonce */
 				     pt,                                      /* pt */
 				     pt_len,                                  /* pt_len */
 				     NULL,                                    /* ad */

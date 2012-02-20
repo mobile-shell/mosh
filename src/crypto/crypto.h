@@ -48,7 +48,7 @@ namespace Crypto {
 
   class Nonce {
   private:
-    char bytes[ 12 ];
+    char bytes[ 12 ] __attribute__((__aligned__ (16)));
 
   public:
     Nonce( uint64_t val );
