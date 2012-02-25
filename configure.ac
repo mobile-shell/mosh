@@ -12,6 +12,7 @@ AC_CONFIG_HEADERS([config.h])
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_RANLIB
+AC_PATH_PROG([PROTOC], [protoc], [AC_MSG_ERROR([protoc is not found])])
 
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""

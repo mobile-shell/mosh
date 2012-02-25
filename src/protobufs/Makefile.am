@@ -1,6 +1,5 @@
 source = userinput.proto hostinput.proto transportinstruction.proto
 
-PROTOC = protoc
 AM_CPPFLAGS = $(protobuf_CFLAGS)
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) -fno-default-inline -pipe
 
