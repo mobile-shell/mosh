@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "byteorder.h"
 #include "crypto.h"
 #include "base64.h"
 
