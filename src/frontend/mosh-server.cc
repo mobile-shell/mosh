@@ -90,7 +90,7 @@ int main( int argc, char *argv[] )
 
   /* network.set_verbose(); */
 
-  printf( "MOSH CONNECT %d %s\n", network.port(), network.get_key().c_str() );
+  printf( "\nMOSH CONNECT %d %s\n", network.port(), network.get_key().c_str() );
   fflush( stdout );
 
   /* don't let signals kill us */
