@@ -131,7 +131,7 @@ namespace Overlay {
     uint64_t message_expiration;
 
   public:
-    bool need_countup( uint64_t ts ) const { return ts - last_word_from_server > 4500; }
+    bool need_countup( uint64_t ts ) const { return ts - last_word_from_server > 6500; }
     void adjust_message( void );
     void apply( Framebuffer &fb ) const;
     void set_notification_string( const wstring s_message ) { message = s_message; message_expiration = timestamp() + 1000; }
