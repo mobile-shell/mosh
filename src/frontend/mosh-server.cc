@@ -16,6 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
+
 #include <locale.h>
 #include <string.h>
 #include <langinfo.h>
@@ -31,7 +33,9 @@
 #include <typeinfo>
 #include <signal.h>
 #include <sys/signalfd.h>
+#ifdef HAVE_UTEMPTER
 #include <utempter.h>
+#endif
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -182,10 +186,13 @@ int main( int argc, char *argv[] )
     exit( 0 );
   } else {
     /* parent */
+
+    #ifdef HAVE_UTEMPTER
     /* make utmp entry */
     char tmp[ 64 ];
     snprintf( tmp, 64, "mosh [%d]", getpid() );
     utempter_add_record( master, tmp );
+    #endif
 
     try {
       serve( master, terminal, network );
@@ -202,7 +209,9 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
+    #ifdef HAVE_UTEMPTER
     utempter_remove_added_record();
+    #endif
   }
 
   printf( "\n[mosh-server is exiting.]\n" );
@@ -239,7 +248,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
   uint64_t last_remote_num = network.get_remote_state_num();
 
+  #ifdef HAVE_UTEMPTER
   bool connected_utmp = false;
+  #endif
+
   struct in_addr saved_addr;
   saved_addr.s_addr = 0;
 
@@ -305,6 +317,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	    break;
 	  }
 
+	  #ifdef HAVE_UTEMPTER
 	  /* update utmp entry if we have become "connected" */
 	  if ( (!connected_utmp)
 	       || ( saved_addr.s_addr != network.get_remote_ip().s_addr ) ) {
@@ -318,6 +331,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
 	    connected_utmp = true;
 	  }
+	  #endif
 	}
       }
       
@@ -397,6 +411,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	break;
       }
 
+      #ifdef HAVE_UTEMPTER
       /* update utmp if has been more than 10 seconds since heard from client */
       if ( connected_utmp ) {
 	if ( time_since_remote_state > 10000 ) {
@@ -409,6 +424,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  connected_utmp = false;
 	}
       }
+      #endif
 
       if ( terminal.set_echo_ack( now ) ) {
 	/* update client with new echo ack */

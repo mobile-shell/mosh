@@ -41,7 +41,10 @@ AC_SUBST([WARNING_CXXFLAGS])
 AC_SUBST([PICKY_CXXFLAGS])
 
 # Checks for libraries.
-AC_SEARCH_LIBS([utempter_remove_added_record], [utempter], , [AC_MSG_ERROR([Unable to find libutempter.])])
+AC_SEARCH_LIBS([utempter_remove_added_record], [utempter],
+  [AC_DEFINE([HAVE_UTEMPTER], [1],
+     [Define if libutempter is available.])],
+  [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])])
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 AX_BOOST_BASE(, , [AC_MSG_ERROR([Unable to find boost libraries.])])
 
