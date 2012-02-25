@@ -11,6 +11,7 @@ AC_CONFIG_HEADERS([config.h])
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_RANLIB
+AC_PATH_PROG([PROTOC], [protoc], [AC_MSG_ERROR([protoc is not found])])
 
 # Checks for libraries.
 AC_SEARCH_LIBS([utempter_remove_added_record], [utempter], [AC_DEFINE([HAVE_UTEMPTER], [1], [Define if libutempter is available.])], [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])]) 

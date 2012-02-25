@@ -1,6 +1,5 @@
 source = userinput.proto hostinput.proto transportinstruction.proto
 
-PROTOC = protoc
 AM_CPPFLAGS = $(protobuf_CFLAGS)
 AM_CXXFLAGS = -Wno-long-long -Werror -Wall -fno-default-inline -pipe
 
