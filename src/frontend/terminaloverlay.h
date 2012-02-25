@@ -44,14 +44,13 @@ namespace Overlay {
   class ConditionalOverlay {
   public:
     uint64_t expiration_frame;
-    uint64_t expiration_time; /* after frame is hit */
     int col;
     bool active; /* represents a prediction at all */
     uint64_t tentative_until_epoch; /* when to show */
     uint64_t prediction_time; /* used to find long-pending predictions */
 
     ConditionalOverlay( uint64_t s_exp, int s_col, uint64_t s_tentative )
-      : expiration_frame( s_exp ), expiration_time( uint64_t( -1 ) ), col( s_col ),
+      : expiration_frame( s_exp ), col( s_col ),
 	active( false ),
 	tentative_until_epoch( s_tentative ), prediction_time( uint64_t( -1 ) )
     {}
@@ -59,11 +58,10 @@ namespace Overlay {
     virtual ~ConditionalOverlay() {}
 
     bool tentative( uint64_t confirmed_epoch ) const { return tentative_until_epoch > confirmed_epoch; }
-    void reset( void ) { expiration_frame = expiration_time = tentative_until_epoch = -1; active = false; }
-    bool start_clock( uint64_t local_frame_acked, uint64_t now, unsigned int send_interval );
+    void reset( void ) { expiration_frame = tentative_until_epoch = -1; active = false; }
     void expire( uint64_t s_exp, uint64_t now )
     {
-      expiration_frame = s_exp; expiration_time = uint64_t(-1); prediction_time = now;
+      expiration_frame = s_exp; prediction_time = now;
     }
   };
 
@@ -73,7 +71,7 @@ namespace Overlay {
 
     void apply( Framebuffer &fb, uint64_t confirmed_epoch ) const;
 
-    Validity get_validity( const Framebuffer &fb, uint64_t sent_frame, uint64_t early_ack, uint64_t late_ack, uint64_t now ) const;
+    Validity get_validity( const Framebuffer &fb, uint64_t early_ack, uint64_t late_ack ) const;
 
     ConditionalCursorMove( uint64_t s_exp, int s_row, int s_col, uint64_t s_tentative )
       : ConditionalOverlay( s_exp, s_col, s_tentative ), row( s_row )
@@ -89,7 +87,7 @@ namespace Overlay {
 				       that match the original contents */
 
     void apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const;
-    Validity get_validity( const Framebuffer &fb, int row, uint64_t sent_frame, uint64_t early_ack, uint64_t late_ack, uint64_t now ) const;
+    Validity get_validity( const Framebuffer &fb, int row, uint64_t early_ack, uint64_t late_ack ) const;
 
     ConditionalOverlayCell( uint64_t s_exp, int s_col, uint64_t s_tentative )
       : ConditionalOverlay( s_exp, s_col, s_tentative ),
@@ -183,8 +181,6 @@ namespace Overlay {
 
     void init_cursor( const Framebuffer &fb );
 
-    uint64_t last_scheduled_timeout;
-
     unsigned int send_interval;
 
   public:
@@ -206,7 +202,7 @@ namespace Overlay {
 
     void reset( void );
 
-    bool active( void ) { return timestamp() <= last_scheduled_timeout; }
+    bool active( void ) const;
 
     void set_local_frame_sent( uint64_t x ) { local_frame_sent = x; }
     void set_local_frame_acked( uint64_t x ) { local_frame_acked = x; }
@@ -222,7 +218,6 @@ namespace Overlay {
 			       srtt_trigger( false ),
 			       glitch_trigger( 0 ),
 			       last_quick_confirmation( 0 ),
-			       last_scheduled_timeout( 0 ),
 			       send_interval( 250 ),
 			       display_preference( Adaptive )
     {

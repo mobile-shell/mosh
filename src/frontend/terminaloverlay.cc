@@ -31,15 +31,6 @@ using namespace boost::lambda;
 using namespace Overlay;
 using std::max;
 
-bool ConditionalOverlay::start_clock( uint64_t local_frame_acked, uint64_t now, unsigned int send_interval )
-{
-  if ( (local_frame_acked >= expiration_frame) && (expiration_time == uint64_t(-1)) ) {
-    expiration_time = now + 75 + 125 * send_interval / 100;
-    return true;
-  }
-  return false;
-}
-
 void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const
 {
   if ( (!active)
@@ -72,8 +63,7 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
 }
 
 Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
-					       uint64_t sent_frame, uint64_t early_ack, uint64_t late_ack,
-					       uint64_t now ) const
+					       uint64_t early_ack, uint64_t late_ack ) const
 {
   if ( !active ) {
     return Inactive;
@@ -95,10 +85,7 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
     return Pending;
   }
 
-  assert( expiration_time != uint64_t(-1) );
-
-  if ( (late_ack >= expiration_frame)
-       || ( (sent_frame <= early_ack) && (expiration_time <= now) ) ) {
+  if ( late_ack >= expiration_frame ) {
     if ( (current.contents == replacement.contents)
 	 || (current.is_blank() && replacement.is_blank()) ) {
       BOOST_AUTO( it, find_if( original_contents.begin(), original_contents.end(),
@@ -117,7 +104,7 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
   return Pending;
 }
 
-Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t sent_frame, uint64_t early_ack, uint64_t late_ack, uint64_t now ) const
+Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t early_ack, uint64_t late_ack ) const
 {
   if ( !active ) {
     return Inactive;
@@ -134,10 +121,7 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t se
     return Pending;
   }
 
-  assert( expiration_time != uint64_t(-1) );
-
-  if ( (late_ack >= expiration_frame)
-       || ( (sent_frame <= early_ack) && (expiration_time <= now) ) ) {
+  if ( late_ack >= expiration_frame ) {
     if ( (fb.ds.get_cursor_col() == col)
 	 && (fb.ds.get_cursor_row() == row) ) {
       return Correct;
@@ -417,12 +401,8 @@ void PredictionEngine::cull( const Framebuffer &fb )
     }
 
     for ( BOOST_AUTO( j, i->overlay_cells.begin() ); j != i->overlay_cells.end(); j++ ) {
-      if ( j->start_clock( local_frame_acked, now, send_interval ) ) {
-	last_scheduled_timeout = max( last_scheduled_timeout, j->expiration_time );
-      }
       switch ( j->get_validity( fb, i->row_num,
-				local_frame_sent, local_frame_acked, local_frame_late_acked,
-				now ) ) {
+				local_frame_acked, local_frame_late_acked ) ) {
       case IncorrectOrExpired:
 	if ( j->tentative( confirmed_epoch ) ) {
 
@@ -506,16 +486,9 @@ void PredictionEngine::cull( const Framebuffer &fb )
   }
 
   /* go through cursor predictions */
-  for ( BOOST_AUTO( it, cursors.begin() ); it != cursors.end(); it++ ) {
-    if ( it->start_clock( local_frame_acked, now, send_interval ) ) {
-      last_scheduled_timeout = max( last_scheduled_timeout, it->expiration_time );
-    }
-  }
-
   if ( !cursors.empty() ) {
     if ( cursor().get_validity( fb,
-				local_frame_sent, local_frame_acked, local_frame_late_acked,
-				now ) == IncorrectOrExpired ) {
+				local_frame_acked, local_frame_late_acked ) == IncorrectOrExpired ) {
       /*
       fprintf( stderr, "Sadly, we're predicting (%d,%d) vs. (%d,%d) [tau: %ld, expiration_time=%ld, now=%ld]\n",
 	       cursor().row, cursor().col,
@@ -531,8 +504,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
   }
 
   cursors.remove_if( bind( &ConditionalCursorMove::get_validity, _1, var(fb),
-			   local_frame_sent, local_frame_acked, local_frame_late_acked,
-			   now ) != Pending );
+			   local_frame_acked, local_frame_late_acked ) != Pending );
 }
 
 ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_cols )
@@ -774,4 +746,21 @@ void PredictionEngine::become_tentative( void )
   fprintf( stderr, "Now tentative in epoch %lu (confirmed=%lu)\n",
 	   prediction_epoch, confirmed_epoch );
   */
+}
+
+bool PredictionEngine::active( void ) const
+{
+  if ( !cursors.empty() ) {
+    return true;
+  }
+
+  for ( BOOST_AUTO( i, overlays.begin() ); i != overlays.end(); i++ ) {  
+    for ( BOOST_AUTO( j, i->overlay_cells.begin() ); j != i->overlay_cells.end(); j++ ) {  
+      if ( j->active ) {
+	return true;
+      }
+    }
+  }
+
+  return false;
 }
