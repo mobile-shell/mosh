@@ -44,6 +44,7 @@ namespace Network {
     static const int ACK_DELAY = 100; /* ms before delayed ack */
     static const int SHUTDOWN_RETRIES = 3; /* number of shutdown packets to send before giving up */
     static const int ECHO_TIMEOUT = 50; /* for late ack */
+    static const int ACTIVE_RETRY_TIMEOUT = 10000; /* attempt to resend at frame rate */
 
     /* helper methods for tick() */
     void update_assumed_receiver_state( void );
@@ -72,6 +73,8 @@ namespace Network {
     uint64_t next_ack_time;
     uint64_t next_send_time;
 
+    void calculate_timers( void );
+
     bool verbose;
     bool shutdown_in_progress;
     int shutdown_tries;
@@ -85,6 +88,8 @@ namespace Network {
     uint64_t get_late_ack( uint64_t now ); /* calculate delayed "echo" acknowledgment */
 
     unsigned int SEND_MINDELAY; /* ms to collect all input */
+
+    uint64_t last_heard; /* last time received new state */
 
   public:
     /* constructor */
@@ -104,6 +109,9 @@ namespace Network {
 
     /* Accelerate reply ack */
     void set_data_ack( void ) { pending_data_ack = true; }
+
+    /* Received something */
+    void remote_heard( uint64_t ts ) { last_heard = ts; }
 
     /* Starts shutdown sequence */
     void start_shutdown( void ) { shutdown_in_progress = true; }

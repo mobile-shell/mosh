@@ -45,7 +45,8 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     pending_data_ack( false ),
     ack_timestamp( 0 ),
     ack_history(),
-    SEND_MINDELAY( 15 )
+    SEND_MINDELAY( 15 ),
+    last_heard( 0 )
 {
 }
 
@@ -63,41 +64,57 @@ unsigned int TransportSender<MyState>::send_interval( void ) const
   return SEND_INTERVAL;
 }
 
-/* How many ms can the caller wait before we will have an event (empty ack or next frame)? */
+/* Housekeeping routine to calculate next send and ack times */
 template <class MyState>
-int TransportSender<MyState>::wait_time( void )
+void TransportSender<MyState>::calculate_timers( void )
 {
-  if ( pending_data_ack && (next_ack_time > timestamp() + ACK_DELAY) ) {
-    next_ack_time = timestamp() + ACK_DELAY;
+  uint64_t now = timestamp();
+
+  /* Update assumed receiver state */
+  update_assumed_receiver_state();
+
+  /* Cut out common prefix of all states */
+  rationalize_states();
+
+  if ( pending_data_ack && (next_ack_time > now + ACK_DELAY) ) {
+    next_ack_time = now + ACK_DELAY;
   }
 
-  if ( !(current_state == sent_states.back().state) ) { /* pending data to send */
-    if ( next_send_time > timestamp() + SEND_MINDELAY ) {
-      next_send_time = timestamp() + SEND_MINDELAY;
+  if ( ( !(current_state == assumed_receiver_state->state)
+	 && (last_heard + ACTIVE_RETRY_TIMEOUT > now) )
+       || !(current_state == sent_states.back().state) ) { /* pending data to send */
+    if ( next_send_time > now + SEND_MINDELAY ) {
+      next_send_time = now + SEND_MINDELAY;
     }
 
     if ( next_send_time < sent_states.back().timestamp + send_interval() ) {
       next_send_time = sent_states.back().timestamp + send_interval();
     }
+  } else {
+    next_send_time = uint64_t(-1);
   }
 
   /* speed up shutdown sequence */
   if ( shutdown_in_progress || (ack_num == uint64_t(-1)) ) {
     next_ack_time = sent_states.back().timestamp + send_interval();
   }
+}
 
-  uint64_t next_wakeup = next_ack_time;
+/* How many ms to wait until next event */
+template <class MyState>
+int TransportSender<MyState>::wait_time( void )
+{
+  calculate_timers();
 
-  if ( next_send_time < next_wakeup ) {
-    next_wakeup = next_send_time;
-  }
+  uint64_t next_wakeup = min( next_ack_time, next_send_time );
+  uint64_t now = timestamp();
 
   if ( !connection->get_attached() ) {
     return -1;
   }
 
-  if ( next_wakeup > timestamp() ) {
-    return next_wakeup - timestamp();
+  if ( next_wakeup > now ) {
+    return next_wakeup - now;
   } else {
     return 0;
   }
@@ -107,35 +124,33 @@ int TransportSender<MyState>::wait_time( void )
 template <class MyState>
 void TransportSender<MyState>::tick( void )
 {
-  wait_time();
+  calculate_timers(); /* updates assumed receiver state and rationalizes */
 
   if ( !connection->get_attached() ) {
     return;
   }
 
-  if ( (timestamp() < next_ack_time)
-       && (timestamp() < next_send_time) ) {
+  uint64_t now = timestamp();
+
+  if ( (now < next_ack_time)
+       && (now < next_send_time) ) {
     return;
   }
 
   /* Determine if a new diff or empty ack needs to be sent */
-  /* Update assumed receiver state */
-  update_assumed_receiver_state();
     
-  /* Cut out common prefix of all states */
-  rationalize_states();
-
   string diff = current_state.diff_from( assumed_receiver_state->state );
 
-  if ( diff.empty() && (timestamp() >= next_ack_time) ) {
+  if ( diff.empty() && (now >= next_ack_time) ) {
     send_empty_ack();
     return;
   }
 
-  if ( !diff.empty() && ( (timestamp() >= next_send_time)
-			  || (timestamp() >= next_ack_time) ) ) {
+  if ( !diff.empty() && ( (now >= next_send_time)
+			  || (now >= next_ack_time) ) ) {
     /* Send diffs or ack */
     send_to_receiver( diff );
+    return;
   }
 }
 
@@ -156,6 +171,7 @@ void TransportSender<MyState>::send_empty_ack( void )
   send_in_fragments( "", new_num );
 
   next_ack_time = timestamp() + ACK_INTERVAL;
+  next_send_time = uint64_t(-1);
 }
 
 template <class MyState>

@@ -128,6 +128,7 @@ void Transport<MyState, RemoteState>::recv( void )
     received_states.push_back( new_state );
     sender.set_ack_num( received_states.back().num );
 
+    sender.remote_heard( new_state.timestamp );
     if ( !inst.diff().empty() ) {
       sender.set_data_ack();
     }
