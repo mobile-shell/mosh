@@ -33,7 +33,6 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
     last_receiver_state( initial_remote ),
-    sent_state_late_acked( 0 ),
     fragments(),
     verbose( false )
 {
@@ -47,7 +46,6 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
     last_receiver_state( initial_remote ),
-    sent_state_late_acked( 0 ),
     fragments(),
     verbose( false )
 {
@@ -68,9 +66,6 @@ void Transport<MyState, RemoteState>::recv( void )
     }
 
     sender.process_acknowledgment_through( inst.ack_num() );
-    if ( inst.late_ack_num() > sent_state_late_acked ) {
-      sent_state_late_acked = inst.late_ack_num();
-    }
 
     /* first, make sure we don't already have the new state */
     for ( typename list< TimestampedState<RemoteState> >::iterator i = received_states.begin();

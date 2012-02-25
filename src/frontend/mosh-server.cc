@@ -251,12 +251,16 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	break;
       }
 
+      uint64_t now = Network::timestamp();
+
       if ( pollfds[ 0 ].revents & POLLIN ) {
 	/* packet received from the network */
 	network.recv();
 	
 	/* is new user input available for the terminal? */
 	if ( network.get_remote_state_num() != last_remote_num ) {
+	  last_remote_num = network.get_remote_state_num();
+
 	  string terminal_to_host;
 	  
 	  Network::UserStream us;
@@ -276,6 +280,9 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	      }
 	    }
 	  }
+
+	  /* register input frame number for future echo ack */
+	  terminal.register_input_frame( last_remote_num, now );
 
 	  /* update client with new state of terminal */
 	  if ( !network.shutdown_in_progress() ) {
@@ -381,7 +388,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       /* update utmp if has been more than 10 seconds since heard from client */
       if ( connected_utmp ) {
-	if ( network.get_latest_remote_state().timestamp < Network::timestamp() - 10000 ) {
+	if ( network.get_latest_remote_state().timestamp < now - 10000 ) {
 	  utempter_remove_added_record();
 
 	  char tmp[ 64 ];
@@ -392,6 +399,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
 
+      terminal.set_echo_ack( now );
       network.tick();
     } catch ( Network::NetworkException e ) {
       fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );

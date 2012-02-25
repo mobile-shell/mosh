@@ -73,7 +73,7 @@ namespace Network {
     
     /* interface for Network::Transport */
     void subtract( const UserStream *prefix );
-    string diff_from( const UserStream &existing );
+    string diff_from( const UserStream &existing ) const;
     void apply_string( string diff );
     bool operator==( const UserStream &x ) const { return actions == x.actions; }
   };

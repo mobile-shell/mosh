@@ -47,7 +47,6 @@ namespace Network {
     /* simple receiver */
     list< TimestampedState<RemoteState> > received_states;
     RemoteState last_receiver_state; /* the state we were in when user last queried state */
-    uint64_t sent_state_late_acked;
     FragmentAssembly fragments;
     bool verbose;
 
@@ -97,7 +96,6 @@ namespace Network {
 
     uint64_t get_sent_state_acked( void ) const { return sender.get_sent_state_acked(); }
     uint64_t get_sent_state_last( void ) const { return sender.get_sent_state_last(); }
-    uint64_t get_sent_state_late_acked( void ) const { return sent_state_late_acked; }
 
     unsigned int send_interval( void ) const { return sender.send_interval(); }
 

@@ -16,6 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <boost/typeof/typeof.hpp>
+#include <boost/lambda/lambda.hpp>
+
 #include "completeterminal.h"
 
 #include "hostinput.pb.h"
@@ -24,6 +27,7 @@ using namespace std;
 using namespace Parser;
 using namespace Terminal;
 using namespace HostBuffers;
+using namespace boost::lambda;
 
 string Complete::act( const string &str )
 {
@@ -52,9 +56,15 @@ string Complete::act( const Action *act )
 }
 
 /* interface for Network::Transport */
-string Complete::diff_from( const Complete &existing )
+string Complete::diff_from( const Complete &existing ) const
 {
   HostBuffers::HostMessage output;
+
+  if ( existing.get_echo_ack() != get_echo_ack() ) {
+    assert( get_echo_ack() >= existing.get_echo_ack() );
+    Instruction *new_echo = output.add_instruction();
+    new_echo->MutableExtension( echoack )->set_echo_ack_num( get_echo_ack() );
+  }
 
   if ( !(existing.get_fb() == get_fb()) ) {
     if ( (existing.get_fb().ds.get_width() != terminal.get_fb().ds.get_width())
@@ -82,6 +92,10 @@ void Complete::apply_string( string diff )
     } else if ( input.instruction( i ).HasExtension( resize ) ) {
       act( new Resize( input.instruction( i ).GetExtension( resize ).width(),
 		       input.instruction( i ).GetExtension( resize ).height() ) );
+    } else if ( input.instruction( i ).HasExtension( echoack ) ) {
+      uint64_t inst_echo_ack_num = input.instruction( i ).GetExtension( echoack ).echo_ack_num();
+      assert( inst_echo_ack_num >= echo_ack );
+      echo_ack = inst_echo_ack_num;
     }
   }
 }
@@ -89,5 +103,25 @@ void Complete::apply_string( string diff )
 bool Complete::operator==( Complete const &x ) const
 {
   //  assert( parser == x.parser ); /* parser state is irrelevant for us */
-  return terminal == x.terminal;
+  return (terminal == x.terminal) && (echo_ack == x.echo_ack);
+}
+
+void Complete::set_echo_ack( uint64_t now )
+{
+  uint64_t newest_echo_ack = 0;
+
+  for ( BOOST_AUTO( i, input_history.begin() ); i != input_history.end(); i++ ) {
+    if ( i->second < now - ECHO_TIMEOUT ) {
+      newest_echo_ack = i->first;
+    }
+  }
+
+  input_history.remove_if( (&_1)->*&pair<uint64_t, uint64_t>::first < newest_echo_ack );
+
+  echo_ack = newest_echo_ack;
+}
+
+void Complete::register_input_frame( uint64_t n, uint64_t now )
+{
+  input_history.push_back( make_pair( n, now ) );
 }

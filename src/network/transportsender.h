@@ -43,7 +43,6 @@ namespace Network {
     static const int ACK_INTERVAL = 3000; /* ms between empty acks */
     static const int ACK_DELAY = 100; /* ms before delayed ack */
     static const int SHUTDOWN_RETRIES = 3; /* number of shutdown packets to send before giving up */
-    static const int ECHO_TIMEOUT = 50; /* for late ack */
     static const int ACTIVE_RETRY_TIMEOUT = 10000; /* attempt to resend at frame rate */
 
     /* helper methods for tick() */
@@ -82,10 +81,6 @@ namespace Network {
     /* information about receiver state */
     uint64_t ack_num;
     bool pending_data_ack;
-    uint64_t ack_timestamp;
-
-    list< pair<uint64_t, uint64_t> > ack_history;
-    uint64_t get_late_ack( uint64_t now ); /* calculate delayed "echo" acknowledgment */
 
     unsigned int SEND_MINDELAY; /* ms to collect all input */
 

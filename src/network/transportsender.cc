@@ -43,8 +43,6 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     shutdown_tries( 0 ),
     ack_num( 0 ),
     pending_data_ack( false ),
-    ack_timestamp( 0 ),
-    ack_history(),
     SEND_MINDELAY( 15 ),
     last_heard( 0 )
 {
@@ -260,14 +258,11 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
 {
   Instruction inst;
 
-  uint64_t now = timestamp();
-
   inst.set_protocol_version( MOSH_PROTOCOL_VERSION );
   inst.set_old_num( assumed_receiver_state->num );
   inst.set_new_num( new_num );
   inst.set_ack_num( ack_num );
   inst.set_throwaway_num( sent_states.front().num );
-  inst.set_late_ack_num( get_late_ack( now ) );
   inst.set_diff( diff );
 
   if ( new_num == uint64_t(-1) ) {
@@ -280,12 +275,11 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
     connection->send( i->tostring() );
 
     if ( verbose ) {
-      fprintf( stderr, "[%u] Sent [%d=>%d] id %d, frag %d ack=%d, late_ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d, srtt=%.1f age=%llu\n",
+      fprintf( stderr, "[%u] Sent [%d=>%d] id %d, frag %d ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d, srtt=%.1f\n",
 	       (unsigned int)(timestamp() % 100000), (int)inst.old_num(), (int)inst.new_num(), (int)i->id, (int)i->fragment_num,
-	       (int)inst.ack_num(), (int)inst.late_ack_num(), (int)inst.throwaway_num(), (int)i->contents.size(),
+	       (int)inst.ack_num(), (int)inst.throwaway_num(), (int)i->contents.size(),
 	       1000.0 / (double)send_interval(),
-	       (int)connection->timeout(), connection->get_SRTT(),
-	       (long long)(now - ack_timestamp) );
+	       (int)connection->timeout(), connection->get_SRTT() );
     }
 
   }
@@ -318,23 +312,4 @@ template <class MyState>
 void TransportSender<MyState>::set_ack_num( uint64_t s_ack_num )
 {
   ack_num = s_ack_num;
-  ack_timestamp = timestamp();
-  ack_history.push_back( make_pair( ack_num, ack_timestamp ) );
-}
-
-/* The "late" ack is for the input state that has had enough time on the host to have been echoed */
-template <class MyState>
-uint64_t TransportSender<MyState>::get_late_ack( uint64_t now )
-{
-  uint64_t newest_echo_ack = 0;
-
-  for ( BOOST_AUTO( i, ack_history.begin() ); i != ack_history.end(); i++ ) {
-    if ( i->second < now - ECHO_TIMEOUT ) {
-      newest_echo_ack = i->first;
-    }
-  }
-
-  ack_history.remove_if( (&_1)->*&pair<uint64_t, uint64_t>::first < newest_echo_ack );
-
-  return newest_echo_ack;
 }

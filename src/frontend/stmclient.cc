@@ -182,7 +182,7 @@ bool STMClient::process_network_input( void )
 
   overlays.get_prediction_engine().set_local_frame_acked( network->get_sent_state_acked() );
   overlays.get_prediction_engine().set_send_interval( network->send_interval() );
-  overlays.get_prediction_engine().set_local_frame_late_acked( network->get_sent_state_late_acked() );
+  overlays.get_prediction_engine().set_local_frame_late_acked( network->get_latest_remote_state().state.get_echo_ack() );
 
   return true;
 }

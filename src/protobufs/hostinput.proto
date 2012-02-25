@@ -19,7 +19,12 @@ message ResizeMessage {
   optional int32 height = 6;
 }
 
+message EchoAck {
+  optional uint64 echo_ack_num = 8;
+}
+
 extend Instruction {
   optional HostBytes hostbytes = 2;
   optional ResizeMessage resize = 3;
+  optional EchoAck echoack = 7;
 }

@@ -19,6 +19,9 @@
 #ifndef COMPLETE_TERMINAL_HPP
 #define COMPLETE_TERMINAL_HPP
 
+#include <list>
+#include <stdint.h>
+
 #include "parser.h"
 #include "terminal.h"
 
@@ -30,8 +33,14 @@ namespace Terminal {
     Parser::UTF8Parser parser;
     Terminal::Emulator terminal;
 
+    std::list< std::pair<uint64_t, uint64_t> > input_history;
+    uint64_t echo_ack;
+
+    static const int ECHO_TIMEOUT = 50; /* for late ack */
+
   public:
-    Complete( size_t width, size_t height ) : parser(), terminal( width, height ) {}
+    Complete( size_t width, size_t height ) : parser(), terminal( width, height ),
+					      input_history(), echo_ack( 0 ) {}
     
     std::string act( const std::string &str );
     std::string act( const Parser::Action *act );
@@ -39,9 +48,13 @@ namespace Terminal {
     const Framebuffer & get_fb( void ) const { return terminal.get_fb(); }
     bool parser_grounded( void ) const { return parser.is_grounded(); }
 
+    uint64_t get_echo_ack( void ) const { return echo_ack; }
+    void set_echo_ack( uint64_t now );
+    void register_input_frame( uint64_t n, uint64_t now );
+
     /* interface for Network::Transport */
     void subtract( const Complete * ) {}
-    std::string diff_from( const Complete &existing );
+    std::string diff_from( const Complete &existing ) const;
     void apply_string( std::string diff );
     bool operator==( const Complete &x ) const;
   };
