@@ -1,3 +1,19 @@
+mosh (0.95) unstable; urgency=low
+
+  * Version 0.95 released.
+
+  * Make echo acknowledgment reliable to reduce spurious mispredict detections.
+
+  * Require two dropped heartbeats before showing blue bar of lost contact
+
+  * Print newline before MOSH CONNECT string to make more robust if intermediate keys hit
+
+  * Disable ControlMaster in initial SSH connection so proxy is always used
+
+  * Make retransmissions occur at frame rate (vs. every 3 seconds) for limited time after loss
+
+ -- Keith Winstein <keithw@mit.edu>  Sat, 25 Feb 2012 15:15:59 -0500
+
 mosh (0.94c-1) unstable; urgency=low
 
   * Move to protobuf (from protobuf-lite) to make build on Ubuntu 10.04

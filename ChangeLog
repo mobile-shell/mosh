@@ -1,4 +1,18 @@
-2011-02-15 Keith Winstein <mosh-devel@mit.edu>
+2012-02-25 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 0.95 released.
+
+	* Make echo acknowledgment reliable to reduce spurious mispredict detections.
+
+	* Require two dropped heartbeats before showing blue bar of lost contact
+
+	* Print newline before MOSH CONNECT string to make more robust if intermediate keys hit
+
+	* Disable ControlMaster in initial SSH connection so proxy is always used
+
+	* Make retransmissions occur at frame rate (vs. every 3 seconds) for limited time after loss
+
+2012-02-15 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.94 released.
 
@@ -9,13 +23,13 @@
 
 	* Now builds with g++ or clang (with libstdc++)
 
-2011-02-13 Keith Winstein <mosh-devel@mit.edu>
+2012-02-13 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.93 released.
 
 	* Make utmp entries
 
-2011-02-13 Keith Winstein <mosh-devel@mit.edu>
+2012-02-13 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.92 released.
 
@@ -25,7 +39,7 @@
 
 	* Better prediction when deleting at line ending
 
-2011-02-09 Keith Winstein <mosh-devel@mit.edu>
+2012-02-09 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.91 released.
 
@@ -41,11 +55,11 @@
 	show server echos, while maintaining prediction overlay in the
 	background in case it is needed.
 
-2011-02-07 Keith Winstein <mosh-devel@mit.edu>
+2012-02-07 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.9b released.
 	* Improvements to build system (Anders Kaseorg)
 
-2011-02-06 Keith Winstein <mosh-devel@mit.edu>
+2012-02-06 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.9 released.
