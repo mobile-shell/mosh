@@ -16,9 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <endian.h>
 #include <assert.h>
 
+#include "byteorder.h"
 #include "transportfragment.h"
 #include "transportinstruction.pb.h"
 #include "compressor.h"

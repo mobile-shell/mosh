@@ -21,10 +21,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
-#include <endian.h>
 #include <errno.h>
 
 #include "dos_assert.h"
+#include "byteorder.h"
 #include "network.h"
 #include "crypto.h"
 

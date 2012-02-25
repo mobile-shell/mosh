@@ -71,6 +71,16 @@ AC_FUNC_MBRTOWC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime gettimeofday inet_ntoa iswprint memchr memset nl_langinfo setenv setlocale socket strchr strdup strerror strtol wcwidth])
 
+AC_CHECK_DECL([htobe64],
+  [AC_DEFINE([HAVE_HTOBE64], [1],
+  [Define if htobe64 and friends exist.])],
+  [AC_CHECK_DECL([OSSwapHostToBigInt64],
+     [AC_DEFINE([HAVE_OSX_SWAP], [1],
+        [Define if OSSwapHostToBigInt64 and friends exist.])],
+     [AC_MSG_ERROR([Unable to find byte swapping functions])],
+     [[#include <libkern/OSByteOrder.h>]])],
+  [[#include <endian.h>]])
+
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 

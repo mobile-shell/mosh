@@ -1,7 +1,5 @@
 /* Taken from GNU coreutils */
 
-#define restrict
-
 /* base64.h -- Encode binary data using printable characters.
    Copyright (C) 2004-2006, 2009-2011 Free Software Foundation, Inc.
    Written by Simon Josefsson.
@@ -22,6 +20,8 @@
 
 #ifndef BASE64_H
 # define BASE64_H
+
+# include "config.h"
 
 /* Get size_t. */
 # include <stddef.h>
