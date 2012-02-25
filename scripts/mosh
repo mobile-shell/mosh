@@ -130,7 +130,7 @@ if ( $pid == 0 ) { # child
   close $pty_slave;
 
   my $s = q{sh -c 'exec "$@" "`set -- $SSH_CONNECTION; echo $3`"' -- } . $server;
-  exec 'ssh', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', $s;
+  exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', $s;
   die "Cannot exec ssh: $!\n";
 } else { # server
   my ( $ip, $port, $key );
