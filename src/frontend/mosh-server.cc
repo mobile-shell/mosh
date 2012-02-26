@@ -245,13 +245,15 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
   while ( 1 ) {
     try {
-      int active_fds = poll( pollfds, 3, network.wait_time() );
+      uint64_t now = Network::timestamp();
+
+      int active_fds = poll( pollfds, 3, min( network.wait_time(), terminal.wait_time( now ) ) );
       if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;
       }
 
-      uint64_t now = Network::timestamp();
+      now = Network::timestamp();
 
       if ( pollfds[ 0 ].revents & POLLIN ) {
 	/* packet received from the network */
@@ -281,8 +283,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	    }
 	  }
 
-	  /* register input frame number for future echo ack */
-	  terminal.register_input_frame( last_remote_num, now );
+	  if ( !us.empty() ) {
+	    /* register input frame number for future echo ack */
+	    terminal.register_input_frame( last_remote_num, now );
+	  }
 
 	  /* update client with new state of terminal */
 	  if ( !network.shutdown_in_progress() ) {
@@ -399,7 +403,13 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
 
-      terminal.set_echo_ack( now );
+      if ( terminal.set_echo_ack( now ) ) {
+	/* update client with new echo ack */
+	if ( !network.shutdown_in_progress() ) {
+	  network.set_current_state( terminal );
+	}
+      }
+
       network.tick();
     } catch ( Network::NetworkException e ) {
       fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );

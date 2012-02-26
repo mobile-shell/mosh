@@ -49,8 +49,9 @@ namespace Terminal {
     bool parser_grounded( void ) const { return parser.is_grounded(); }
 
     uint64_t get_echo_ack( void ) const { return echo_ack; }
-    void set_echo_ack( uint64_t now );
+    bool set_echo_ack( uint64_t now );
     void register_input_frame( uint64_t n, uint64_t now );
+    int wait_time( uint64_t now ) const;
 
     /* interface for Network::Transport */
     void subtract( const Complete * ) {}

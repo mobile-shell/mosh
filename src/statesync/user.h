@@ -68,7 +68,8 @@ namespace Network {
     void push_back( Parser::UserByte s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
     void push_back( Parser::Resize s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
     
-    size_t size( void ) { return actions.size(); }
+    bool empty( void ) const { return actions.empty(); }
+    size_t size( void ) const { return actions.size(); }
     const Parser::Action *get_action( unsigned int i );
     
     /* interface for Network::Transport */

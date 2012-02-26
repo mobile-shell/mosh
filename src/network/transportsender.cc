@@ -104,7 +104,11 @@ int TransportSender<MyState>::wait_time( void )
 {
   calculate_timers();
 
-  uint64_t next_wakeup = min( next_ack_time, next_send_time );
+  uint64_t next_wakeup = next_ack_time;
+  if ( next_send_time < next_wakeup ) {
+    next_wakeup = next_send_time;
+  }
+
   uint64_t now = timestamp();
 
   if ( !connection->get_attached() ) {

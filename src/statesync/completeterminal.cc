@@ -106,8 +106,9 @@ bool Complete::operator==( Complete const &x ) const
   return (terminal == x.terminal) && (echo_ack == x.echo_ack);
 }
 
-void Complete::set_echo_ack( uint64_t now )
+bool Complete::set_echo_ack( uint64_t now )
 {
+  bool ret = false;
   uint64_t newest_echo_ack = 0;
 
   for ( BOOST_AUTO( i, input_history.begin() ); i != input_history.end(); i++ ) {
@@ -118,10 +119,33 @@ void Complete::set_echo_ack( uint64_t now )
 
   input_history.remove_if( (&_1)->*&pair<uint64_t, uint64_t>::first < newest_echo_ack );
 
+  if ( echo_ack != newest_echo_ack ) {
+    ret = true;
+  }
+
   echo_ack = newest_echo_ack;
+
+  return ret;
 }
 
 void Complete::register_input_frame( uint64_t n, uint64_t now )
 {
   input_history.push_back( make_pair( n, now ) );
+}
+
+int Complete::wait_time( uint64_t now ) const
+{
+  if ( input_history.size() < 2 ) {
+    return INT_MAX;
+  }
+
+  BOOST_AUTO( it, input_history.begin() );
+  it++;
+
+  uint64_t next_echo_ack_time = it->second + ECHO_TIMEOUT;
+  if ( next_echo_ack_time <= now ) {
+    return 0;
+  } else {
+    return next_echo_ack_time - now;
+  }
 }
