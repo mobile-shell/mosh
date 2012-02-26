@@ -63,7 +63,8 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
 }
 
 Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
-					       uint64_t early_ack, uint64_t late_ack ) const
+					       uint64_t early_ack __attribute__((unused)),
+					       uint64_t late_ack ) const
 {
   if ( !active ) {
     return Inactive;
@@ -74,18 +75,14 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
     return IncorrectOrExpired;
   }
 
-  if ( unknown ) {
-    return CorrectNoCredit;
-  }
-
   const Cell &current = *( fb.get_cell( row, col ) );
 
   /* see if it hasn't been updated yet */
-  if ( early_ack < expiration_frame ) {
-    return Pending;
-  }
-
   if ( late_ack >= expiration_frame ) {
+    if ( unknown ) {
+      return CorrectNoCredit;
+    }
+
     if ( (current.contents == replacement.contents)
 	 || (current.is_blank() && replacement.is_blank()) ) {
       BOOST_AUTO( it, find_if( original_contents.begin(), original_contents.end(),
@@ -104,7 +101,9 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
   return Pending;
 }
 
-Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t early_ack, uint64_t late_ack ) const
+Validity ConditionalCursorMove::get_validity( const Framebuffer &fb,
+					      uint64_t early_ack __attribute((unused)),
+					      uint64_t late_ack ) const
 {
   if ( !active ) {
     return Inactive;
@@ -115,10 +114,6 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb, uint64_t ea
     assert( false );
     //    fprintf( stderr, "Crazy cursor (%d,%d)!\n", row, col );
     return IncorrectOrExpired;
-  }
-
-  if ( early_ack < expiration_frame ) {
-    return Pending;
   }
 
   if ( late_ack >= expiration_frame ) {
