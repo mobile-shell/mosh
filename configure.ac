@@ -14,6 +14,7 @@ AC_PROG_RANLIB
 
 # Checks for libraries.
 AC_SEARCH_LIBS([utempter_remove_added_record], [utempter], , [AC_MSG_ERROR([Unable to find libutempter.])])
+AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 AX_BOOST_BASE(, , [AC_MSG_ERROR([Unable to find boost libraries.])])
 
 # Checks for header files.
@@ -41,7 +42,6 @@ AC_CHECK_FUNCS([clock_gettime gettimeofday inet_ntoa iswprint memchr memset nl_l
 
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
-PKG_CHECK_MODULES([zlib], [zlib])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/crypto/Makefile src/frontend/Makefile src/network/Makefile src/protobufs/Makefile src/statesync/Makefile src/terminal/Makefile src/util/Makefile scripts/Makefile src/examples/Makefile man/Makefile])
 AC_OUTPUT
