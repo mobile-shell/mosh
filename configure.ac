@@ -60,6 +60,11 @@ fi
 
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
+# We want to replace -I with -isystem here to disable errors in the .h files
+# See http://code.google.com/p/protobuf/issues/detail?id=365
+protobuf_CFLAGS=`echo $protobuf_CFLAGS | sed 's/-I/-isystem /'`
+# Do the same for boost...
+BOOST_CPPFLAGS=`echo $BOOST_CPPFLAGS | sed 's/-I/-isystem /'`
 
 AC_CONFIG_FILES([Makefile src/Makefile src/crypto/Makefile src/frontend/Makefile src/network/Makefile src/protobufs/Makefile src/statesync/Makefile src/terminal/Makefile src/util/Makefile scripts/Makefile src/examples/Makefile man/Makefile])
 AC_OUTPUT
