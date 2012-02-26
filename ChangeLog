@@ -1,3 +1,9 @@
+2012-02-26 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 0.96 released.
+
+	* Compress all instructions with zlib
+
 2012-02-25 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.95 released.

@@ -21,6 +21,7 @@
 
 #include "transportfragment.h"
 #include "transportinstruction.pb.h"
+#include "compressor.h"
 
 using namespace Network;
 using namespace TransportBuffers;
@@ -121,7 +122,7 @@ Instruction FragmentAssembly::get_assembly( void )
   }
 
   Instruction ret;
-  assert( ret.ParseFromString( encoded ) );
+  assert( ret.ParseFromString( get_compressor().uncompress_str( encoded ) ) );
 
   fragments.clear();
   fragments_arrived = 0;
@@ -155,7 +156,7 @@ vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, int MTU )
   last_instruction = inst;
   last_MTU = MTU;
 
-  string payload = inst.SerializeAsString();
+  string payload = get_compressor().compress_str( inst.SerializeAsString() );
   uint16_t fragment_num = 0;
   vector<Fragment> ret;
 
