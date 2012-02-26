@@ -88,7 +88,7 @@ namespace Network {
       last_instruction.set_old_num( -1 );
       last_instruction.set_new_num( -1 );
     }
-    vector<Fragment> make_fragments( Instruction &inst, int MTU );
+    vector<Fragment> make_fragments( const Instruction &inst, int MTU );
     uint64_t last_ack_sent( void ) const { return last_instruction.ack_num(); }
   };
   

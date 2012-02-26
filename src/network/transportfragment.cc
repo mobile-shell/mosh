@@ -136,7 +136,7 @@ bool Fragment::operator==( const Fragment &x )
     && ( initialized == x.initialized ) && ( contents == x.contents );
 }
 
-vector<Fragment> Fragmenter::make_fragments( Instruction &inst, int MTU )
+vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, int MTU )
 {
   if ( (inst.old_num() != last_instruction.old_num())
        || (inst.new_num() != last_instruction.new_num())
