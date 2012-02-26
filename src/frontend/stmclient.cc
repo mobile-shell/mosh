@@ -16,12 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
+
 #include <locale.h>
 #include <string.h>
 #include <langinfo.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <pty.h>
 #include <stdlib.h>
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -30,6 +31,12 @@
 #include <signal.h>
 #include <sys/signalfd.h>
 #include <time.h>
+
+#if HAVE_PTY_H
+#include <pty.h>
+#elif HAVE_UTIL_H
+#include <util.h>
+#endif
 
 #include "stmclient.h"
 #include "swrite.h"
