@@ -106,11 +106,13 @@ void Connection::setup( void )
   }
 
   /* Disable path MTU discovery */
+#ifdef HAVE_IP_MTU_DISCOVER
   char flag = IP_PMTUDISC_DONT;
   socklen_t optlen = sizeof( flag );
   if ( setsockopt( sock, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
     throw NetworkException( "setsockopt", errno );
   }
+#endif
 }
 
 Connection::Connection( const char *desired_ip ) /* server */

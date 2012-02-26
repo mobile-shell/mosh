@@ -89,6 +89,11 @@ AC_CHECK_DECL([htobe64],
      [[#include <libkern/OSByteOrder.h>]])],
   [[#include <endian.h>]])
 
+AC_CHECK_DECL([IP_MTU_DISCOVER],
+  [AC_DEFINE([HAVE_IP_MTU_DISCOVER], [1],
+     [Define if IP_MTU_DISCOVER is a valid sockopt.])],
+  , [[#include <netinet/ip.h>]])
+
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 
