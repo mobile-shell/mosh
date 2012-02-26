@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(builddir)/../protobufs -I$(srcdir)/../util
-AM_CXXFLAGS = -pedantic -Wno-long-long -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe
+AM_CXXFLAGS = -pedantic -Wno-long-long -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe $(protobuf_CFLAGS)
 LDADD = ../crypto/libmoshcrypto.a ../network/libmoshnetwork.a ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../util/libmoshutil.a ../protobufs/libmoshprotos.a -lutil -lm $(protobuf_LIBS)
 
 bin_PROGRAMS = mosh-client mosh-server
