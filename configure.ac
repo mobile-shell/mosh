@@ -58,6 +58,10 @@ if test "x$ac_cv_have_decl_htobe64" != xyes; then
 					[[#include <libkern/OSByteOrder.h>]])
 fi
 
+AC_CHECK_DECL([IP_MTU_DISCOVER], [AC_DEFINE([HAVE_IP_MTU_DISCOVER], [1],
+				 [Define if IP_MTU_DISCOVER is a valid sockopt.])],
+				 , [[#include <netinet/ip.h>]])
+
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 # We want to replace -I with -isystem here to disable errors in the .h files
