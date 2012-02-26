@@ -2,8 +2,6 @@ AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) -fno-default-inline -pipe
 
 noinst_PROGRAMS = encrypt decrypt ntester parse termemu
 
-LIBS = $(protobuf_LIBS)
-
 encrypt_SOURCES = encrypt.cc
 encrypt_CPPFLAGS = -I$(srcdir)/../crypto
 encrypt_LDADD = ../crypto/libmoshcrypto.a
@@ -18,8 +16,8 @@ parse_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a -lutil
 
 termemu_SOURCES = termemu.cc
 termemu_CPPFLAGS = -I$(srcdir)/../terminal -I$(srcdir)/../util -I$(srcdir)/../statesync -I$(builddir)/../protobufs
-termemu_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a ../statesync/libmoshstatesync.a ../protobufs/libmoshprotos.a -lutil
+termemu_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a ../statesync/libmoshstatesync.a ../protobufs/libmoshprotos.a -lutil $(protobuf_LIBS)
 
 ntester_SOURCES = ntester.cc
 ntester_CPPFLAGS = -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(builddir)/../protobufs
-ntester_LDADD = ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a -lutil -lrt -lm
+ntester_LDADD = ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a -lutil -lrt -lm $(protobuf_LIBS)
