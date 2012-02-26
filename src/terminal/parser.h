@@ -31,10 +31,6 @@
 #include "parserstate.h"
 #include "parserstatefamily.h"
 
-#ifndef __STDC_ISO_10646__
-#error "Must have __STDC_ISO_10646__"
-#endif
-
 namespace Parser {
   static const StateFamily family;
 
