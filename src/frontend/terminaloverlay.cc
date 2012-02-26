@@ -83,6 +83,10 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
       return CorrectNoCredit;
     }
 
+    if ( replacement.is_blank() ) { /* too easy for this to trigger falsely */
+      return CorrectNoCredit;
+    }
+
     if ( (current.contents == replacement.contents)
 	 || (current.is_blank() && replacement.is_blank()) ) {
       BOOST_AUTO( it, find_if( original_contents.begin(), original_contents.end(),
