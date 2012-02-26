@@ -8,7 +8,7 @@ using namespace std;
 
 string Compressor::compress_str( const string input )
 {
-  size_t len = BUFFER_SIZE;
+  long unsigned int len = BUFFER_SIZE;
   assert( Z_OK == compress( buffer, &len,
 			    reinterpret_cast<const unsigned char *>( input.data() ),
 			    input.size() ) );
@@ -17,7 +17,7 @@ string Compressor::compress_str( const string input )
 
 string Compressor::uncompress_str( const string input )
 {
-  size_t len = BUFFER_SIZE;
+  long unsigned int len = BUFFER_SIZE;
   assert( Z_OK == uncompress( buffer, &len,
 			      reinterpret_cast<const unsigned char *>( input.data() ),
 			      input.size() ) );

@@ -1,3 +1,11 @@
+mosh (0.96a-1) unstable; urgency=low
+
+  * Version 0.96a released.
+
+  * Fix build problem on i386
+
+ -- Keith Winstein <keithw@mit.edu>  Sun, 26 Feb 2012 13:49:44 -0500
+
 mosh (0.96-1) unstable; urgency=low
 
   * Version 0.96 released.
