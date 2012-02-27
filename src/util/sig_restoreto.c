@@ -3,7 +3,7 @@
 /* MT-unsafe */
 
 #include <signal.h>
-#include "sig.h"
+#include "selfpipe-internal.h"
 
 void sig_restoreto (sigset_t const *set, unsigned int n)
 {

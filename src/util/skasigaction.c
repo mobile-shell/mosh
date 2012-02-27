@@ -1,10 +1,11 @@
 /* ISC license. */
 
-#include <signal.h>
-#include "sysdeps.h"
-#include "sig.h"
+#include "config.h"
 
-#ifdef HASSIGACTION
+#include <signal.h>
+#include "selfpipe-internal.h"
+
+#ifdef HAVE_SIGACTION
 
 int skasigaction (int sig, struct skasigaction const *new, struct skasigaction *old)
 {

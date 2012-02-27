@@ -2,13 +2,13 @@
 
 /* MT-unsafe */
 
+#include "config.h"
+
 #include <signal.h>
-#include "sysdeps.h"
-#include "djbunix.h"
 #include "selfpipe-internal.h"
 #include "selfpipe.h"
 
-#ifdef HASSIGNALFD
+#ifdef HAVE_SIGNALFD
 
 void selfpipe_finish (void)
 {
@@ -19,9 +19,6 @@ void selfpipe_finish (void)
 }
 
 #else
-
-#include "sig.h"
-#include "nsig.h"
 
 void selfpipe_finish (void)
 {

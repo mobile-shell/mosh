@@ -2,7 +2,6 @@
 
 #include <unistd.h>
 #include <errno.h>
-#include "djbunix.h"
 
 int fd_close (int fd)
 {

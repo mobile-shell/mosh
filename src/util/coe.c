@@ -1,7 +1,6 @@
 /* ISC license. */
 
 #include <fcntl.h>
-#include "djbunix.h"
 
 int coe (int fd)
 {

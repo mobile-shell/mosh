@@ -2,7 +2,6 @@
 
 #include <unistd.h>
 #include <errno.h>
-#include "allreadwrite.h"
 
 int fd_write (int fd, char const *buf, unsigned int len)
 {

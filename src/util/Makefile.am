@@ -1,4 +1,5 @@
 AM_CXXFLAGS = -pedantic -Wno-long-long -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe
+AM_CPPFLAGS = -pedantic -Wno-long-long -Werror -Wall -Wextra -pipe
 
 noinst_LIBRARIES = libmoshutil.a
 

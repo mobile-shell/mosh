@@ -18,6 +18,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <locale.h>
 #include <string.h>
 #include <langinfo.h>
@@ -29,7 +30,6 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <signal.h>
-#include <sys/signalfd.h>
 #include <time.h>
 
 #if HAVE_PTY_H
@@ -37,6 +37,8 @@
 #elif HAVE_UTIL_H
 #include <util.h>
 #endif
+
+#include "selfpipe.h"
 
 #include "stmclient.h"
 #include "swrite.h"
@@ -101,37 +103,21 @@ void STMClient::shutdown( void )
 void STMClient::main_init( void )
 {
   /* establish WINCH fd and start listening for signal */
-  sigset_t signal_mask;
-  assert( sigemptyset( &signal_mask ) == 0 );
-  assert( sigaddset( &signal_mask, SIGWINCH ) == 0 );
-
-  /* stop "ignoring" WINCH signal */
-  assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
-
-  winch_fd = signalfd( -1, &signal_mask, 0 );
-  if ( winch_fd < 0 ) {
-    perror( "signalfd" );
+  signal_fd = selfpipe_init();
+  if ( signal_fd < 0 ) {
+    perror( "selfpipe" );
     return;
   }
+
+  assert( selfpipe_trap(SIGWINCH) == 0 );
 
   /* establish fd for shutdown signals */
-  assert( sigemptyset( &signal_mask ) == 0 );
-  assert( sigaddset( &signal_mask, SIGTERM ) == 0 );
-  assert( sigaddset( &signal_mask, SIGINT ) == 0 );
-  assert( sigaddset( &signal_mask, SIGHUP ) == 0 );
-  assert( sigaddset( &signal_mask, SIGPIPE ) == 0 );
-  assert( sigaddset( &signal_mask, SIGTSTP ) == 0 );
-  assert( sigaddset( &signal_mask, SIGSTOP ) == 0 );
-  assert( sigaddset( &signal_mask, SIGCONT ) == 0 );
-
-  /* don't let signals kill us */
-  assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
-
-  shutdown_signal_fd = signalfd( -1, &signal_mask, 0 );
-  if ( shutdown_signal_fd < 0 ) {
-    perror( "signalfd" );
-    return;
-  }
+  assert( selfpipe_trap( SIGTERM ) == 0 );
+  assert( selfpipe_trap( SIGINT ) == 0 );
+  assert( selfpipe_trap( SIGHUP ) == 0 );
+  assert( selfpipe_trap( SIGPIPE ) == 0 );
+  assert( selfpipe_trap( SIGTSTP ) == 0 );
+  assert( selfpipe_trap( SIGCONT ) == 0 );
 
   /* get initial window size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -256,10 +242,6 @@ bool STMClient::process_user_input( int fd )
 
 bool STMClient::process_resize( void )
 {
-  struct signalfd_siginfo info;
-  assert( read( winch_fd, &info, sizeof( info ) ) == sizeof( info ) );
-  assert( info.ssi_signo == SIGWINCH );
-  
   /* get new size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
     perror( "ioctl TIOCGWINSZ" );
@@ -287,7 +269,7 @@ void STMClient::main( void )
   main_init();
 
   /* prepare to poll for events */
-  struct pollfd pollfds[ 4 ];
+  struct pollfd pollfds[ 3 ];
 
   pollfds[ 0 ].fd = network->fd();
   pollfds[ 0 ].events = POLLIN;
@@ -295,18 +277,17 @@ void STMClient::main( void )
   pollfds[ 1 ].fd = STDIN_FILENO;
   pollfds[ 1 ].events = POLLIN;
 
-  pollfds[ 2 ].fd = winch_fd;
+  pollfds[ 2 ].fd = signal_fd;
   pollfds[ 2 ].events = POLLIN;
-
-  pollfds[ 3 ].fd = shutdown_signal_fd;
-  pollfds[ 3 ].events = POLLIN;
 
   while ( 1 ) {
     try {
       output_new_frame();
 
-      int active_fds = poll( pollfds, 4, min( network->wait_time(), overlays.wait_time() ) );
-      if ( active_fds < 0 ) {
+      int active_fds = poll( pollfds, 3, min( network->wait_time(), overlays.wait_time() ) );
+      if ( active_fds < 0 && errno == EINTR ) {
+	continue;
+      } else if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;
       }
@@ -329,26 +310,20 @@ void STMClient::main( void )
       }
 
       if ( pollfds[ 2 ].revents & POLLIN ) {
-	/* resize */
-	if ( !process_resize() ) { return; }
-      }
+	int signo = selfpipe_read();
 
-      if ( pollfds[ 3 ].revents & POLLIN ) {
-	/* shutdown signal */
-	struct signalfd_siginfo the_siginfo;
-	ssize_t bytes_read = read( pollfds[ 3 ].fd, &the_siginfo, sizeof( the_siginfo ) );
-	if ( bytes_read == 0 ) {
-	  break;
-	} else if ( bytes_read < 0 ) {
-	  perror( "read" );
-	  break;
-	}
+	if ( signo == SIGWINCH ) {
+	  /* resize */
+	  if ( !process_resize() ) { return; }
+	} else if ( signo > 0 ) {
+	  /* shutdown signal */
 
-	if ( !network->attached() ) {
-	  break;
-	} else if ( !network->shutdown_in_progress() ) {
-	  overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ) );
-	  network->start_shutdown();
+	  if ( !network->attached() ) {
+	    break;
+	  } else if ( !network->shutdown_in_progress() ) {
+	    overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ) );
+	    network->start_shutdown();
+	  }
 	}
       }
 

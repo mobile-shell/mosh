@@ -1,8 +1,8 @@
 /* ISC license. */
 
 #include <errno.h>
-#include "allreadwrite.h"
-#include "error.h"
+
+#define error_isagain(e) (((e) == EAGAIN) || ((e) == EWOULDBLOCK))
 
 int sanitize_read (int r)
 {

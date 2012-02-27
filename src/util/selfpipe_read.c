@@ -2,12 +2,12 @@
 
 /* MT-unsafe */
 
-#include "sysdeps.h"
-#include "allreadwrite.h"
+#include "config.h"
+
 #include "selfpipe-internal.h"
 #include "selfpipe.h"
 
-#ifdef HASSIGNALFD
+#ifdef HAVE_SIGNALFD
 
 #include <sys/signalfd.h>
 

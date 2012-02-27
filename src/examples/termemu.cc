@@ -35,7 +35,6 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/signalfd.h>
 #include <termios.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -55,6 +54,8 @@
 #include "parser.h"
 #include "completeterminal.h"
 #include "swrite.h"
+
+#include "selfpipe.h"
 
 const size_t buf_size = 16384;
 
@@ -198,18 +199,13 @@ bool tick( Terminal::Framebuffer &state, const Terminal::Framebuffer &new_frame 
 void emulate_terminal( int fd )
 {
   /* establish WINCH fd and start listening for signal */
-  sigset_t signal_mask;
-  assert( sigemptyset( &signal_mask ) == 0 );
-  assert( sigaddset( &signal_mask, SIGWINCH ) == 0 );
-
-  /* stop "ignoring" WINCH signal */
-  assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
-
-  int winch_fd = signalfd( -1, &signal_mask, 0 );
-  if ( winch_fd < 0 ) {
-    perror( "signalfd" );
+  int signal_fd = selfpipe_init();
+  if ( signal_fd < 0 ) {
+    perror( "selfpipe" );
     return;
   }
+
+  assert( selfpipe_trap(SIGWINCH) == 0 );
 
   /* get current window size */
   struct winsize window_size;
@@ -236,7 +232,7 @@ void emulate_terminal( int fd )
   pollfds[ 1 ].fd = fd;
   pollfds[ 1 ].events = POLLIN;
 
-  pollfds[ 2 ].fd = winch_fd;
+  pollfds[ 2 ].fd = signal_fd;
   pollfds[ 2 ].events = POLLIN;
 
   swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
@@ -245,7 +241,9 @@ void emulate_terminal( int fd )
 
   while ( 1 ) {
     int active_fds = poll( pollfds, 3, poll_timeout );
-    if ( active_fds < 0 ) {
+    if ( active_fds < 0 && errno == EINTR ) {
+      continue;
+    } else if ( active_fds < 0 ) {
       perror( "poll" );
       break;
     }
@@ -292,9 +290,7 @@ void emulate_terminal( int fd )
       }
     } else if ( pollfds[ 2 ].revents & POLLIN ) {
       /* resize */
-      struct signalfd_siginfo info;
-      assert( read( winch_fd, &info, sizeof( info ) ) == sizeof( info ) );
-      assert( info.ssi_signo == SIGWINCH );
+      assert( selfpipe_read() == SIGWINCH );
 
       /* get new size */
       if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {

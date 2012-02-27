@@ -1,7 +1,8 @@
 /* ISC license. */
 
-#include "sysdeps.h"
-#ifdef HASPIPE2
+#include "config.h"
+
+#ifdef HAVE_PIPE2
 # define _GNU_SOURCE
 # include <fcntl.h>
 #else
@@ -9,7 +10,8 @@
 #endif
 
 #include <unistd.h>
-#include "djbunix.h"
+
+#include "selfpipe-internal.h"
 
 int pipe_internal (int *p, unsigned int flags)
 {

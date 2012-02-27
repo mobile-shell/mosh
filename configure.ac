@@ -51,6 +51,10 @@ AC_CHECK_DECL([signalfd], [AC_DEFINE([HAVE_SIGNALFD], [1],
 				    [Define if signalfd is available.])],
 				    , [[#include <sys/signalfd.h>]])
 
+AC_CHECK_DECL([pipe2], [AC_DEFINE([HAVE_PIPE2], [1],
+		       [Define if pipe2 is available.])],
+		       , [[#define _GNU_SOURCE], [#include <unistd.h>]])
+
 AC_CHECK_DECL([_NSGetEnviron], [AC_DEFINE([HAVE_NSGETENVIRON], [1],
 			       [Define if _NSGetEnviron must be used to get the environment.])],
 			       , [[#include <crt_externs.h>]])

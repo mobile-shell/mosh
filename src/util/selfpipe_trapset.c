@@ -2,13 +2,14 @@
 
 /* MT-unsafe */
 
+#include "config.h"
+
 #include <errno.h>
 #include <signal.h>
-#include "sysdeps.h"
 #include "selfpipe-internal.h"
 #include "selfpipe.h"
 
-#ifdef HASSIGNALFD
+#ifdef HAVE_SIGNALFD
 
 #include <sys/signalfd.h>
 
@@ -29,9 +30,6 @@ int selfpipe_trapset (sigset_t const *set)
 }
 
 #else
-
-#include "sig.h"
-#include "nsig.h"
 
 int selfpipe_trapset (sigset_t const *set)
 {

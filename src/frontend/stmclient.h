@@ -36,7 +36,7 @@ private:
 
   struct termios saved_termios, raw_termios;
 
-  int winch_fd, shutdown_signal_fd;
+  int signal_fd;
   struct winsize window_size;
 
   Terminal::Framebuffer *local_framebuffer;
@@ -56,7 +56,7 @@ public:
   STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode )
     : ip( s_ip ), port( s_port ), key( s_key ),
       saved_termios(), raw_termios(),
-      winch_fd(), shutdown_signal_fd(),
+      signal_fd(),
       window_size(),
       local_framebuffer( NULL ),
       overlays(),

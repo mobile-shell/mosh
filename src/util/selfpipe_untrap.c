@@ -2,13 +2,14 @@
 
 /* MT-unsafe */
 
+#include "config.h"
+
 #include <errno.h>
 #include <signal.h>
-#include "sysdeps.h"
 #include "selfpipe-internal.h"
 #include "selfpipe.h"
 
-#ifdef HASSIGNALFD
+#ifdef HAVE_SIGNALFD
 
 #include <sys/signalfd.h>
 
@@ -37,8 +38,6 @@ int selfpipe_untrap (int sig)
 }
 
 #else
-
-#include "sig.h"
 
 int selfpipe_untrap (int sig)
 {
