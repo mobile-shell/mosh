@@ -18,13 +18,13 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <locale.h>
 #include <string.h>
 #include <langinfo.h>
 #include <termios.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <pty.h>
 #include <stdlib.h>
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -32,7 +32,6 @@
 #include <pwd.h>
 #include <typeinfo>
 #include <signal.h>
-#include <sys/signalfd.h>
 #ifdef HAVE_UTEMPTER
 #include <utempter.h>
 #endif
@@ -40,9 +39,19 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+extern "C" {
+#include "selfpipe.h"
+}
+
 #include "completeterminal.h"
 #include "swrite.h"
 #include "user.h"
+
+#if HAVE_PTY_H
+#include <pty.h>
+#elif HAVE_UTIL_H
+#include <util.h>
+#endif
 
 #include "networktransport.cc"
 
@@ -222,17 +231,14 @@ int main( int argc, char *argv[] )
 void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
 {
   /* establish fd for shutdown signals */
-  sigset_t signal_mask;
-
-  assert( sigemptyset( &signal_mask ) == 0 );
-  assert( sigaddset( &signal_mask, SIGTERM ) == 0 );
-  assert( sigaddset( &signal_mask, SIGINT ) == 0 );
-
-  int shutdown_signal_fd = signalfd( -1, &signal_mask, 0 );
-  if ( shutdown_signal_fd < 0 ) {
-    perror( "signalfd" );
+  int signal_fd = selfpipe_init();
+  if ( signal_fd < 0 ) {
+    perror( "selfpipe" );
     return;
   }
+
+  assert( selfpipe_trap( SIGTERM ) == 0 );
+  assert( selfpipe_trap( SIGINT ) == 0 );
 
   /* prepare to poll for events */
   struct pollfd pollfds[ 3 ];
@@ -243,7 +249,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   pollfds[ 1 ].fd = host_fd;
   pollfds[ 1 ].events = POLLIN;
 
-  pollfds[ 2 ].fd = shutdown_signal_fd;
+  pollfds[ 2 ].fd = signal_fd;
   pollfds[ 2 ].events = POLLIN;
 
   uint64_t last_remote_num = network.get_remote_state_num();
@@ -266,7 +272,9 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       }
 
       int active_fds = poll( pollfds, 3, poll_timeout );
-      if ( active_fds < 0 ) {
+      if ( active_fds < 0 && errno == EINTR ) {
+	continue;
+      } else if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;
       }
@@ -364,12 +372,11 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       if ( pollfds[ 2 ].revents & POLLIN ) {
 	/* shutdown signal */
-	struct signalfd_siginfo the_siginfo;
-	ssize_t bytes_read = read( pollfds[ 2 ].fd, &the_siginfo, sizeof( the_siginfo ) );
-	if ( bytes_read == 0 ) {
+	int signo = selfpipe_read();
+	if ( signo == 0 ) {
 	  break;
-	} else if ( bytes_read < 0 ) {
-	  perror( "read" );
+	} else if ( signo < 0 ) {
+	  perror( "selfpipe_read" );
 	  break;
 	}
 
