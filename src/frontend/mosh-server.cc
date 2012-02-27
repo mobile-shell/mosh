@@ -40,6 +40,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#ifdef HAVE_NSGETENVIRON
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
+#endif
+
 #include "completeterminal.h"
 #include "swrite.h"
 #include "user.h"

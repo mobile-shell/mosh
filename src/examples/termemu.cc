@@ -32,6 +32,7 @@
 #include <wctype.h>
 #include <iostream>
 #include <typeinfo>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/signalfd.h>
@@ -44,6 +45,11 @@
 #include <pty.h>
 #elif HAVE_UTIL_H
 #include <util.h>
+#endif
+
+#ifdef HAVE_NSGETENVIRON
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
 #endif
 
 #include "parser.h"
