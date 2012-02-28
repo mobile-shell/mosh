@@ -179,7 +179,7 @@ int main( int argc, char *argv[] )
     assert( my_argv[ 0 ] );
     my_argv[ 1 ] = NULL;
     
-    if ( execve( pw->pw_shell, my_argv, environ ) < 0 ) {
+    if ( execv( pw->pw_shell, my_argv ) < 0 ) {
       perror( "execve" );
       exit( 1 );
     }
