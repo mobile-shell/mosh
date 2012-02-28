@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(srcdir)/../terminal -I$(builddir)/../protobufs
-AM_CXXFLAGS = -pedantic -Wno-long-long -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe
+AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) -fno-default-inline -pipe
 
 noinst_LIBRARIES = libmoshstatesync.a
 

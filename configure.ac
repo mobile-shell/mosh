@@ -12,6 +12,33 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_RANLIB
 
+WARNING_CXXFLAGS=""
+PICKY_CXXFLAGS=""
+AC_ARG_ENABLE([compile-warnings],
+  [AS_HELP_STRING([--enable-compile-warnings@<:@=no/yes/maximum/error],
+     [Turn on compiler warnings])],
+  [case "$enableval" in
+     no)
+       ;;
+     '' | yes)
+       WARNING_CXXFLAGS="-Wall"
+       ;;
+     maximum)
+       WARNING_CXXFLAGS="-Wall"
+       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++"
+       ;;
+     error)
+       WARNING_CXXFLAGS="-Wall -Werror"
+       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++"
+       ;;
+     *)
+       AC_MSG_ERROR([Unknown argument '$enableval' to --enable-compile-warnings])
+       ;;
+   esac],
+  [WARNING_CXXFLAGS="-Wall"])
+AC_SUBST([WARNING_CXXFLAGS])
+AC_SUBST([PICKY_CXXFLAGS])
+
 # Checks for libraries.
 AC_SEARCH_LIBS([utempter_remove_added_record], [utempter], , [AC_MSG_ERROR([Unable to find libutempter.])])
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])

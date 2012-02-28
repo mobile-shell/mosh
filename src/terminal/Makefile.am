@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(srcdir)/../util
-AM_CXXFLAGS = -pedantic -Wno-long-long -Werror -Wall -Wextra -Weffc++ -fno-default-inline -pipe
+AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) -fno-default-inline -pipe
 
 noinst_LIBRARIES = libmoshterminal.a
 
