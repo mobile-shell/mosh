@@ -92,7 +92,7 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MBRTOWC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([gettimeofday inet_ntoa iswprint memchr memset nl_langinfo setenv setlocale socket strchr strdup strerror strtol wcwidth])
+AC_CHECK_FUNCS([gettimeofday inet_ntoa iswprint memchr memset nl_langinfo setenv setlocale sigaction socket strchr strdup strerror strtol wcwidth])
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
@@ -100,6 +100,17 @@ AC_CHECK_DECL([mach_absolute_time],
   [AC_DEFINE([HAVE_MACH_ABSOLUTE_TIME], [1],
      [Define if mach_absolute_time is available.])],
   , [[#include <mach/mach_time.h>]])
+
+AC_CHECK_DECL([pipe2],
+  [AC_DEFINE([HAVE_PIPE2], [1],
+     [Define if pipe2 is available.])],
+  , [[#define _GNU_SOURCE
+      #include <unistd.h>]])
+
+AC_CHECK_DECL([signalfd],
+  [AC_DEFINE([HAVE_SIGNALFD], [1],
+     [Define if signalfd is available.])],
+  , [[#include <sys/signalfd.h>]])
 
 AC_CHECK_DECL([htobe64],
   [AC_DEFINE([HAVE_HTOBE64], [1],
