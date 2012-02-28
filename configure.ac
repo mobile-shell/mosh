@@ -49,6 +49,28 @@ AC_SEARCH_LIBS([utempter_remove_added_record], [utempter],
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 AX_BOOST_BASE(, , [AC_MSG_ERROR([Unable to find boost libraries.])])
 
+AC_ARG_WITH([skalibs],
+  [AS_HELP_STRING([--with-skalibs[=DIR]],
+     [root directory of skalibs installation])],
+  [with_skalibs=$withval
+   AS_IF([test x"$withval" != xyes],
+     [SKALIBS_CPPFLAGS="-I$withval/include"
+      SKALIBS_LDFLAGS="-L$withval/lib"])])
+AC_ARG_WITH([skalibs-include],
+  [AS_HELP_STRING([--with-skalibs-include=DIR],
+     [specify exact include dir for skalibs headers])],
+  [SKALIBS_CPPFLAGS="-I$withval"])
+AC_ARG_WITH([skalibs-libdir],
+  [AS_HELP_STRING([--with-skalibs-libdir=DIR],
+     [specify exact library dir for skalibs libraries])],
+  [SKALIBS_LDFLAGS="-L$withval"])
+
+AX_CHECK_LIBRARY([SKALIBS], [selfpipe.h], [stddjb], [],
+  [AC_MSG_ERROR([Unable to find skalibs.])])
+
+AC_SUBST([STDDJB_CPPFLAGS], ["$SKALIBS_CPPFLAGS"])
+AC_SUBST([STDDJB_LDFLAGS], ["$SKALIBS_LDFLAGS -lstddjb"])
+
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h pty.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h termios.h unistd.h util.h wchar.h wctype.h])
 
