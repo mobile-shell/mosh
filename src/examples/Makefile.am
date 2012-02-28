@@ -18,8 +18,13 @@ parse_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a -lutil $(BOOST
 termemu_SOURCES = termemu.cc
 termemu_CPPFLAGS = -I$(srcdir)/../terminal -I$(srcdir)/../util -I$(srcdir)/../statesync -I$(builddir)/../protobufs
 termemu_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a ../statesync/libmoshstatesync.a ../protobufs/libmoshprotos.a -lutil $(BOOST_LDFLAGS) $(protobuf_LIBS)
-termemu_CPPFLAGS += $(STDDJB_CPPFLAGS)
-termemu_LDADD += $(STDDJB_LDFLAGS)
+if COND_THIRD_LIBSTDDJB
+  termemu_CPPFLAGS += -I$(top_srcdir)/third/libstddjb
+  termemu_LDADD += $(top_builddir)/third/libstddjb/libstddjb.a
+else
+  termemu_CPPFLAGS += $(STDDJB_CPPFLAGS)
+  termemu_LDADD += $(STDDJB_LDFLAGS)
+endif
 
 ntester_SOURCES = ntester.cc
 ntester_CPPFLAGS = -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(builddir)/../protobufs $(BOOST_CPPFLAGS)

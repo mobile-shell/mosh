@@ -1,0 +1,4 @@
+SUBDIRS =
+if COND_THIRD_LIBSTDDJB
+  SUBDIRS += libstddjb
+endif

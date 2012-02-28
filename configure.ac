@@ -10,6 +10,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
+AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
 AC_PATH_PROG([PROTOC], [protoc], [AC_MSG_ERROR([protoc is not found])])
@@ -55,7 +56,8 @@ AC_ARG_WITH([skalibs],
   [with_skalibs=$withval
    AS_IF([test x"$withval" != xyes],
      [SKALIBS_CPPFLAGS="-I$withval/include"
-      SKALIBS_LDFLAGS="-L$withval/lib"])])
+      SKALIBS_LDFLAGS="-L$withval/lib"])],
+  [with_skalibs=no])
 AC_ARG_WITH([skalibs-include],
   [AS_HELP_STRING([--with-skalibs-include=DIR],
      [specify exact include dir for skalibs headers])],
@@ -65,11 +67,12 @@ AC_ARG_WITH([skalibs-libdir],
      [specify exact library dir for skalibs libraries])],
   [SKALIBS_LDFLAGS="-L$withval"])
 
-AX_CHECK_LIBRARY([SKALIBS], [selfpipe.h], [stddjb], [],
-  [AC_MSG_ERROR([Unable to find skalibs.])])
-
-AC_SUBST([STDDJB_CPPFLAGS], ["$SKALIBS_CPPFLAGS"])
-AC_SUBST([STDDJB_LDFLAGS], ["$SKALIBS_LDFLAGS -lstddjb"])
+AM_CONDITIONAL([COND_THIRD_LIBSTDDJB], [test x"$with_skalibs" = xno])
+AS_IF([test x"$with_skalibs" != xno],
+  [AX_CHECK_LIBRARY([SKALIBS], [selfpipe.h], [stddjb], [],
+     [AC_MSG_ERROR([Unable to find skalibs.])])
+   AC_SUBST([STDDJB_CPPFLAGS], ["$SKALIBS_CPPFLAGS"])
+   AC_SUBST([STDDJB_LDFLAGS], ["$SKALIBS_LDFLAGS -lstddjb"])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h pty.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h termios.h unistd.h util.h wchar.h wctype.h])
@@ -130,5 +133,20 @@ AC_CHECK_DECL([IP_MTU_DISCOVER],
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 
-AC_CONFIG_FILES([Makefile src/Makefile src/crypto/Makefile src/frontend/Makefile src/network/Makefile src/protobufs/Makefile src/statesync/Makefile src/terminal/Makefile src/util/Makefile scripts/Makefile src/examples/Makefile man/Makefile])
+AC_CONFIG_FILES([
+  Makefile
+  third/Makefile
+  third/libstddjb/Makefile
+  src/Makefile
+  src/crypto/Makefile
+  src/frontend/Makefile
+  src/network/Makefile
+  src/protobufs/Makefile
+  src/statesync/Makefile
+  src/terminal/Makefile
+  src/util/Makefile
+  scripts/Makefile
+  src/examples/Makefile
+  man/Makefile
+])
 AC_OUTPUT
