@@ -6,7 +6,7 @@ AM_CXXFLAGS = $(WARNING_CXXFLAGS) -fno-default-inline -pipe
 SUFFIXES = .proto .pb.cc
 
 .proto.pb.cc:
-	$(AM_V_GEN)$(PROTOC) --cpp_out=$(builddir) -I$(srcdir) $<
+	$(AM_V_GEN)$(PROTOC) --cpp_out=. -I$(srcdir) $<
 
 noinst_LIBRARIES = libmoshprotos.a
 
