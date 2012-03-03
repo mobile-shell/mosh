@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Keith Winstein <keithw@mit.edu>
 Build-Depends: debhelper (>= 7.0.0), autotools-dev, protobuf-compiler, libprotobuf-dev, dh-autoreconf, pkg-config, libutempter-dev, libboost-dev, zlib1g-dev
-Standards-Version: 3.9.2
+Standards-Version: 3.9.3
 Homepage: http://mosh.mit.edu
 Vcs-Git: git://github.com/keithw/mosh.git
 Vcs-Browser: http://github.com/keithw/mosh

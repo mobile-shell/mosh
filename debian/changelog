@@ -1,3 +1,9 @@
+mosh (0.96a-2) unstable; urgency=low
+
+  * Update copyright file to include public domain files and other licenses
+
+ -- Keith Winstein <keithw@mit.edu>  Sat, 03 Mar 2012 14:05:15 -0500
+
 mosh (0.96a-1) unstable; urgency=low
 
   * Version 0.96a released.
