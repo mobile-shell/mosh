@@ -74,6 +74,7 @@ License: ISC
  (also found in ocb-license.html in the Mosh source distribution).
 
 Files: src/crypto/ae.h
+Copyright: public-domain
 License: public-domain
  This file is in the public domain. It is provided "as is", without
  warranty of any kind. Use at your own risk.
@@ -81,6 +82,7 @@ License: public-domain
  Comments are welcome: Ted Krovetz <ted@krovetz>.
 
 Files: src/crypto/rijndael-alg-fst.*
+Copyright: public-domain
 License: public-domain
  @author Vincent Rijmen <vincent.rijmen@esat.kuleuven.ac.be>
  @author Antoon Bosselaers <antoon.bosselaers@esat.kuleuven.ac.be>
