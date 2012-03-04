@@ -23,7 +23,7 @@ License: GPL-3+
 
 Files: m4/pkg.m4
 Copyright: 2004 Scott James Remnant <scott@netsplit.com>
-License: GPL-2
+License: GPL-2+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -74,7 +74,7 @@ License: ISC
  (also found in ocb-license.html in the Mosh source distribution).
 
 Files: src/crypto/ae.h
-Copyright: public-domain
+Copyright: none
 License: public-domain
  This file is in the public domain. It is provided "as is", without
  warranty of any kind. Use at your own risk.
@@ -82,7 +82,7 @@ License: public-domain
  Comments are welcome: Ted Krovetz <ted@krovetz>.
 
 Files: src/crypto/rijndael-alg-fst.*
-Copyright: public-domain
+Copyright: none
 License: public-domain
  @author Vincent Rijmen <vincent.rijmen@esat.kuleuven.ac.be>
  @author Antoon Bosselaers <antoon.bosselaers@esat.kuleuven.ac.be>
