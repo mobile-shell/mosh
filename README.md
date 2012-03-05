@@ -1,5 +1,5 @@
-Mosh -- the mobile shell
-------------------------
+Mosh: the mobile shell
+======================
 
 Mosh is a remote terminal application that supports intermittent
 connectivity, allows roaming, and provides speculative local echo
@@ -34,7 +34,9 @@ It aims to support the typical interactive uses of SSH, plus:
 Mosh does not support X forwarding or the non-interactive uses of SSH,
 including port forwarding.
 
-Other features:
+
+Other features
+--------------
 
    * Mosh adjusts its frame rate so as not to fill up network queues
      on slow links, so "Control-C" always works within an RTT to halt
@@ -53,26 +55,30 @@ Other features:
    * Mosh leverages SSH to set up the connection and authenticate
      users. Mosh does not contain any privileged (root) code.
 
-Usage:
 
-  The mosh-client binary must be installed on the user's machine, and
-  the mosh-server binary on the remote host.
+Usage
+-----
+
+  The `mosh-client` binary must be installed on the user's machine, and
+  the `mosh-server` binary on the remote host.
 
   The user runs:
 
-  $ mosh [user@]host
+    $ mosh [user@]host
 
-  If the mosh-client or mosh-server binaries are installed outside the
-  user's PATH, mosh accepts the arguments --client=PATH and
-  --server=PATH to select alternate locations.
+  If the `mosh-client` or `mosh-server` binaries are installed outside the
+  user's PATH, mosh accepts the arguments `--client=PATH` and
+  `--server=PATH` to select alternate locations.
 
-How it works:
 
-  The mosh program will SSH to user@host to establish the connection.
+How it works
+------------
+
+  The mosh program will SSH to `user@host` to establish the connection.
   SSH may prompt the user for a password or use public-key
   authentication to log in.
 
-  From this point, mosh runs the 'mosh-server' process (as the user)
+  From this point, mosh runs the `mosh-server` process (as the user)
   on the server machine. The server process listens on a high UDP port
   and sends its port number and an AES-128 secret key back to the
   client over SSH. The SSH connection is then shut down and the
@@ -85,12 +91,14 @@ How it works:
   between client and server. Sites that have these ports firewalled
   would not be able to use Mosh.
 
-More info:
+
+More info
+---------
 
   * Mosh Web site:
 
-    http://mosh.mit.edu
+    <http://mosh.mit.edu>
 
-  * mosh-users@mit.edu mailing list:
+  * `mosh-users@mit.edu` mailing list:
 
-    http://mailman.mit.edu/mailman/listinfo/mosh-users
+    <http://mailman.mit.edu/mailman/listinfo/mosh-users>
