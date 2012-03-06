@@ -16,7 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <pty.h>
+#include "config.h"
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +32,12 @@
 #include <wctype.h>
 #include <iostream>
 #include <typeinfo>
+
+#if HAVE_PTY_H
+#include <pty.h>
+#elif HAVE_UTIL_H
+#include <util.h>
+#endif
 
 #include "parser.h"
 #include "swrite.h"

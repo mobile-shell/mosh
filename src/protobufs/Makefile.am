@@ -1,8 +1,7 @@
 source = userinput.proto hostinput.proto transportinstruction.proto
 
-PROTOC = protoc
 AM_CPPFLAGS = $(protobuf_CFLAGS)
-AM_CXXFLAGS = -pedantic -Wno-long-long -Werror -Wall -fno-default-inline -pipe
+AM_CXXFLAGS = -Wno-long-long -Werror -Wall -fno-default-inline -pipe
 
 SUFFIXES = .proto .pb.cc
 
