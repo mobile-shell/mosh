@@ -254,6 +254,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       }
 
       now = Network::timestamp();
+      uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
 
       if ( pollfds[ 0 ].revents & POLLIN ) {
 	/* packet received from the network */
@@ -392,7 +393,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       /* update utmp if has been more than 10 seconds since heard from client */
       if ( connected_utmp ) {
-	if ( network.get_latest_remote_state().timestamp < now - 10000 ) {
+	if ( time_since_remote_state > 10000 ) {
 	  utempter_remove_added_record();
 
 	  char tmp[ 64 ];
