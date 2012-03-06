@@ -109,10 +109,13 @@ int main( int argc, char *argv[] )
   /* don't let signals kill us */
   sigset_t signals_to_block;
 
-  assert( sigemptyset( &signals_to_block ) == 0 );
-  assert( sigaddset( &signals_to_block, SIGHUP ) == 0 );
-  assert( sigaddset( &signals_to_block, SIGPIPE ) == 0 );
-  assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
+  if ( sigemptyset( &signals_to_block )
+       || sigaddset( &signals_to_block, SIGHUP )
+       || sigaddset( &signals_to_block, SIGPIPE )
+       || sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) ) {
+    perror( "blocking signals" );
+    exit( 1 );
+  }
 
   struct termios child_termios;
 
@@ -153,8 +156,11 @@ int main( int argc, char *argv[] )
 
     /* unblock signals */
     sigset_t signals_to_block;
-    assert( sigemptyset( &signals_to_block ) == 0 );
-    assert( sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) == 0 );
+    if ( sigemptyset( &signals_to_block )
+         || sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) ) {
+      perror( "unblocking signals" );
+      exit( 1 );
+    }
 
     /* set TERM */
     if ( setenv( "TERM", "xterm", true ) < 0 ) {
@@ -235,8 +241,11 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
     return;
   }
 
-  assert( selfpipe_trap( SIGTERM ) == 0 );
-  assert( selfpipe_trap( SIGINT ) == 0 );
+  if ( selfpipe_trap( SIGTERM )
+       || selfpipe_trap( SIGINT ) ) {
+    perror( "selfpipe_trap" );
+    return;
+  }
 
   /* prepare to poll for events */
   struct pollfd pollfds[ 3 ];

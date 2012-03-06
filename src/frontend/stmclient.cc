@@ -111,13 +111,16 @@ void STMClient::main_init( void )
     return;
   }
 
-  assert( selfpipe_trap( SIGWINCH ) == 0 );
-  assert( selfpipe_trap( SIGTERM ) == 0 );
-  assert( selfpipe_trap( SIGINT ) == 0 );
-  assert( selfpipe_trap( SIGHUP ) == 0 );
-  assert( selfpipe_trap( SIGPIPE ) == 0 );
-  assert( selfpipe_trap( SIGTSTP ) == 0 );
-  assert( selfpipe_trap( SIGCONT ) == 0 );
+  if ( selfpipe_trap( SIGWINCH )
+       || selfpipe_trap( SIGTERM )
+       || selfpipe_trap( SIGINT )
+       || selfpipe_trap( SIGHUP )
+       || selfpipe_trap( SIGPIPE )
+       || selfpipe_trap( SIGTSTP )
+       || selfpipe_trap( SIGCONT ) ) {
+    perror( "selfpipe_trap" );
+    return;
+  }
 
   /* get initial window size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
