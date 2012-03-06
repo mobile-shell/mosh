@@ -247,13 +247,20 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
     try {
       uint64_t now = Network::timestamp();
 
-      int active_fds = poll( pollfds, 3, min( network.wait_time(), terminal.wait_time( now ) ) );
+      const int timeout_if_no_client = 60000;
+      int poll_timeout = min( network.wait_time(), terminal.wait_time( now ) );
+      if ( !network.has_remote_addr() ) {
+        poll_timeout = min( poll_timeout, timeout_if_no_client );
+      }
+
+      int active_fds = poll( pollfds, 3, poll_timeout );
       if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;
       }
 
       now = Network::timestamp();
+      uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
 
       if ( pollfds[ 0 ].revents & POLLIN ) {
 	/* packet received from the network */
@@ -352,7 +359,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  break;
 	}
 
-	if ( network.attached() && (!network.shutdown_in_progress()) ) {
+	if ( network.has_remote_addr() && (!network.shutdown_in_progress()) ) {
 	  network.start_shutdown();
 	} else {
 	  break;
@@ -368,7 +375,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       if ( (pollfds[ 1 ].revents)
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	/* host problem */
-	if ( network.attached() ) {
+	if ( network.has_remote_addr() ) {
 	  network.start_shutdown();
 	} else {
 	  break;
@@ -392,7 +399,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       /* update utmp if has been more than 10 seconds since heard from client */
       if ( connected_utmp ) {
-	if ( network.get_latest_remote_state().timestamp < now - 10000 ) {
+	if ( time_since_remote_state > 10000 ) {
 	  utempter_remove_added_record();
 
 	  char tmp[ 64 ];
@@ -408,6 +415,13 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	if ( !network.shutdown_in_progress() ) {
 	  network.set_current_state( terminal );
 	}
+      }
+
+      if ( !network.has_remote_addr()
+           && time_since_remote_state >= uint64_t( timeout_if_no_client ) ) {
+        fprintf( stderr, "No connection within %d seconds.\n",
+                 timeout_if_no_client / 1000 );
+        break;
       }
 
       network.tick();

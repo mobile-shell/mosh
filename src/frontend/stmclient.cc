@@ -211,7 +211,7 @@ bool STMClient::process_user_input( int fd )
 
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
-	  if ( network->attached() && (!network->shutdown_in_progress()) ) {
+	  if ( network->has_remote_addr() && (!network->shutdown_in_progress()) ) {
 	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting on user request..." ) );
 	    network->start_shutdown();
 	    return true;
@@ -312,7 +312,7 @@ void STMClient::main( void )
       if ( pollfds[ 1 ].revents & POLLIN ) {
 	/* input from the user needs to be fed to the network */
 	if ( !process_user_input( pollfds[ 1 ].fd ) ) {
-	  if ( !network->attached() ) {
+	  if ( !network->has_remote_addr() ) {
 	    break;
 	  } else if ( !network->shutdown_in_progress() ) {
 	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ) );
@@ -337,7 +337,7 @@ void STMClient::main( void )
 	  break;
 	}
 
-	if ( !network->attached() ) {
+	if ( !network->has_remote_addr() ) {
 	  break;
 	} else if ( !network->shutdown_in_progress() ) {
 	  overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ) );
@@ -354,7 +354,7 @@ void STMClient::main( void )
       if ( (pollfds[ 1 ].revents)
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	/* user problem */
-	if ( !network->attached() ) {
+	if ( !network->has_remote_addr() ) {
 	  break;
 	} else if ( !network->shutdown_in_progress() ) {
 	  overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ) );

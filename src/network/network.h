@@ -75,10 +75,10 @@ namespace Network {
     static const uint64_t MAX_RTO = 1000; /* ms */
 
     int sock;
+    bool has_remote_addr;
     struct sockaddr_in remote_addr;
 
     bool server;
-    bool attached;
 
     int MTU;
 
@@ -110,7 +110,7 @@ namespace Network {
 
     int port( void ) const;
     string get_key( void ) const { return key.printable_key(); }
-    bool get_attached( void ) const { return attached; }
+    bool get_has_remote_addr( void ) const { return has_remote_addr; }
 
     uint64_t timeout( void ) const;
     double get_SRTT( void ) const { return SRTT; }
