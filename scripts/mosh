@@ -74,7 +74,7 @@ delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
 if ( defined $fake_proxy ) {
   use Errno qw(EINTR);
   use IO::Socket::INET;
-  use threads;
+  use POSIX qw(_exit);
 
   my ( $host, $port ) = @ARGV;
 
@@ -102,10 +102,13 @@ if ( defined $fake_proxy ) {
     }
   }
 
-  my $thr = threads->create(sub { cat $sock, \*STDOUT; $sock->shutdown( 0 ); })
-    or die "$0: create thread: $!\n";
+  defined( my $pid = fork ) or die "$0: fork: $!\n";
+  if ( $pid == 0 ) {
+    cat $sock, \*STDOUT; $sock->shutdown( 0 );
+    _exit 0;
+  }
   cat \*STDIN, $sock; $sock->shutdown( 1 );
-  $thr->join;
+  waitpid $pid, 0;
   exit;
 }
 
