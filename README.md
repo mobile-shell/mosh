@@ -56,6 +56,45 @@ Other features
      users. Mosh does not contain any privileged (root) code.
 
 
+Getting Mosh
+------------
+
+  Mosh is available from an [Ubuntu PPA][].  Packages for other operating
+  systems are planned.
+
+  [Ubuntu PPA]: https://launchpad.net/~keithw/+archive/mosh
+
+
+  On a UNIX-like system you can build Mosh from source using the following
+  commands:
+
+    ./autogen.sh
+    ./configure
+    make
+    make install   # as root
+
+  `configure` accepts standard options, like `--prefix` to set the installation
+  prefix.  Pass `--help` for a full listing.
+
+  To build and use Mosh you will need
+
+  * [GNU Autotools][]
+  * the [Protocol Buffers][] library and compiler
+  * [Boost][]
+  * `libutempter`
+  * `zlib`
+  * the Perl module [IO::Pty][]
+
+  including development packages where applicable.
+
+  The file `debian/control` contains a list of the relevant Debian packages.
+
+  [GNU Autotools]:    http://www.gnu.org/software/autoconf/
+  [Protocol Buffers]: http://code.google.com/p/protobuf/
+  [Boost]:            http://www.boost.org/
+  [IO::Pty]:          http://search.cpan.org/~toddr/IO-Tty/Pty.pm
+
+
 Usage
 -----
 
@@ -67,18 +106,18 @@ Usage
     $ mosh [user@]host
 
   If the `mosh-client` or `mosh-server` binaries are installed outside the
-  user's PATH, mosh accepts the arguments `--client=PATH` and
+  user's PATH, `mosh` accepts the arguments `--client=PATH` and
   `--server=PATH` to select alternate locations.
 
 
 How it works
 ------------
 
-  The mosh program will SSH to `user@host` to establish the connection.
+  The `mosh` program will SSH to `user@host` to establish the connection.
   SSH may prompt the user for a password or use public-key
   authentication to log in.
 
-  From this point, mosh runs the `mosh-server` process (as the user)
+  From this point, `mosh` runs the `mosh-server` process (as the user)
   on the server machine. The server process listens on a high UDP port
   and sends its port number and an AES-128 secret key back to the
   client over SSH. The SSH connection is then shut down and the
