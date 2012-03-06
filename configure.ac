@@ -12,6 +12,11 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_RANLIB
 
+AC_CHECK_PROG([HAVE_PROTOC], [protoc], [yes], [no])
+if test x"$HAVE_PROTOC" != x"yes"; then
+  AC_MSG_ERROR([cannot find protoc, the Protocol Buffers compiler])
+fi
+
 # Checks for libraries.
 AC_SEARCH_LIBS([utempter_remove_added_record], [utempter], , [AC_MSG_ERROR([Unable to find libutempter.])])
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
