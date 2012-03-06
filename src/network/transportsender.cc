@@ -112,7 +112,7 @@ int TransportSender<MyState>::wait_time( void )
   uint64_t now = timestamp();
 
   if ( !connection->get_has_remote_addr() ) {
-    return -1;
+    return INT_MAX;
   }
 
   if ( next_wakeup > now ) {
