@@ -67,18 +67,18 @@ Usage
     $ mosh [user@]host
 
   If the `mosh-client` or `mosh-server` binaries are installed outside the
-  user's PATH, mosh accepts the arguments `--client=PATH` and
+  user's PATH, `mosh` accepts the arguments `--client=PATH` and
   `--server=PATH` to select alternate locations.
 
 
 How it works
 ------------
 
-  The mosh program will SSH to `user@host` to establish the connection.
+  The `mosh` program will SSH to `user@host` to establish the connection.
   SSH may prompt the user for a password or use public-key
   authentication to log in.
 
-  From this point, mosh runs the `mosh-server` process (as the user)
+  From this point, `mosh` runs the `mosh-server` process (as the user)
   on the server machine. The server process listens on a high UDP port
   and sends its port number and an AES-128 secret key back to the
   client over SSH. The SSH connection is then shut down and the
