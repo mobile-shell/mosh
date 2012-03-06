@@ -247,7 +247,13 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
     try {
       uint64_t now = Network::timestamp();
 
-      int active_fds = poll( pollfds, 3, min( network.wait_time(), terminal.wait_time( now ) ) );
+      const int timeout_if_no_client = 60000;
+      int poll_timeout = min( network.wait_time(), terminal.wait_time( now ) );
+      if ( !network.has_remote_addr() ) {
+        poll_timeout = min( poll_timeout, timeout_if_no_client );
+      }
+
+      int active_fds = poll( pollfds, 3, poll_timeout );
       if ( active_fds < 0 ) {
 	perror( "poll" );
 	break;
@@ -409,6 +415,13 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	if ( !network.shutdown_in_progress() ) {
 	  network.set_current_state( terminal );
 	}
+      }
+
+      if ( !network.has_remote_addr()
+           && time_since_remote_state >= uint64_t( timeout_if_no_client ) ) {
+        fprintf( stderr, "No connection within %d seconds.\n",
+                 timeout_if_no_client / 1000 );
+        break;
       }
 
       network.tick();
