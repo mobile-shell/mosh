@@ -105,9 +105,9 @@ void Connection::setup( void )
 
 Connection::Connection( const char *desired_ip ) /* server */
   : sock( -1 ),
+    has_remote_addr( false ),
     remote_addr(),
     server( true ),
-    attached( false ),
     MTU( SEND_MTU ),
     key(),
     session( key ),
@@ -150,9 +150,9 @@ Connection::Connection( const char *desired_ip ) /* server */
 
 Connection::Connection( const char *key_str, const char *ip, int port ) /* client */
   : sock( -1 ),
+    has_remote_addr( false ),
     remote_addr(),
     server( false ),
-    attached( false ),
     MTU( SEND_MTU ),
     key( key_str ),
     session( key ),
@@ -177,12 +177,12 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     throw NetworkException( buffer, saved_errno );
   }
 
-  attached = true;
+  has_remote_addr = true;
 }
 
 void Connection::send( string s )
 {
-  assert( attached );
+  assert( has_remote_addr );
 
   Packet px = new_packet( s );
 
@@ -252,7 +252,7 @@ string Connection::recv( void )
     }
 
     /* auto-adjust to remote host */
-    attached = true;
+    has_remote_addr = true;
 
     if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
 	 || (remote_addr.sin_port != packet_remote_addr.sin_port) ) {

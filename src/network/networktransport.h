@@ -73,7 +73,7 @@ namespace Network {
     bool shutdown_in_progress( void ) const { return sender.get_shutdown_in_progress(); }
     bool shutdown_acknowledged( void ) const { return sender.get_shutdown_acknowledged(); }
     bool shutdown_ack_timed_out( void ) const { return sender.shutdown_ack_timed_out(); }
-    bool attached( void ) const { return connection.get_attached(); }
+    bool has_remote_addr( void ) const { return connection.get_has_remote_addr(); }
 
     /* Other side has requested shutdown and we have sent one ACK */
     bool counterparty_shutdown_ack_sent( void ) const { return sender.get_counterparty_shutdown_acknowledged(); }

@@ -352,7 +352,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  break;
 	}
 
-	if ( network.attached() && (!network.shutdown_in_progress()) ) {
+	if ( network.has_remote_addr() && (!network.shutdown_in_progress()) ) {
 	  network.start_shutdown();
 	} else {
 	  break;
@@ -368,7 +368,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       if ( (pollfds[ 1 ].revents)
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
 	/* host problem */
-	if ( network.attached() ) {
+	if ( network.has_remote_addr() ) {
 	  network.start_shutdown();
 	} else {
 	  break;

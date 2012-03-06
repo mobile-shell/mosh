@@ -111,7 +111,7 @@ int TransportSender<MyState>::wait_time( void )
 
   uint64_t now = timestamp();
 
-  if ( !connection->get_attached() ) {
+  if ( !connection->get_has_remote_addr() ) {
     return -1;
   }
 
@@ -128,7 +128,7 @@ void TransportSender<MyState>::tick( void )
 {
   calculate_timers(); /* updates assumed receiver state and rationalizes */
 
-  if ( !connection->get_attached() ) {
+  if ( !connection->get_has_remote_addr() ) {
     return;
   }
 
