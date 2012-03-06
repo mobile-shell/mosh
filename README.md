@@ -56,6 +56,45 @@ Other features
      users. Mosh does not contain any privileged (root) code.
 
 
+Getting Mosh
+------------
+
+  Mosh is available from an [Ubuntu PPA][].  Packages for other operating
+  systems are planned.
+
+  [Ubuntu PPA]: https://launchpad.net/~keithw/+archive/mosh
+
+
+  On a UNIX-like system you can build Mosh from source using the following
+  commands:
+
+    ./autogen.sh
+    ./configure
+    make
+    make install   # as root
+
+  `configure` accepts standard options, like `--prefix` to set the installation
+  prefix.  Pass `--help` for a full listing.
+
+  To build and use Mosh you will need
+
+  * [GNU Autotools][]
+  * the [Protocol Buffers][] library and compiler
+  * [Boost][]
+  * `libutempter`
+  * `zlib`
+  * the Perl module [IO::Pty][]
+
+  including development packages where applicable.
+
+  The file `debian/control` contains a list of the relevant Debian packages.
+
+  [GNU Autotools]:    http://www.gnu.org/software/autoconf/
+  [Protocol Buffers]: http://code.google.com/p/protobuf/
+  [Boost]:            http://www.boost.org/
+  [IO::Pty]:          http://search.cpan.org/~toddr/IO-Tty/Pty.pm
+
+
 Usage
 -----
 
