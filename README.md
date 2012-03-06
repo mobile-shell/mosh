@@ -59,9 +59,14 @@ Other features
 Getting Mosh
 ------------
 
-  Mosh is available from an [Ubuntu PPA][].  Packages for other operating
-  systems are planned.
+  Mosh is available from:
 
+  * [Debian sid][]
+  * an [Ubuntu PPA][]
+
+  Packages for other operating systems are planned.
+
+  [Debian sid]: http://packages.debian.org/sid/mosh
   [Ubuntu PPA]: https://launchpad.net/~keithw/+archive/mosh
 
 
