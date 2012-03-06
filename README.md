@@ -59,13 +59,18 @@ Other features
 Getting Mosh
 ------------
 
-  Mosh is available from an [Ubuntu PPA][].  Packages for other operating
-  systems are planned.
+  Mosh is available from an [Ubuntu PPA][] and is in [Debian
+  unstable][] (sid). Packages for other operating systems are planned.
 
   [Ubuntu PPA]: https://launchpad.net/~keithw/+archive/mosh
 
+  Ubuntu installation instructions:
 
-  On a UNIX-like system you can build Mosh from source using the following
+    sudo add-apt-repository ppa:keithw/mosh
+    sudo apt-get update
+    sudo apt-get install mosh
+
+  On a Unix-like system you can build Mosh from source using the following
   commands:
 
     ./autogen.sh
