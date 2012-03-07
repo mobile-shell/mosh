@@ -376,7 +376,9 @@ void PredictionEngine::cull( const Framebuffer &fb )
   /* control srtt_trigger with hysteresis */
   if ( send_interval > SRTT_TRIGGER_HIGH ) {
     srtt_trigger = true;
-  } else if ( send_interval <= SRTT_TRIGGER_LOW ) { /* 20 ms is current minimum value */
+  } else if ( srtt_trigger &&
+	      (send_interval <= SRTT_TRIGGER_LOW) /* 20 ms is current minimum value */
+	      && (!active()) ) { /* only turn off when no predictions being shown */
     srtt_trigger = false;
   }
 
