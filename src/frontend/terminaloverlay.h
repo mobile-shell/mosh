@@ -152,6 +152,8 @@ namespace Overlay {
     static const uint64_t GLITCH_REPAIR_COUNT = 10; /* non-glitches required to cure glitch trigger */
     static const uint64_t GLITCH_REPAIR_MININTERVAL = 150; /* required time in between non-glitches */
 
+    static const uint64_t GLITCH_FLAG_THRESHOLD = 500; /* prediction outstanding this long => underline */
+
     char last_byte;
     Parser::UTF8Parser parser;
 
@@ -172,7 +174,7 @@ namespace Overlay {
 
     bool flagging; /* whether we are underlining predictions */
     bool srtt_trigger; /* show predictions because of slow round trip time */
-    int glitch_trigger; /* show predictions temporarily because of long-pending prediction */
+    unsigned int glitch_trigger; /* show predictions temporarily because of long-pending prediction */
     uint64_t last_quick_confirmation;
 
     ConditionalCursorMove & cursor( void ) { assert( !cursors.empty() ); return cursors.back(); }

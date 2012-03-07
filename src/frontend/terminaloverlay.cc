@@ -382,11 +382,16 @@ void PredictionEngine::cull( const Framebuffer &fb )
     srtt_trigger = false;
   }
 
-  /* control flagging with hysteresis */
+  /* control underlining with hysteresis */
   if ( send_interval > FLAG_TRIGGER_HIGH ) {
     flagging = true;
   } else if ( send_interval <= FLAG_TRIGGER_LOW ) {
     flagging = false;
+  }
+
+  /* really big glitches also activate underlining */
+  if ( glitch_trigger > GLITCH_REPAIR_COUNT ) {
+    flagging = true;
   }
 
   /* go through cell predictions */
@@ -473,8 +478,11 @@ void PredictionEngine::cull( const Framebuffer &fb )
       case Pending:
 	/* When a prediction takes a long time to be confirmed, we
 	   activate the predictions even if SRTT is low */
-	if ( (now - j->prediction_time) >= GLITCH_THRESHOLD ) {
-	  glitch_trigger = GLITCH_REPAIR_COUNT;
+	if ( (now - j->prediction_time) >= GLITCH_FLAG_THRESHOLD ) {
+	  glitch_trigger = GLITCH_REPAIR_COUNT * 2; /* display and underline */
+	} else if ( ((now - j->prediction_time) >= GLITCH_THRESHOLD)
+		    && (glitch_trigger < GLITCH_REPAIR_COUNT) ) {
+	  glitch_trigger = GLITCH_REPAIR_COUNT; /* just display */
 	}
 
 	break;
