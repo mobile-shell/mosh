@@ -1,7 +1,5 @@
 * Hari Balakrishnan, who advised this work and came up with the name.
 
-* Anders Kaseorg for help with the conversion to autoconf/automake.
-
 * Paul Williams (www.vt100.net), whose reverse-engineered vt500 state
   diagram is the basis for the Mosh parser.
 
