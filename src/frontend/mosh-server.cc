@@ -110,8 +110,6 @@ int main( int argc, char *argv[] )
   sigset_t signals_to_block;
 
   assert( sigemptyset( &signals_to_block ) == 0 );
-  assert( sigaddset( &signals_to_block, SIGTERM ) == 0 );
-  assert( sigaddset( &signals_to_block, SIGINT ) == 0 );
   assert( sigaddset( &signals_to_block, SIGHUP ) == 0 );
   assert( sigaddset( &signals_to_block, SIGPIPE ) == 0 );
   assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
