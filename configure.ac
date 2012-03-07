@@ -18,7 +18,7 @@ AC_PATH_PROG([PROTOC], [protoc], [AC_MSG_ERROR([protoc is not found])])
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""
 AC_ARG_ENABLE([compile-warnings],
-  [AS_HELP_STRING([--enable-compile-warnings@<:@=no/yes/maximum/error],
+  [AS_HELP_STRING([--enable-compile-warnings@<:@=no/yes/maximum/error@:>@],
      [Turn on compiler warnings])],
   [case "$enableval" in
      no)
