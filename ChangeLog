@@ -1,3 +1,17 @@
+2012-03-07 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 0.97 released.
+
+	* Merged Mac OS X port (thanks to Quentin Smith and Anders Kaseorg)
+
+	* Server will quit if no connection within first 60 seconds
+
+	* Startup script no longer requires threaded Perl
+
+	* Add --enable-compile-warnings=error to ./configure
+
+	* Fix some flicker issues with adaptive prediction mode
+
 2012-02-26 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.96 released.

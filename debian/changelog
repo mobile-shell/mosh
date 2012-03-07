@@ -1,3 +1,17 @@
+mosh (0.97-1) unstable; urgency=low
+
+  * Merged Mac OS X port (thanks to Quentin Smith and Anders Kaseorg)
+
+  * Server will quit if no connection within first 60 seconds
+
+  * Startup script no longer requires threaded Perl
+
+  * Add --enable-compile-warnings=error to ./configure
+
+  * Fix some flicker issues with adaptive prediction mode
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 07 Mar 2012 04:17:19 -0500
+
 mosh (0.96a-3) unstable; urgency=low
 
   * Update copyright file to correct pkg.m4 is GPL-2+ not GPL-2

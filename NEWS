@@ -1,5 +1,10 @@
-Initial release (0.9):
-----------------------
+2012-03-07 Release candidate (0.97):
+------------------------------------
+
+* Now builds on Mac OS X as well as GNU/Linux
+
+2012-02-06 Initial release (0.9):
+---------------------------------
 
 * Supports intermittent connectivity
 * Supports client and server IP roaming
