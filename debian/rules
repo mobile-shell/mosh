@@ -11,7 +11,3 @@
 
 %:
 	dh $@ --with autoreconf
-
-override_dh_autoreconf:
-	cp README.md README
-	dh_autoreconf
