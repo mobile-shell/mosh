@@ -126,6 +126,15 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
       pwc = (wchar_t) 0xFFFD;
     }
 
+    if ( (pwc >= 0xD800) && (pwc <= 0xDFFF) ) { /* surrogate code point */
+      /*
+	OS X unfortunately allows these sequences without EILSEQ, but
+	they are ill-formed UTF-8 and we shouldn't repeat them to the
+	user's terminal.
+      */
+      pwc = (wchar_t) 0xFFFD;
+    }
+
     std::list<Action *> vec = parser.input( pwc );
     ret.insert( ret.end(), vec.begin(), vec.end() );
 
