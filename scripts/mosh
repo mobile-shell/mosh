@@ -97,8 +97,8 @@ if ( defined $fake_proxy ) {
     my ( $from, $to ) = @_;
     while ( my $n = $from->sysread( my $buf, 4096 ) ) {
       next if ( $n == -1 && $! == EINTR );
-      $n >= 0 or die "$0: read: $!\n";
-      $to->write( $buf ) or die "$0: write: $!\n";
+      $n >= 0 or last;
+      $to->write( $buf ) or last;
     }
   }
 
@@ -107,6 +107,7 @@ if ( defined $fake_proxy ) {
     cat $sock, \*STDOUT; $sock->shutdown( 0 );
     _exit 0;
   }
+  $SIG{ 'HUP' } = 'IGNORE';
   cat \*STDIN, $sock; $sock->shutdown( 1 );
   waitpid $pid, 0;
   exit;
