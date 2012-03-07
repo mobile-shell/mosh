@@ -349,7 +349,11 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	/* fill buffer if possible */
 	ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
 	if ( bytes_read == 0 ) { /* EOF */
-	  return;
+	  if ( !network.has_remote_addr() ) {
+	    return;
+	  } else if ( !network.shutdown_in_progress() ) {
+	    network.start_shutdown();
+	  }
 	} else if ( bytes_read < 0 ) {
 	  perror( "read" );
 	  return;
