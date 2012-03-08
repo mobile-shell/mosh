@@ -20,6 +20,7 @@
 #include <boost/lambda/lambda.hpp>
 
 #include "completeterminal.h"
+#include "fatal_assert.h"
 
 #include "hostinput.pb.h"
 
@@ -83,7 +84,7 @@ string Complete::diff_from( const Complete &existing ) const
 void Complete::apply_string( string diff )
 {
   HostBuffers::HostMessage input;
-  assert( input.ParseFromString( diff ) );
+  fatal_assert( input.ParseFromString( diff ) );
 
   for ( int i = 0; i < input.instruction_size(); i++ ) {
     if ( input.instruction( i ).HasExtension( hostbytes ) ) {

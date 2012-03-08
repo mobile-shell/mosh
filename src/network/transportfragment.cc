@@ -22,6 +22,7 @@
 #include "transportfragment.h"
 #include "transportinstruction.pb.h"
 #include "compressor.h"
+#include "fatal_assert.h"
 
 using namespace Network;
 using namespace TransportBuffers;
@@ -46,7 +47,7 @@ string Fragment::tostring( void )
   
   ret += network_order_string( id );
 
-  assert( !( fragment_num & 0x8000 ) ); /* effective limit on size of a terminal screen change or buffered user input */
+  fatal_assert( !( fragment_num & 0x8000 ) ); /* effective limit on size of a terminal screen change or buffered user input */
   uint16_t combined_fragment_num = ( final << 15 ) | fragment_num;
   ret += network_order_string( combined_fragment_num );
 
@@ -122,7 +123,7 @@ Instruction FragmentAssembly::get_assembly( void )
   }
 
   Instruction ret;
-  assert( ret.ParseFromString( get_compressor().uncompress_str( encoded ) ) );
+  fatal_assert( ret.ParseFromString( get_compressor().uncompress_str( encoded ) ) );
 
   fragments.clear();
   fragments_arrived = 0;

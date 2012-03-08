@@ -68,7 +68,6 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
   buf[ buf_len++ ] = c;
 
   /* This function will only work in a UTF-8 locale. */
-  /* This is asserted in the constructor. */
 
   wchar_t pwc;
   mbstate_t ps;

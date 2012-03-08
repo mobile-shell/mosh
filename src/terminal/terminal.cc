@@ -123,6 +123,7 @@ void Emulator::print( const Parser::Print *act )
     break;
   default:
     assert( false );
+    break;
   }
 }
 

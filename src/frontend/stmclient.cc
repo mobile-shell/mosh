@@ -46,6 +46,7 @@ extern "C" {
 #include "swrite.h"
 #include "completeterminal.h"
 #include "user.h"
+#include "fatal_assert.h"
 
 #include "networktransport.cc"
 
@@ -111,13 +112,13 @@ void STMClient::main_init( void )
     return;
   }
 
-  assert( selfpipe_trap( SIGWINCH ) == 0 );
-  assert( selfpipe_trap( SIGTERM ) == 0 );
-  assert( selfpipe_trap( SIGINT ) == 0 );
-  assert( selfpipe_trap( SIGHUP ) == 0 );
-  assert( selfpipe_trap( SIGPIPE ) == 0 );
-  assert( selfpipe_trap( SIGTSTP ) == 0 );
-  assert( selfpipe_trap( SIGCONT ) == 0 );
+  fatal_assert( selfpipe_trap( SIGWINCH ) == 0 );
+  fatal_assert( selfpipe_trap( SIGTERM ) == 0 );
+  fatal_assert( selfpipe_trap( SIGINT ) == 0 );
+  fatal_assert( selfpipe_trap( SIGHUP ) == 0 );
+  fatal_assert( selfpipe_trap( SIGPIPE ) == 0 );
+  fatal_assert( selfpipe_trap( SIGTSTP ) == 0 );
+  fatal_assert( selfpipe_trap( SIGCONT ) == 0 );
 
   /* get initial window size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {

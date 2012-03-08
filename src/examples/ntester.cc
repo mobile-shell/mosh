@@ -21,6 +21,7 @@
 #include <poll.h>
 
 #include "user.h"
+#include "fatal_assert.h"
 #include "networktransport.cc"
 
 using namespace Network;
@@ -117,7 +118,7 @@ int main( int argc, char *argv[] )
 
 	if ( fds[ 0 ].revents & POLLIN ) {
 	  char x;
-	  assert( read( STDIN_FILENO, &x, 1 ) == 1 );
+	  fatal_assert( read( STDIN_FILENO, &x, 1 ) == 1 );
 	  n->get_current_state().push_back( Parser::UserByte( x ) );
 	}
 

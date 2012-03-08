@@ -49,6 +49,7 @@
 #include "parser.h"
 #include "completeterminal.h"
 #include "swrite.h"
+#include "fatal_assert.h"
 
 extern "C" {
 #include "selfpipe.h"
@@ -202,7 +203,7 @@ void emulate_terminal( int fd )
     return;
   }
 
-  assert( selfpipe_trap(SIGWINCH) == 0 );
+  fatal_assert( selfpipe_trap(SIGWINCH) == 0 );
 
   /* get current window size */
   struct winsize window_size;
@@ -287,7 +288,7 @@ void emulate_terminal( int fd )
       }
     } else if ( pollfds[ 2 ].revents & POLLIN ) {
       /* resize */
-      assert( selfpipe_read() == SIGWINCH );
+      fatal_assert( selfpipe_read() == SIGWINCH );
 
       /* get new size */
       if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {

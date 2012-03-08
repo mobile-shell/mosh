@@ -46,6 +46,7 @@ extern "C" {
 #include "completeterminal.h"
 #include "swrite.h"
 #include "user.h"
+#include "fatal_assert.h"
 
 #if HAVE_PTY_H
 #include <pty.h>
@@ -109,10 +110,10 @@ int main( int argc, char *argv[] )
   /* don't let signals kill us */
   sigset_t signals_to_block;
 
-  assert( sigemptyset( &signals_to_block ) == 0 );
-  assert( sigaddset( &signals_to_block, SIGHUP ) == 0 );
-  assert( sigaddset( &signals_to_block, SIGPIPE ) == 0 );
-  assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
+  fatal_assert( sigemptyset( &signals_to_block ) == 0 );
+  fatal_assert( sigaddset( &signals_to_block, SIGHUP ) == 0 );
+  fatal_assert( sigaddset( &signals_to_block, SIGPIPE ) == 0 );
+  fatal_assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
 
   struct termios child_termios;
 
@@ -153,8 +154,8 @@ int main( int argc, char *argv[] )
 
     /* unblock signals */
     sigset_t signals_to_block;
-    assert( sigemptyset( &signals_to_block ) == 0 );
-    assert( sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) == 0 );
+    fatal_assert( sigemptyset( &signals_to_block ) == 0 );
+    fatal_assert( sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) == 0 );
 
     /* set TERM */
     if ( setenv( "TERM", "xterm", true ) < 0 ) {
@@ -183,7 +184,7 @@ int main( int argc, char *argv[] )
 
     char *my_argv[ 2 ];
     my_argv[ 0 ] = strdup( pw->pw_shell );
-    assert( my_argv[ 0 ] );
+    fatal_assert( my_argv[ 0 ] );
     my_argv[ 1 ] = NULL;
     
     if ( execv( pw->pw_shell, my_argv ) < 0 ) {
@@ -235,8 +236,8 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
     return;
   }
 
-  assert( selfpipe_trap( SIGTERM ) == 0 );
-  assert( selfpipe_trap( SIGINT ) == 0 );
+  fatal_assert( selfpipe_trap( SIGTERM ) == 0 );
+  fatal_assert( selfpipe_trap( SIGINT ) == 0 );
 
   /* prepare to poll for events */
   struct pollfd pollfds[ 3 ];
