@@ -104,16 +104,14 @@ void STMClient::shutdown( void )
 
 void STMClient::main_init( void )
 {
-  /* establish WINCH fd and start listening for signal */
+  /* establish a fd for signals */
   signal_fd = selfpipe_init();
   if ( signal_fd < 0 ) {
-    perror( "selfpipe" );
+    perror( "selfpipe_init" );
     return;
   }
 
-  assert( selfpipe_trap(SIGWINCH) == 0 );
-
-  /* establish fd for shutdown signals */
+  assert( selfpipe_trap( SIGWINCH ) == 0 );
   assert( selfpipe_trap( SIGTERM ) == 0 );
   assert( selfpipe_trap( SIGINT ) == 0 );
   assert( selfpipe_trap( SIGHUP ) == 0 );

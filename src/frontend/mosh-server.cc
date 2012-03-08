@@ -231,7 +231,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   /* establish fd for shutdown signals */
   int signal_fd = selfpipe_init();
   if ( signal_fd < 0 ) {
-    perror( "selfpipe" );
+    perror( "selfpipe_init" );
     return;
   }
 
