@@ -104,22 +104,23 @@ void STMClient::shutdown( void )
 
 void STMClient::main_init( void )
 {
-  /* establish WINCH fd and start listening for signal */
+  /* establish a fd for signals */
   signal_fd = selfpipe_init();
   if ( signal_fd < 0 ) {
-    perror( "selfpipe" );
+    perror( "selfpipe_init" );
     return;
   }
 
-  assert( selfpipe_trap(SIGWINCH) == 0 );
-
-  /* establish fd for shutdown signals */
-  assert( selfpipe_trap( SIGTERM ) == 0 );
-  assert( selfpipe_trap( SIGINT ) == 0 );
-  assert( selfpipe_trap( SIGHUP ) == 0 );
-  assert( selfpipe_trap( SIGPIPE ) == 0 );
-  assert( selfpipe_trap( SIGTSTP ) == 0 );
-  assert( selfpipe_trap( SIGCONT ) == 0 );
+  if ( selfpipe_trap( SIGWINCH )
+       || selfpipe_trap( SIGTERM )
+       || selfpipe_trap( SIGINT )
+       || selfpipe_trap( SIGHUP )
+       || selfpipe_trap( SIGPIPE )
+       || selfpipe_trap( SIGTSTP )
+       || selfpipe_trap( SIGCONT ) ) {
+    perror( "selfpipe_trap" );
+    return;
+  }
 
   /* get initial window size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
