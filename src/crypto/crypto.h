@@ -26,7 +26,7 @@
 
 using std::string;
 
-long int myatoi( char *str );
+long int myatoi( const char *str );
 
 namespace Crypto {
   class CryptoException {

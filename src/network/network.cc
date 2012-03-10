@@ -115,7 +115,7 @@ void Connection::setup( void )
 #endif
 }
 
-Connection::Connection( const char *desired_ip ) /* server */
+Connection::Connection( const char *desired_ip, const char *desired_port ) /* server */
   : sock( -1 ),
     has_remote_addr( false ),
     remote_addr(),
@@ -134,30 +134,92 @@ Connection::Connection( const char *desired_ip ) /* server */
 {
   setup();
 
-  /* Attempt to bind free local port, with
-     address client used to connect to us.
+  /* The mosh wrapper always gives an IP request, in order
+     to deal with multihomed servers. The port is optional. */
 
-     This usage does not seem to be endorsed by POSIX. */
+  /* If an IP request is given, we try to bind to that IP, but we also
+     try INADDR_ANY. If a port request is given, we bind only to that port. */
 
-  struct sockaddr_in local_addr;
-  local_addr.sin_family = AF_INET;
-  local_addr.sin_port = htons( 0 );
-  if ( desired_ip
-       && inet_aton( desired_ip, &local_addr.sin_addr )
-       && (bind( sock, (sockaddr *)&local_addr, sizeof( local_addr ) ) == 0) ) {
-    return;
+  /* convert port number */
+  long int desired_port_no = 0;
+
+  if ( desired_port ) {
+    char *end;
+    errno = 0;
+    desired_port_no = strtol( desired_port, &end, 10 );
+    if ( (errno != 0) || (end != desired_port + strlen( desired_port )) ) {
+      throw NetworkException( "Invalid port number", errno );
+    }
   }
+
+  if ( (desired_port_no < 0) || (desired_port_no > 65535) ) {
+    throw NetworkException( "Port number outside valid range [0..65535]", 0 );
+  }
+
+  /* convert desired IP */
+  uint32_t desired_ip_addr = INADDR_ANY;
 
   if ( desired_ip ) {
-    fprintf( stderr, "Could not bind to desired local address %s.\n", desired_ip );
+    struct in_addr sin_addr;
+    if ( inet_aton( desired_ip, &sin_addr ) == 0 ) {
+      throw NetworkException( "Invalid IP address", errno );
+    }
+    desired_ip_addr = sin_addr.s_addr;
   }
 
-  /* Could not bind to that IP (maybe we are behind NAT).
-     Try again with any IP. */
-  local_addr.sin_addr.s_addr = INADDR_ANY;
-  if ( bind( sock, (sockaddr *)&local_addr, sizeof( local_addr ) ) < 0 ) {
-    throw NetworkException( "bind", errno );
+  /* try to bind to desired IP first */
+  if ( desired_ip_addr != INADDR_ANY ) {
+    try {
+      if ( try_bind( sock, desired_ip_addr, desired_port_no ) ) { return; }
+    } catch ( NetworkException e ) {
+      struct in_addr sin_addr;
+      sin_addr.s_addr = desired_ip_addr;
+      fprintf( stderr, "Error binding to IP %s: %s: %s\n",
+	       inet_ntoa( sin_addr ),
+	       e.function.c_str(), strerror( e.the_errno ) );
+    }
   }
+
+  /* now try any local interface */
+  try {
+    if ( try_bind( sock, INADDR_ANY, desired_port_no ) ) { return; }
+  } catch ( NetworkException e ) {
+    fprintf( stderr, "Error binding to any interface: %s: %s\n",
+	     e.function.c_str(), strerror( e.the_errno ) );
+    throw; /* this time it's fatal */
+  }
+
+  assert( false );
+  throw NetworkException( "Could not bind", errno );
+}
+
+bool Connection::try_bind( int socket, uint32_t s_addr, int port )
+{
+  struct sockaddr_in local_addr;
+  local_addr.sin_family = AF_INET;
+  local_addr.sin_addr.s_addr = s_addr;
+
+  int search_low = PORT_RANGE_LOW, search_high = PORT_RANGE_HIGH;
+
+  if ( port != 0 ) { /* port preference */
+    search_low = search_high = port;
+  }
+
+  for ( int i = search_low; i <= search_high; i++ ) {
+    local_addr.sin_port = htons( i );
+
+    if ( bind( socket, (sockaddr *)&local_addr, sizeof( local_addr ) ) == 0 ) {
+      fprintf( stderr, "Server now bound to %s:%d\n",
+	       inet_ntoa( local_addr.sin_addr ),
+	       ntohs( local_addr.sin_port ) );
+      return true;
+    } else if ( i == search_high ) { /* last port to search */
+      throw NetworkException( "bind", errno );
+    }
+  }
+
+  assert( false );
+  return false;
 }
 
 Connection::Connection( const char *key_str, const char *ip, int port ) /* client */
@@ -266,10 +328,10 @@ string Connection::recv( void )
     /* auto-adjust to remote host */
     has_remote_addr = true;
 
-    if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
-	 || (remote_addr.sin_port != packet_remote_addr.sin_port) ) {
-      remote_addr = packet_remote_addr;
-      if ( server ) {
+    if ( server ) { /* only client can roam */
+      if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
+	   || (remote_addr.sin_port != packet_remote_addr.sin_port) ) {
+	remote_addr = packet_remote_addr;
 	fprintf( stderr, "Server now attached to client at %s:%d\n",
 		 inet_ntoa( remote_addr.sin_addr ),
 		 ntohs( remote_addr.sin_port ) );

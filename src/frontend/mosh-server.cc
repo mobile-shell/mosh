@@ -62,17 +62,23 @@ void serve( int host_fd,
 	    Terminal::Complete &terminal,
 	    ServerConnection &network );
 
+int run_server( const char *desired_ip, const char *desired_port );
+
 using namespace std;
 
 int main( int argc, char *argv[] )
 {
   char *desired_ip = NULL;
+  char *desired_port = NULL;
   if ( argc == 1 ) {
     desired_ip = NULL;
   } else if ( argc == 2 ) {
     desired_ip = argv[ 1 ];
+  } else if ( argc == 3 ) {
+    desired_ip = argv[ 1 ];
+    desired_port = argv[ 2 ];
   } else {
-    fprintf( stderr, "Usage: %s [LOCALADDR]\n", argv[ 0 ] );
+    fprintf( stderr, "Usage: %s [LOCALADDR] [PORT]\n", argv[ 0 ] );
     exit( 1 );
   }
 
@@ -88,6 +94,20 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  try {
+    return run_server( desired_ip, desired_port );
+  } catch ( Network::NetworkException e ) {
+    fprintf( stderr, "Network exception: %s: %s\n",
+	     e.function.c_str(), strerror( e.the_errno ) );
+    return 1;
+  } catch ( Crypto::CryptoException e ) {
+    fprintf( stderr, "Crypto exception: %s\n",
+	     e.text.c_str() );
+    return 1;
+  }
+}
+
+int run_server( const char *desired_ip, const char *desired_port ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -100,7 +120,7 @@ int main( int argc, char *argv[] )
 
   /* open network */
   Network::UserStream blank;
-  ServerConnection network( terminal, blank, desired_ip );
+  ServerConnection network( terminal, blank, desired_ip, desired_port );
 
   /* network.set_verbose(); */
 
@@ -131,7 +151,7 @@ int main( int argc, char *argv[] )
     _exit( 0 );
   }
 
-  fprintf( stderr, "[mosh-server detached, pid=%d.]\n", (int)getpid() );
+  fprintf( stderr, "[mosh-server detached, pid = %d]\n", (int)getpid() );
 
   int master;
 

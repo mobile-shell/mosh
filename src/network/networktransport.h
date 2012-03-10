@@ -51,7 +51,8 @@ namespace Network {
     bool verbose;
 
   public:
-    Transport( MyState &initial_state, RemoteState &initial_remote, const char *desired_ip );
+    Transport( MyState &initial_state, RemoteState &initial_remote,
+	       const char *desired_ip, const char *desired_port );
     Transport( MyState &initial_state, RemoteState &initial_remote,
 	       const char *key_str, const char *ip, int port );
 

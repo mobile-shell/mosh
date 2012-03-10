@@ -29,6 +29,8 @@ my $server = 'mosh-server';
 
 my $predict = undef;
 
+my $port_request = undef;
+
 my $usage =
 qq{Usage: $0 [options] [user@]host
     --client=PATH        mosh client on local machine  (default: "mosh-client")
@@ -37,6 +39,8 @@ qq{Usage: $0 [options] [user@]host
     --predict=adaptive   local echo for slower links [default]
 -a  --predict=always     use local echo even on fast links
 -n  --predict=never      never use local echo
+
+-p  --port=NUM           server-side UDP port
 
 Please report bugs to mosh-devel\@mit.edu.
 Mosh home page: http://mosh.mit.edu\n};
@@ -55,8 +59,10 @@ sub predict_check {
 GetOptions( 'client=s' => \$client,
 	    'server=s' => \$server,
 	    'predict=s' => \$predict,
+	    'port=i' => \$port_request,
 	    'a' => sub { $predict = 'always' },
 	    'n' => sub { $predict = 'never' },
+	    'p=i' => \$port_request,
 	    'fake-proxy!' => \my $fake_proxy ) or die $usage;
 
 if ( defined $predict ) {
@@ -67,6 +73,16 @@ if ( defined $predict ) {
 } else {
   $predict = 'adaptive';
   predict_check( $predict, 0 );
+}
+
+if ( defined $port_request ) {
+  if ( $port_request =~ m{^[0-9]+$}
+       and $port_request >= 0
+       and $port_request <= 65535 ) {
+    # good port
+  } else {
+    die "$0: Server-side port ($port_request) must be within valid range [0..65535].\n";
+  }
 }
 
 delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
@@ -133,7 +149,13 @@ if ( $pid == 0 ) { # child
   open STDERR, ">&", $pty_slave->fileno() or die;
   close $pty_slave;
 
-  my $s = q{sh -c 'exec "$@" "`set -- $SSH_CONNECTION; echo $3`"' -- } . $server;
+  my $s;
+  if ( defined $port_request ) {
+    $s = q{sh -c 'MOSH_PORT=$1; shift; MOSH_IP=`set -- $SSH_CONNECTION; echo $3`; exec "$@" $MOSH_IP $MOSH_PORT' -- } . $port_request . ' ' . $server;
+  } else {
+    # retain compatibility with older server when no port requested
+    $s = q{sh -c 'exec "$@" "`set -- $SSH_CONNECTION; echo $3`"' -- } . $server;
+  }
   exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', $s;
   die "Cannot exec ssh: $!\n";
 } else { # server

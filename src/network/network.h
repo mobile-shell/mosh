@@ -74,6 +74,11 @@ namespace Network {
     static const uint64_t MIN_RTO = 50; /* ms */
     static const uint64_t MAX_RTO = 1000; /* ms */
 
+    static const int PORT_RANGE_LOW  = 60001;
+    static const int PORT_RANGE_HIGH = 60999;
+
+    static bool try_bind( int socket, uint32_t s_addr, int port );
+
     int sock;
     bool has_remote_addr;
     struct sockaddr_in remote_addr;
@@ -100,7 +105,7 @@ namespace Network {
     Packet new_packet( string &s_payload );
 
   public:
-    Connection( const char *desired_ip ); /* server */
+    Connection( const char *desired_ip, const char *desired_port ); /* server */
     Connection( const char *key_str, const char *ip, int port ); /* client */
     
     void send( string s );

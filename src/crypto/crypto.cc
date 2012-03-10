@@ -30,7 +30,7 @@ using namespace Crypto;
 
 const char rdev[] = "/dev/urandom";
 
-long int myatoi( char *str )
+long int myatoi( const char *str )
 {
   char *end;
 
