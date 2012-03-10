@@ -20,6 +20,7 @@ mosh-server \- server-side helper for mosh
 .SH SYNOPSIS
 .B mosh-server
 [IP address to bind]
+[port number to bind]
 .br
 .SH DESCRIPTION
 \fBmosh-server\fP is a helper program for the 
@@ -29,7 +30,11 @@ remote terminal application.
 \fBmosh-server\fP binds to a high UDP port and chooses an encryption
 key to protect the session. It prints both on standard output,
 detaches from the terminal, and waits for the \fBmosh-client\fP to
-establish a connection via UDP.
+establish a connection.
+
+By default, \fBmosh-server\fP binds to a port between 60000 and
+61000. If a port number is supplied on the command line,
+\fBmosh-server\fP will bind to it instead.
 
 \fBmosh-server\fP maintains an entry in the
 .BR utmp(5)

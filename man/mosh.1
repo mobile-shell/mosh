@@ -57,8 +57,10 @@ round-trip and do not cause lasting effect.
 
 \fBmosh\fP does not support X forwarding or the non-interactive uses
 of SSH, including port forwarding or sshfs. \fBmosh\fP works through
-typical client-side network address translators but requires high-port
-UDP to pass between client and server.
+typical client-side network address translators but requires UDP to
+pass between client and server. By default, \fBmosh\fP uses the ports
+between 60000 and 61000, but allows the user to request a particular
+UDP port instead.
 
 .SH OPTIONS
 .TP
@@ -85,6 +87,21 @@ Even on `always', \fBmosh\fP will only show predictions when it is
 confident. This generally means a previous prediction on the same row
 of the terminal has been confirmed by the server, without any
 intervening control character keystrokes.
+
+.TP
+.B \-a
+Synonym for \-\-predict=always
+
+.TP
+.B \-n
+Synonym for \-\-predict=never
+
+.TP
+.B \-p \fINUM\fP, \-\-port=\fINUM\fP
+Use a particular server-side UDP port, for example, if this is the
+only port that is forwarded through a firewall to the
+server. Otherwise, \fBmosh\fP will choose a port between 60000 and
+61000.
 
 .SH SEE ALSO
 .BR mosh-client (1),
