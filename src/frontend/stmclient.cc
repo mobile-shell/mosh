@@ -130,7 +130,7 @@ void STMClient::main_init( void )
   local_framebuffer = new Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
 
   /* initialize screen */
-  string init = Terminal::Display::new_frame( false, *local_framebuffer, *local_framebuffer );
+  string init = display.new_frame( false, *local_framebuffer, *local_framebuffer );
   swrite( STDOUT_FILENO, init.data(), init.size() );
 
   /* open network */
@@ -158,11 +158,11 @@ void STMClient::output_new_frame( void )
   overlays.apply( new_state );
 
   /* calculate minimal difference from where we are */
-  const string diff( Terminal::Display::new_frame( !repaint_requested,
-						   *local_framebuffer,
-						   new_state ) );
+  const string diff( display.new_frame( !repaint_requested,
+					*local_framebuffer,
+					new_state ) );
   swrite( STDOUT_FILENO, diff.data(), diff.size() );
-  *local_framebuffer = new_state;  
+  *local_framebuffer = new_state;
 
   repaint_requested = false;
 }

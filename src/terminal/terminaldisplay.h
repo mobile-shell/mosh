@@ -49,10 +49,15 @@ namespace Terminal {
 
   class Display {
   private:
-    static void put_cell( bool initialized, FrameState &frame, const Framebuffer &f );
+    bool has_ech; /* erase character is part of vt200 but not supported by tmux
+		     (or by "screen" terminfo entry, which is what tmux advertises) */
+
+    void put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const;
 
   public:
-    static std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f );
+    std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f ) const;
+
+    Display( bool use_environment );
   };
 }
 

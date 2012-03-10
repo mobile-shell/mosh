@@ -25,7 +25,7 @@ using namespace Terminal;
 
 /* Print a new "frame" to the terminal, using ANSI/ECMA-48 escape codes. */
 
-std::string Display::new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f )
+std::string Display::new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f ) const
 {
   FrameState frame( last );
 
@@ -201,7 +201,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   return frame.str;
 }
 
-void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &f )
+void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const
 {
   char tmp[ 64 ];
 
@@ -238,13 +238,28 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
       }
     }
 
-    frame.x += clear_count;
-    if ( frame.x >= f.ds.get_width() ) {
+    assert( frame.x + clear_count <= f.ds.get_width() );
+
+    /* can we go to the end of the line? */
+    if ( frame.x + clear_count == f.ds.get_width() ) {
       snprintf( tmp, 64, "\033[K" );
+      frame.append( tmp );
+      frame.x += clear_count;
     } else {
-      snprintf( tmp, 64, "\033[%dX", clear_count );
+      if ( has_ech ) {
+	if ( clear_count == 1 ) {
+	  frame.append( "\033[X" );
+	} else {
+	  snprintf( tmp, 64, "\033[%dX", clear_count );
+	  frame.append( tmp );
+	}
+	frame.x += clear_count;
+      } else { /* no ECH, so just print a space */
+	frame.append( " " );
+	frame.cursor_x++;
+	frame.x++;
+      }
     }
-    frame.append( tmp );
 
     return;
   }

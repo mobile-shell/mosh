@@ -88,6 +88,7 @@ Getting Mosh
   * [GNU Autotools][]
   * the [Protocol Buffers][] library and compiler
   * [Boost][]
+  * `ncurses`
   * `libutempter`
   * `zlib`
   * the Perl module [IO::Pty][]

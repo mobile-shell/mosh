@@ -75,7 +75,7 @@ string Complete::diff_from( const Complete &existing ) const
       new_res->MutableExtension( resize )->set_height( terminal.get_fb().ds.get_height() );
     }
     Instruction *new_inst = output.add_instruction();
-    new_inst->MutableExtension( hostbytes )->set_hoststring( Terminal::Display::new_frame( true, existing.get_fb(), terminal.get_fb() ) );
+    new_inst->MutableExtension( hostbytes )->set_hoststring( display.new_frame( true, existing.get_fb(), terminal.get_fb() ) );
   }
   
   return output.SerializeAsString();

@@ -42,6 +42,7 @@ private:
   Terminal::Framebuffer *local_framebuffer;
   Overlay::OverlayManager overlays;
   Network::Transport< Network::UserStream, Terminal::Complete > *network;
+  Terminal::Display display;
 
   bool repaint_requested, quit_sequence_started;
 
@@ -61,6 +62,7 @@ public:
       local_framebuffer( NULL ),
       overlays(),
       network( NULL ),
+      display( true ), /* use TERM environment var to initialize display */
       repaint_requested( false ),
       quit_sequence_started( false )
   {

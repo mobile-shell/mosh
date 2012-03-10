@@ -32,6 +32,7 @@ namespace Terminal {
   private:
     Parser::UTF8Parser parser;
     Terminal::Emulator terminal;
+    Terminal::Display display;
 
     std::list< std::pair<uint64_t, uint64_t> > input_history;
     uint64_t echo_ack;
@@ -39,7 +40,7 @@ namespace Terminal {
     static const int ECHO_TIMEOUT = 50; /* for late ack */
 
   public:
-    Complete( size_t width, size_t height ) : parser(), terminal( width, height ),
+    Complete( size_t width, size_t height ) : parser(), terminal( width, height ), display( false ),
 					      input_history(), echo_ack( 0 ) {}
     
     std::string act( const std::string &str );

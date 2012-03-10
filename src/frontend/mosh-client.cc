@@ -89,6 +89,8 @@ int main( int argc, char *argv[] )
   } catch ( Crypto::CryptoException e ) {
     fprintf( stderr, "Crypto exception: %s\r\n",
 	     e.text.c_str() );
+  } catch ( std::string s ) {
+    fprintf( stderr, "Error: %s\r\n", s.c_str() );
   }
 
   printf( "\n[mosh is exiting.]\n" );
