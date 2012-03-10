@@ -1,3 +1,9 @@
+mosh (0.98a-1) unstable; urgency=low
+
+  * Small cleanup to generated terminal output when predictions active
+
+ -- Keith Winstein <keithw@mit.edu>  Sat, 10 Mar 2012 06:40:24 -0500
+
 mosh (0.98-1) unstable; urgency=low
 
   * Version 0.98 released.

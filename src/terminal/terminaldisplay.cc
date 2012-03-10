@@ -242,8 +242,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
     /* can we go to the end of the line? */
     if ( frame.x + clear_count == f.ds.get_width() ) {
-      snprintf( tmp, 64, "\033[K" );
-      frame.append( tmp );
+      frame.append( "\033[K" );
       frame.x += clear_count;
     } else {
       if ( has_ech ) {
