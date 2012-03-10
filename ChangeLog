@@ -1,3 +1,15 @@
+2012-03-10 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 0.98 released.
+
+	* Add option to select server-side UDP port.
+
+	* Restrict default UDP port range to 60000..61000.
+
+	* Use TERM / terminfo to decide when to send ECH sequence.
+
+	* Now works properly inside tmux.
+
 2012-03-07 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 0.97 released.

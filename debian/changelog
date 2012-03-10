@@ -1,3 +1,17 @@
+mosh (0.98-1) unstable; urgency=low
+
+  * Version 0.98 released.
+
+  * Add option to select server-side UDP port.
+
+  * Restrict default UDP port range to 60000..61000.
+
+  * Use TERM / terminfo to decide when to send ECH sequence.
+
+  * Now works properly inside tmux.
+
+ -- Keith Winstein <keithw@mit.edu>  Sat, 10 Mar 2012 05:45:34 -0500
+
 mosh (0.97-1) unstable; urgency=low
 
   * Merged Mac OS X port (thanks to Quentin Smith and Anders Kaseorg)
