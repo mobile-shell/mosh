@@ -145,6 +145,10 @@ More info
 
     <http://mosh.mit.edu>
 
+  * `mosh-devel@mit.edu` mailing list:
+
+    <http://mailman.mit.edu/mailman/listinfo/mosh-devel>
+
   * `mosh-users@mit.edu` mailing list:
 
     <http://mailman.mit.edu/mailman/listinfo/mosh-users>
