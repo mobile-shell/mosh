@@ -52,7 +52,8 @@ Display::Display( bool use_environment )
       } 
     }
 
-    char *val = tigetstr( "ech" );
+    char ech_name[] = "ech";
+    char *val = tigetstr( ech_name );
     if ( val <= 0 ) {
       has_ech = false;
     }
