@@ -134,10 +134,9 @@ How it works
   If the client changes IP addresses, the server will begin sending
   to the client on the new IP address within a few seconds.
 
-  To function, Mosh requires high-port UDP datagrams to be passed
-  between client and server. Sites that have these ports firewalled
-  would not be able to use Mosh.
-
+  To function, Mosh requires UDP datagrams to be passed between client
+  and server. By default, `mosh` uses a port number between 60000 and
+  61000, but the user can select a particular port with the -p option.
 
 More info
 ---------
