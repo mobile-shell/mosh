@@ -209,11 +209,11 @@ bool Connection::try_bind( int socket, uint32_t s_addr, int port )
     local_addr.sin_port = htons( i );
 
     if ( bind( socket, (sockaddr *)&local_addr, sizeof( local_addr ) ) == 0 ) {
-      fprintf( stderr, "Server now bound to %s:%d\n",
-	       inet_ntoa( local_addr.sin_addr ),
-	       ntohs( local_addr.sin_port ) );
       return true;
     } else if ( i == search_high ) { /* last port to search */
+      fprintf( stderr, "Failed binding to %s:%d\n",
+	       inet_ntoa( local_addr.sin_addr ),
+	       ntohs( local_addr.sin_port ) );
       throw NetworkException( "bind", errno );
     }
   }
