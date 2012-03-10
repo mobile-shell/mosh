@@ -237,10 +237,15 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 	break;
       }
     }
-    snprintf( tmp, 64, "\033[%dX", clear_count );
-    frame.append( tmp );
 
     frame.x += clear_count;
+    if ( frame.x >= f.ds.get_width() ) {
+      snprintf( tmp, 64, "\033[K" );
+    } else {
+      snprintf( tmp, 64, "\033[%dX", clear_count );
+    }
+    frame.append( tmp );
+
     return;
   }
 
