@@ -54,7 +54,9 @@ Display::Display( bool use_environment )
 
     char ech_name[] = "ech";
     char *val = tigetstr( ech_name );
-    if ( val <= 0 ) {
+    if ( val == (char *)-1 )
+      throw std::string( "Invalid terminfo string capability " ) + ech_name;
+    if ( val == 0 ) {
       has_ech = false;
     }
   }
