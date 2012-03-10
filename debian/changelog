@@ -1,3 +1,9 @@
+mosh (0.98c-1) unstable; urgency=low
+
+  * Fix pointer comparison (Anders Kaseorg)
+
+ -- Keith Winstein <keithw@mit.edu>  Sat, 10 Mar 2012 16:50:35 -0500
+
 mosh (0.98b-1) unstable; urgency=low
 
   * Update README.md
