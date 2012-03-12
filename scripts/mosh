@@ -50,12 +50,12 @@ qq{Usage: $0 [options] [user@]host
 -p NUM  --port=NUM           server-side UDP port
 
         --help               this message
-        --version
+        --version            version and copyright information
 
 Please report bugs to mosh-devel\@mit.edu.
-Mosh home page: http://mosh.mit.edu
+Mosh home page: http://mosh.mit.edu\n};
 
-mosh $MOSH_VERSION
+my $version_message = qq{mosh $MOSH_VERSION
 Copyright 2012 Keith Winstein <mosh-devel\@mit.edu>
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
@@ -84,7 +84,7 @@ GetOptions( 'client=s' => \$client,
 	    'fake-proxy!' => \my $fake_proxy ) or die $usage;
 
 die $usage if ( defined $help );
-die "mosh $MOSH_VERSION\n" if ( defined $version );
+die $version_message if ( defined $version );
 
 if ( defined $predict ) {
   predict_check( $predict, 0 );
