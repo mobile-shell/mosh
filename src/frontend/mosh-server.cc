@@ -153,6 +153,10 @@ int run_server( const char *desired_ip, const char *desired_port ) {
 
   fprintf( stderr, "[mosh-server detached, pid = %d]\n", (int)getpid() );
 
+  fprintf( stderr, "\nmosh-server (%s)\n", PACKAGE_STRING );
+  fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
+  fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
+
   int master;
 
   if ( !(child_termios.c_iflag & IUTF8) ) {

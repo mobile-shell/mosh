@@ -16,6 +16,8 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+my $MOSH_VERSION = '0.98c';
+
 use warnings;
 use strict;
 use Socket;
@@ -31,6 +33,9 @@ my $predict = undef;
 
 my $port_request = undef;
 
+my $help = undef;
+my $version = undef;
+
 my $usage =
 qq{Usage: $0 [options] [user@]host
         --client=PATH        mosh client on local machine
@@ -44,8 +49,17 @@ qq{Usage: $0 [options] [user@]host
 
 -p NUM  --port=NUM           server-side UDP port
 
+        --help               this message
+        --version
+
 Please report bugs to mosh-devel\@mit.edu.
-Mosh home page: http://mosh.mit.edu\n};
+Mosh home page: http://mosh.mit.edu
+
+mosh $MOSH_VERSION
+Copyright 2012 Keith Winstein <mosh-devel\@mit.edu>
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.\n};
 
 sub predict_check {
   my ( $predict, $env_set ) = @_;
@@ -65,7 +79,12 @@ GetOptions( 'client=s' => \$client,
 	    'a' => sub { $predict = 'always' },
 	    'n' => sub { $predict = 'never' },
 	    'p=i' => \$port_request,
+	    'help' => \$help,
+	    'version' => \$version,
 	    'fake-proxy!' => \my $fake_proxy ) or die $usage;
+
+die $usage if ( defined $help );
+die "mosh $MOSH_VERSION\n" if ( defined $version );
 
 if ( defined $predict ) {
   predict_check( $predict, 0 );

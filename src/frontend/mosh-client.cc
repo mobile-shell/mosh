@@ -16,6 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -23,6 +25,10 @@
 #include "crypto.h"
 
 void usage( const char *argv0 ) {
+  fprintf( stderr, "mosh-client (%s)\n", PACKAGE_STRING );
+  fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
+  fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
+
   fprintf( stderr, "Usage: %s IP PORT\n", argv0 );
 }
 
