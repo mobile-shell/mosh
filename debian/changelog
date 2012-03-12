@@ -1,3 +1,11 @@
+mosh (1.0-1) unstable; urgency=low
+
+  * Version 1.0 released.
+
+  * mosh now supports --version option and prints no-warranty message.
+
+ -- Keith Winstein <keithw@mit.edu>  Mon, 12 Mar 2012 04:51:43 -0400
+
 mosh (0.98c-1) unstable; urgency=low
 
   * Fix pointer comparison (Anders Kaseorg)
