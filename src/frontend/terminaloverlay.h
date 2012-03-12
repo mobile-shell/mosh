@@ -152,7 +152,7 @@ namespace Overlay {
     static const uint64_t GLITCH_REPAIR_COUNT = 10; /* non-glitches required to cure glitch trigger */
     static const uint64_t GLITCH_REPAIR_MININTERVAL = 150; /* required time in between non-glitches */
 
-    static const uint64_t GLITCH_FLAG_THRESHOLD = 500; /* prediction outstanding this long => underline */
+    static const uint64_t GLITCH_FLAG_THRESHOLD = 5000; /* prediction outstanding this long => underline */
 
     char last_byte;
     Parser::UTF8Parser parser;
