@@ -143,12 +143,12 @@ Advice to distributors
 A note on compiler flags: Mosh is security-sensitive code. When making
 automated builds for a binary package, we recommend passing the option
 `--enable-compile-warnings=error` to ./configure. On GNU/Linux with
-g++ or clang++, the package should compile cleanly with
+`g++` or `clang++`, the package should compile cleanly with
 `-Werror`. Please report a bug if it doesn't.
 
 Mosh ships with a default optimization setting of `-O2`. Some
 distributors have asked about changing this to `-Os` (which causes a
-compiler to prefer space optimizations to time optimization). We have
+compiler to prefer space optimizations to time optimizations). We have
 benchmarked with the included `src/examples/benchmark` program to test
 this. The results are that `-O2` is 40% faster than `-Os` with g++ 4.6
 on GNU/Linux, and 16% faster than `-Os` with clang++ 3.1 on Mac OS
