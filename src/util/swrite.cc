@@ -25,7 +25,7 @@
 int swrite( int fd, const char *str, ssize_t len )
 {
   ssize_t total_bytes_written = 0;
-  ssize_t bytes_to_write = ( len >= 0 ) ? len : strlen( str );
+  ssize_t bytes_to_write = ( len >= 0 ) ? len : (ssize_t) strlen( str );
   while ( total_bytes_written < bytes_to_write ) {
     ssize_t bytes_written = write( fd, str + total_bytes_written,
 				   bytes_to_write - total_bytes_written );
