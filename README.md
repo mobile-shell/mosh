@@ -102,7 +102,6 @@ Getting Mosh
   [Boost]:            http://www.boost.org/
   [IO::Pty]:          http://search.cpan.org/~toddr/IO-Tty/Pty.pm
 
-
 Usage
 -----
 
@@ -137,6 +136,28 @@ How it works
   To function, Mosh requires UDP datagrams to be passed between client
   and server. By default, `mosh` uses a port number between 60000 and
   61000, but the user can select a particular port with the -p option.
+
+Advice to distributors
+----------------------
+
+A note on compiler flags: Mosh is security-sensitive code. When making
+automated builds for a binary package, we recommend passing the option
+`--enable-compiler-warnings=error` to ./configure. On GNU/Linux with
+gcc and a system boost, the package should compile cleanly with
+-Werror. Please report a bug if it doesn't.
+
+Mosh ships with a default optimization setting of `-O2`. Some
+distributors have asked about changing this to `-Os` (which causes a
+compiler to prefer space optimizations to time optimization). We have
+benchmarked mosh with g++ 4.6 and clang++ 2.9 to see if `-Os` might be
+preferable. In both cases, -Os did produce a smaller binary (by up to
+40%, saving a few hundred kilobytes), but at a considerable cost to
+mosh's performance -- about 28-31% for both compilers, or similar to a
+typical net benefit from enabling optimization. While Mosh is not
+especially CPU intensive and mostly sits idle when the user is not
+typing, our recommendation to distributors would be to stay with the
+default of `-O2` unless saving space on disk is particularly
+important.
 
 More info
 ---------
