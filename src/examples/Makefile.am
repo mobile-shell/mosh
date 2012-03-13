@@ -1,7 +1,7 @@
 AM_CPPFLAGS = $(protobuf_CFLAGS)
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) -fno-default-inline -pipe
 
-noinst_PROGRAMS = encrypt decrypt ntester parse termemu
+noinst_PROGRAMS = encrypt decrypt ntester parse termemu benchmark
 
 encrypt_SOURCES = encrypt.cc
 encrypt_CPPFLAGS = -I$(srcdir)/../crypto
@@ -29,3 +29,14 @@ endif
 ntester_SOURCES = ntester.cc
 ntester_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I../protobufs $(BOOST_CPPFLAGS)
 ntester_LDADD = ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a -lutil -lm $(BOOST_LDFLAGS) $(protobuf_LIBS)
+
+benchmark_SOURCES = benchmark.cc
+benchmark_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I../protobufs -I$(srcdir)/../frontend -I$(srcdir)/../crypto $(BOOST_CPPFLAGS) -I$(srcdir)/../network
+benchmark_LDADD = ../frontend/terminaloverlay.o ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../protobufs/libmoshprotos.a ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a -lutil -lm $(BOOST_LDFLAGS) $(protobuf_LIBS)
+if COND_THIRD_LIBSTDDJB
+  benchmark_CPPFLAGS += -I$(top_srcdir)/third/libstddjb
+  benchmark_LDADD += $(top_builddir)/third/libstddjb/libstddjb.a
+else
+  benchmark_CPPFLAGS += $(STDDJB_CPPFLAGS)
+  benchmark_LDADD += $(STDDJB_LDFLAGS)
+endif
