@@ -142,7 +142,7 @@ Advice to distributors
 
 A note on compiler flags: Mosh is security-sensitive code. When making
 automated builds for a binary package, we recommend passing the option
-`--enable-compiler-warnings=error` to ./configure. On GNU/Linux with
+`--enable-compile-warnings=error` to ./configure. On GNU/Linux with
 gcc and a system boost, the package should compile cleanly with
 -Werror. Please report a bug if it doesn't.
 
