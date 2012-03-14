@@ -16,8 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/lambda/lambda.hpp>
-
 #include "completeterminal.h"
 #include "fatal_assert.h"
 
@@ -27,7 +25,6 @@ using namespace std;
 using namespace Parser;
 using namespace Terminal;
 using namespace HostBuffers;
-using namespace boost::lambda;
 
 string Complete::act( const string &str )
 {
@@ -106,6 +103,11 @@ bool Complete::operator==( Complete const &x ) const
   return (terminal == x.terminal) && (echo_ack == x.echo_ack);
 }
 
+static bool old_ack(uint64_t newest_echo_ack, const pair<uint64_t, uint64_t> p)
+{
+  return p.first < newest_echo_ack;
+}
+
 bool Complete::set_echo_ack( uint64_t now )
 {
   bool ret = false;
@@ -119,7 +121,7 @@ bool Complete::set_echo_ack( uint64_t now )
     }
   }
 
-  input_history.remove_if( (&_1)->*&pair<uint64_t, uint64_t>::first < newest_echo_ack );
+  input_history.remove_if( bind1st( ptr_fun( old_ack ), newest_echo_ack ) );
 
   if ( echo_ack != newest_echo_ack ) {
     ret = true;
