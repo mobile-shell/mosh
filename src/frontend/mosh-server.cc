@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
-#include <langinfo.h>
 #include <termios.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -49,6 +48,7 @@ extern "C" {
 #include "swrite.h"
 #include "user.h"
 #include "fatal_assert.h"
+#include "locale_utils.h"
 
 #if HAVE_PTY_H
 #include <pty.h>
@@ -196,16 +196,8 @@ int main( int argc, char *argv[] )
   }
 
   /* Adopt implementation locale */
-  if ( NULL == setlocale( LC_ALL, "" ) ) {
-    perror( "setlocale" );
-    exit( 1 );
-  }
-
-  /* Verify locale calls for UTF-8 */
-  if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
-    fprintf( stderr, "mosh requires a UTF-8 locale.\n" );
-    exit( 1 );
-  }
+  set_native_locale();
+  assert_utf8_locale();
 
   try {
     return run_server( desired_ip, desired_port, command, colors );

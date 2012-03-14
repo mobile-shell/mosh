@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
-#include <langinfo.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +46,7 @@ extern "C" {
 #include "completeterminal.h"
 #include "user.h"
 #include "terminaloverlay.h"
+#include "locale_utils.h"
 
 const int ITERATIONS = 100000;
 
@@ -63,16 +63,8 @@ int main( void )
   Complete local_terminal( 80, 24 );
 
   /* Adopt native locale */
-  if ( NULL == setlocale( LC_ALL, "" ) ) {
-    perror( "setlocale" );
-    exit( 1 );
-  }
-
-  /* Verify locale calls for UTF-8 */
-  if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
-    fprintf( stderr, "mosh requires a UTF-8 locale.\n" );
-    exit( 1 );
-  }
+  set_native_locale();
+  assert_utf8_locale();
 
   for ( int i = 0; i < ITERATIONS; i++ ) {
     /* type a character */
