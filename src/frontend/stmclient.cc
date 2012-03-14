@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
-#include <langinfo.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,16 +46,13 @@ extern "C" {
 #include "completeterminal.h"
 #include "user.h"
 #include "fatal_assert.h"
+#include "locale_utils.h"
 
 #include "networktransport.cc"
 
 void STMClient::init( void )
 {
-  /* Verify locale calls for UTF-8 */
-  if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
-    fprintf( stderr, "mosh requires a UTF-8 locale.\n" );
-    exit( 1 );
-  }
+  assert_utf8_locale();
 
   /* Verify terminal configuration */
   if ( tcgetattr( STDIN_FILENO, &saved_termios ) < 0 ) {
