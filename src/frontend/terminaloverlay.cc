@@ -16,8 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
 #include <algorithm>
 #include <wchar.h>
 #include <list>
@@ -26,7 +24,6 @@
 
 #include "terminaloverlay.h"
 
-using namespace boost::lambda;
 using namespace Overlay;
 using std::max;
 using std::mem_fun_ref;
@@ -330,7 +327,7 @@ void PredictionEngine::apply( Framebuffer &fb ) const
 
 void PredictionEngine::kill_epoch( uint64_t epoch, const Framebuffer &fb )
 {
-  cursors.remove_if( bind( &ConditionalCursorMove::tentative, _1, epoch - 1 ) );
+  cursors.remove_if( bind2nd( mem_fun_ref( &ConditionalCursorMove::tentative ), epoch - 1 ) );
 
   cursors.push_back( ConditionalCursorMove( local_frame_sent + 1,
 					    fb.ds.get_cursor_row(),
@@ -532,8 +529,16 @@ void PredictionEngine::cull( const Framebuffer &fb )
     }
   }
 
-  cursors.remove_if( bind( &ConditionalCursorMove::get_validity, _1, var(fb),
-			   local_frame_acked, local_frame_late_acked ) != Pending );
+  /* NB: switching from list to another STL container could break this code.
+     So we don't use the cursors_t typedef. */
+  for ( list<ConditionalCursorMove>::iterator it = cursors.begin();
+        it != cursors.end(); ) {
+    if ( it->get_validity( fb, local_frame_acked, local_frame_late_acked ) != Pending ) {
+      it = cursors.erase( it );
+    } else {
+      it++;
+    }
+  }
 }
 
 ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_cols )
