@@ -159,7 +159,8 @@ namespace Overlay {
     typedef list<ConditionalOverlayRow> overlays_t;
     overlays_t overlays;
 
-    list<ConditionalCursorMove> cursors;
+    typedef list<ConditionalCursorMove> cursors_t;
+    cursors_t cursors;
 
     typedef ConditionalOverlayRow::overlay_cells_t overlay_cells_t;
 

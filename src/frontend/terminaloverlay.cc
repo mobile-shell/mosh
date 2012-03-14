@@ -300,7 +300,11 @@ void TitleEngine::set_prefix( const wstring s )
 
 void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const
 {
-  for_each( overlay_cells.begin(), overlay_cells.end(), bind( &ConditionalOverlayCell::apply, _1, var(fb), confirmed_epoch, row_num, flag ) );
+  for ( overlay_cells_t::const_iterator it = overlay_cells.begin();
+        it != overlay_cells.end();
+        it++ ) {
+    it->apply( fb, confirmed_epoch, row_num, flag );
+  }
 }
 
 void PredictionEngine::apply( Framebuffer &fb ) const
@@ -310,9 +314,17 @@ void PredictionEngine::apply( Framebuffer &fb ) const
 						 || (display_preference == Always) );
 
   if ( show ) {
-    for_each( cursors.begin(), cursors.end(), bind( &ConditionalCursorMove::apply, _1, var(fb), confirmed_epoch ) );
+    for ( cursors_t::const_iterator it = cursors.begin();
+          it != cursors.end();
+          it++ ) {
+      it->apply( fb, confirmed_epoch );
+    }
 
-    for_each( overlays.begin(), overlays.end(), bind( &ConditionalOverlayRow::apply, _1, var(fb), confirmed_epoch, flagging ) );
+    for ( overlays_t::const_iterator it = overlays.begin();
+          it != overlays.end();
+          it++ ) {
+      it->apply( fb, confirmed_epoch, flagging );
+    }
   }
 }
 
