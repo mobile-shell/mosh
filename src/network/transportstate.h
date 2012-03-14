@@ -31,6 +31,10 @@ namespace Network {
     TimestampedState( uint64_t s_timestamp, uint64_t s_num, State &s_state )
       : timestamp( s_timestamp ), num( s_num ), state( s_state )
     {}
+
+    /* For use with find_if, remove_if */
+    bool num_eq( uint64_t v ) const { return num == v; }
+    bool num_lt( uint64_t v ) const { return num <  v; }
   };
 }
 
