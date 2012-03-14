@@ -538,8 +538,9 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
 ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_cols )
 {
-  overlays_t::iterator it = find_if( overlays.begin(), overlays.end(),
-			             (&_1)->*&ConditionalOverlayRow::row_num == row_num );
+  overlays_t::iterator it =
+    find_if( overlays.begin(), overlays.end(),
+	     bind2nd( mem_fun_ref( &ConditionalOverlayRow::row_num_eq ), row_num ) );
 
   if ( it != overlays.end() ) {
     return *it;
