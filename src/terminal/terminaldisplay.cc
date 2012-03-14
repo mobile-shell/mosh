@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/typeof/typeof.hpp>
 #include <stdio.h>
 
 #include "terminaldisplay.h"
@@ -51,9 +50,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       /* write combined Icon Name and Window Title */
       frame.append( "\033]0;" );
       const std::deque<wchar_t> &window_title( f.get_window_title() );
-      for ( BOOST_AUTO( i, window_title.begin() );
-	    i != window_title.end();
-	    i++ ) {
+      for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
+            i != window_title.end();
+            i++ ) {
 	snprintf( tmp, 64, "%lc", *i );
 	frame.append( tmp );
       }
@@ -62,7 +61,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       /* write Icon Name */
       frame.append( "\033]1;" );
       const std::deque<wchar_t> &icon_name( f.get_icon_name() );
-      for ( BOOST_AUTO( i, icon_name.begin() );
+      for ( std::deque<wchar_t>::const_iterator i = icon_name.begin();
 	    i != icon_name.end();
 	    i++ ) {
 	snprintf( tmp, 64, "%lc", *i );
@@ -72,7 +71,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
       frame.append( "\033]2;" );
       const std::deque<wchar_t> &window_title( f.get_window_title() );
-      for ( BOOST_AUTO( i, window_title.begin() );
+      for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
 	    i != window_title.end();
 	    i++ ) {
 	snprintf( tmp, 64, "%lc", *i );
