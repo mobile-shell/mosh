@@ -17,7 +17,6 @@
 */
 
 #include <boost/lambda/lambda.hpp>
-#include <boost/typeof/typeof.hpp>
 #include <algorithm>
 #include <list>
 #include <stdio.h>
@@ -184,7 +183,7 @@ void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t 
 {
   sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
   if ( sent_states.size() > 32 ) { /* limit on state queue */
-    BOOST_AUTO( last, sent_states.end() );
+    typename sent_states_t::iterator last = sent_states.end();
     for ( int i = 0; i < 16; i++ ) { last--; }
     sent_states.erase( last ); /* erase state from middle of queue */
   }
@@ -290,7 +289,9 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
 
   vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU() );
 
-  for ( BOOST_AUTO( i, fragments.begin() ); i != fragments.end(); i++ ) {
+  for ( vector<Fragment>::iterator i = fragments.begin();
+        i != fragments.end();
+        i++ ) {
     connection->send( i->tostring() );
 
     if ( verbose ) {
