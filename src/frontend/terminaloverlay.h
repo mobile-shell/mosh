@@ -112,7 +112,8 @@ namespace Overlay {
   public:
     int row_num;
 
-    vector<ConditionalOverlayCell> overlay_cells;
+    typedef vector<ConditionalOverlayCell> overlay_cells_t;
+    overlay_cells_t overlay_cells;
 
     void apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const;
 
@@ -155,9 +156,12 @@ namespace Overlay {
     char last_byte;
     Parser::UTF8Parser parser;
 
-    list<ConditionalOverlayRow> overlays;
+    typedef list<ConditionalOverlayRow> overlays_t;
+    overlays_t overlays;
 
     list<ConditionalCursorMove> cursors;
+
+    typedef ConditionalOverlayRow::overlay_cells_t overlay_cells_t;
 
     uint64_t local_frame_sent, local_frame_acked, local_frame_late_acked;
 
