@@ -103,10 +103,8 @@ namespace Overlay {
 	return;
       }
 
-      vector<Cell> new_orig( original_contents );
-      new_orig.push_back( replacement );
-      reset();
-      original_contents = new_orig;
+      original_contents.push_back( replacement );
+      ConditionalOverlay::reset();
     }
   };
 
