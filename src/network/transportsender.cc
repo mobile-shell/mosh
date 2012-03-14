@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/lambda/lambda.hpp>
 #include <algorithm>
 #include <list>
 #include <stdio.h>
@@ -26,7 +25,6 @@
 #include "transportsender.h"
 #include "transportfragment.h"
 
-using namespace boost::lambda;
 using namespace Network;
 using namespace std;
 
@@ -312,9 +310,10 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
 {
   /* Ignore ack if we have culled the state it's acknowledging */
 
-  if ( sent_states.end() != find_if( sent_states.begin(), sent_states.end(),
-				     (&_1)->*&TimestampedState<MyState>::num == ack_num ) ) {
-    sent_states.remove_if( (&_1)->*&TimestampedState<MyState>::num < ack_num );
+  if ( sent_states.end() !=
+       find_if( sent_states.begin(), sent_states.end(),
+		bind2nd( mem_fun_ref( &TimestampedState<MyState>::num_eq ), ack_num ) ) ) {
+    sent_states.remove_if( bind2nd( mem_fun_ref( &TimestampedState<MyState>::num_lt ), ack_num ) );
   }
 
   assert( !sent_states.empty() );
