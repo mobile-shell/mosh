@@ -45,15 +45,6 @@ License: GPL-2+
  On Debian systems, the complete text of the GNU General
  Public License version 2 can be found in "/usr/share/common-licenses/GPL-2"
 
-Files: m4/ax_boost_base.m4
-Copyright: 2008 Thomas Porschberg <thomas@randspringer.de>
-           2009 Peter Adolphs
-License: permissive
- Copying and distribution of this file, with or without modification, are
- permitted in any medium without royalty provided the copyright notice
- and this notice are preserved. This file is offered as-is, without any
- warranty.
-
 Files: m4/ax_check_library.m4
 Copyright: 2010 Diego Elio Petteno` <flameeyes@gmail.com>
 License: GPL-3+
