@@ -50,12 +50,17 @@ extern "C" {
 
 const int ITERATIONS = 1000;
 
+using namespace Terminal;
+
 int main( void )
 {
-  Terminal::Framebuffer local_framebuffer( 80, 24 );
+  int fbmod = 0;
+  Framebuffer local_framebuffers[ 2 ] = { Framebuffer(80,24), Framebuffer(80,24) };
+  Framebuffer *local_framebuffer = &(local_framebuffers[ fbmod ]);
+  Framebuffer *new_state = &(local_framebuffers[ !fbmod ]);
   Overlay::OverlayManager overlays;
-  Terminal::Display display( true );
-  Terminal::Complete local_terminal( 80, 24 );
+  Display display( true );
+  Complete local_terminal( 80, 24 );
 
   /* Adopt native locale */
   if ( NULL == setlocale( LC_ALL, "" ) ) {
@@ -71,25 +76,27 @@ int main( void )
 
   for ( int i = 0; i < ITERATIONS; i++ ) {
     /* type a character */
-    overlays.get_prediction_engine().new_user_byte( i + 'x', local_framebuffer );
+    overlays.get_prediction_engine().new_user_byte( i + 'x', *local_framebuffer );
 
     /* fetch target state */
-    Terminal::Framebuffer new_state( local_terminal.get_fb() );
+    *new_state = local_terminal.get_fb();
 
     /* apply local overlays */
-    overlays.apply( new_state );
+    overlays.apply( *new_state );
 
     /* calculate minimal difference from where we are */
     const string diff( display.new_frame( false,
-					  local_framebuffer,
-					  new_state ) );    
+					  *local_framebuffer,
+					  *new_state ) );
 
     /* make sure to use diff */
     if ( diff.size() > INT_MAX ) {
       exit( 1 );
     }
 
-    local_framebuffer = new_state;
+    fbmod = !fbmod;
+    local_framebuffer = &(local_framebuffers[ fbmod ]);
+    new_state = &(local_framebuffers[ !fbmod ]);
   }
 
   return 0;

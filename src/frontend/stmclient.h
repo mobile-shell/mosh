@@ -39,7 +39,7 @@ private:
   int signal_fd;
   struct winsize window_size;
 
-  Terminal::Framebuffer *local_framebuffer;
+  Terminal::Framebuffer *local_framebuffer, *new_state;
   Overlay::OverlayManager overlays;
   Network::Transport< Network::UserStream, Terminal::Complete > *network;
   Terminal::Display display;
@@ -60,6 +60,7 @@ public:
       signal_fd(),
       window_size(),
       local_framebuffer( NULL ),
+      new_state( NULL ),
       overlays(),
       network( NULL ),
       display( true ), /* use TERM environment var to initialize display */
@@ -88,6 +89,10 @@ public:
   {
     if ( local_framebuffer != NULL ) {
       delete local_framebuffer;
+    }
+
+    if ( new_state != NULL ) {
+      delete new_state;
     }
 
     if ( network != NULL ) {
