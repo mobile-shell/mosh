@@ -24,6 +24,7 @@
 
 #include "stmclient.h"
 #include "crypto.h"
+#include "locale_utils.h"
 
 /* these need to be included last because of conflicting defines */
 #include <curses.h>
@@ -103,10 +104,7 @@ int main( int argc, char *argv[] )
   }
 
   /* Adopt native locale */
-  if ( NULL == setlocale( LC_ALL, "" ) ) {
-    perror( "setlocale" );
-    exit( 1 );
-  }
+  set_native_locale();
 
   try {
     STMClient client( ip, port, key, predict_mode );
