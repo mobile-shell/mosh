@@ -48,7 +48,7 @@ extern "C" {
 #include "user.h"
 #include "terminaloverlay.h"
 
-const int ITERATIONS = 100000;
+const int ITERATIONS = 1000;
 
 int main( void )
 {

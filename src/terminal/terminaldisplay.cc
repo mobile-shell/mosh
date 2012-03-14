@@ -25,6 +25,12 @@ using namespace Terminal;
 
 /* Print a new "frame" to the terminal, using ANSI/ECMA-48 escape codes. */
 
+static const Renditions & initial_rendition( void )
+{
+  const static Renditions blank = Renditions( 0 );
+  return blank;
+}
+
 std::string Display::new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f ) const
 {
   FrameState frame( last );
@@ -67,11 +73,11 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     frame.append( "\033[0m\033[H\033[2J" );
     initialized = false;
     frame.cursor_x = frame.cursor_y = 0;
-    frame.current_rendition_string = "\033[0m";
+    frame.current_rendition = initial_rendition();
   } else {
     frame.cursor_x = frame.last_frame.ds.get_cursor_col();
     frame.cursor_y = frame.last_frame.ds.get_cursor_row();
-    frame.current_rendition_string = frame.last_frame.ds.get_renditions().sgr();
+    frame.current_rendition = frame.last_frame.ds.get_renditions();
   }
 
   /* shortcut -- has display moved up by a certain number of lines? */
@@ -111,9 +117,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	  frame.append_silent_move( f.ds.get_height() - 1, 0 );
 	}
 
-	if ( frame.current_rendition_string != "\033[0m" ) {
+	if ( !(frame.current_rendition == initial_rendition()) ) {
 	  frame.append( "\033[0m" );
-	  frame.current_rendition_string = "\033[0m";
+	  frame.current_rendition = initial_rendition();
 	}
 
 	for ( int i = 0; i < lines_scrolled; i++ ) {
@@ -193,9 +199,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
   /* have renditions changed? */
   if ( (!initialized)
-       || (f.ds.get_renditions().sgr() != frame.current_rendition_string) ) {
+       || !(f.ds.get_renditions() == frame.current_rendition) ) {
     frame.appendstring( f.ds.get_renditions().sgr() );
-    frame.current_rendition_string = f.ds.get_renditions().sgr();
+    frame.current_rendition = f.ds.get_renditions();
   }
 
   return frame.str;
@@ -217,12 +223,10 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
     frame.append_silent_move( frame.y, frame.x );
   }
 
-  std::string rendition_str = cell->renditions.sgr();
-
-  if ( frame.current_rendition_string != rendition_str ) {
+  if ( !(frame.current_rendition == cell->renditions) ) {
     /* print renditions */
-    frame.appendstring( rendition_str );
-    frame.current_rendition_string = rendition_str;
+    frame.appendstring( cell->renditions.sgr() );
+    frame.current_rendition = cell->renditions;
   }
 
   if ( cell->contents.empty() ) {

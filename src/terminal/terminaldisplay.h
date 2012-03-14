@@ -29,13 +29,13 @@ namespace Terminal {
     std::string str;
 
     int cursor_x, cursor_y;
-    std::string current_rendition_string;
+    Renditions current_rendition;
 
     Framebuffer last_frame;
 
     FrameState( const Framebuffer &s_last )
       : x(0), y(0),
-	str(), cursor_x(0), cursor_y(0), current_rendition_string(),
+	str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
 	last_frame( s_last )
     {
       str.reserve( 1024 );
