@@ -96,6 +96,12 @@ namespace Terminal {
 	       || ( (contents.size() == 1) && ( (contents.front() == 0x20)
 						|| (contents.front() == 0xA0) ) ) );
     }
+
+    bool contents_match ( const Cell& other ) const
+    {
+      return ( is_blank() && other.is_blank() )
+             || ( contents == other.contents );
+    }
   };
 
   class Row {

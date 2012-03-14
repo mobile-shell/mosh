@@ -29,6 +29,8 @@
 using namespace boost::lambda;
 using namespace Overlay;
 using std::max;
+using std::mem_fun_ref;
+using std::bind2nd;
 
 void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const
 {
@@ -88,12 +90,10 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
       return CorrectNoCredit;
     }
 
-    if ( (current.contents == replacement.contents)
-	 || (current.is_blank() && replacement.is_blank()) ) {
+    if ( current.contents_match( replacement ) ) {
       vector<Cell>::const_iterator it =
         find_if( original_contents.begin(), original_contents.end(),
-		 (replacement.is_blank() && bind( &Cell::is_blank, _1 ))
-		 || replacement.contents == (&_1)->*&Cell::contents );
+		 bind2nd( mem_fun_ref( &Cell::contents_match ), replacement ) );
       if ( it == original_contents.end() ) {
 	return Correct;
       } else {
