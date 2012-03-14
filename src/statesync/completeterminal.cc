@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/typeof/typeof.hpp>
 #include <boost/lambda/lambda.hpp>
 
 #include "completeterminal.h"
@@ -112,7 +111,9 @@ bool Complete::set_echo_ack( uint64_t now )
   bool ret = false;
   uint64_t newest_echo_ack = 0;
 
-  for ( BOOST_AUTO( i, input_history.begin() ); i != input_history.end(); i++ ) {
+  for ( input_history_t::const_iterator i = input_history.begin();
+        i != input_history.end();
+        i++ ) {
     if ( i->second < now - ECHO_TIMEOUT ) {
       newest_echo_ack = i->first;
     }
@@ -140,7 +141,7 @@ int Complete::wait_time( uint64_t now ) const
     return INT_MAX;
   }
 
-  BOOST_AUTO( it, input_history.begin() );
+  input_history_t::const_iterator it = input_history.begin();
   it++;
 
   uint64_t next_echo_ack_time = it->second + ECHO_TIMEOUT;
