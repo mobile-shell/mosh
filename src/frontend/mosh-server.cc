@@ -279,10 +279,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
   #ifdef HAVE_UTEMPTER
   bool connected_utmp = false;
-  #endif
 
   struct in_addr saved_addr;
   saved_addr.s_addr = 0;
+  #endif
 
   while ( 1 ) {
     try {
