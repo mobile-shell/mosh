@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/typeof/typeof.hpp>
 #include <assert.h>
 #include <stdio.h>
 
@@ -323,8 +322,12 @@ void Framebuffer::soft_reset( void )
 
 void Framebuffer::posterize( void )
 {
-  for ( BOOST_AUTO( i, rows.begin() ); i != rows.end(); i++ ) {
-    for ( BOOST_AUTO( j, i->cells.begin() ); j != i->cells.end(); j++ ) {
+  for ( rows_t::iterator i = rows.begin();
+        i != rows.end();
+        i++ ) {
+    for ( Row::cells_t::iterator j = i->cells.begin();
+          j != i->cells.end();
+          j++ ) {
       j->renditions.posterize();
     }
   }
@@ -337,7 +340,7 @@ void Framebuffer::resize( int s_width, int s_height )
 
   rows.resize( s_height, newrow() );
 
-  for ( std::deque<Row>::iterator i = rows.begin();
+  for ( rows_t::iterator i = rows.begin();
 	i != rows.end();
 	i++ ) {
     i->set_wrap( false );
@@ -537,7 +540,7 @@ void Renditions::posterize( void )
 
 void Row::reset( int background_color )
 {
-  for ( std::vector<Cell>::iterator i = cells.begin();
+  for ( cells_t::iterator i = cells.begin();
 	i != cells.end();
 	i++ ) {
     i->reset( background_color );
@@ -548,12 +551,16 @@ void Framebuffer::prefix_window_title( const std::deque<wchar_t> &s )
 {
   if ( icon_name == window_title ) {
     /* preserve equivalence */
-    for ( BOOST_AUTO( i, s.rbegin() ); i != s.rend(); i++ ) {
+    for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
+          i != s.rend();
+          i++ ) {
       icon_name.push_front( *i );
     }
   }
 
-  for ( BOOST_AUTO( i, s.rbegin() ); i != s.rend(); i++ ) {
+  for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
+        i != s.rend();
+        i++ ) {
     window_title.push_front( *i );
   }
 }
