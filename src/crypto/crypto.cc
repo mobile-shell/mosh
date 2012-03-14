@@ -46,7 +46,7 @@ long int myatoi( const char *str )
   return ret;
 }
 
-static void * sse_alloc( int len )
+static void * aligned_alloc( int len )
 {
   void *ptr = NULL;
 
@@ -193,8 +193,8 @@ string Session::encrypt( Message plaintext )
   const size_t pt_len = plaintext.text.size();
   const int ciphertext_len = pt_len + 16;
 
-  char *ciphertext = (char *)sse_alloc( ciphertext_len );
-  char *pt = (char *)sse_alloc( pt_len );
+  char *ciphertext = (char *)aligned_alloc( ciphertext_len );
+  char *pt = (char *)aligned_alloc( pt_len );
 
   memcpy( pt, plaintext.text.data(), plaintext.text.size() );
 
@@ -240,10 +240,10 @@ Message Session::decrypt( string ciphertext )
   }
 
   Nonce __attribute__((__aligned__ (16))) nonce( str, 8 );
-  char *body = (char *)sse_alloc( body_len );
+  char *body = (char *)aligned_alloc( body_len );
   memcpy( body, str + 8, body_len );
 
-  char *plaintext = (char *)sse_alloc( pt_len );
+  char *plaintext = (char *)aligned_alloc( pt_len );
 
   if ( pt_len != ae_decrypt( ctx,               /* ctx */
 			     nonce.data(),      /* nonce */
