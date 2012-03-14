@@ -71,7 +71,7 @@ int main( void )
 
   for ( int i = 0; i < ITERATIONS; i++ ) {
     /* type a character */
-    overlays.get_prediction_engine().new_user_byte( 'x', local_framebuffer );
+    overlays.get_prediction_engine().new_user_byte( i + 'x', local_framebuffer );
 
     /* fetch target state */
     Terminal::Framebuffer new_state( local_terminal.get_fb() );
