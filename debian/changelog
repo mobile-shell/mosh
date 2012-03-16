@@ -4,7 +4,13 @@ mosh (1.02-1) unstable; urgency=low
 
   * Uses xterm-256color and supports 256-color escape sequences.
 
- -- Keith Winstein <keithw@mit.edu>  Fri, 16 Mar 2012 13:35:28 -0400
+  * Posterizes to 8 colors unless the user has a 256-color terminal.
+
+  * Handles terminals without BCE.
+
+  * Starts login shell.
+
+ -- Keith Winstein <keithw@mit.edu>  Fri, 16 Mar 2012 17:57:45 -0400
 
 mosh (1.01-1) unstable; urgency=low
 
