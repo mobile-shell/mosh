@@ -213,8 +213,7 @@ int run_server( const char *desired_ip, const char *desired_port ) {
       shell_name = "/bin/sh";
     }
 
-    string login_shell = "-";
-    login_shell.append( basename( shell_name.c_str() ) ); /* must be GNU basename */
+    string login_shell = "-" + shell_name;
 
     char *my_argv[ 2 ];
     my_argv[ 0 ] = strdup( login_shell.c_str() );
