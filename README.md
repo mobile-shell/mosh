@@ -34,7 +34,6 @@ It aims to support the typical interactive uses of SSH, plus:
 Mosh does not support X forwarding or the non-interactive uses of SSH,
 including port forwarding.
 
-
 Other features
 --------------
 
@@ -55,22 +54,31 @@ Other features
    * Mosh leverages SSH to set up the connection and authenticate
      users. Mosh does not contain any privileged (root) code.
 
-
 Getting Mosh
 ------------
 
-  Mosh is available from an [Ubuntu PPA][] and has a [package in
-  Debian unstable][Debian]. Packages for other operating systems are
-  planned.
+  Mosh is packaged for various operating systems.
 
-  [Ubuntu PPA]: https://launchpad.net/~keithw/+archive/mosh
-  [Debian]: http://packages.debian.org/sid/mosh
+  * [Debian][] unstable
 
-  Ubuntu installation instructions:
+        sudo apt-get install mosh
 
-    sudo add-apt-repository ppa:keithw/mosh
-    sudo apt-get update
-    sudo apt-get install mosh
+  * [Ubuntu][], through a PPA
+
+        sudo add-apt-repository ppa:keithw/mosh
+        sudo apt-get update
+        sudo apt-get install mosh
+
+  * [MacPorts][]
+
+        sudo port install mosh
+
+  [Debian]:   http://packages.debian.org/sid/mosh
+  [Ubuntu]:   https://launchpad.net/~keithw/+archive/mosh
+  [MacPorts]: https://trac.macports.org/browser/trunk/dports/net/mosh/Portfile
+
+Building from source
+--------------------
 
   On a Unix-like system you can build Mosh from source using the following
   commands:
@@ -115,7 +123,6 @@ Usage
   If the `mosh-client` or `mosh-server` binaries are installed outside the
   user's PATH, `mosh` accepts the arguments `--client=PATH` and
   `--server=PATH` to select alternate locations.
-
 
 How it works
 ------------
