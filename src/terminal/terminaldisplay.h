@@ -54,9 +54,13 @@ namespace Terminal {
 
     bool has_bce; /* erases result in cell filled with background color */
 
+    int posterize_colors; /* downsample input colors >8 to [0..7] */
+
     void put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const;
 
   public:
+    void downgrade( Framebuffer &f ) const { if ( posterize_colors ) { f.posterize(); } }
+
     std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f ) const;
 
     Display( bool use_environment );

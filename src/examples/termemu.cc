@@ -148,7 +148,7 @@ int main( void )
 }
 
 /* Print a frame if the last frame was more than 1/50 seconds ago */
-bool tick( Terminal::Framebuffer &state, const Terminal::Framebuffer &new_frame,
+bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame,
 	   const Terminal::Display &display )
 {
   static bool initialized = false;
@@ -165,6 +165,8 @@ bool tick( Terminal::Framebuffer &state, const Terminal::Framebuffer &new_frame,
 
   if ( (!initialized)
        || (diff >= 0.02) ) {
+    display.downgrade( new_frame );
+
     std::string update = display.new_frame( initialized, state, new_frame );
     swrite( STDOUT_FILENO, update.c_str() );
     state = new_frame;
@@ -314,7 +316,9 @@ void emulate_terminal( int fd )
       break;
     }
 
-    if ( tick( state, complete.get_fb(), display ) ) { /* there was a frame */
+    Terminal::Framebuffer new_frame( complete.get_fb() );
+
+    if ( tick( state, new_frame, display ) ) { /* there was a frame */
       poll_timeout = -1;
     } else {
       poll_timeout = 20;

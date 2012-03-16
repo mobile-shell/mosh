@@ -40,6 +40,8 @@ namespace Terminal {
     void set_rendition( int num );
     std::string sgr( void ) const;
 
+    void posterize( void );
+
     bool operator==( const Renditions &x ) const
     {
       return (bold == x.bold) && (underlined == x.underlined)
@@ -284,6 +286,8 @@ namespace Terminal {
 
     void reset_cell( Cell *c ) { c->reset( ds.get_background_rendition() ); }
     void reset_row( Row *r ) { r->reset( ds.get_background_rendition() ); }
+
+    void posterize( void );
 
     void ring_bell( void ) { bell_count++; }
     unsigned int get_bell_count( void ) const { return bell_count; }

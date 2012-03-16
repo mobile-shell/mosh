@@ -29,7 +29,7 @@
 using namespace Terminal;
 
 Display::Display( bool use_environment )
-  : has_ech( true ), has_bce( true )
+  : has_ech( true ), has_bce( true ), posterize_colors( false )
 {
   if ( use_environment ) {
     int errret = -2;
@@ -57,8 +57,7 @@ Display::Display( bool use_environment )
     char *val = tigetstr( ech_name );
     if ( val == (char *)-1 ) {
       throw std::string( "Invalid terminfo string capability " ) + ech_name;
-    }
-    if ( val == 0 ) {
+    } else if ( val == 0 ) {
       has_ech = false;
     }
 
@@ -67,9 +66,17 @@ Display::Display( bool use_environment )
     int bce_val = tigetflag( bce_name );
     if ( bce_val == -1 ) {
       throw std::string( "Invalid terminfo boolean capability " ) + bce_name;
-    }
-    if ( bce_val == 0 ) {
+    } else if ( bce_val == 0 ) {
       has_bce = false;
+    }
+
+    /* check colors */
+    char colors_name[] = "colors";
+    int color_val = tigetnum( colors_name );
+    if ( color_val == -2 ) {
+      throw std::string( "Invalid terminfo numeric capability " ) + colors_name;
+    } else if ( color_val < 256 ) {
+      posterize_colors = true;
     }
   }
 }

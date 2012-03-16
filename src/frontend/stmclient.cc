@@ -158,6 +158,9 @@ void STMClient::output_new_frame( void )
   /* apply local overlays */
   overlays.apply( *new_state );
 
+  /* apply any mutations */
+  display.downgrade( *new_state );
+
   /* calculate minimal difference from where we are */
   const string diff( display.new_frame( !repaint_requested,
 					*local_framebuffer,

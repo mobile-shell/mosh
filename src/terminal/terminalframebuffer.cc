@@ -320,6 +320,15 @@ void Framebuffer::soft_reset( void )
   ds.clear_saved_cursor();
 }
 
+void Framebuffer::posterize( void )
+{
+  for ( BOOST_AUTO( i, rows.begin() ); i != rows.end(); i++ ) {
+    for ( BOOST_AUTO( j, i->cells.begin() ); j != i->cells.end(); j++ ) {
+      j->renditions.posterize();
+    }
+  }
+}
+
 void Framebuffer::resize( int s_width, int s_height )
 {
   assert( s_width > 0 );
@@ -451,6 +460,64 @@ std::string Renditions::sgr( void ) const
   ret.append( "m" );
 
   return ret;
+}
+
+/* Reduce 256 "standard" colors to the 8 ANSI colors. */
+
+/* We could do something fancy like find the nearest system color in
+   the deltaE(2000) sense, but for "business graphics," the colorimetric
+   intent is probably less important than just having separate colors
+   be separate as much as possible. */
+
+/* Terminal emulators generally agree on the (R',G',B') values of the
+   "standard" 256-color pallette beyond #15, but for the first 16
+   colors there is disagreement. Most terminal emulators are roughly
+   self-consistent, except on Ubuntu's gnome-terminal where "ANSI
+   blue" (#4) has been replaced with the aubergine system-wide
+   color. See
+   https://lists.ubuntu.com/archives/ubuntu-devel/2011-March/032726.html
+
+   For purposes of this routine, we just treat the eight colors as
+   taking each possible assignment of 0 or 255 to their components.
+
+   Terminal emulators that advertise "xterm" are inconsistent on the
+   handling of initc to change the contents of a cell in the color
+   pallette. On RIS (reset to initial state) or choosing reset from
+   the user interface, xterm resets all entries, but gnome-terminal
+   only resets entries beyond 16. (rxvt doesn't reset any entries,
+   and Terminal.app ignores initc.) On initc, xterm applies changes
+   immediately (but slowly), but gnome-terminal's changes are only
+   prospective unless the user resizes the terminal.
+
+   mosh ignores initc for now, despite advertising xterm-256color. */
+
+static const char standard_posterization[] = {
+  0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7,
+  0, 0, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4, 2, 2, 6, 6,
+  6, 6, 2, 2, 6, 6, 6, 6, 2, 2, 6, 6, 6, 6, 2, 2,
+  6, 6, 6, 6, 0, 0, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4,
+  2, 2, 6, 6, 6, 6, 2, 2, 6, 6, 6, 6, 2, 2, 6, 6,
+  6, 6, 2, 2, 6, 6, 6, 6, 1, 1, 5, 5, 5, 5, 1, 1,
+  5, 5, 5, 5, 3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7,
+  3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7, 1, 1, 5, 5,
+  5, 5, 1, 1, 5, 5, 5, 5, 3, 3, 7, 7, 7, 7, 3, 3,
+  7, 7, 7, 7, 3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7,
+  1, 1, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5, 3, 3, 7, 7,
+  7, 7, 3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7, 3, 3,
+  7, 7, 7, 7, 1, 1, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5,
+  3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7, 3, 3, 7, 7,
+  7, 7, 3, 3, 7, 7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7 };
+
+void Renditions::posterize( void )
+{
+  if ( foreground_color ) {
+    foreground_color = 30 + standard_posterization[ foreground_color - 30 ];
+  }
+
+  if ( background_color ) {
+    background_color = 40 + standard_posterization[ background_color - 40 ];
+  }
 }
 
 void Row::reset( int background_color )
