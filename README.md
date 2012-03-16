@@ -97,11 +97,13 @@ Building from source
   * the [Protocol Buffers][] library and compiler
   * [Boost][]
   * `ncurses`
-  * `libutempter`
   * `zlib`
   * the Perl module [IO::Pty][]
 
   including development packages where applicable.
+
+  If `libutempter` is available, `mosh-server` will record sessions in the
+  `utmp` file, which makes them visible to commands like `who`.
 
   The file `debian/control` contains a list of the relevant Debian packages.
 
