@@ -176,6 +176,8 @@ int run_server( const char *desired_ip, const char *desired_port ) {
   if ( child == 0 ) {
     /* child */
 
+    setsid(); /* may fail */
+
     /* unblock signals */
     sigset_t signals_to_block;
     fatal_assert( sigemptyset( &signals_to_block ) == 0 );
@@ -206,8 +208,16 @@ int run_server( const char *desired_ip, const char *desired_port ) {
       exit( 1 );
     }
 
+    string shell_name( pw->pw_shell );
+    if ( shell_name.empty() ) { /* empty shell means Bourne shell */
+      shell_name = "/bin/sh";
+    }
+
+    string login_shell = "-";
+    login_shell.append( basename( shell_name.c_str() ) ); /* must be GNU basename */
+
     char *my_argv[ 2 ];
-    my_argv[ 0 ] = strdup( pw->pw_shell );
+    my_argv[ 0 ] = strdup( login_shell.c_str() );
     fatal_assert( my_argv[ 0 ] );
     my_argv[ 1 ] = NULL;
     
