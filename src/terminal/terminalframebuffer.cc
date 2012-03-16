@@ -369,6 +369,7 @@ Renditions::Renditions( int s_background )
     background_color( s_background )
 {}
 
+/* This routine cannot be used to set a color beyond the 8-color set. */
 void Renditions::set_rendition( int num )
 {
   if ( num == 0 ) {
@@ -377,10 +378,18 @@ void Renditions::set_rendition( int num )
     return;
   }
 
-  if ( (30 <= num) && (num <= 39) ) { /* foreground color */
+  if ( num == 39 ) {
+    foreground_color = 0;
+    return;
+  } else if ( num == 49 ) {
+    background_color = 0;
+    return;
+  }
+
+  if ( (30 <= num) && (num <= 37) ) { /* foreground color in 8-color set */
     foreground_color = num;
     return;
-  } else if ( (40 <= num) && (num <= 49) ) { /* background color */
+  } else if ( (40 <= num) && (num <= 47) ) { /* background color in 8-color set */
     background_color = num;
     return;
   }
@@ -394,6 +403,20 @@ void Renditions::set_rendition( int num )
   }
 }
 
+void Renditions::set_foreground_color( int num )
+{
+  if ( (0 <= num) && (num <= 255) ) {
+    foreground_color = 30 + num;
+  }
+}
+
+void Renditions::set_background_color( int num )
+{
+  if ( (0 <= num) && (num <= 255) ) {
+    background_color = 40 + num;
+  }
+}
+
 std::string Renditions::sgr( void ) const
 {
   std::string ret;
@@ -404,16 +427,27 @@ std::string Renditions::sgr( void ) const
   if ( blink ) ret.append( ";5" );
   if ( inverse ) ret.append( ";7" );
   if ( invisible ) ret.append( ";8" );
-  if ( foreground_color ) {
+
+  if ( foreground_color > 37 ) { /* use 256-color set */
+    char col[ 64 ];
+    snprintf( col, 64, "m\033[38;5;%d", foreground_color - 30 );
+    ret.append( col );
+  } else if ( foreground_color ) {
     char col[ 8 ];
     snprintf( col, 8, ";%d", foreground_color );
     ret.append( col );
   }
-  if ( background_color ) {
+
+  if ( background_color > 47 ) { /* use 256-color set */
+    char col[ 64 ];
+    snprintf( col, 64, "m\033[48;5;%d", background_color - 40 );
+    ret.append( col );
+  } else if ( background_color ) {
     char col[ 8 ];
     snprintf( col, 8, ";%d", background_color );
     ret.append( col );
   }
+
   ret.append( "m" );
 
   return ret;

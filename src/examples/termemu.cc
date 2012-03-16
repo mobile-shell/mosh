@@ -95,7 +95,7 @@ int main( void )
 
   if ( child == 0 ) {
     /* child */
-    if ( setenv( "TERM", "xterm", true ) < 0 ) {
+    if ( setenv( "TERM", "xterm-256color", true ) < 0 ) {
       perror( "setenv" );
       exit( 1 );
     }

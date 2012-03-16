@@ -35,6 +35,8 @@ namespace Terminal {
     int background_color;
 
     Renditions( int s_background );
+    void set_foreground_color( int num );
+    void set_background_color( int num );
     void set_rendition( int num );
     std::string sgr( void ) const;
 
@@ -182,9 +184,11 @@ namespace Terminal {
     int limit_top( void );
     int limit_bottom( void );
 
+    void set_foreground_color( int x ) { renditions.set_foreground_color( x ); }
+    void set_background_color( int x ) { renditions.set_background_color( x ); }
     void add_rendition( int x ) { renditions.set_rendition( x ); }
     Renditions get_renditions( void ) const { return renditions; }
-    int get_background_rendition( void ) { return renditions.background_color; }
+    int get_background_rendition( void ) const { return renditions.background_color; }
 
     void save_cursor( void );
     void restore_cursor( void );

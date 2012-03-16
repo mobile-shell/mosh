@@ -332,9 +332,24 @@ static Function func_Ctrl_BEL( CONTROL, "\x07", Ctrl_BEL );
 /* select graphics rendition -- e.g., bold, blinking, etc. */
 void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
 {
-  for ( int i = 0; i < dispatch->param_count(); i++ ) {
-    int rendition = dispatch->getparam( i, 0 );
-    fb->ds.add_rendition( rendition );
+  /* We need to special-case the handling of CSI [34]8 ; 5 ; Ps m,
+     because Ps of 0 in that case does not mean reset to default, even
+     though it means that otherwise (as usually renditions are applied
+     in order). */
+
+  if ( (dispatch->param_count() == 3)
+       && (dispatch->getparam( 0, -1 ) == 38)
+       && (dispatch->getparam( 1, -1 ) == 5) ) {
+    fb->ds.set_foreground_color( dispatch->getparam( 2, 0 ) );
+  } else if ( (dispatch->param_count() == 3)
+	      && (dispatch->getparam( 0, -1 ) == 48)
+	      && (dispatch->getparam( 1, -1 ) == 5) ) {
+    fb->ds.set_background_color( dispatch->getparam( 2, 0 ) );
+  } else {
+    for ( int i = 0; i < dispatch->param_count(); i++ ) {
+      int rendition = dispatch->getparam( i, 0 );
+      fb->ds.add_rendition( rendition );
+    }
   }
 }
 

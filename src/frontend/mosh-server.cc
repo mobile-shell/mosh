@@ -182,7 +182,7 @@ int run_server( const char *desired_ip, const char *desired_port ) {
     fatal_assert( sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) == 0 );
 
     /* set TERM */
-    if ( setenv( "TERM", "xterm", true ) < 0 ) {
+    if ( setenv( "TERM", "xterm-256color", true ) < 0 ) {
       perror( "setenv" );
       exit( 1 );
     }
