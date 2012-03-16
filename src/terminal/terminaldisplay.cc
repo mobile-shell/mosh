@@ -244,12 +244,15 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
     assert( frame.x + clear_count <= f.ds.get_width() );
 
+    bool can_use_erase = has_bce || (cell->renditions == initial_rendition());
+
     /* can we go to the end of the line? */
-    if ( frame.x + clear_count == f.ds.get_width() ) {
+    if ( (frame.x + clear_count == f.ds.get_width())
+	 && can_use_erase ) {
       frame.append( "\033[K" );
       frame.x += clear_count;
     } else {
-      if ( has_ech ) {
+      if ( has_ech && can_use_erase ) {
 	if ( clear_count == 1 ) {
 	  frame.append( "\033[X" );
 	} else {
@@ -258,6 +261,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 	}
 	frame.x += clear_count;
       } else { /* no ECH, so just print a space */
+	/* unlike erases, this will use background color irrespective of BCE */
 	frame.append( " " );
 	frame.cursor_x++;
 	frame.x++;

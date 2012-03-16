@@ -52,6 +52,8 @@ namespace Terminal {
     bool has_ech; /* erase character is part of vt200 but not supported by tmux
 		     (or by "screen" terminfo entry, which is what tmux advertises) */
 
+    bool has_bce; /* erases result in cell filled with background color */
+
     void put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const;
 
   public:

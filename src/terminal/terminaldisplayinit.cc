@@ -29,7 +29,7 @@
 using namespace Terminal;
 
 Display::Display( bool use_environment )
-  : has_ech( true )
+  : has_ech( true ), has_bce( true )
 {
   if ( use_environment ) {
     int errret = -2;
@@ -52,12 +52,24 @@ Display::Display( bool use_environment )
       } 
     }
 
+    /* check for ECH */
     char ech_name[] = "ech";
     char *val = tigetstr( ech_name );
-    if ( val == (char *)-1 )
+    if ( val == (char *)-1 ) {
       throw std::string( "Invalid terminfo string capability " ) + ech_name;
+    }
     if ( val == 0 ) {
       has_ech = false;
+    }
+
+    /* check for BCE */
+    char bce_name[] = "bce";
+    int bce_val = tigetflag( bce_name );
+    if ( bce_val == -1 ) {
+      throw std::string( "Invalid terminfo boolean capability " ) + bce_name;
+    }
+    if ( bce_val == 0 ) {
+      has_bce = false;
     }
   }
 }
