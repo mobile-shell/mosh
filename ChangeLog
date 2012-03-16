@@ -1,3 +1,9 @@
+2012-03-16 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 1.02 released.
+
+	* Uses xterm-256color and supports 256-color escape sequences.
+
 2012-03-14 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.01 released.

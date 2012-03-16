@@ -1,3 +1,11 @@
+mosh (1.02-1) unstable; urgency=low
+
+  * Version 1.02 released.
+
+  * Uses xterm-256color and supports 256-color escape sequences.
+
+ -- Keith Winstein <keithw@mit.edu>  Fri, 16 Mar 2012 13:35:28 -0400
+
 mosh (1.01-1) unstable; urgency=low
 
   * Version 1.01 released.
