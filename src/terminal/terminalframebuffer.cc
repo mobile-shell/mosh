@@ -437,27 +437,34 @@ std::string Renditions::sgr( void ) const
   if ( inverse ) ret.append( ";7" );
   if ( invisible ) ret.append( ";8" );
 
-  if ( foreground_color > 37 ) { /* use 256-color set */
-    char col[ 64 ];
-    snprintf( col, 64, "m\033[38;5;%d", foreground_color - 30 );
-    ret.append( col );
-  } else if ( foreground_color ) {
+  if ( foreground_color
+       && (foreground_color <= 37) ) {
+    /* ANSI foreground color */
     char col[ 8 ];
     snprintf( col, 8, ";%d", foreground_color );
     ret.append( col );
   }
 
-  if ( background_color > 47 ) { /* use 256-color set */
-    char col[ 64 ];
-    snprintf( col, 64, "m\033[48;5;%d", background_color - 40 );
-    ret.append( col );
-  } else if ( background_color ) {
+  if ( background_color
+       && (background_color <= 47) ) {
     char col[ 8 ];
     snprintf( col, 8, ";%d", background_color );
     ret.append( col );
   }
 
   ret.append( "m" );
+
+  if ( foreground_color > 37 ) { /* use 256-color set */
+    char col[ 64 ];
+    snprintf( col, 64, "\033[38;5;%dm", foreground_color - 30 );
+    ret.append( col );
+  }
+
+  if ( background_color > 47 ) { /* use 256-color set */
+    char col[ 64 ];
+    snprintf( col, 64, "\033[48;5;%dm", background_color - 40 );
+    ret.append( col );
+  }
 
   return ret;
 }
