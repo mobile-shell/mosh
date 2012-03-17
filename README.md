@@ -73,9 +73,14 @@ Getting Mosh
 
         sudo port install mosh
 
+  * [Homebrew][]
+
+	brew install mobile-shell
+
   [Debian]:   http://packages.debian.org/sid/mosh
   [Ubuntu]:   https://launchpad.net/~keithw/+archive/mosh
   [MacPorts]: https://trac.macports.org/browser/trunk/dports/net/mosh/Portfile
+  [Homebrew]: http://mxcl.github.com/homebrew/
 
 Building from source
 --------------------
