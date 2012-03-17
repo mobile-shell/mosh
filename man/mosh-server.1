@@ -21,6 +21,7 @@ mosh-server \- server-side helper for mosh
 .B mosh-server
 [IP address to bind]
 [port number to bind]
+[command]
 .br
 .SH DESCRIPTION
 \fBmosh-server\fP is a helper program for the 
@@ -35,6 +36,9 @@ establish a connection.
 By default, \fBmosh-server\fP binds to a port between 60000 and
 61000. If a port number is supplied on the command line,
 \fBmosh-server\fP will bind to it instead.
+
+Without a command argument, \fBmosh-server\fP executes the user's
+login shell.
 
 \fBmosh-server\fP maintains an entry in the
 .BR utmp(5)

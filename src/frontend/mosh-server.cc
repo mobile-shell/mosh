@@ -62,7 +62,8 @@ void serve( int host_fd,
 	    Terminal::Complete &terminal,
 	    ServerConnection &network );
 
-int run_server( const char *desired_ip, const char *desired_port );
+int run_server( const char *desired_ip, const char *desired_port,
+		const char *command );
 
 using namespace std;
 
@@ -70,6 +71,7 @@ int main( int argc, char *argv[] )
 {
   char *desired_ip = NULL;
   char *desired_port = NULL;
+  char *command = NULL;
   if ( argc == 1 ) {
     desired_ip = NULL;
   } else if ( argc == 2 ) {
@@ -77,8 +79,12 @@ int main( int argc, char *argv[] )
   } else if ( argc == 3 ) {
     desired_ip = argv[ 1 ];
     desired_port = argv[ 2 ];
+  } else if ( argc == 4 ) {
+    desired_ip = argv[ 1 ];
+    desired_port = argv[ 2 ];
+    command = argv[ 3 ];
   } else {
-    fprintf( stderr, "Usage: %s [LOCALADDR] [PORT]\n", argv[ 0 ] );
+    fprintf( stderr, "Usage: %s [LOCALADDR] [PORT] [COMMAND]\n", argv[ 0 ] );
     exit( 1 );
   }
 
@@ -95,7 +101,7 @@ int main( int argc, char *argv[] )
   }
 
   try {
-    return run_server( desired_ip, desired_port );
+    return run_server( desired_ip, desired_port, command );
   } catch ( Network::NetworkException e ) {
     fprintf( stderr, "Network exception: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -107,7 +113,8 @@ int main( int argc, char *argv[] )
   }
 }
 
-int run_server( const char *desired_ip, const char *desired_port ) {
+int run_server( const char *desired_ip, const char *desired_port,
+		const char *command ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -201,16 +208,23 @@ int run_server( const char *desired_ip, const char *desired_port ) {
       exit( 1 );
     }
 
-    /* get shell name */
-    struct passwd *pw = getpwuid( geteuid() );
-    if ( pw == NULL ) {
-      perror( "getpwuid" );
-      exit( 1 );
-    }
+    /* get command to run */
+    string shell_name;
 
-    string shell_name( pw->pw_shell );
-    if ( shell_name.empty() ) { /* empty shell means Bourne shell */
-      shell_name = "/bin/sh";
+    if ( command ) {
+      shell_name = command;
+    } else {
+      /* get shell name */
+      struct passwd *pw = getpwuid( geteuid() );
+      if ( pw == NULL ) {
+	perror( "getpwuid" );
+	exit( 1 );
+      }
+
+      shell_name = pw->pw_shell;
+      if ( shell_name.empty() ) { /* empty shell means Bourne shell */
+	shell_name = "/bin/sh";
+      }
     }
 
     string login_shell = "-" + shell_name;
@@ -220,7 +234,7 @@ int run_server( const char *desired_ip, const char *desired_port ) {
     fatal_assert( my_argv[ 0 ] );
     my_argv[ 1 ] = NULL;
     
-    if ( execv( pw->pw_shell, my_argv ) < 0 ) {
+    if ( execv( shell_name.c_str(), my_argv ) < 0 ) {
       perror( "execve" );
       exit( 1 );
     }
