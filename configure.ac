@@ -42,6 +42,24 @@ AC_ARG_ENABLE([compile-warnings],
 AC_SUBST([WARNING_CXXFLAGS])
 AC_SUBST([PICKY_CXXFLAGS])
 
+AC_ARG_ENABLE([client],
+  [AS_HELP_STRING([--enable-client], [Build the mosh-client program @<:@yes@:>@])],
+  [build_client="$enableval"],
+  [build_client="yes"])
+AM_CONDITIONAL([BUILD_CLIENT], [test x"$build_client" != xno])
+
+AC_ARG_ENABLE([server],
+  [AS_HELP_STRING([--enable-server], [Build the mosh-server program @<:@yes@:>@])],
+  [build_server="$enableval"],
+  [build_server="yes"])
+AM_CONDITIONAL([BUILD_SERVER], [test x"$build_server" != xno])
+
+AC_ARG_ENABLE([examples],
+  [AS_HELP_STRING([--enable-examples], [Build the miscellaneous programs in src/examples @<:@no@:>@])],
+  [build_examples="$enableval"],
+  [build_examples="no"])
+AM_CONDITIONAL([BUILD_EXAMPLES], [test x"$build_examples" != xno])
+
 # Checks for libraries.
 AC_SEARCH_LIBS([utempter_remove_added_record], [utempter],
   [AC_DEFINE([HAVE_UTEMPTER], [1],

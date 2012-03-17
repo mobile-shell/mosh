@@ -1,7 +1,9 @@
 AM_CPPFLAGS = $(protobuf_CFLAGS)
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) -fno-default-inline -pipe
 
-noinst_PROGRAMS = encrypt decrypt ntester parse termemu benchmark
+if BUILD_EXAMPLES
+  noinst_PROGRAMS = encrypt decrypt ntester parse termemu benchmark
+endif
 
 encrypt_SOURCES = encrypt.cc
 encrypt_CPPFLAGS = -I$(srcdir)/../crypto

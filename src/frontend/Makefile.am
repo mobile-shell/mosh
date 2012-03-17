@@ -9,7 +9,15 @@ else
   LDADD += $(STDDJB_LDFLAGS)
 endif
 
-bin_PROGRAMS = mosh-client mosh-server
+bin_PROGRAMS =
+
+if BUILD_CLIENT
+  bin_PROGRAMS += mosh-client
+endif
+
+if BUILD_SERVER
+  bin_PROGRAMS += mosh-server
+endif
 
 mosh_client_SOURCES = mosh-client.cc stmclient.cc stmclient.h terminaloverlay.cc terminaloverlay.h
 mosh_server_SOURCES = mosh-server.cc
