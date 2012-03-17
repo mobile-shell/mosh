@@ -75,7 +75,7 @@ Getting Mosh
 
   * [Homebrew][]
 
-	brew install mobile-shell
+        brew install mobile-shell
 
   [Debian]:   http://packages.debian.org/sid/mosh
   [Ubuntu]:   https://launchpad.net/~keithw/+archive/mosh
