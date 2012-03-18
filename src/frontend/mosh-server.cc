@@ -38,6 +38,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <getopt.h>
 
 extern "C" {
 #include "selfpipe.h"
@@ -67,13 +68,30 @@ int run_server( const char *desired_ip, const char *desired_port,
 
 using namespace std;
 
+void print_usage( const char *argv0 )
+{
+  fprintf( stderr, "Usage: %s new [-s] [-i LOCALADDR] [-p PORT] [-- COMMAND...]\n", argv0 );
+}
+
+string get_SSH_IP( void )
+{
+  const char *SSH_CONNECTION = getenv( "SSH_CONNECTION" );
+  fatal_assert( SSH_CONNECTION );
+  char *SSH_writable = strdup( SSH_CONNECTION );
+  fatal_assert( SSH_writable );
+  strtok( SSH_writable, " " );
+  const char *local_interface_IP = strtok( NULL, " " );
+  fatal_assert( local_interface_IP );
+  return string( local_interface_IP );
+}
+
 int main( int argc, char *argv[] )
 {
   char *desired_ip = NULL;
   char *desired_port = NULL;
   char **command = NULL;
 
-  /* Look for command */
+  /* strip off command */
   for ( int i = 0; i < argc; i++ ) {
     if ( 0 == strcmp( argv[ i ], "--" ) ) { /* start of command */
       if ( i != argc - 1 ) {
@@ -84,15 +102,50 @@ int main( int argc, char *argv[] )
     }
   }
 
-  if ( argc == 1 ) {
-    desired_ip = NULL;
+  /* Parse new command-line syntax */
+  if ( (argc >= 2)
+       && (strcmp( argv[ 1 ], "new" ) == 0) ) {
+    /* new option syntax */
+    int opt;
+    while ( (opt = getopt( argc, argv, "i:p:s" )) != -1 ) {
+      switch ( opt ) {
+      case 'i':
+	desired_ip = optarg;
+	break;
+      case 'p':
+	desired_port = optarg;
+	break;
+      case 's':
+	desired_ip = strdup( get_SSH_IP().c_str() );
+	fatal_assert( desired_ip );
+	break;
+      default:
+	print_usage( argv[ 0 ] );
+	exit( 1 );
+      }
+    }
+  } else if ( argc == 1 ) {
+    /* do nothing */
   } else if ( argc == 2 ) {
     desired_ip = argv[ 1 ];
   } else if ( argc == 3 ) {
     desired_ip = argv[ 1 ];
     desired_port = argv[ 2 ];
   } else {
-    fprintf( stderr, "Usage: %s [LOCALADDR] [PORT] [-- COMMAND1 COMMAND2 ...]\n", argv[ 0 ] );
+    print_usage( argv[ 0 ] );
+    exit( 1 );
+  }
+
+  /* Sanity-check arguments */
+  if ( desired_ip
+       && ( strspn( desired_ip, "0123456789." ) != strlen( desired_ip ) ) ) {
+    print_usage( argv[ 0 ] );
+    exit( 1 );
+  }
+
+  if ( desired_port
+       && ( strspn( desired_ip, "0123456789" ) != strlen( desired_ip ) ) ) {
+    print_usage( argv[ 0 ] );
     exit( 1 );
   }
 
