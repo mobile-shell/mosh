@@ -155,8 +155,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 		  1, f.ds.get_height() );
 	frame.append( tmp );
 
-	/* make sure we know cursor position after scrolling region reset */
-	frame.append_silent_move( 0, 0 );
+	/* invalidate cursor position after unsetting scrolling region */
+	frame.cursor_x = frame.cursor_y = -1;
       }
     }
   }
