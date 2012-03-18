@@ -39,6 +39,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <getopt.h>
+#include <time.h>
 
 extern "C" {
 #include "selfpipe.h"
@@ -73,6 +74,14 @@ void print_usage( const char *argv0 )
   fprintf( stderr, "Usage: %s new [-s] [-i LOCALADDR] [-p PORT] [-- COMMAND...]\n", argv0 );
 }
 
+void spin( void )
+{
+  struct timespec req;
+  req.tv_sec = 0;
+  req.tv_nsec = 100000000; /* 0.1 sec */
+  nanosleep( &req, NULL );
+}
+
 string get_SSH_IP( void )
 {
   const char *SSH_CONNECTION = getenv( "SSH_CONNECTION" );
@@ -94,7 +103,7 @@ int main( int argc, char *argv[] )
 
   /* strip off command */
   for ( int i = 0; i < argc; i++ ) {
-    if ( 0 == strcmp( argv[ i ], "--" ) ) { /* start of command */
+    if ( 0 == strcmp( argv[ i ], "--" ) ) { /* -- is mandatory */
       if ( i != argc - 1 ) {
 	command = argv + i + 1;
       }
@@ -126,6 +135,7 @@ int main( int argc, char *argv[] )
       }
     }
   } else if ( argc == 1 ) {
+    /* legacy argument parsing for older client wrapper script */
     /* do nothing */
   } else if ( argc == 2 ) {
     desired_ip = argv[ 1 ];
@@ -463,7 +473,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
 	if ( bytes_read == 0 ) { /* EOF */
 	  if ( !network.has_remote_addr() ) {
-	    return;
+	    spin(); /* let 60-second timer take care of this */
 	  } else if ( !network.shutdown_in_progress() ) {
 	    network.start_shutdown();
 	  }
@@ -514,7 +524,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	if ( network.has_remote_addr() ) {
 	  network.start_shutdown();
 	} else {
-	  break;
+	  spin(); /* let 60-second timer take care of this */
 	}
       }
 
@@ -565,7 +575,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       network.tick();
     } catch ( Network::NetworkException e ) {
       fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );
-      sleep( 1 );
+      spin();
     } catch ( Crypto::CryptoException e ) {
       fprintf( stderr, "Crypto exception: %s\n", e.text.c_str() );
     }
