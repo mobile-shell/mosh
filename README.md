@@ -127,9 +127,19 @@ Usage
 
     $ mosh [user@]host
 
+  A command may also be specified, for example:
+
+    $ mosh host -- screen -r
+
   If the `mosh-client` or `mosh-server` binaries are installed outside the
   user's PATH, `mosh` accepts the arguments `--client=PATH` and
-  `--server=PATH` to select alternate locations.
+  `--server=PATH` to select alternate locations. More options are
+  documented in the mosh(1) manual page.
+
+  Mosh supports 256-color mode as long as the user's own terminal
+  does.  Generally this means the `TERM` environment variable must be
+  set to `xterm-256color` or `screen-256color-bce` before running
+  `mosh`.
 
 How it works
 ------------
