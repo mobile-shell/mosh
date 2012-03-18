@@ -37,7 +37,7 @@ my $help = undef;
 my $version = undef;
 
 my $usage =
-qq{Usage: $0 [options] [user@]host [--] [command]
+qq{Usage: $0 [options] [user@]host [--] [command...]
         --client=PATH        mosh client on local machine
                                 (default: "mosh-client")
         --server=PATH        mosh server on remote machine
