@@ -80,6 +80,7 @@ string get_SSH_IP( void )
   char *SSH_writable = strdup( SSH_CONNECTION );
   fatal_assert( SSH_writable );
   strtok( SSH_writable, " " );
+  strtok( NULL, " " );
   const char *local_interface_IP = strtok( NULL, " " );
   fatal_assert( local_interface_IP );
   return string( local_interface_IP );
@@ -139,12 +140,14 @@ int main( int argc, char *argv[] )
   /* Sanity-check arguments */
   if ( desired_ip
        && ( strspn( desired_ip, "0123456789." ) != strlen( desired_ip ) ) ) {
+    fprintf( stderr, "%s: Bad IP address (%s)\n", argv[ 0 ], desired_ip );
     print_usage( argv[ 0 ] );
     exit( 1 );
   }
 
   if ( desired_port
        && ( strspn( desired_ip, "0123456789" ) != strlen( desired_ip ) ) ) {
+    fprintf( stderr, "%s: Bad UDP port (%s)\n", argv[ 0 ], desired_port );
     print_usage( argv[ 0 ] );
     exit( 1 );
   }

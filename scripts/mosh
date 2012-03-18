@@ -170,14 +170,13 @@ if ( $pid == 0 ) { # child
   open STDERR, ">&", $pty_slave->fileno() or die;
   close $pty_slave;
 
-  my $s;
+  my @server = ( $server, 'new', '-s' );
+
   if ( defined $port_request ) {
-    $s = q{sh -c 'MOSH_PORT=$1; shift; MOSH_IP=`set -- $SSH_CONNECTION; echo $3`; exec "$@" $MOSH_IP $MOSH_PORT' -- } . $port_request . ' ' . $server;
-  } else {
-    # retain compatibility with older server when no port requested
-    $s = q{sh -c 'exec "$@" "`set -- $SSH_CONNECTION; echo $3`"' -- } . $server;
+    push @server, ( '-p', $port_request );
   }
-  exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', $s;
+
+  exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', @server;
   die "Cannot exec ssh: $!\n";
 } else { # server
   my ( $ip, $port, $key );
