@@ -65,7 +65,7 @@ void serve( int host_fd,
 	    ServerConnection &network );
 
 int run_server( const char *desired_ip, const char *desired_port,
-		char *command[] );
+		char *command[], const int colors );
 
 using namespace std;
 
@@ -100,6 +100,7 @@ int main( int argc, char *argv[] )
   char *desired_ip = NULL;
   char *desired_port = NULL;
   char **command = NULL;
+  int colors = 0;
 
   /* strip off command */
   for ( int i = 0; i < argc; i++ ) {
@@ -117,7 +118,7 @@ int main( int argc, char *argv[] )
        && (strcmp( argv[ 1 ], "new" ) == 0) ) {
     /* new option syntax */
     int opt;
-    while ( (opt = getopt( argc, argv, "i:p:s" )) != -1 ) {
+    while ( (opt = getopt( argc, argv, "i:p:c:s" )) != -1 ) {
       switch ( opt ) {
       case 'i':
 	desired_ip = optarg;
@@ -129,9 +130,12 @@ int main( int argc, char *argv[] )
 	desired_ip = strdup( get_SSH_IP().c_str() );
 	fatal_assert( desired_ip );
 	break;
+      case 'c':
+	colors = myatoi( optarg );
+	break;
       default:
 	print_usage( argv[ 0 ] );
-	exit( 1 );
+	/* don't die on unknown options */
       }
     }
   } else if ( argc == 1 ) {
@@ -195,7 +199,7 @@ int main( int argc, char *argv[] )
   }
 
   try {
-    return run_server( desired_ip, desired_port, command );
+    return run_server( desired_ip, desired_port, command, colors );
   } catch ( Network::NetworkException e ) {
     fprintf( stderr, "Network exception: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -208,7 +212,7 @@ int main( int argc, char *argv[] )
 }
 
 int run_server( const char *desired_ip, const char *desired_port,
-		char *command[] ) {
+		char *command[], const int colors ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -285,7 +289,10 @@ int run_server( const char *desired_ip, const char *desired_port,
     fatal_assert( sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) == 0 );
 
     /* set TERM */
-    if ( setenv( "TERM", "xterm-256color", true ) < 0 ) {
+    const char default_term[] = "xterm";
+    const char color_term[] = "xterm-256color";
+
+    if ( setenv( "TERM", (colors == 256) ? color_term : default_term, true ) < 0 ) {
       perror( "setenv" );
       exit( 1 );
     }

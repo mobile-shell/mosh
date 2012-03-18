@@ -163,6 +163,23 @@ my $pty_slave = $pty->slave;
 
 $pty_slave->clone_winsize_from( \*STDIN );
 
+# Count colors
+open COLORCOUNT, '-|', $client, ('-c') or die "Can't count colors: $!\n";
+my $colors = "";
+{
+  local $/ = undef;
+  $colors = <COLORCOUNT>;
+}
+close COLORCOUNT or die;
+
+chomp $colors;
+
+if ( (not defined $colors)
+    or $colors !~ m{^[0-9]+$}
+    or $colors < 0 ) {
+  $colors = 0;
+}
+
 my $pid = fork;
 die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
@@ -173,13 +190,20 @@ if ( $pid == 0 ) { # child
 
   my @server = ( $server, 'new', '-s' );
 
+  push @server, ( '-c', $colors );
+
   if ( defined $port_request ) {
     push @server, ( '-p', $port_request );
   }
 
   if ( scalar @command > 0 ) {
-    my $command_string = q{"} . (join ' ', @command) . q{"};
-    push @server, ( '--', '/bin/sh', '-c', $command_string );
+    my $command_string = join ' ', @command;
+    $command_string =~ s'\$'\$'g;
+    $command_string =~ s'`'\`'g;
+    $command_string =~ s'"'\"'g;
+    $command_string =~ s'\\'\\'g;
+
+    push @server, ( '--', '/bin/sh', '-c',  qq{"$command_string"} );
   }
 
   exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', @server;
