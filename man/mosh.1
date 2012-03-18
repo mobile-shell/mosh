@@ -21,6 +21,8 @@ mosh \- mobile shell with roaming and intelligent local echo
 .B mosh
 .RI [ options ]
 [user@]host
+[--]
+[command...]
 .br
 .SH DESCRIPTION
 \fBmosh\fP (mobile shell) is a remote terminal application that
@@ -63,6 +65,10 @@ between 60000 and 61000, but allows the user to request a particular
 UDP port instead.
 
 .SH OPTIONS
+.TP
+.B \fIcommand\fP
+Command to run on remote host. By default, \fBmosh\fP executes a login shell.
+
 .TP
 .B \-\-client=\fIPATH\fP
 path to client helper on local machine (default: "mosh-client")

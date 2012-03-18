@@ -37,7 +37,7 @@ my $help = undef;
 my $version = undef;
 
 my $usage =
-qq{Usage: $0 [options] [user@]host
+qq{Usage: $0 [options] [user@]host [--] [command]
         --client=PATH        mosh client on local machine
                                 (default: "mosh-client")
         --server=PATH        mosh server on remote machine
@@ -150,11 +150,12 @@ if ( defined $fake_proxy ) {
   exit;
 }
 
-if ( scalar @ARGV != 1 ) {
+if ( scalar @ARGV < 1 ) {
   die $usage;
 }
 
-my $userhost = $ARGV[ 0 ];
+my $userhost = shift;
+my @command = @ARGV;
 
 # Run SSH and read password
 my $pty = new IO::Pty;
@@ -174,6 +175,10 @@ if ( $pid == 0 ) { # child
 
   if ( defined $port_request ) {
     push @server, ( '-p', $port_request );
+  }
+
+  if ( scalar @command > 0 ) {
+    push @server, ( '--', @command );
   }
 
   exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', @server;
