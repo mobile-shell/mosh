@@ -74,7 +74,7 @@ int main( int argc, char *argv[] )
   char **command = NULL;
 
   /* Look for command */
-  for ( int i = 0; i < argc; i++ ) {
+  for ( int i = 0; i < argc - 1; i++ ) {
     if ( 0 == strcmp( argv[ i ], "--" ) ) { /* start of command */
       command = argv + i + 1;
       argc = i; /* rest of options before -- */
