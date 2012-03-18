@@ -1,3 +1,11 @@
+2012-03-18 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 1.1 released (stable release).
+
+	* Allows user to specify remote command to execute.
+
+	* Only advertises 256 colors when user's terminal has 256 colors.
+
 2012-03-16 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.02 released.

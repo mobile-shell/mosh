@@ -1,3 +1,13 @@
+mosh (1.09-1) unstable; urgency=low
+
+  * Release candidate for version 1.1.
+
+  * Allows user to specify remote command to execute.
+
+  * Only advertises 256 colors when user's terminal has 256 colors.
+
+ -- Keith Winstein <keithw@mit.edu>  Sun, 18 Mar 2012 06:06:43 -0400
+
 mosh (1.02-1) unstable; urgency=low
 
   * Version 1.02 released.
