@@ -484,9 +484,6 @@ std::string Renditions::sgr( void ) const
    color. See
    https://lists.ubuntu.com/archives/ubuntu-devel/2011-March/032726.html
 
-   For purposes of this routine, we just treat the eight colors as
-   taking each possible assignment of 0 or 255 to their components.
-
    Terminal emulators that advertise "xterm" are inconsistent on the
    handling of initc to change the contents of a cell in the color
    pallette. On RIS (reset to initial state) or choosing reset from
@@ -498,23 +495,26 @@ std::string Renditions::sgr( void ) const
 
    mosh ignores initc for now, despite advertising xterm-256color. */
 
+/* Table mapping common color cube for [16 .. 255]
+   to xterm's system colors (0 .. 7) with closest
+   CIE deltaE(2000). */
 static const char standard_posterization[] = {
-  0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7,
-  0, 0, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4, 2, 2, 6, 6,
-  6, 6, 2, 2, 6, 6, 6, 6, 2, 2, 6, 6, 6, 6, 2, 2,
-  6, 6, 6, 6, 0, 0, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4,
-  2, 2, 6, 6, 6, 6, 2, 2, 6, 6, 6, 6, 2, 2, 6, 6,
-  6, 6, 2, 2, 6, 6, 6, 6, 1, 1, 5, 5, 5, 5, 1, 1,
-  5, 5, 5, 5, 3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7,
-  3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7, 1, 1, 5, 5,
-  5, 5, 1, 1, 5, 5, 5, 5, 3, 3, 7, 7, 7, 7, 3, 3,
-  7, 7, 7, 7, 3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7,
-  1, 1, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5, 3, 3, 7, 7,
-  7, 7, 3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7, 3, 3,
-  7, 7, 7, 7, 1, 1, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5,
-  3, 3, 7, 7, 7, 7, 3, 3, 7, 7, 7, 7, 3, 3, 7, 7,
-  7, 7, 3, 3, 7, 7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7 };
+  0, 1, 2, 3, 4, 5, 6, 7, 7, 1, 2, 3, 4, 5, 6, 7,
+  0, 4, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4, 2, 6, 6, 6,
+  6, 4, 2, 2, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 2, 2,
+  2, 2, 6, 6, 1, 4, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4,
+  2, 2, 6, 6, 4, 5, 2, 2, 6, 6, 6, 6, 2, 2, 2, 6,
+  6, 6, 2, 2, 2, 2, 6, 6, 1, 5, 5, 4, 4, 4, 1, 1,
+  5, 5, 5, 5, 3, 3, 7, 5, 5, 5, 2, 2, 2, 6, 7, 7,
+  2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 6, 6, 1, 5, 5, 5,
+  5, 5, 1, 1, 5, 5, 5, 5, 3, 1, 7, 5, 5, 5, 3, 3,
+  3, 7, 7, 7, 3, 3, 2, 7, 6, 7, 3, 2, 2, 2, 6, 6,
+  1, 5, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5, 3, 1, 1, 5,
+  5, 5, 3, 3, 7, 7, 7, 7, 3, 3, 3, 7, 7, 7, 3, 3,
+  3, 3, 7, 7, 1, 1, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5,
+  1, 1, 1, 5, 5, 5, 3, 7, 7, 7, 7, 7, 3, 3, 3, 7,
+  7, 7, 3, 3, 3, 3, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 1, 1, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7 };
 
 void Renditions::posterize( void )
 {
