@@ -21,6 +21,8 @@ mosh-client \- client-side helper for mosh
 MOSH_KEY=KEY
 .B mosh-client 
 IP PORT
+.B mosh-client 
+-c
 .br
 .SH DESCRIPTION
 \fBmosh-client\fP is a helper program for the 
@@ -42,6 +44,9 @@ key that protects the integrity and confidentiality of the session.
 For constructing new setup wrappers for remote execution facilities
 other than SSH, it may be necessary to invoke \fBmosh-client\fP
 directly.
+
+With the -c option, \fBmosh-client\fP instead prints the number of colors
+of the terminal given by the TERM environment variable.
 
 .SH SEE ALSO
 .BR mosh (1),

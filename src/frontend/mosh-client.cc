@@ -20,31 +20,65 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 
 #include "stmclient.h"
 #include "crypto.h"
+
+/* these need to be included last because of conflicting defines */
+#include <curses.h>
+#include <term.h>
 
 void usage( const char *argv0 ) {
   fprintf( stderr, "mosh-client (%s)\n", PACKAGE_STRING );
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
 
-  fprintf( stderr, "Usage: %s IP PORT\n", argv0 );
+  fprintf( stderr, "Usage: %s IP PORT\n       %s -c\n", argv0, argv0 );
+}
+
+void print_colorcount( void )
+{
+  /* check colors */
+  setupterm((char *)0, 1, (int *)0);
+
+  char colors_name[] = "colors";
+  int color_val = tigetnum( colors_name );
+  if ( color_val == -2 ) {
+    fprintf( stderr, "Invalid terminfo numeric capability: %s\n",
+	     colors_name );
+  }
+
+  printf( "%d\n", color_val );
 }
 
 int main( int argc, char *argv[] )
 {
   /* Get arguments */
+  int opt;
+  while ( (opt = getopt( argc, argv, "c" )) != -1 ) {
+    switch ( opt ) {
+    case 'c':
+      print_colorcount();
+      exit( 0 );
+      break;
+    default:
+      usage( argv[ 0 ] );
+      exit( 1 );
+      break;
+    }
+  }
+
   char *ip;
   int port;
 
-  if ( argc != 3 ) {
+  if ( argc - optind != 2 ) {
     usage( argv[ 0 ] );
     exit( 1 );
   }
 
-  ip = argv[ 1 ];
-  port = myatoi( argv[ 2 ] );
+  ip = argv[ optind ];
+  port = myatoi( argv[ optind + 1 ] );
 
   /* Read key from environment */
   char *env_key = getenv( "MOSH_KEY" );
