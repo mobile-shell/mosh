@@ -260,7 +260,8 @@ void TransportSender<MyState>::rationalize_states( void )
   }
 }
 
-static const string make_chaff( void )
+template <class MyState>
+const string TransportSender<MyState>::make_chaff( void )
 {
   const int CHAFF_MAX = 16;
 

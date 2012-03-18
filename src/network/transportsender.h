@@ -86,6 +86,8 @@ namespace Network {
 
     uint64_t last_heard; /* last time received new state */
 
+    static const string make_chaff( void );
+
   public:
     /* constructor */
     TransportSender( Connection *s_connection, MyState &initial_state );
