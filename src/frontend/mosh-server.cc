@@ -63,7 +63,7 @@ void serve( int host_fd,
 	    ServerConnection &network );
 
 int run_server( const char *desired_ip, const char *desired_port,
-		const char *command );
+		char *command[] );
 
 using namespace std;
 
@@ -71,7 +71,17 @@ int main( int argc, char *argv[] )
 {
   char *desired_ip = NULL;
   char *desired_port = NULL;
-  char *command = NULL;
+  char **command = NULL;
+
+  /* Look for command */
+  for ( int i = 0; i < argc; i++ ) {
+    if ( 0 == strcmp( argv[ i ], "--" ) ) { /* start of command */
+      command = argv + i + 1;
+      argc = i; /* rest of options before -- */
+      break;
+    }
+  }
+
   if ( argc == 1 ) {
     desired_ip = NULL;
   } else if ( argc == 2 ) {
@@ -79,13 +89,29 @@ int main( int argc, char *argv[] )
   } else if ( argc == 3 ) {
     desired_ip = argv[ 1 ];
     desired_port = argv[ 2 ];
-  } else if ( argc == 4 ) {
-    desired_ip = argv[ 1 ];
-    desired_port = argv[ 2 ];
-    command = argv[ 3 ];
   } else {
-    fprintf( stderr, "Usage: %s [LOCALADDR] [PORT] [COMMAND]\n", argv[ 0 ] );
+    fprintf( stderr, "Usage: %s [LOCALADDR] [PORT] [-- COMMAND1 COMMAND2 ...]\n", argv[ 0 ] );
     exit( 1 );
+  }
+
+  /* Get shell */
+  char *my_argv[ 2 ];
+  if ( !command ) {
+    /* get shell name */
+    struct passwd *pw = getpwuid( geteuid() );
+    if ( pw == NULL ) {
+      perror( "getpwuid" );
+      exit( 1 );
+    }
+
+    string shell_name( pw->pw_shell );
+    if ( shell_name.empty() ) { /* empty shell means Bourne shell */
+      shell_name = "/bin/sh";
+    }
+
+    my_argv[ 0 ] = pw->pw_shell;
+    my_argv[ 1 ] = NULL;
+    command = my_argv;
   }
 
   /* Adopt implementation locale */
@@ -114,7 +140,7 @@ int main( int argc, char *argv[] )
 }
 
 int run_server( const char *desired_ip, const char *desired_port,
-		const char *command ) {
+		char *command[] ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -208,33 +234,14 @@ int run_server( const char *desired_ip, const char *desired_port,
       exit( 1 );
     }
 
-    /* get command to run */
-    string shell_name;
+    /* prepend '-' to make login shell */
+    string executable( command[ 0 ] );
+    string argv0 = "-" + executable;
 
-    if ( command ) {
-      shell_name = command;
-    } else {
-      /* get shell name */
-      struct passwd *pw = getpwuid( geteuid() );
-      if ( pw == NULL ) {
-	perror( "getpwuid" );
-	exit( 1 );
-      }
-
-      shell_name = pw->pw_shell;
-      if ( shell_name.empty() ) { /* empty shell means Bourne shell */
-	shell_name = "/bin/sh";
-      }
-    }
-
-    string login_shell = "-" + shell_name;
-
-    char *my_argv[ 2 ];
-    my_argv[ 0 ] = strdup( login_shell.c_str() );
-    fatal_assert( my_argv[ 0 ] );
-    my_argv[ 1 ] = NULL;
+    command[ 0 ] = strdup( argv0.c_str() );
+    fatal_assert( command[ 0 ] );
     
-    if ( execv( shell_name.c_str(), my_argv ) < 0 ) {
+    if ( execv( executable.c_str(), command ) < 0 ) {
       perror( "execve" );
       exit( 1 );
     }
