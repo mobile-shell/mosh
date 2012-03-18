@@ -1,3 +1,9 @@
+mosh (1.09a-1) unstable; urgency=low
+
+  * Add chaff to datagrams to frustrate statistical analysis of length
+
+ -- Keith Winstein <keithw@mit.edu>  Sun, 18 Mar 2012 14:00:11 -0400
+
 mosh (1.09-1) unstable; urgency=low
 
   * Release candidate for version 1.1.

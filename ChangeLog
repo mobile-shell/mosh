@@ -6,6 +6,8 @@
 
 	* Only advertises 256 colors when user's terminal has 256 colors.
 
+	* Add chaff to datagrams to frustrate statistical analysis of length
+
 2012-03-16 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.02 released.
