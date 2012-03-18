@@ -1,3 +1,9 @@
+mosh (1.09b-1) unstable; urgency=low
+
+  * More efficient repaint when scrolling top part of window
+
+ -- Keith Winstein <keithw@mit.edu>  Sun, 18 Mar 2012 16:37:30 -0400
+
 mosh (1.09a-1) unstable; urgency=low
 
   * Add chaff to datagrams to frustrate statistical analysis of length
