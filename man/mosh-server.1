@@ -19,8 +19,10 @@
 mosh-server \- server-side helper for mosh
 .SH SYNOPSIS
 .B mosh-server
-[IP address to bind]
-[port number to bind]
+new
+[-s]
+[-i IP]
+[-p port]
 [-- command...]
 .br
 .SH DESCRIPTION
@@ -34,18 +36,34 @@ detaches from the terminal, and waits for the \fBmosh-client\fP to
 establish a connection.
 
 By default, \fBmosh-server\fP binds to a port between 60000 and
-61000. If a port number is supplied on the command line,
-\fBmosh-server\fP will bind to it instead.
+61000 and executes the user's login shell.
 
-Without a command argument, \fBmosh-server\fP executes the user's
-login shell.
-
-\fBmosh-server\fP maintains an entry in the
+On platforms with \fButempter\fP, \fBmosh-server\fP maintains an entry
+in the
 .BR utmp(5)
 file to indicate its process ID, whether the session is connected,
 and the client's current IP address.
 
 \fBmosh-server\fP exits when the client terminates the connection.
+
+.SH OPTIONS
+
+The argument "new" must be first on the command line to use
+command-line options.
+
+.TP
+.B \-s
+bind to the local interface used for an incoming SSH connection, given
+in the \fBSSH_CONNECTION\fP environment variable (for multihomed
+hosts)
+
+.TP
+.B \-i \fIIP\fP
+IP address of the local interface to bind (for multihomed hosts)
+
+.TP
+.B \-p \fIPORT\fP
+UDP port number to bind
 
 .SH EXAMPLE
 
