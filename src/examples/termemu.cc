@@ -26,7 +26,6 @@
 #include <poll.h>
 #include <string.h>
 #include <locale.h>
-#include <langinfo.h>
 #include <wchar.h>
 #include <assert.h>
 #include <wctype.h>
@@ -50,6 +49,7 @@
 #include "completeterminal.h"
 #include "swrite.h"
 #include "fatal_assert.h"
+#include "locale_utils.h"
 
 extern "C" {
 #include "selfpipe.h"
@@ -64,15 +64,8 @@ int main( void )
   int master;
   struct termios saved_termios, raw_termios, child_termios;
 
-  if ( NULL == setlocale( LC_ALL, "" ) ) {
-    perror( "setlocale" );
-    exit( 1 );
-  }
-
-  if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
-    fprintf( stderr, "stm requires a UTF-8 locale.\n" );
-    exit( 1 );
-  }
+  set_native_locale();
+  assert_utf8_locale();
 
   if ( tcgetattr( STDIN_FILENO, &saved_termios ) < 0 ) {
     perror( "tcgetattr" );
