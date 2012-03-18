@@ -11,4 +11,6 @@ message Instruction {
   optional uint64 throwaway_num = 5;
 
   optional bytes diff = 6;
+
+  optional bytes chaff = 7;
 }

@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <list>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "transportsender.h"
 #include "transportfragment.h"
@@ -46,6 +48,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     SEND_MINDELAY( 15 ),
     last_heard( 0 )
 {
+  srand( time( NULL ) ); /* for chaff */
 }
 
 /* Try to send roughly two frames per RTT, bounded by limits on frame rate */
@@ -257,6 +260,18 @@ void TransportSender<MyState>::rationalize_states( void )
   }
 }
 
+static const string make_chaff( void )
+{
+  const int CHAFF_MAX = 16;
+
+  char chaff[ CHAFF_MAX ];
+  for ( int i = 0; i < CHAFF_MAX; i++ ) {
+    chaff[ i ] = rand() % 256;
+  }
+  int chaff_len = rand() % (CHAFF_MAX + 1);
+  return string( chaff, chaff_len );
+}
+
 template <class MyState>
 void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num )
 {
@@ -268,6 +283,7 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
   inst.set_ack_num( ack_num );
   inst.set_throwaway_num( sent_states.front().num );
   inst.set_diff( diff );
+  inst.set_chaff( make_chaff() );
 
   if ( new_num == uint64_t(-1) ) {
     shutdown_tries++;
