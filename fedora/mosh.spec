@@ -40,5 +40,5 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
-* Fri Mar 16 2012  <achernya@mit.edu> - 1.02-1
+* Fri Mar 16 2012  <achernya@mit.edu> - 1.1-1
 - Initial packaging for mosh.
