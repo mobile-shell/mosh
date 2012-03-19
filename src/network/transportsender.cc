@@ -46,9 +46,9 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     ack_num( 0 ),
     pending_data_ack( false ),
     SEND_MINDELAY( 15 ),
-    last_heard( 0 )
+    last_heard( 0 ),
+    prng()
 {
-  srand( time( NULL ) ); /* for chaff */
 }
 
 /* Try to send roughly two frames per RTT, bounded by limits on frame rate */
@@ -263,13 +263,11 @@ void TransportSender<MyState>::rationalize_states( void )
 template <class MyState>
 const string TransportSender<MyState>::make_chaff( void )
 {
-  const int CHAFF_MAX = 16;
+  const size_t CHAFF_MAX = 16;
+  const size_t chaff_len = prng.uint8() % (CHAFF_MAX + 1);
 
   char chaff[ CHAFF_MAX ];
-  for ( int i = 0; i < CHAFF_MAX; i++ ) {
-    chaff[ i ] = rand() % 256;
-  }
-  int chaff_len = rand() % (CHAFF_MAX + 1);
+  prng.fill( chaff, chaff_len );
   return string( chaff, chaff_len );
 }
 
