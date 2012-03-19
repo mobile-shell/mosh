@@ -1,16 +1,16 @@
-mosh (1.09b-1) unstable; urgency=low
+mosh (1.0.9b-1) unstable; urgency=low
 
   * More efficient repaint when scrolling top part of window
 
  -- Keith Winstein <keithw@mit.edu>  Sun, 18 Mar 2012 16:37:30 -0400
 
-mosh (1.09a-1) unstable; urgency=low
+mosh (1.0.9a-1) unstable; urgency=low
 
   * Add chaff to datagrams to frustrate statistical analysis of length
 
  -- Keith Winstein <keithw@mit.edu>  Sun, 18 Mar 2012 14:00:11 -0400
 
-mosh (1.09-1) unstable; urgency=low
+mosh (1.0.9-1) unstable; urgency=low
 
   * Release candidate for version 1.1.
 
@@ -20,7 +20,7 @@ mosh (1.09-1) unstable; urgency=low
 
  -- Keith Winstein <keithw@mit.edu>  Sun, 18 Mar 2012 06:06:43 -0400
 
-mosh (1.02-1) unstable; urgency=low
+mosh (1.0.2-1) unstable; urgency=low
 
   * Version 1.02 released.
 
@@ -34,7 +34,7 @@ mosh (1.02-1) unstable; urgency=low
 
  -- Keith Winstein <keithw@mit.edu>  Fri, 16 Mar 2012 17:57:45 -0400
 
-mosh (1.01-1) unstable; urgency=low
+mosh (1.0.1-1) unstable; urgency=low
 
   * Version 1.01 released.
 
