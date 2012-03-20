@@ -69,6 +69,11 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   if ( (!initialized)
        || (f.ds.get_width() != frame.last_frame.ds.get_width())
        || (f.ds.get_height() != frame.last_frame.ds.get_height()) ) {
+    /* reset scrolling region */
+    snprintf( tmp, 64, "\033[%d;%dr",
+	      1, f.ds.get_height() );
+    frame.append( tmp );
+
     /* clear screen */
     frame.append( "\033[0m\033[H\033[2J" );
     initialized = false;
@@ -113,26 +118,45 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       frame.y = scroll_height;
 
       if ( lines_scrolled ) {
-	if ( frame.cursor_y != f.ds.get_height() - 1 ) {
-	  frame.append_silent_move( f.ds.get_height() - 1, 0 );
-	}
-
 	if ( !(frame.current_rendition == initial_rendition()) ) {
 	  frame.append( "\033[0m" );
 	  frame.current_rendition = initial_rendition();
 	}
 
+	int top_margin = 0;
+	int bottom_margin = top_margin + lines_scrolled + scroll_height - 1;
+
+	assert( bottom_margin < f.ds.get_height() );
+
+	/* set scrolling region */
+	snprintf( tmp, 64, "\033[%d;%dr",
+		  top_margin + 1, bottom_margin + 1);
+	frame.append( tmp );
+
+	/* go to bottom of scrolling region */
+	frame.append_silent_move( bottom_margin, 0 );
+
+	/* scroll */
 	for ( int i = 0; i < lines_scrolled; i++ ) {
 	  frame.append( "\n" );
 	}
 
-	for ( int i = 0; i < f.ds.get_height(); i++ ) {
-	  if ( i + lines_scrolled < f.ds.get_height() ) {
+	/* do the move in memory */
+	for ( int i = top_margin; i <= bottom_margin; i++ ) {
+	  if ( i + lines_scrolled <= bottom_margin ) {
 	    *(frame.last_frame.get_mutable_row( i )) = *(frame.last_frame.get_row( i + lines_scrolled ));
 	  } else {
 	    frame.last_frame.get_mutable_row( i )->reset( 0 );
 	  }
 	}
+
+	/* reset scrolling region */
+	snprintf( tmp, 64, "\033[%d;%dr",
+		  1, f.ds.get_height() );
+	frame.append( tmp );
+
+	/* invalidate cursor position after unsetting scrolling region */
+	frame.cursor_x = frame.cursor_y = -1;
       }
     }
   }

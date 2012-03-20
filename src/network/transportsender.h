@@ -27,6 +27,7 @@
 #include "transportinstruction.pb.h"
 #include "transportstate.h"
 #include "transportfragment.h"
+#include "prng.h"
 
 using std::list;
 using std::pair;
@@ -86,7 +87,9 @@ namespace Network {
 
     uint64_t last_heard; /* last time received new state */
 
-    static const string make_chaff( void );
+    /* chaff to disguise instruction length */
+    PRNG prng;
+    const string make_chaff( void );
 
   public:
     /* constructor */

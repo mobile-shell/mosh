@@ -90,6 +90,6 @@ AC_DEFUN([AX_CHECK_LIBRARY], [
 
   AS_IF([test "$]AS_TR_SH([ax_cv_have_]$1)[" = "yes"],
     AC_DEFINE([HAVE_]$1, [1], [Define to 1 if ]$1[ is found])
-      m4_ifnblank([$4], [$4]),
-    m4_ifnblank([$5], [$5]))
+    [$4],
+    [$5])
 ])
