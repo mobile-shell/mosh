@@ -84,6 +84,8 @@ namespace Crypto {
     Session( const Session & );
     Session & operator=( const Session & );
   };
+
+  void disable_dumping_core( void );
 }
 
 #endif
