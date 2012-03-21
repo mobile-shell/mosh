@@ -74,12 +74,18 @@ void print_usage( const char *argv0 )
   fprintf( stderr, "Usage: %s new [-s] [-i LOCALADDR] [-p PORT] [-- COMMAND...]\n", argv0 );
 }
 
+/* Simple spinloop */
 void spin( void )
 {
-  struct timespec req;
-  req.tv_sec = 0;
-  req.tv_nsec = 100000000; /* 0.1 sec */
-  nanosleep( &req, NULL );
+  static unsigned int spincount = 0;
+  spincount++;
+
+  if ( spincount > 10 ) {
+    struct timespec req;
+    req.tv_sec = 0;
+    req.tv_nsec = 100000000; /* 0.1 sec */
+    nanosleep( &req, NULL );
+  }
 }
 
 string get_SSH_IP( void )
