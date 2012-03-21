@@ -24,7 +24,7 @@ Mosh is a remote terminal application that supports:
 
 
 %build
-%configure
+%configure --enable-compile-warnings=error
 make %{?_smp_mflags}
 
 
@@ -40,5 +40,5 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
-* Fri Mar 16 2012  <achernya@mit.edu> - 1.1-1
+* Wed Mar 21 2012  <achernya@mit.edu> - 1.1-1
 - Initial packaging for mosh.
