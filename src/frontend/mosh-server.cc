@@ -97,6 +97,9 @@ string get_SSH_IP( void )
 
 int main( int argc, char *argv[] )
 {
+  /* For security, make sure we don't dump core */
+  Crypto::disable_dumping_core();
+
   char *desired_ip = NULL;
   char *desired_port = NULL;
   char **command = NULL;
