@@ -316,8 +316,8 @@ int run_server( const char *desired_ip, const char *desired_port,
     command[ 0 ] = strdup( argv0.c_str() );
     fatal_assert( command[ 0 ] );
     
-    if ( execv( executable.c_str(), command ) < 0 ) {
-      perror( "execve" );
+    if ( execvp( executable.c_str(), command ) < 0 ) {
+      perror( "execvp" );
       exit( 1 );
     }
     exit( 0 );

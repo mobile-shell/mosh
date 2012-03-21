@@ -197,16 +197,10 @@ if ( $pid == 0 ) { # child
   }
 
   if ( scalar @command > 0 ) {
-    my $command_string = join ' ', @command;
-    $command_string =~ s'\$'\$'g;
-    $command_string =~ s'`'\`'g;
-    $command_string =~ s'"'\"'g;
-    $command_string =~ s'\\'\\'g;
-
-    push @server, ( '--', '/bin/sh', '-c',  qq{"$command_string"} );
+    push @server, '--', @command;
   }
 
-  exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', @server;
+  exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', shell_quote( @server );
   die "Cannot exec ssh: $!\n";
 } else { # server
   my ( $ip, $port, $key );
@@ -240,3 +234,5 @@ if ( $pid == 0 ) { # child
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
   exec {$client} ($client, $ip, $port);
 }
+
+sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }
