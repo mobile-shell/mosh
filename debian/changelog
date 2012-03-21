@@ -1,3 +1,17 @@
+mosh (1.0.9c-1) unstable; urgency=low
+
+  * Improved building on Mac OS X (Anders Kaseorg)
+
+  * PRNG (for chaff) now reads from /dev/urandom (Keegan McAllister)
+
+  * Startup script cleanups and fix shell quoting (Anders Kaseorg)
+
+  * Disables core dumps (containing session key) (Keegan McAllister)
+
+  * Improved terminal shutdown and other cosmetic fixes
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 21 Mar 2012 19:23:41 -0400
+
 mosh (1.0.9b-1) unstable; urgency=low
 
   * More efficient repaint when scrolling top part of window

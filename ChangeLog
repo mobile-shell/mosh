@@ -8,9 +8,13 @@
 
 	* Add chaff to datagrams to frustrate statistical analysis of length
 
+	* Cosmetic fixes to terminal handling
+
+	* Improved startup script (Anders Kaseorg)
+
 2012-03-16 Keith Winstein <mosh-devel@mit.edu>
 
-	* Version 1.02 released.
+	* Version 1.0.2 released.
 
 	* Uses xterm-256color and supports 256-color escape sequences.
 
@@ -22,7 +26,7 @@
 
 2012-03-14 Keith Winstein <mosh-devel@mit.edu>
 
-	* Version 1.01 released.
+	* Version 1.0.1 released.
 
 	* Roughly 40% less CPU usage.
 
