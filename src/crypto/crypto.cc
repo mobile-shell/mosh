@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <sys/resource.h>
 
 #include "byteorder.h"
 #include "crypto.h"
@@ -245,4 +246,18 @@ Message Session::decrypt( string ciphertext )
   free( body );
 
   return ret;
+}
+
+/* Disable dumping core, as a precaution to avoid saving sensitive data
+   to disk. */
+void Crypto::disable_dumping_core( void ) {
+  struct rlimit limit;
+  limit.rlim_cur = 0;
+  limit.rlim_max = 0;
+  if ( 0 != setrlimit( RLIMIT_CORE, &limit ) ) {
+    /* We don't throw CryptoException because this is called very early
+       in main(), outside of 'try'. */
+    perror( "setrlimit(RLIMIT_CORE)" );
+    exit( 1 );
+  }
 }

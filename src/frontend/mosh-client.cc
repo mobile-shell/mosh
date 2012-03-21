@@ -54,6 +54,9 @@ void print_colorcount( void )
 
 int main( int argc, char *argv[] )
 {
+  /* For security, make sure we don't dump core */
+  Crypto::disable_dumping_core();
+
   /* Get arguments */
   int opt;
   while ( (opt = getopt( argc, argv, "c" )) != -1 ) {
