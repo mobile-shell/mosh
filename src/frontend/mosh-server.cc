@@ -318,9 +318,8 @@ int run_server( const char *desired_ip, const char *desired_port,
     
     if ( execvp( executable.c_str(), command ) < 0 ) {
       perror( "execvp" );
-      exit( 1 );
+      _exit( 1 );
     }
-    exit( 0 );
   } else {
     /* parent */
 
