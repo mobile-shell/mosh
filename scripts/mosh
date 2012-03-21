@@ -188,7 +188,7 @@ if ( $pid == 0 ) { # child
   open STDERR, ">&", $pty_slave->fileno() or die;
   close $pty_slave;
 
-  my @server = ( $server, 'new', '-s' );
+  my @server = ( 'new', '-s' );
 
   push @server, ( '-c', $colors );
 
@@ -200,7 +200,7 @@ if ( $pid == 0 ) { # child
     push @server, '--', @command;
   }
 
-  exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', shell_quote( @server );
+  exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$0 --fake-proxy -- %h %p", '-t', $userhost, '--', "$server " . shell_quote( @server );
   die "Cannot exec ssh: $!\n";
 } else { # server
   my ( $ip, $port, $key );
