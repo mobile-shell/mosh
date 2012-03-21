@@ -53,6 +53,8 @@ private:
 
   void output_new_frame( void );
 
+  bool still_connecting( void ) { return (network->get_remote_state_num() == 0); }
+
 public:
   STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode )
     : ip( s_ip ), port( s_port ), key( s_key ),

@@ -293,7 +293,14 @@ void STMClient::main( void )
     try {
       output_new_frame();
 
-      int active_fds = poll( pollfds, 3, min( network->wait_time(), overlays.wait_time() ) );
+      int wait_time = min( network->wait_time(), overlays.wait_time() );
+
+      /* Handle startup "Connecting..." message */
+      if ( still_connecting() ) {
+	wait_time = min( 250, wait_time );
+      }
+
+      int active_fds = poll( pollfds, 3, wait_time );
       if ( active_fds < 0 && errno == EINTR ) {
 	continue;
       } else if ( active_fds < 0 ) {
@@ -369,7 +376,9 @@ void STMClient::main( void )
       }
 
       static const wstring connecting_notification( L"Connecting..." );
-      if ( (network->get_remote_state_num() == 0) && (!network->shutdown_in_progress()) ) {
+      if ( still_connecting()
+	   && (!network->shutdown_in_progress())
+	   && (timestamp() - network->get_latest_remote_state().timestamp > 250) ) {
 	overlays.get_notification_engine().set_notification_string( connecting_notification );
       } else if ( (network->get_remote_state_num() != 0)
 		  && (overlays.get_notification_engine().get_notification_string()
