@@ -169,7 +169,7 @@ int main( int argc, char *argv[] )
   }
 
   if ( desired_port
-       && ( strspn( desired_ip, "0123456789" ) != strlen( desired_ip ) ) ) {
+       && ( strspn( desired_port, "0123456789" ) != strlen( desired_port ) ) ) {
     fprintf( stderr, "%s: Bad UDP port (%s)\n", argv[ 0 ], desired_port );
     print_usage( argv[ 0 ] );
     exit( 1 );
