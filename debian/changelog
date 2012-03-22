@@ -1,3 +1,9 @@
+mosh (1.0.9d-1) unstable; urgency=low
+
+  * Fix bug preventing -p argument from working
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 21 Mar 2012 22:46:51 -0400
+
 mosh (1.0.9c-1) unstable; urgency=low
 
   * Improved building on Mac OS X (Anders Kaseorg)
