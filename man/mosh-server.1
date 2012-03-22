@@ -23,6 +23,7 @@ new
 [-s]
 [-i IP]
 [-p port]
+[-c colors]
 [-- command...]
 .br
 .SH DESCRIPTION
@@ -33,7 +34,8 @@ remote terminal application.
 \fBmosh-server\fP binds to a high UDP port and chooses an encryption
 key to protect the session. It prints both on standard output,
 detaches from the terminal, and waits for the \fBmosh-client\fP to
-establish a connection.
+establish a connection. It will exit if no client has contacted
+it within 60 seconds.
 
 By default, \fBmosh-server\fP binds to a port between 60000 and
 61000 and executes the user's login shell.
@@ -65,6 +67,10 @@ IP address of the local interface to bind (for multihomed hosts)
 .B \-p \fIPORT\fP
 UDP port number to bind
 
+.TP
+.B \-c \fICOLORS\fP
+Number of colors to advertise to applications through TERM (e.g. 8, 256)
+
 .SH EXAMPLE
 
 .nf
@@ -72,7 +78,7 @@ $ mosh-server
 
 MOSH CONNECT 60001 UAkFedSsVJs2LfMeKyQB5g
 
-mosh-server (mosh 1.0)
+mosh-server (mosh 1.1)
 [...] (copyright notice omitted)
 
 [mosh-server detached, pid = 20443]
