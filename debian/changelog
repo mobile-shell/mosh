@@ -1,3 +1,9 @@
+mosh (1.1-1) unstable; urgency=low
+
+  * Version 1.1 released
+
+ -- Keith Winstein <keithw@mit.edu>  Thu, 22 Mar 2012 18:40:59 -0400
+
 mosh (1.0.9d-1) unstable; urgency=low
 
   * Fix bug preventing -p argument from working
