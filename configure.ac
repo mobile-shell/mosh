@@ -54,6 +54,12 @@ AC_ARG_ENABLE([server],
   [build_server="yes"])
 AM_CONDITIONAL([BUILD_SERVER], [test x"$build_server" != xno])
 
+AC_ARG_ENABLE([tests],
+  [AS_HELP_STRING([--enable-tests], [Build tests])],
+  [build_tests="$enableval"],
+  [build_tests="no"])
+AM_CONDITIONAL([BUILD_TESTS], [test x"$build_tests" != xno])
+
 AC_ARG_ENABLE([examples],
   [AS_HELP_STRING([--enable-examples], [Build the miscellaneous programs in src/examples @<:@no@:>@])],
   [build_examples="$enableval"],
@@ -200,6 +206,7 @@ AC_CONFIG_FILES([
   src/util/Makefile
   scripts/Makefile
   src/examples/Makefile
+  src/tests/Makefile
   man/Makefile
 ])
 AC_OUTPUT
