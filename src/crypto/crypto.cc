@@ -59,13 +59,13 @@ static void * aligned_alloc( int len )
   if( ! (ptr = malloc(len)) ) {
     throw std::bad_alloc();
   }
-  if( (size_t)ptr & 0xF ) {
+  if( (uintptr_t)ptr & 0xF ) {
     // The pointer wasn't 16-byte aligned, so try again with valloc
     free(ptr);
     if( ! (ptr = valloc(len)) ) {
       throw std::bad_alloc();
     }
-    if( (size_t)ptr & 0xF ) {
+    if( (uintptr_t)ptr & 0xF ) {
       free(ptr);
       throw std::bad_alloc();
     }
