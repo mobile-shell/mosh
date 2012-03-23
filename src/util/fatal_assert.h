@@ -24,7 +24,7 @@
 
 static void fatal_error( const char *expression, const char *file, int line, const char *function )
 {
-  fprintf( stderr, "Fatal assertion failure in function %s at %s:%d, failed test: %s\n",
+  fprintf( stderr, "Fatal assertion failure in function %s at %s:%d\nFailed test: %s\n",
            function, file, line, expression );
   exit( 2 );
 }
