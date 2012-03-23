@@ -72,6 +72,12 @@ class PRNG {
     fill( &x, 1 );
     return x;
   }
+
+  uint32_t uint32() {
+    uint32_t x;
+    fill( &x, 4 );
+    return x;
+  }
 };
 
 #endif
