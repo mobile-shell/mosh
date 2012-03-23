@@ -113,7 +113,7 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MBRTOWC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langinfo setenv setlocale sigaction socket strchr strdup strerror strtol wcwidth])
+AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langinfo posix_memalign setenv setlocale sigaction socket strchr strdup strerror strtol wcwidth])
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 

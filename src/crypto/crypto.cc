@@ -50,9 +50,27 @@ static void * sse_alloc( int len )
 {
   void *ptr = NULL;
 
+#if defined(HAVE_POSIX_MEMALIGN)
   if( (0 != posix_memalign( (void **)&ptr, 16, len )) || (ptr == NULL) ) {
     throw std::bad_alloc();
   }
+#else
+  // Some platforms will align malloc. Let's try that first.
+  if( ! (ptr = malloc(len)) ) {
+    throw std::bad_alloc();
+  }
+  if( (size_t)ptr & 0xF ) {
+    // The pointer wasn't 16-byte aligned, so try again with valloc
+    free(ptr);
+    if( ! (ptr = valloc(len)) ) {
+      throw std::bad_alloc();
+    }
+    if( (size_t)ptr & 0xF ) {
+      free(ptr);
+      throw std::bad_alloc();
+    }
+  }
+#endif /* !defined(HAVE_POSIX_MEMALIGN) */
 
   return ptr;
 }
