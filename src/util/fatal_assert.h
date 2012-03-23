@@ -24,9 +24,8 @@
 
 static void fatal_error( const char *expression, const char *file, int line, const char *function )
 {
-  char buffer[ 2048 ];
-  snprintf( buffer, 2048, "Fatal assertion failure in function %s at %s:%d, failed test: %s\n",
-	    function, file, line, expression );
+  fprintf( stderr, "Fatal assertion failure in function %s at %s:%d, failed test: %s\n",
+           function, file, line, expression );
   exit( 2 );
 }
 
