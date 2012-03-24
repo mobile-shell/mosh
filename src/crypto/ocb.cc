@@ -92,14 +92,16 @@
     #define __SSSE3__  (_M_IX86 || _M_AMD64 || _M_X64)    /* Assume SSSE3 */
 	#include <intrin.h>
 	#pragma intrinsic(_byteswap_uint64, _BitScanForward, memcpy)
-	#define bswap64(x) _byteswap_uint64(x)
-	static inline unsigned ntz(unsigned x) {_BitScanForward(&x,x);return x;}
 #elif __GNUC__
 	#define inline __inline__            /* No "inline" in GCC ansi C mode */
 	#define restrict __restrict__      /* No "restrict" in GCC ansi C mode */
-	#define bswap64(x) __builtin_bswap64(x)           /* Assuming GCC 4.3+ */
-	#define ntz(x)     __builtin_ctz((unsigned)(x))   /* Assuming GCC 3.4+ */
-#else              /* Assume some C99 features: stdint.h, inline, restrict */
+#endif
+
+#if _MSC_VER
+	#define bswap64(x) _byteswap_uint64(x)
+#elif HAVE_DECL___BUILTIN_BSWAP64
+	#define bswap64(x) __builtin_bswap64(x)           /* GCC 4.3+ */
+#else
 	#define bswap32(x)                                              \
 	   ((((x) & 0xff000000u) >> 24) | (((x) & 0x00ff0000u) >>  8) | \
 		(((x) & 0x0000ff00u) <<  8) | (((x) & 0x000000ffu) << 24))
@@ -111,7 +113,13 @@
 		out.u32[1] = bswap32(in.u32[0]);
 		return out.u64;
 	}
-    
+#endif
+
+#if _MSC_VER
+	static inline unsigned ntz(unsigned x) {_BitScanForward(&x,x);return x;}
+#elif HAVE_DECL___BUILTIN_CTZ
+	#define ntz(x)     __builtin_ctz((unsigned)(x))   /* GCC 3.4+ */
+#else
 	#if (L_TABLE_SZ <= 9) && (L_TABLE_SZ_IS_ENOUGH)   /* < 2^13 byte texts */
 	static inline unsigned ntz(unsigned x) {
 		static const unsigned char tz_table[] = {0, 
