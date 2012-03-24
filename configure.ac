@@ -119,6 +119,8 @@ AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Def
 
 AC_CHECK_LIB([ncurses], [setupterm])
 
+AC_CHECK_DECLS([__builtin_bswap64, __builtin_ctz])
+
 AC_CHECK_DECL([mach_absolute_time],
   [AC_DEFINE([HAVE_MACH_ABSOLUTE_TIME], [1],
      [Define if mach_absolute_time is available.])],
