@@ -75,6 +75,7 @@ namespace Crypto {
   private:
     Base64Key key;
     ae_ctx *ctx;
+    uint64_t blocks_encrypted;
     
   public:
     Session( Base64Key s_key );
