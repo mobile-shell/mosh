@@ -46,7 +46,8 @@ long int myatoi( const char *str )
   return ret;
 }
 
-static void * aligned_alloc( int len )
+AlignedBuffer::AlignedBuffer( size_t len, const char *data )
+  : m_len( len ), m_data( NULL )
 {
   void *ptr = NULL;
 
@@ -72,7 +73,11 @@ static void * aligned_alloc( int len )
   }
 #endif /* !defined(HAVE_POSIX_MEMALIGN) */
 
-  return ptr;
+  m_data = (char *) ptr;
+
+  if ( data ) {
+    memcpy( m_data, data, len );
+  }
 }
 
 Base64Key::Base64Key( string printable_key )
@@ -193,10 +198,8 @@ string Session::encrypt( Message plaintext )
   const size_t pt_len = plaintext.text.size();
   const int ciphertext_len = pt_len + 16;
 
-  char *ciphertext = (char *)aligned_alloc( ciphertext_len );
-  char *pt = (char *)aligned_alloc( pt_len );
-
-  memcpy( pt, plaintext.text.data(), plaintext.text.size() );
+  AlignedBuffer ciphertext( ciphertext_len );
+  AlignedBuffer pt( pt_len, plaintext.text.data() );
 
   if ( (uint64_t( plaintext.nonce.data() ) & 0xf) != 0 ) {
     throw CryptoException( "Bad alignment." );
@@ -204,15 +207,13 @@ string Session::encrypt( Message plaintext )
 
   if ( ciphertext_len != ae_encrypt( ctx,                                     /* ctx */
 				     plaintext.nonce.data(),                  /* nonce */
-				     pt,                                      /* pt */
-				     pt_len,                                  /* pt_len */
+				     pt.data(),                               /* pt */
+				     pt.len(),                                /* pt_len */
 				     NULL,                                    /* ad */
 				     0,                                       /* ad_len */
-				     ciphertext,                              /* ct */
+				     ciphertext.data(),                       /* ct */
 				     NULL,                                    /* tag */
 				     AE_FINALIZE ) ) {                        /* final */
-    free( pt );
-    free( ciphertext );
     throw CryptoException( "ae_encrypt() returned error." );
   }
 
@@ -235,14 +236,10 @@ string Session::encrypt( Message plaintext )
      client use the same key, so we actually need to die after 2^47 blocks.
   */
   if ( blocks_encrypted >> 47 ) {
-    free( pt );
-    free( ciphertext );
     throw CryptoException( "Encrypted 2^47 blocks.", true );
   }
 
-  string text( (char *)ciphertext, ciphertext_len );
-  free( pt );
-  free( ciphertext );
+  string text( ciphertext.data(), ciphertext.len() );
 
   return plaintext.nonce.cc_str() + text;
 }
@@ -264,28 +261,22 @@ Message Session::decrypt( string ciphertext )
   }
 
   Nonce __attribute__((__aligned__ (16))) nonce( str, 8 );
-  char *body = (char *)aligned_alloc( body_len );
-  memcpy( body, str + 8, body_len );
-
-  char *plaintext = (char *)aligned_alloc( pt_len );
+  AlignedBuffer body( body_len, str + 8 );
+  AlignedBuffer plaintext( pt_len );
 
   if ( pt_len != ae_decrypt( ctx,               /* ctx */
 			     nonce.data(),      /* nonce */
-			     body,              /* ct */
-			     body_len,          /* ct_len */
+			     body.data(),       /* ct */
+			     body.len(),        /* ct_len */
 			     NULL,              /* ad */
 			     0,                 /* ad_len */
-			     plaintext,         /* pt */
+			     plaintext.data(),  /* pt */
 			     NULL,              /* tag */
 			     AE_FINALIZE ) ) {  /* final */
-    free( plaintext );
-    free( body );
     throw CryptoException( "Packet failed integrity check." );
   }
 
-  Message ret( nonce, string( plaintext, pt_len ) );
-  free( plaintext );
-  free( body );
+  Message ret( nonce, string( plaintext.data(), plaintext.len() ) );
 
   return ret;
 }
