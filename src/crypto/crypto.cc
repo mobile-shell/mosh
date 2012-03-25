@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <sys/resource.h>
 
 #include "byteorder.h"
@@ -47,33 +48,34 @@ long int myatoi( const char *str )
 }
 
 AlignedBuffer::AlignedBuffer( size_t len, const char *data )
-  : m_len( len ), m_data( NULL )
+  : m_len( len ), m_allocated( NULL ), m_data( NULL )
 {
-  void *ptr = NULL;
-
 #if defined(HAVE_POSIX_MEMALIGN)
-  if( (0 != posix_memalign( (void **)&ptr, 16, len )) || (ptr == NULL) ) {
+  if ( ( 0 != posix_memalign( &m_allocated, 16, len ) )
+      || ( m_allocated == NULL ) ) {
     throw std::bad_alloc();
   }
-#else
-  // Some platforms will align malloc. Let's try that first.
-  if( ! (ptr = malloc(len)) ) {
-    throw std::bad_alloc();
-  }
-  if( (uintptr_t)ptr & 0xF ) {
-    // The pointer wasn't 16-byte aligned, so try again with valloc
-    free(ptr);
-    if( ! (ptr = valloc(len)) ) {
-      throw std::bad_alloc();
-    }
-    if( (uintptr_t)ptr & 0xF ) {
-      free(ptr);
-      throw std::bad_alloc();
-    }
-  }
-#endif /* !defined(HAVE_POSIX_MEMALIGN) */
+  m_data = (char *) m_allocated;
 
-  m_data = (char *) ptr;
+#else
+  /* malloc() a region 15 bytes larger than we need, and find
+     the aligned offset within. */
+  m_allocated = malloc( 15 + len );
+  if ( m_allocated == NULL ) {
+    throw std::bad_alloc();
+  }
+
+  uintptr_t iptr = (uintptr_t) m_allocated;
+  if ( iptr & 0xF ) {
+    iptr += 16 - ( iptr & 0xF );
+  }
+  assert( !( iptr & 0xF ) );
+  assert( iptr >= (uintptr_t) m_allocated );
+  assert( iptr <= ( 15 + (uintptr_t) m_allocated ) );
+
+  m_data = (char *) iptr;
+
+#endif /* !defined(HAVE_POSIX_MEMALIGN) */
 
   if ( data ) {
     memcpy( m_data, data, len );
