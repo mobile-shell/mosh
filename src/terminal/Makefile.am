@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(srcdir)/../util $(BOOST_CPPFLAGS) $(TINFO_CFLAGS)
-AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) -fno-default-inline -pipe
+AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) -fno-default-inline -pipe
 
 noinst_LIBRARIES = libmoshterminal.a
 
