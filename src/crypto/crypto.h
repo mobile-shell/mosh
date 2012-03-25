@@ -23,6 +23,7 @@
 #include <string>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 using std::string;
 
@@ -35,6 +36,28 @@ namespace Crypto {
     bool fatal;
     CryptoException( string s_text, bool s_fatal = false )
       : text( s_text ), fatal( s_fatal ) {};
+  };
+
+  /* 16-byte-aligned buffer, with length. */
+  class AlignedBuffer {
+  private:
+    size_t m_len;
+    char *m_data;
+
+  public:
+    AlignedBuffer( size_t len, const char *data = NULL );
+
+    ~AlignedBuffer() {
+      free( m_data );
+    }
+
+    char * data( void ) const { return m_data; }
+    size_t len( void )  const { return m_len;  }
+
+  private:
+    /* Not implemented */
+    AlignedBuffer( const AlignedBuffer& );
+    AlignedBuffer& operator=( const AlignedBuffer& );
   };
 
   class Base64Key {
