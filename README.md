@@ -95,7 +95,8 @@ Building from source
     make install   # as root
 
   `configure` accepts standard options, like `--prefix` to set the installation
-  prefix.  Pass `--help` for a full listing.
+  prefix.  Pass `--help` for a full listing.  See also the section "Advice to
+  distributors" below.
 
   To build and use Mosh you will need
 
@@ -167,9 +168,20 @@ Advice to distributors
 
 A note on compiler flags: Mosh is security-sensitive code. When making
 automated builds for a binary package, we recommend passing the option
-`--enable-compile-warnings=error` to ./configure. On GNU/Linux with
+`--enable-compile-warnings=error` to `./configure`. On GNU/Linux with
 `g++` or `clang++`, the package should compile cleanly with
 `-Werror`. Please report a bug if it doesn't.
+
+Where available, Mosh builds with a variety of binary hardening flags
+such as `-fstack-protector-all`, `-D_FORTIFY_SOURCE=2`, etc.  These
+provide proactive security against the possibility of a memory
+corruption bug in Mosh or one of the libraries it uses.  For a full
+list of flags, search for `HARDEN` in `configure.ac`.  The `configure`
+script detects which flags are supported by your compiler, and enables
+them automatically.  To disable this detection, pass
+`--disable-hardening` to `./configure`.  Please report a bug if you
+have trouble with the default settings; we would like as many users as
+possible to be running a configuration as secure as possible.
 
 Mosh ships with a default optimization setting of `-O2`. Some
 distributors have asked about changing this to `-Os` (which causes a
