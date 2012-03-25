@@ -42,13 +42,14 @@ namespace Crypto {
   class AlignedBuffer {
   private:
     size_t m_len;
+    void *m_allocated;
     char *m_data;
 
   public:
     AlignedBuffer( size_t len, const char *data = NULL );
 
     ~AlignedBuffer() {
-      free( m_data );
+      free( m_allocated );
     }
 
     char * data( void ) const { return m_data; }
