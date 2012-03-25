@@ -1,4 +1,4 @@
-AM_CFLAGS = -pedantic -Wall -Wextra -pipe
+AM_CFLAGS = -pedantic -Wall -Wextra -pipe $(HARDEN_CFLAGS)
 
 noinst_LIBRARIES = libstddjb.a
 

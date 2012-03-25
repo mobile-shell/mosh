@@ -1,5 +1,6 @@
 AM_CPPFLAGS = -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I../protobufs -I$(srcdir)/../util $(BOOST_CPPFLAGS) $(TINFO_CFLAGS) $(protobuf_CFLAGS) $(poll_CFLAGS)
-AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) -fno-default-inline -pipe
+AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) -fno-default-inline -pipe
+AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 LDADD = ../crypto/libmoshcrypto.a ../network/libmoshnetwork.a ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../util/libmoshutil.a ../protobufs/libmoshprotos.a $(poll_LIBS) -lm $(TINFO_LIBS) $(protobuf_LIBS)
 if COND_THIRD_LIBSTDDJB
   AM_CPPFLAGS += -I$(top_srcdir)/third/libstddjb
