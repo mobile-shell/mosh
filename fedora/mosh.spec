@@ -1,5 +1,5 @@
 Name:		mosh
-Version:	1.1
+Version:	1.1.1
 Release:	1%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
@@ -45,5 +45,8 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
-* Wed Mar 21 2012  <achernya@mit.edu> - 1.1-1
+* Mon Mar 26 2012 Alexander Chernyakhovsky <achernya@mit.edu> - 1.1.1-1
+- Update to mosh 1.1.1.
+
+* Wed Mar 21 2012 Alexander Chernyakhovsky <achernya@mit.edu> - 1.1-1
 - Initial packaging for mosh.
