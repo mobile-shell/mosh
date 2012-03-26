@@ -1,3 +1,13 @@
+2012-03-27 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 1.1.1 released.
+
+	* Fix spec file and build failure on Fedora.
+
+	* Print out error message properly on fatal_assert().
+
+	* Support for machines without posix_memalign().
+
 2012-03-22 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.1 released (stable release).
