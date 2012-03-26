@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
+#include <unistd.h>
 
 #if HAVE_CLOCK_GETTIME
  #include <time.h>
