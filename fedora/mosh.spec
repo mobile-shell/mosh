@@ -8,8 +8,14 @@ Group:		Applications/Internet
 URL:		http://mosh.mit.edu/
 Source0:	https://github.com/downloads/keithw/mosh/mosh-%{version}.tar.gz
 
-BuildRequires:	protobuf-compiler, protobuf-devel, libutempter-devel, boost-devel, zlib-devel, ncurses-devel
-Requires:	openssh-clients, perl-IO-Tty
+BuildRequires:	protobuf-compiler
+BuildRequires:	protobuf-devel
+BuildRequires:	libutempter-devel
+BuildRequires:	boost-devel
+BuildRequires:	zlib-devel
+BuildRequires:	ncurses-devel
+Requires:	openssh-clients
+Requires:	perl-IO-Tty
 
 %description
 Mosh is a remote terminal application that supports:
@@ -29,7 +35,6 @@ make %{?_smp_mflags}
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
 
