@@ -429,6 +429,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	      /* tell child process of resize */
 	      const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
 	      struct winsize window_size;
+	      if ( ioctl( host_fd, TIOCGWINSZ, &window_size ) < 0 ) {
+		perror( "ioctl TIOCGWINSZ" );
+		return;
+	      }
 	      window_size.ws_col = res->width;
 	      window_size.ws_row = res->height;
 	      if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
