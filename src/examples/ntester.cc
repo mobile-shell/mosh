@@ -18,7 +18,7 @@
 
 #include <termios.h>
 #include <unistd.h>
-#include <poll.h>
+#include <sys/poll.h>
 
 #include "user.h"
 #include "fatal_assert.h"
