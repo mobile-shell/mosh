@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <errno.h>
-#include <poll.h>
+#include <sys/poll.h>
 #include <string.h>
 #include <locale.h>
 #include <wchar.h>
