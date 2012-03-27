@@ -1,6 +1,6 @@
-AM_CPPFLAGS = -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I../protobufs -I$(srcdir)/../util $(BOOST_CPPFLAGS) $(protobuf_CFLAGS)
+AM_CPPFLAGS = -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I../protobufs -I$(srcdir)/../util $(BOOST_CPPFLAGS) $(protobuf_CFLAGS) $(poll_CFLAGS)
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) -fno-default-inline -pipe
-LDADD = ../crypto/libmoshcrypto.a ../network/libmoshnetwork.a ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../util/libmoshutil.a ../protobufs/libmoshprotos.a -lm $(protobuf_LIBS)
+LDADD = ../crypto/libmoshcrypto.a ../network/libmoshnetwork.a ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../util/libmoshutil.a ../protobufs/libmoshprotos.a -lm $(protobuf_LIBS) $(poll_LIBS)
 if COND_THIRD_LIBSTDDJB
   AM_CPPFLAGS += -I$(top_srcdir)/third/libstddjb
   LDADD += $(top_builddir)/third/libstddjb/libstddjb.a
