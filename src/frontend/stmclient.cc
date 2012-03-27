@@ -398,9 +398,13 @@ void STMClient::main( void )
       req.tv_nsec = 200000000; /* 0.2 sec */
       nanosleep( &req, NULL );
     } catch ( Crypto::CryptoException e ) {
-      wchar_t tmp[ 128 ];
-      swprintf( tmp, 128, L"Crypto exception: %s", e.text.c_str() );
-      overlays.get_notification_engine().set_notification_string( wstring( tmp ) );
+      if ( e.fatal ) {
+        throw;
+      } else {
+        wchar_t tmp[ 128 ];
+        swprintf( tmp, 128, L"Crypto exception: %s", e.text.c_str() );
+        overlays.get_notification_engine().set_notification_string( wstring( tmp ) );
+      }
     }
   }
 }
