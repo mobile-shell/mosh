@@ -133,6 +133,12 @@ if test -z "$poll_LIBS"; then
    AC_CHECK_LIB([poll], [poll], [poll_LIBS="-lpoll"])
 fi
 
+AC_ARG_VAR([poll_CFLAGS], [C compiler flags for poll])
+AC_ARG_VAR([poll_LIBS], [linker flags for poll])
+if test -z "$poll_LIBS"; then
+   AC_CHECK_LIB([poll], [poll], [poll_LIBS="-lpoll"])
+fi
+
 AC_CHECK_DECLS([__builtin_bswap64, __builtin_ctz])
 
 AC_CHECK_DECL([mach_absolute_time],
