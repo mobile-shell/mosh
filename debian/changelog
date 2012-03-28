@@ -1,3 +1,16 @@
+mosh (1.1.1a-1) unstable; urgency=low
+
+  * Fixes to build on OS X 10.5 with older gcc and -lpoll (Quentin Smith)
+
+  * Add --with-utempter and --without-utempter per gentoo request
+	(Michael Weber)
+
+  * configure now requires ncurses headers (and others) to be installed
+
+  * Consolidate locale routines to help Android port (Keegan McAllister)
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 28 Mar 2012 15:16:51 +0200
+
 mosh (1.1.1-1) unstable; urgency=low
 
   * Version 1.1.1 released.

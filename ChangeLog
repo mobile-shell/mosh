@@ -1,3 +1,16 @@
+2012-03-28 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 1.1.2 released.
+
+	* Fixes to build on OS X 10.5 with older gcc and -lpoll (Quentin Smith)
+
+	* Add --with-utempter and --without-utempter per gentoo request
+	  (Michael Weber)
+
+	* configure now requires ncurses headers (and others) to be installed
+
+	* Consolidate locale routines to help Android port (Keegan McAllister)
+
 2012-03-27 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.1.1 released.
