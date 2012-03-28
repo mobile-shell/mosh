@@ -2,8 +2,7 @@ mosh (1.1.1a-1) unstable; urgency=low
 
   * Fixes to build on OS X 10.5 with older gcc and -lpoll (Quentin Smith)
 
-  * Add --with-utempter and --without-utempter per gentoo request
-	(Michael Weber)
+  * Add --with-utempter and --without-utempter per gentoo req (Michael Weber)
 
   * configure now requires ncurses headers (and others) to be installed
 
