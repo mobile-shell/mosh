@@ -19,11 +19,14 @@
 #ifndef TEST_UTILS_HPP
 #define TEST_UTILS_HPP
 
+#include <string>
+
 #include "crypto.h"
 
 #define DUMP_NAME_FMT "%-10s "
 
 void hexdump( const void *buf, size_t len, const char *name );
 void hexdump( const Crypto::AlignedBuffer &buf, const char *name );
+void hexdump( const std::string &buf, const char *name );
 
 #endif
