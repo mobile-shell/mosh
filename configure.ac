@@ -101,7 +101,9 @@ AS_IF([test x"$with_skalibs" != xno],
    AC_SUBST([STDDJB_LDFLAGS], ["$SKALIBS_LDFLAGS -lstddjb"])])
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h curses.h fcntl.h langinfo.h limits.h locale.h netinet/in.h pty.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/time.h term.h termios.h unistd.h util.h wchar.h wctype.h])
+AC_CHECK_HEADERS([arpa/inet.h curses.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/time.h term.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
+
+AC_CHECK_HEADERS([pty.h util.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -123,7 +125,7 @@ AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langi
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
-AC_CHECK_LIB([ncurses], [setupterm])
+AC_CHECK_LIB([ncurses], [setupterm], [], [AC_MSG_ERROR([Missing ncurses.])])
 
 AC_ARG_VAR([poll_CFLAGS], [C compiler flags for poll])
 AC_ARG_VAR([poll_LIBS], [linker flags for poll])
