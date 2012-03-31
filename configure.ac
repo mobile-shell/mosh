@@ -166,6 +166,11 @@ AC_CHECK_DECL([IP_MTU_DISCOVER],
      [Define if IP_MTU_DISCOVER is a valid sockopt.])],
   , [[#include <netinet/ip.h>]])
 
+AC_CHECK_DECL([__STDC_ISO_10646__],
+  [],
+  [AC_MSG_WARN([C library doesn't advertise wchar_t is Unicode (OS X works anyway with workaround).])],
+  [[#include <wchar.h>]])
+
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 
