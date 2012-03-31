@@ -171,6 +171,12 @@ AC_CHECK_DECL([__STDC_ISO_10646__],
   [AC_MSG_WARN([C library doesn't advertise wchar_t is Unicode (OS X works anyway with workaround).])],
   [[#include <wchar.h>]])
 
+AC_CHECK_DECL([IUTF8],
+  [AC_DEFINE([HAVE_IUTF8], [1],
+     [Define if IUTF8 is a defined termios mode.])],
+  [AC_MSG_WARN([No IUTF8 termios mode; character-erase of multibyte character sequence probably does not work properly in canonical mode on this platform.])],
+  [[#include <termios.h>]])
+
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 
