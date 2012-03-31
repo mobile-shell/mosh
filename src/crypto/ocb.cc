@@ -302,6 +302,7 @@
 				 "adcs %H1,%H1,%H1\n\t"
 				 "adcs %0,%0,%0\n\t"
 				 "adcs %H0,%H0,%H0\n\t"
+			         "it cs\n\t"
 				 "eorcs %1,%1,#135"
 		: "+r"(b.l), "+r"(b.r) : : "cc");
 		return b;
