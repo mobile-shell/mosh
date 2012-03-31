@@ -62,11 +62,14 @@ void STMClient::init( void )
 
   /* Put terminal driver in raw mode */
   raw_termios = saved_termios;
+
+#ifdef HAVE_IUTF8
   if ( !(raw_termios.c_iflag & IUTF8) ) {
-    /* SSH should also convey IUTF8 across connection. */
     //    fprintf( stderr, "Warning: Locale is UTF-8 but termios IUTF8 flag not set. Setting IUTF8 flag.\n" );
+    /* Probably not really necessary since we are putting terminal driver into raw mode anyway. */
     raw_termios.c_iflag |= IUTF8;
   }
+#endif /* HAVE_IUTF8 */
 
   cfmakeraw( &raw_termios );
 

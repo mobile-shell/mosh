@@ -74,10 +74,14 @@ int main( void )
 
   child_termios = saved_termios;
 
+#ifdef HAVE_IUTF8
   if ( !(child_termios.c_iflag & IUTF8) ) {
     fprintf( stderr, "Warning: Locale is UTF-8 but termios IUTF8 flag not set. Setting IUTF8 flag.\n" );
     child_termios.c_iflag |= IUTF8;
   }
+#else
+  fprintf( stderr, "Warning: termios IUTF8 flag not defined. Character-erase of multibyte character sequence probably does not work properly on this platform.\n" );
+#endif /* HAVE_IUTF8 */
 
   pid_t child = forkpty( &master, NULL, &child_termios, NULL );
 

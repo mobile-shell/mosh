@@ -265,11 +265,15 @@ int run_server( const char *desired_ip, const char *desired_port,
 
   int master;
 
+#ifdef HAVE_IUTF8
   if ( !(child_termios.c_iflag & IUTF8) ) {
     /* SSH should also convey IUTF8 across connection. */
     //    fprintf( stderr, "Warning: Locale is UTF-8 but termios IUTF8 flag not set. Setting IUTF8 flag.\n" );
     child_termios.c_iflag |= IUTF8;
   }
+#else
+  fprintf( stderr, "\nWarning: termios IUTF8 flag not defined.\nCharacter-erase of multibyte character sequence\nprobably does not work properly on this platform.\n" );
+#endif /* HAVE_IUTF8 */
 
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, &child_termios, &window_size );
