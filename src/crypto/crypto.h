@@ -32,7 +32,9 @@ namespace Crypto {
   class CryptoException {
   public:
     string text;
-    CryptoException( string s_text ) : text( s_text ) {};
+    bool fatal;
+    CryptoException( string s_text, bool s_fatal = false )
+      : text( s_text ), fatal( s_fatal ) {};
   };
 
   class Base64Key {
@@ -73,6 +75,7 @@ namespace Crypto {
   private:
     Base64Key key;
     ae_ctx *ctx;
+    uint64_t blocks_encrypted;
     
   public:
     Session( Base64Key s_key );

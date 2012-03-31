@@ -131,7 +131,7 @@ string Base64Key::printable_key( void ) const
 }
 
 Session::Session( Base64Key s_key )
-  : key( s_key ), ctx( NULL )
+  : key( s_key ), ctx( NULL ), blocks_encrypted( 0 )
 {
   ctx = ae_allocate( NULL );
   if ( ctx == NULL ) {
@@ -214,6 +214,30 @@ string Session::encrypt( Message plaintext )
     free( pt );
     free( ciphertext );
     throw CryptoException( "ae_encrypt() returned error." );
+  }
+
+  blocks_encrypted += pt_len >> 4;
+  if ( pt_len & 0xF ) {
+    /* partial block */
+    blocks_encrypted++;
+  }
+
+  /* "Both the privacy and the authenticity properties of OCB degrade as
+      per s^2 / 2^128, where s is the total number of blocks that the
+      adversary acquires.... In order to ensure that s^2 / 2^128 remains
+      small, a given key should be used to encrypt at most 2^48 blocks (2^55
+      bits or 4 petabytes)"
+
+     -- http://tools.ietf.org/html/draft-krovetz-ocb-03
+
+     We deem it unlikely that a legitimate user will send 4 PB through a Mosh
+     session.  If it happens, we simply kill the session.  The server and
+     client use the same key, so we actually need to die after 2^47 blocks.
+  */
+  if ( blocks_encrypted >> 47 ) {
+    free( pt );
+    free( ciphertext );
+    throw CryptoException( "Encrypted 2^47 blocks.", true );
   }
 
   string text( (char *)ciphertext, ciphertext_len );

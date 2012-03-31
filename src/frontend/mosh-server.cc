@@ -592,7 +592,11 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );
       spin();
     } catch ( Crypto::CryptoException e ) {
-      fprintf( stderr, "Crypto exception: %s\n", e.text.c_str() );
+      if ( e.fatal ) {
+        throw;
+      } else {
+        fprintf( stderr, "Crypto exception: %s\n", e.text.c_str() );
+      }
     }
   }
 }
