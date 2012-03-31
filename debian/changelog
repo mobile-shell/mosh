@@ -1,3 +1,13 @@
+mosh (1.1.2a-1) unstable; urgency=low
+
+  * Fixes to build on armel and armhf (Keegan McAllister)
+
+  * Fix to build on FreeBSD, with warning about broken tty multibyte delete (reported by Christoph Egger)
+
+  * Keep sane values in unused wx_xpixel/wx_ypixel values of struct winsize.
+
+ -- Keith Winstein <keithw@mit.edu>  Sat, 31 Mar 2012 15:51:31 -0400
+
 mosh (1.1.2-1) unstable; urgency=low
 
   * Version 1.1.2 released.
