@@ -1,3 +1,9 @@
+mosh (1.1.2b-1) unstable; urgency=low
+
+  * Close connection after four petabytes (per OCB recommendation)
+
+ -- Keith Winstein <keithw@mit.edu>  Sat, 31 Mar 2012 17:25:10 -0400
+
 mosh (1.1.2a-1) unstable; urgency=low
 
   * Fixes to build on armel and armhf (Keegan McAllister)
