@@ -20,6 +20,7 @@
 #include <typeinfo>
 #include <errno.h>
 #include <wchar.h>
+#include <stdint.h>
 
 #include "parser.h"
 
@@ -121,11 +122,16 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
       throw std::string( "Unknown return value from mbrtowc" );
     }
 
-    if ( (pwc < 0) || (pwc > 0x10FFFF) ) { /* outside Unicode range */
+    /* Cast to unsigned for checks, because some
+       platforms (e.g. ARM) use uint32_t as wchar_t,
+       causing compiler warning on "pwc > 0" check. */
+    uint64_t pwcheck = pwc;
+
+    if ( pwcheck > 0x10FFFF ) { /* outside Unicode range */
       pwc = (wchar_t) 0xFFFD;
     }
 
-    if ( (pwc >= 0xD800) && (pwc <= 0xDFFF) ) { /* surrogate code point */
+    if ( (pwcheck >= 0xD800) && (pwcheck <= 0xDFFF) ) { /* surrogate code point */
       /*
 	OS X unfortunately allows these sequences without EILSEQ, but
 	they are ill-formed UTF-8 and we shouldn't repeat them to the
