@@ -30,6 +30,7 @@ void Cell::reset( int background_color )
   fallback = false;
   width = 1;
   renditions = Renditions( background_color );
+  wrap = false;
 }
 
 DrawState::DrawState( int s_width, int s_height )
@@ -339,7 +340,8 @@ void Framebuffer::resize( int s_width, int s_height )
   for ( std::deque<Row>::iterator i = rows.begin();
 	i != rows.end();
 	i++ ) {
-    (*i).cells.resize( s_width, Cell( ds.get_background_rendition() ) );
+    i->set_wrap( false );
+    i->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
   }
 
   ds.resize( s_width, s_height );

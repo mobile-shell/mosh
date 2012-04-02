@@ -175,8 +175,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
       if ( (frame.cursor_x >= f.ds.get_width())
 	   && (frame.y < f.ds.get_height() - 1)
-	   && f.get_row( frame.y )->wrap
-	   && (!initialized || !frame.last_frame.get_row( frame.y )->wrap) ) {
+	   && f.get_row( frame.y )->get_wrap()
+	   && (!initialized || !frame.last_frame.get_row( frame.y )->get_wrap()) ) {
 	/* next write will wrap */
 	frame.cursor_x = 0;
 	frame.cursor_y++;
@@ -185,8 +185,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
     /* Turn off wrap */
     if ( (frame.y < f.ds.get_height() - 1)
-	 && (!f.get_row( frame.y )->wrap)
-	 && (!initialized || frame.last_frame.get_row( frame.y )->wrap) ) {
+	 && (!f.get_row( frame.y )->get_wrap())
+	 && (!initialized || frame.last_frame.get_row( frame.y )->get_wrap()) ) {
       frame.x = last_x;
       if ( initialized ) {
 	frame.last_frame.reset_cell( frame.last_frame.get_mutable_cell( frame.y, frame.x ) );

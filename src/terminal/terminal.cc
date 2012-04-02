@@ -57,7 +57,7 @@ void Emulator::print( const Parser::Print *act )
   case 1: /* normal character */
   case 2: /* wide character */
     if ( fb.ds.auto_wrap_mode && fb.ds.next_print_will_wrap ) {
-      fb.get_mutable_row( -1 )->wrap = true;
+      fb.get_mutable_row( -1 )->set_wrap( true );
       fb.ds.move_col( 0 );
       fb.move_rows_autoscroll( 1 );
     }
@@ -67,7 +67,7 @@ void Emulator::print( const Parser::Print *act )
 	 && (chwidth == 2)
 	 && (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
       fb.reset_cell( this_cell );
-      fb.get_mutable_row( -1 )->wrap = false;
+      fb.get_mutable_row( -1 )->set_wrap( false );
       /* There doesn't seem to be a consistent way to get the
 	 downstream terminal emulator to set the wrap-around
 	 copy-and-paste flag on a row that ends with an empty cell

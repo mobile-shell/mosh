@@ -57,19 +57,22 @@ namespace Terminal {
     char fallback; /* first character is combining character */
     int width;
     Renditions renditions;
+    bool wrap; /* if last cell, wrap to next line */
 
     Cell( int background_color )
       : contents(),
 	fallback( false ),
 	width( 1 ),
-	renditions( background_color )
+	renditions( background_color ),
+	wrap( false )
     {}
 
     Cell() /* default constructor required by C++11 STL */
       : contents(),
 	fallback( false ),
 	width( 1 ),
-	renditions( 0 )
+	renditions( 0 ),
+	wrap( false )
     {
       assert( false );
     }
@@ -81,7 +84,8 @@ namespace Terminal {
       return ( (contents == x.contents)
 	       && (fallback == x.fallback)
 	       && (width == x.width)
-	       && (renditions == x.renditions) );
+	       && (renditions == x.renditions)
+	       && (wrap == x.wrap) );
     }
 
     wchar_t debug_contents( void ) const;
@@ -97,14 +101,13 @@ namespace Terminal {
   class Row {
   public:
     std::vector<Cell> cells;
-    bool wrap;
 
     Row( size_t s_width, int background_color )
-      : cells( s_width, Cell( background_color ) ), wrap( false )
+      : cells( s_width, Cell( background_color ) )
     {}
 
     Row() /* default constructor required by C++11 STL */
-      : cells( 1, Cell() ), wrap( false )
+      : cells( 1, Cell() )
     {
       assert( false );
     }
@@ -116,8 +119,11 @@ namespace Terminal {
 
     bool operator==( const Row &x ) const
     {
-      return ( (cells == x.cells) && (wrap == x.wrap) );
+      return ( cells == x.cells );
     }
+
+    bool get_wrap( void ) const { return cells.back().wrap; }
+    void set_wrap( bool w ) { cells.back().wrap = w; }
   };
 
   class SavedCursor {
