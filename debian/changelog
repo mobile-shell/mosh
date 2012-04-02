@@ -1,3 +1,9 @@
+mosh (1.1.2c-1) unstable; urgency=low
+
+  * Fix bug causing occasional missing (or spurious) wraparound copy-and-paste
+
+ -- Keith Winstein <keithw@mit.edu>  Mon, 02 Apr 2012 19:08:19 -0400
+
 mosh (1.1.2b-1) unstable; urgency=low
 
   * Close connection after four petabytes (per OCB recommendation)
