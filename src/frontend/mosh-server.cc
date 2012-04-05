@@ -20,6 +20,9 @@
 
 #include <errno.h>
 #include <locale.h>
+#ifdef HAVE_LIBUTIL_H
+#include <libutil.h>
+#endif
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
