@@ -103,7 +103,8 @@ AS_IF([test x"$with_skalibs" != xno],
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h curses.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/time.h term.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
 
-AC_CHECK_HEADERS([pty.h util.h])
+AC_CHECK_HEADERS([pty.h util.h libutil.h])
+AC_CHECK_HEADERS([endian.h sys/endian.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -159,7 +160,11 @@ AC_CHECK_DECL([htobe64],
         [Define if OSSwapHostToBigInt64 and friends exist.])],
      [AC_MSG_ERROR([Unable to find byte swapping functions])],
      [[#include <libkern/OSByteOrder.h>]])],
-  [[#include <endian.h>]])
+  [[#if defined(HAVE_ENDIAN_H)
+#include <endian.h>
+#elif defined(HAVE_SYS_ENDIAN_H)
+#include <sys/endian.h>
+#endif]])
 
 AC_CHECK_DECL([IP_MTU_DISCOVER],
   [AC_DEFINE([HAVE_IP_MTU_DISCOVER], [1],
