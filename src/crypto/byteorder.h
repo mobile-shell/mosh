@@ -22,7 +22,11 @@
 #include "config.h"
 
 #ifdef HAVE_HTOBE64
-# include <endian.h>
+# if defined(HAVE_ENDIAN_H)
+#  include <endian.h>
+# elif defined(HAVE_SYS_ENDIAN_H)
+#  include <sys/endian.h>
+# endif
 #elif HAVE_OSX_SWAP
 # include <libkern/OSByteOrder.h>
 # define htobe64 OSSwapHostToBigInt64
