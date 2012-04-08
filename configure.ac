@@ -101,6 +101,17 @@ AS_IF([test x"$hardening" != x"no"], [
 AC_SUBST([HARDEN_CFLAGS])
 AC_SUBST([HARDEN_LDFLAGS])
 
+# Also check for a few non-hardening-related flags.
+MISC_CXXFLAGS=""
+AC_LANG_PUSH(C++)
+AX_CHECK_COMPILE_FLAG([-fno-default-inline],
+  [MISC_CXXFLAGS="$MISC_CXXFLAGS -fno-default-inline"], [], [-Werror])
+AX_CHECK_COMPILE_FLAG([-pipe],
+  [MISC_CXXFLAGS="$MISC_CXXFLAGS -pipe"], [], [-Werror])
+AC_LANG_POP(C++)
+AC_SUBST([MISC_CXXFLAGS])
+
+# End of flag tests.
 CC="$saved_CC"
 CXX="$saved_CXX"
 LD="$saved_LD"
