@@ -44,6 +44,18 @@ AC_ARG_ENABLE([compile-warnings],
 AC_SUBST([WARNING_CXXFLAGS])
 AC_SUBST([PICKY_CXXFLAGS])
 
+# We want to check for compiler flag support, but there is no way to make
+# clang's "argument unused" warning fatal.  So we invoke the compiler through a
+# wrapper script that greps for this message.
+
+saved_CC="$CC"
+saved_CXX="$CXX"
+saved_LD="$LD"
+flag_wrap="$srcdir/scripts/wrap-compiler-for-flag-check"
+CC="$flag_wrap $CC"
+CXX="$flag_wrap $CXX"
+LD="$flag_wrap $LD"
+
 # We use the same hardening flags for C and C++.  We must check that each flag
 # is supported by both compilers.
 AC_DEFUN([check_cc_cxx_flag],
@@ -88,6 +100,10 @@ AS_IF([test x"$hardening" != x"no"], [
     check_link_flag([-Wl,-z,now], [HARDEN_LDFLAGS="$HARDEN_LDFLAGS -Wl,-z,now"])])])
 AC_SUBST([HARDEN_CFLAGS])
 AC_SUBST([HARDEN_LDFLAGS])
+
+CC="$saved_CC"
+CXX="$saved_CXX"
+LD="$saved_LD"
 
 AC_ARG_ENABLE([client],
   [AS_HELP_STRING([--enable-client], [Build the mosh-client program @<:@yes@:>@])],
