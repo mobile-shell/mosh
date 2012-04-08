@@ -20,9 +20,6 @@
 
 #include <errno.h>
 #include <locale.h>
-#ifdef HAVE_LIBUTIL_H
-#include <libutil.h>
-#endif
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
@@ -57,6 +54,10 @@ extern "C" {
 #include <pty.h>
 #elif HAVE_UTIL_H
 #include <util.h>
+#endif
+
+#if FORKPTY_IN_LIBUTIL
+#include <libutil.h>
 #endif
 
 #include "networktransport.cc"

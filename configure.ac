@@ -159,6 +159,11 @@ AC_CHECK_DECL([signalfd],
      [Define if signalfd is available.])],
   , [[#include <sys/signalfd.h>]])
 
+AC_CHECK_DECL([forkpty],
+  [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
+     [Define if libutil.h necessary for forkpty().])],
+  , [[#include <libutil.h>]])
+
 AC_CHECK_DECL([htobe64],
   [AC_DEFINE([HAVE_HTOBE64], [1],
   [Define if htobe64 and friends exist.])],
