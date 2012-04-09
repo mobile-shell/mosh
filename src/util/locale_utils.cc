@@ -31,7 +31,8 @@
 
 void assert_utf8_locale( void ) {
   /* Verify locale calls for UTF-8 */
-  if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 ) {
+  if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 &&
+       strcmp( nl_langinfo( CODESET ), "utf-8" ) != 0 ) {
     fprintf( stderr, "mosh requires a UTF-8 locale.\n" );
     exit( 1 );
   }
