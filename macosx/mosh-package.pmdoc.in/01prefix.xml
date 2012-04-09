@@ -1,0 +1,30 @@
+<pkgref spec="1.12" uuid="38E2F0D0-8573-4E7B-8A50-A86056DD0EE8">
+    <config>
+        <identifier>edu.mit.mosh.mosh.pkg</identifier>
+        <version>$PACKAGE_VERSION</version>
+        <description></description>
+        <post-install type="none"/>
+        <requireAuthorization/>
+        <installFrom relative="true" mod="true">prefix</installFrom>
+        <installTo mod="true">/usr</installTo>
+        <flags>
+            <followSymbolicLinks/>
+        </flags>
+        <packageStore type="internal">
+        </packageStore>
+        <mod>installTo</mod>
+        <mod>relocatable</mod>
+        <mod>installFrom.path</mod>
+        <mod>identifier</mod>
+        <mod>parent</mod>
+        <mod>includeRoot</mod>
+        <mod>installTo.path</mod>
+        <mod>installFrom.isRelativeType</mod>
+        <mod>version</mod>
+    </config>
+    <contents>
+        <file-list>01prefix-contents.xml</file-list>
+        <filter>/\.gitignore$</filter>
+        <filter>/\.DS_Store$</filter>
+    </contents>
+</pkgref>

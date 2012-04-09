@@ -1,0 +1,32 @@
+<pkmkdoc spec="1.12">
+    <properties>
+        <title>Mosh $PACKAGE_VERSION</title>
+        <build>Mosh.pkg</build>
+        <organization>edu.mit.mosh</organization>
+        <userSees ui="easy"/>
+        <min-target os="3"/>
+        <domain anywhere="true"/>
+    </properties>
+    <distribution>
+        <versions min-spec="1.000000"/>
+        <scripts></scripts>
+    </distribution>
+    <description>Mosh is a remote terminal application that supports intermittent connectivity, allows roaming, and provides speculative local echo and line editing of user keystrokes.</description>
+    <contents>
+        <choice title="Default" id="choice0" starts_selected="true" starts_enabled="true" starts_hidden="false">
+            <customLoc>/</customLoc>
+            <pkgref id="edu.mit.mosh.mosh.pkg"/>
+        </choice>
+    </contents>
+    <resources bg-scale="none" bg-align="topleft">
+        <locale lang="en">
+            <resource relative="true" mod="true" type="license">copying.rtf</resource>
+            <resource relative="true" mod="true" type="readme">readme.rtf</resource>
+        </locale>
+    </resources>
+    <flags/>
+    <item type="file">01prefix.xml</item>
+    <mod>properties.title</mod>
+    <mod>properties.userDomain</mod>
+    <mod>description</mod>
+</pkmkdoc>
