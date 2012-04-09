@@ -93,7 +93,10 @@ AS_IF([test x"$hardening" != x"no"], [
   check_cc_cxx_flag([-fPIE],
    [check_link_flag([-pie],
      [HARDEN_CFLAGS="$HARDEN_CFLAGS -fPIE"
-      HARDEN_LDFLAGS="$HARDEN_LDFLAGS -pie"])])
+      HARDEN_LDFLAGS="$HARDEN_LDFLAGS -pie"],
+     [check_link_flag([-Wl,-pie],
+       [HARDEN_CFLAGS="$HARDEN_CFLAGS -fPIE"
+        HARDEN_LDFLAGS="$HARDEN_LDFLAGS -Wl,-pie"])])])
 
   check_link_flag([-Wl,-z,relro],
    [HARDEN_LDFLAGS="$HARDEN_LDFLAGS -Wl,-z,relro"
