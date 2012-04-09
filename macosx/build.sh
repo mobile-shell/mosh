@@ -12,16 +12,11 @@ then
     ./autogen.sh
 fi
 
-CONFIG_ARGS=--prefix=`pwd`/macosx/prefix
-
-if [ -f config.log ];
-then
-    grep -e "$CONFIG_ARGS" config.log > /dev/null || ./configure "$CONFIG_ARGS"
-else
-    ./configure "$CONFIG_ARGS"
-fi
+./configure --prefix=`pwd`/macosx/prefix
 
 make install -j8
+
+perl -wlpi -e 's{#!/usr/bin/env perl}{#!/usr/bin/perl}' `pwd`/macosx/prefix/bin/mosh
 
 popd > /dev/null
 
@@ -44,7 +39,7 @@ done
 popd > /dev/null
 
 echo "Running PackageMaker..."
-/Applications/PackageMaker.app/Contents/MacOS/PackageMaker -d mosh-package.pmdoc -o "$OUTFILE"
+PackageMaker -d mosh-package.pmdoc -o "$OUTFILE"
 
 echo "Cleaning up..."
 rm -r "$OUTDIR"
