@@ -85,7 +85,7 @@ void Dispatcher::parse_params( void )
     if ( endptr == segment_begin ) {
       val = -1;
     }
-    if ( errno == 0 ) {
+    if ( errno == 0 || segment_begin == endptr ) {
       parsed_params.push_back( val );
     }
 
@@ -99,7 +99,7 @@ void Dispatcher::parse_params( void )
   if ( endptr == segment_begin ) {
     val = -1;
   }
-  if ( errno == 0 ) {
+  if ( errno == 0 || segment_begin == endptr ) {
     parsed_params.push_back( val );
   }
 
