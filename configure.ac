@@ -13,7 +13,9 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
-AC_PATH_PROG([PROTOC], [protoc], [AC_MSG_ERROR([protoc is not found])])
+AC_PATH_PROG([PROTOC], [protoc], [])
+AS_IF([test x"$PROTOC" = x],
+  [AC_MSG_ERROR([cannot find protoc, the Protocol Buffers compiler])])
 
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""
