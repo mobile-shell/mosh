@@ -157,6 +157,17 @@ if ( scalar @ARGV < 1 ) {
 my $userhost = shift;
 my @command = @ARGV;
 
+my ( $host, $ip );
+if ( $userhost =~ m'.*?@(.*)' ) {
+  $host = $1;
+} else {
+  $host = $userhost;
+}
+my $packed_ip = gethostbyname $host;
+if ( defined $packed_ip ) {
+  $ip = inet_ntoa $packed_ip;
+}
+
 # Run SSH and read password
 my $pty = new IO::Pty;
 my $pty_slave = $pty->slave;
@@ -201,10 +212,14 @@ if ( $pid == 0 ) { # child
   }
 
   my $quoted_self = shell_quote( $0 );
-  exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-t', $userhost, '--', "$server " . shell_quote( @server );
+  my @sshargs = ( '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-t', $userhost, '--', "$server " . shell_quote( @server ) );
+  if ( not defined $ip ) {
+    unshift @sshargs, '-S', 'none';
+  }
+  exec 'ssh', @sshargs;
   die "Cannot exec ssh: $!\n";
 } else { # server
-  my ( $ip, $port, $key );
+  my ( $port, $key );
   $pty->close_slave();
   LINE: while ( <$pty> ) {
     chomp;
