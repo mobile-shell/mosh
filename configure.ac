@@ -107,7 +107,7 @@ AS_IF([test x"$with_skalibs" != xno],
    AC_SUBST([STDDJB_LDFLAGS], ["$SKALIBS_LDFLAGS -lstddjb"])])
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h curses.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/time.h term.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/time.h term.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
 
 AC_CHECK_HEADERS([pty.h util.h libutil.h])
 AC_CHECK_HEADERS([endian.h sys/endian.h])
@@ -133,7 +133,15 @@ AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langi
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
-AC_CHECK_LIB([ncurses], [setupterm], [], [AC_MSG_ERROR([Missing ncurses.])])
+PKG_CHECK_MODULES([TINFO], [tinfo], ,
+  [PKG_CHECK_MODULES([TINFO], [ncurses], ,
+     [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
+        [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
+         AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -ltinfo"])],
+        [AX_CHECK_LIBRARY([TINFO], [curses.h], [ncurses], ,
+           [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
+            AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -lncurses"])],
+           [AC_MSG_ERROR([Unable to find libtinfo or libncurses])])])])])
 
 AC_ARG_VAR([poll_CFLAGS], [C compiler flags for poll])
 AC_ARG_VAR([poll_LIBS], [linker flags for poll])
