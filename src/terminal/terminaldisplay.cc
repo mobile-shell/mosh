@@ -180,6 +180,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	/* next write will wrap */
 	frame.cursor_x = 0;
 	frame.cursor_y++;
+	frame.force_next_put = true;
       }
     }
 
@@ -196,6 +197,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       frame.append( tmp );
       frame.cursor_x = frame.x;
 
+      frame.force_next_put = true;
       put_cell( initialized, frame, f );
     }
   }
@@ -237,10 +239,12 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
   const Cell *cell = f.get_cell( frame.y, frame.x );
 
-  if ( initialized
-       && ( *cell == *(frame.last_frame.get_cell( frame.y, frame.x )) ) ) {
-    frame.x += cell->width;
-    return;
+  if ( !frame.force_next_put ) {
+    if ( initialized
+	 && ( *cell == *(frame.last_frame.get_cell( frame.y, frame.x )) ) ) {
+      frame.x += cell->width;
+      return;
+    }
   }
 
   if ( (frame.x != frame.cursor_x) || (frame.y != frame.cursor_y) ) {
@@ -269,6 +273,12 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
     assert( frame.x + clear_count <= f.ds.get_width() );
 
     bool can_use_erase = has_bce || (cell->renditions == initial_rendition());
+
+    if ( frame.force_next_put ) {
+      frame.append( " " );
+      frame.append_silent_move( frame.y, frame.x );
+      frame.force_next_put = false;
+    }
 
     /* can we go to the end of the line? */
     if ( (frame.x + clear_count == f.ds.get_width())
@@ -309,6 +319,8 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
   frame.x += cell->width;
   frame.cursor_x += cell->width;
+
+  frame.force_next_put = false;
 }
 
 void FrameState::append_silent_move( int y, int x )

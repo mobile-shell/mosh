@@ -26,6 +26,7 @@ namespace Terminal {
   class FrameState {
   public:
     int x, y;
+    bool force_next_put;
     std::string str;
 
     int cursor_x, cursor_y;
@@ -35,6 +36,7 @@ namespace Terminal {
 
     FrameState( const Framebuffer &s_last )
       : x(0), y(0),
+	force_next_put( false ),
 	str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
 	last_frame( s_last )
     {
