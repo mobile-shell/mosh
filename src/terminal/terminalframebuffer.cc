@@ -112,8 +112,8 @@ void DrawState::move_col( int N, bool relative, bool implicit )
     cursor_col = N;
   }
 
-  if ( implicit && (cursor_col >= width) ) {
-    next_print_will_wrap = true;
+  if ( implicit ) {
+    next_print_will_wrap = (cursor_col >= width);
   }
 
   snap_cursor_to_border();

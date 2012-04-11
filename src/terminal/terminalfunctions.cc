@@ -273,8 +273,9 @@ void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
   }
 }
 
-static Function func_CSI_DECSM( CSI, "?h", CSI_DECSM );
-static Function func_CSI_DECRM( CSI, "?l", CSI_DECRM );
+/* These functions don't clear wrap state. */
+static Function func_CSI_DECSM( CSI, "?h", CSI_DECSM, false );
+static Function func_CSI_DECRM( CSI, "?l", CSI_DECRM, false );
 
 static bool *get_ANSI_mode( int param, Framebuffer *fb ) {
   switch ( param ) {
