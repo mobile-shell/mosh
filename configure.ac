@@ -68,6 +68,8 @@ AC_ARG_ENABLE([examples],
   [build_examples="no"])
 AM_CONDITIONAL([BUILD_EXAMPLES], [test x"$build_examples" != xno])
 
+AC_LANG([C])
+
 # Checks for libraries.
 AC_ARG_WITH([utempter],
   [AS_HELP_STRING([--with-utempter], [write utmp entries using libutempter @<:@check@:>@])],
@@ -82,7 +84,11 @@ AS_IF([test x"$with_utempter" != xno],
 
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
-AX_BOOST_BASE(, , [AC_MSG_ERROR([Unable to find boost libraries.])])
+AX_BOOST_BASE(1.34, , [AC_MSG_ERROR([Unable to find boost libraries.])])
+# AC_LANG_PUSH([C++])
+# AC_CHECK_HEADER([boost/typeof/typeof.hpp], ,
+#   [AC_MSG_ERROR([boost-1.34 for BOOST_AUTO required])])
+# AC_LANG_POP([C++])
 
 AC_ARG_WITH([skalibs],
   [AS_HELP_STRING([--with-skalibs[=DIR]],
