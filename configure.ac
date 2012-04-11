@@ -160,9 +160,13 @@ AC_CHECK_DECL([mach_absolute_time],
 
 AC_CHECK_DECL([pipe2],
   [AC_DEFINE([HAVE_PIPE2], [1],
-     [Define if pipe2 is available.])],
+     [Define if pipe2 and O_CLOEXEC is available.])],
   , [[#define _GNU_SOURCE
-      #include <unistd.h>]])
+      #include <unistd.h>
+      #include <fcntl.h>
+      #ifndef O_CLOEXEC
+      #error O_CLOEXEC undeclared
+      #endif]])
 
 AC_CHECK_DECL([signalfd],
   [AC_DEFINE([HAVE_SIGNALFD], [1],
