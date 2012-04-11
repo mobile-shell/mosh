@@ -380,7 +380,7 @@ Renditions::Renditions( int s_background )
     background_color( s_background )
 {}
 
-/* This routine cannot be used to set a color beyond the 8-color set. */
+/* This routine cannot be used to set a color beyond the 16-color set. */
 void Renditions::set_rendition( int num )
 {
   if ( num == 0 ) {
@@ -402,6 +402,12 @@ void Renditions::set_rendition( int num )
     return;
   } else if ( (40 <= num) && (num <= 47) ) { /* background color in 8-color set */
     background_color = num;
+    return;
+  } else if ( (90 <= num) && (num <= 97) ) { /* foreground color in 16-color set */
+    foreground_color = num - 90 + 38;
+    return;
+  } else if ( (100 <= num) && (num <= 107) ) { /* background color in 16-color set */
+    background_color = num - 100 + 48;
     return;
   }
 
