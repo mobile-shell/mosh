@@ -269,7 +269,11 @@ AC_CHECK_DECL([htobe64],
   [AC_CHECK_DECL([OSSwapHostToBigInt64],
      [AC_DEFINE([HAVE_OSX_SWAP], [1],
         [Define if OSSwapHostToBigInt64 and friends exist.])],
-     [AC_MSG_ERROR([Unable to find byte swapping functions])],
+       [AC_CHECK_DECL([bswap_64],
+         [AC_DEFINE([HAVE_BSWAP_64], [1],
+           [Define if bswap_64 exist.])],
+         [AC_MSG_ERROR([Unable to find byte swapping functions])],
+         [[#include <byteswap.h>]])],
      [[#include <libkern/OSByteOrder.h>]])],
   [[#if defined(HAVE_ENDIAN_H)
 #include <endian.h>
