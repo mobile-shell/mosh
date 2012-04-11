@@ -33,6 +33,35 @@
 # define be64toh OSSwapBigToHostInt64
 # define htobe16 OSSwapHostToBigInt16
 # define be16toh OSSwapBigToHostInt16
+#elif HAVE_BSWAP_64
+# include <byteswap.h>
+# if __BYTE_ORDER == __LITTLE_ENDIAN
+#  ifndef htobe16
+#    define htobe16(x) bswap_16 (x)
+#  endif
+#  ifndef be16toh
+#    define be16toh(x) bswap_16 (x)
+#  endif
+#  ifndef htobe64
+#    define htobe64(x) bswap_64 (x)
+#  endif
+#  ifndef be64toh
+#    define be64toh(x) bswap_64 (x)
+#  endif
+# else
+#  ifndef htobe16
+#    define htobe16(x) (x)
+#  endif
+#  ifndef be16toh
+#    define be16toh(x) (x)
+#  endif
+#  ifndef htobe64
+#    define htobe64(x) (x)
+#  endif
+#  ifndef be64toh
+#    define be64toh(x) (x)
+#  endif
+# endif
 #endif
 
 #endif
