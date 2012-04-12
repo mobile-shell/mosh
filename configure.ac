@@ -253,6 +253,27 @@ AC_CHECK_DECL([mach_absolute_time],
      [Define if mach_absolute_time is available.])],
   , [[#include <mach/mach_time.h>]])
 
+AC_CHECK_DECL([pipe2],
+  [AC_DEFINE([HAVE_PIPE2], [1],
+     [Define if pipe2 is available.])],
+  , [[#define _GNU_SOURCE
+      #include <unistd.h>]])
+
+AC_CHECK_DECL([signalfd],
+  [AC_DEFINE([HAVE_SIGNALFD], [1],
+     [Define if signalfd is available.])],
+  , [[#include <sys/signalfd.h>]])
+
+AC_CHECK_DECL([forkpty],
+  [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
+     [Define if libutil.h necessary for forkpty().])],
+  , [[#include <libutil.h>]])
+
+AC_CHECK_DECL([openpty],
+  [AC_DEFINE([OPENPTY_IN_LIBUTIL], [1],
+     [Define if libutil.h necessary for openpty().])],
+  , [[#include <libutil.h>]])
+
 AC_CHECK_DECL([htobe64],
   [AC_DEFINE([HAVE_HTOBE64], [1],
   [Define if htobe64 and friends exist.])],

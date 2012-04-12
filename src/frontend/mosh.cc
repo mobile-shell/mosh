@@ -14,6 +14,8 @@
 //   You should have received a copy of the GNU General Public License
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <vector>
 #include <map>
@@ -29,7 +31,16 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+
+#if HAVE_PTY_H
+#include <pty.h>
+#elif HAVE_UTIL_H
 #include <util.h>
+#endif
+
+#if FORKPTY_IN_LIBUTIL
+#include <libutil.h>
+#endif
 
 using namespace std;
 using namespace boost;
