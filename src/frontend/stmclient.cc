@@ -37,10 +37,7 @@
 #include <util.h>
 #endif
 
-extern "C" {
-#include "selfpipe.h"
-}
-
+#include "sigfd.h"
 #include "stmclient.h"
 #include "swrite.h"
 #include "completeterminal.h"
@@ -105,19 +102,19 @@ void STMClient::shutdown( void )
 void STMClient::main_init( void )
 {
   /* establish a fd for signals */
-  signal_fd = selfpipe_init();
+  signal_fd = sigfd_init();
   if ( signal_fd < 0 ) {
-    perror( "selfpipe_init" );
+    perror( "sigfd_init" );
     return;
   }
 
-  fatal_assert( selfpipe_trap( SIGWINCH ) == 0 );
-  fatal_assert( selfpipe_trap( SIGTERM ) == 0 );
-  fatal_assert( selfpipe_trap( SIGINT ) == 0 );
-  fatal_assert( selfpipe_trap( SIGHUP ) == 0 );
-  fatal_assert( selfpipe_trap( SIGPIPE ) == 0 );
-  fatal_assert( selfpipe_trap( SIGTSTP ) == 0 );
-  fatal_assert( selfpipe_trap( SIGCONT ) == 0 );
+  fatal_assert( sigfd_trap( SIGWINCH ) == 0 );
+  fatal_assert( sigfd_trap( SIGTERM ) == 0 );
+  fatal_assert( sigfd_trap( SIGINT ) == 0 );
+  fatal_assert( sigfd_trap( SIGHUP ) == 0 );
+  fatal_assert( sigfd_trap( SIGPIPE ) == 0 );
+  fatal_assert( sigfd_trap( SIGTSTP ) == 0 );
+  fatal_assert( sigfd_trap( SIGCONT ) == 0 );
 
   /* get initial window size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -325,7 +322,7 @@ void STMClient::main( void )
       }
 
       if ( pollfds[ 2 ].revents & POLLIN ) {
-	int signo = selfpipe_read();
+	int signo = sigfd_read();
 
 	if ( signo == SIGWINCH ) {
 	  /* resize */
