@@ -31,6 +31,8 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #if HAVE_PTY_H
 #include <pty.h>
