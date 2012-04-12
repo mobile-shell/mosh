@@ -61,6 +61,12 @@ Getting Mosh
   packages for many operating systems, as well as instructions for building
   from source.
 
+  Note that `mosh-client` receives an AES session key as an environment
+  variable.  If you are porting Mosh to a new operating system, please make
+  sure that a running process's environment variables are not readable by other
+  users.  We have confirmed that this is the case on GNU/Linux, OS X, and
+  FreeBSD.
+
 Usage
 -----
 
