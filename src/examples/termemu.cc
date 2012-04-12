@@ -50,10 +50,7 @@
 #include "swrite.h"
 #include "fatal_assert.h"
 #include "locale_utils.h"
-
-extern "C" {
-#include "selfpipe.h"
-}
+#include "sigfd.h"
 
 const size_t buf_size = 16384;
 
@@ -197,13 +194,13 @@ bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame,
 void emulate_terminal( int fd )
 {
   /* establish WINCH fd and start listening for signal */
-  int signal_fd = selfpipe_init();
+  int signal_fd = sigfd_init();
   if ( signal_fd < 0 ) {
-    perror( "selfpipe" );
+    perror( "sigfd_init" );
     return;
   }
 
-  fatal_assert( selfpipe_trap(SIGWINCH) == 0 );
+  fatal_assert( sigfd_trap(SIGWINCH) == 0 );
 
   /* get current window size */
   struct winsize window_size;
@@ -291,7 +288,7 @@ void emulate_terminal( int fd )
       }
     } else if ( pollfds[ 2 ].revents & POLLIN ) {
       /* resize */
-      fatal_assert( selfpipe_read() == SIGWINCH );
+      fatal_assert( sigfd_read() == SIGWINCH );
 
       /* get new size */
       if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {

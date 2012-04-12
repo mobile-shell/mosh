@@ -40,10 +40,7 @@
 #include <getopt.h>
 #include <time.h>
 
-extern "C" {
-#include "selfpipe.h"
-}
-
+#include "sigfd.h"
 #include "completeterminal.h"
 #include "swrite.h"
 #include "user.h"
@@ -367,14 +364,14 @@ int run_server( const char *desired_ip, const char *desired_port,
 void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
 {
   /* establish fd for shutdown signals */
-  int signal_fd = selfpipe_init();
+  int signal_fd = sigfd_init();
   if ( signal_fd < 0 ) {
-    perror( "selfpipe_init" );
+    perror( "sigfd_init" );
     return;
   }
 
-  fatal_assert( selfpipe_trap( SIGTERM ) == 0 );
-  fatal_assert( selfpipe_trap( SIGINT ) == 0 );
+  fatal_assert( sigfd_trap( SIGTERM ) == 0 );
+  fatal_assert( sigfd_trap( SIGINT ) == 0 );
 
   /* prepare to poll for events */
   struct pollfd pollfds[ 3 ];
@@ -516,11 +513,11 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       if ( pollfds[ 2 ].revents & POLLIN ) {
 	/* shutdown signal */
-	int signo = selfpipe_read();
+	int signo = sigfd_read();
 	if ( signo == 0 ) {
 	  break;
 	} else if ( signo < 0 ) {
-	  perror( "selfpipe_read" );
+	  perror( "sigfd_read" );
 	  break;
 	}
 
