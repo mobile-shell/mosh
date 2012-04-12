@@ -88,9 +88,11 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
     }
 
     if ( current.contents_match( replacement ) ) {
-      vector<Cell>::const_iterator it =
-        find_if( original_contents.begin(), original_contents.end(),
-		 bind2nd( mem_fun_ref( &Cell::contents_match ), replacement ) );
+      vector<Cell>::const_iterator it = original_contents.begin();
+      for ( ; it != original_contents.end(); it++ ) {
+        if ( it->contents_match( replacement ) )
+          break;
+      }
       if ( it == original_contents.end() ) {
 	return Correct;
       } else {
