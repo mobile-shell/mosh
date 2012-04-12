@@ -139,3 +139,7 @@ More info
   * `mosh-users@mit.edu` mailing list:
 
     <http://mailman.mit.edu/mailman/listinfo/mosh-users>
+
+  * `#mosh` channel on [Freenode IRC](http://freenode.net/)
+
+    http://webchat.freenode.net/?channels=mosh
