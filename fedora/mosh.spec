@@ -11,7 +11,6 @@ Source0:	https://github.com/downloads/keithw/mosh/mosh-%{version}.tar.gz
 BuildRequires:	protobuf-compiler
 BuildRequires:	protobuf-devel
 BuildRequires:	libutempter-devel
-BuildRequires:	boost-devel
 BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
 Requires:	openssh-clients
