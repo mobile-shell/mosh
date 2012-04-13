@@ -70,17 +70,17 @@ Getting Mosh
 Usage
 -----
 
-  The `mosh-client` binary must be installed on the user's machine, and
-  the `mosh-server` binary on the remote host.
+  The `mosh-client` binary must exist on the user's machine, and the
+  `mosh-server` binary on the remote host.
 
   The user runs:
 
     $ mosh [user@]host
 
-  If the `mosh-client` or `mosh-server` binaries are installed outside the
-  user's PATH, `mosh` accepts the arguments `--client=PATH` and
-  `--server=PATH` to select alternate locations. More options are
-  documented in the mosh(1) manual page.
+  If the `mosh-client` or `mosh-server` binaries live outside the user's
+  `$PATH`, `mosh` accepts the arguments `--client=PATH` and `--server=PATH` to
+  select alternate locations. More options are documented in the mosh(1) manual
+  page.
 
   There are [more examples](http://mosh.mit.edu/#usage) and a
   [FAQ](http://mosh.mit.edu/#faq) on the Mosh web site.
