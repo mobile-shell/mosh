@@ -131,7 +131,7 @@ int main( int argc, char *argv[] )
        && (strcmp( argv[ 1 ], "new" ) == 0) ) {
     /* new option syntax */
     int opt;
-    while ( (opt = getopt( argc, argv, "i:p:c:s" )) != -1 ) {
+    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:s" )) != -1 ) {
       switch ( opt ) {
       case 'i':
 	desired_ip = optarg;
