@@ -427,22 +427,9 @@ uint64_t Connection::timeout( void ) const
   return RTO;
 }
 
-class Socket {
-public:
-  int fd;
-
-  Socket( int domain, int type, int protocol )
-    : fd( socket( domain, type, protocol ) )
-  {
-    if ( fd < 0 ) {
-      throw NetworkException( "socket", errno );
-    }
+Connection::~Connection()
+{
+  if ( close( sock ) < 0 ) {
+    throw NetworkException( "close", errno );
   }
-
-  ~Socket()
-  {
-    if ( close( fd ) < 0 ) {
-      throw NetworkException( "close", errno );
-    }
-  }
-};
+}

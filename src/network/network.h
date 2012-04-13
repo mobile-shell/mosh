@@ -107,7 +107,8 @@ namespace Network {
   public:
     Connection( const char *desired_ip, const char *desired_port ); /* server */
     Connection( const char *key_str, const char *ip, int port ); /* client */
-    
+    ~Connection();
+
     void send( string s );
     string recv( void );
     int fd( void ) const { return sock; }

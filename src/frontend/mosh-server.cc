@@ -227,11 +227,11 @@ int run_server( const char *desired_ip, const char *desired_port,
 
   /* open network */
   Network::UserStream blank;
-  ServerConnection network( terminal, blank, desired_ip, desired_port );
+  ServerConnection *network = new ServerConnection( terminal, blank, desired_ip, desired_port );
 
   /* network.set_verbose(); */
 
-  printf( "\nMOSH CONNECT %d %s\n", network.port(), network.get_key().c_str() );
+  printf( "\nMOSH CONNECT %d %s\n", network->port(), network->get_key().c_str() );
   fflush( stdout );
 
   /* don't let signals kill us */
@@ -294,6 +294,9 @@ int run_server( const char *desired_ip, const char *desired_port,
     fatal_assert( sigemptyset( &signals_to_block ) == 0 );
     fatal_assert( sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) == 0 );
 
+    /* close server-related file descriptors */
+    delete network;
+
     /* set TERM */
     const char default_term[] = "xterm";
     const char color_term[] = "xterm-256color";
@@ -337,7 +340,7 @@ int run_server( const char *desired_ip, const char *desired_port,
     #endif
 
     try {
-      serve( master, terminal, network );
+      serve( master, terminal, *network );
     } catch ( Network::NetworkException e ) {
       fprintf( stderr, "Network exception: %s: %s\n",
 	       e.function.c_str(), strerror( e.the_errno ) );
@@ -350,6 +353,8 @@ int run_server( const char *desired_ip, const char *desired_port,
       perror( "close" );
       exit( 1 );
     }
+
+    delete network;
 
     #ifdef HAVE_UTEMPTER
     utempter_remove_added_record();
