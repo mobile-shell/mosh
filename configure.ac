@@ -143,6 +143,8 @@ AC_ARG_ENABLE([examples],
   [build_examples="no"])
 AM_CONDITIONAL([BUILD_EXAMPLES], [test x"$build_examples" != xno])
 
+AC_LANG([C])
+
 # Checks for libraries.
 AC_ARG_WITH([utempter],
   [AS_HELP_STRING([--with-utempter], [write utmp entries using libutempter @<:@check@:>@])],
@@ -157,7 +159,11 @@ AS_IF([test x"$with_utempter" != xno],
 
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
-AX_BOOST_BASE(, , [AC_MSG_ERROR([Unable to find boost libraries.])])
+AX_BOOST_BASE(1.34, , [AC_MSG_ERROR([Unable to find boost libraries.])])
+# AC_LANG_PUSH([C++])
+# AC_CHECK_HEADER([boost/typeof/typeof.hpp], ,
+#   [AC_MSG_ERROR([boost-1.34 for BOOST_AUTO required])])
+# AC_LANG_POP([C++])
 
 AC_ARG_WITH([skalibs],
   [AS_HELP_STRING([--with-skalibs[=DIR]],
@@ -254,9 +260,13 @@ AC_CHECK_DECL([mach_absolute_time],
 
 AC_CHECK_DECL([pipe2],
   [AC_DEFINE([HAVE_PIPE2], [1],
-     [Define if pipe2 is available.])],
+     [Define if pipe2 and O_CLOEXEC is available.])],
   , [[#define _GNU_SOURCE
-      #include <unistd.h>]])
+      #include <unistd.h>
+      #include <fcntl.h>
+      #ifndef O_CLOEXEC
+      #error O_CLOEXEC undeclared
+      #endif]])
 
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
@@ -269,7 +279,11 @@ AC_CHECK_DECL([htobe64],
   [AC_CHECK_DECL([OSSwapHostToBigInt64],
      [AC_DEFINE([HAVE_OSX_SWAP], [1],
         [Define if OSSwapHostToBigInt64 and friends exist.])],
-     [AC_MSG_ERROR([Unable to find byte swapping functions])],
+       [AC_CHECK_DECL([bswap_64],
+         [AC_DEFINE([HAVE_BSWAP_64], [1],
+           [Define if bswap_64 exist.])],
+         [AC_MSG_ERROR([Unable to find byte swapping functions])],
+         [[#include <byteswap.h>]])],
      [[#include <libkern/OSByteOrder.h>]])],
   [[#if defined(HAVE_ENDIAN_H)
 #include <endian.h>
