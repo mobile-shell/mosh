@@ -15,5 +15,4 @@
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		--disable-silent-rules \
-		--enable-compile-warnings=error \
-		--with-skalibs=/usr/lib/skalibs
+		--enable-compile-warnings=error

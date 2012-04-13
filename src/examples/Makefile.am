@@ -1,5 +1,6 @@
 AM_CPPFLAGS = $(protobuf_CFLAGS)
-AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) -fno-default-inline -pipe
+AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
+AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 
 if BUILD_EXAMPLES
   noinst_PROGRAMS = encrypt decrypt ntester parse termemu benchmark

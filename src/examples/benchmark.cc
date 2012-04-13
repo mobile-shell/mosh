@@ -38,10 +38,7 @@
 #include <util.h>
 #endif
 
-extern "C" {
-#include "selfpipe.h"
-}
-
+#include "sigfd.h"
 #include "swrite.h"
 #include "completeterminal.h"
 #include "user.h"

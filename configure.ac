@@ -44,6 +44,81 @@ AC_ARG_ENABLE([compile-warnings],
 AC_SUBST([WARNING_CXXFLAGS])
 AC_SUBST([PICKY_CXXFLAGS])
 
+# We want to check for compiler flag support, but there is no way to make
+# clang's "argument unused" warning fatal.  So we invoke the compiler through a
+# wrapper script that greps for this message.
+
+saved_CC="$CC"
+saved_CXX="$CXX"
+saved_LD="$LD"
+flag_wrap="$srcdir/scripts/wrap-compiler-for-flag-check"
+CC="$flag_wrap $CC"
+CXX="$flag_wrap $CXX"
+LD="$flag_wrap $LD"
+
+# We use the same hardening flags for C and C++.  We must check that each flag
+# is supported by both compilers.
+AC_DEFUN([check_cc_cxx_flag],
+ [AC_LANG_PUSH(C)
+  AX_CHECK_COMPILE_FLAG([$1],
+   [AC_LANG_PUSH(C++)
+    AX_CHECK_COMPILE_FLAG([$1], [$2], [$3], [-Werror $4])
+    AC_LANG_POP(C++)],
+   [$3], [-Werror $4])
+  AC_LANG_POP(C)])
+AC_DEFUN([check_link_flag],
+ [AX_CHECK_LINK_FLAG([$1], [$2], [$3], [-Werror $4])])
+
+AC_ARG_ENABLE([hardening],
+  [AS_HELP_STRING([--enable-hardening],
+    [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],
+  [hardening="$enableval"],
+  [hardening="yes"])
+
+HARDEN_CFLAGS=""
+HARDEN_LDFLAGS=""
+AS_IF([test x"$hardening" != x"no"], [
+  check_cc_cxx_flag([-fno-strict-overflow], [HARDEN_CFLAGS="$HARDEN_CFLAGS -fno-strict-overflow"])
+
+  # This one will likely succeed, even on platforms where it does nothing.
+  check_cc_cxx_flag([-D_FORTIFY_SOURCE=2], [HARDEN_CFLAGS="$HARDEN_CFLAGS -D_FORTIFY_SOURCE=2"])
+
+  check_cc_cxx_flag([-fstack-protector-all],
+   [HARDEN_CFLAGS="$HARDEN_CFLAGS -fstack-protector-all"
+    check_cc_cxx_flag([-Wstack-protector], [HARDEN_CFLAGS="$HARDEN_CFLAGS -Wstack-protector"],
+      [], [-fstack-protector-all])
+    check_cc_cxx_flag([--param ssp-buffer-size=1], [HARDEN_CFLAGS="$HARDEN_CFLAGS --param ssp-buffer-size=1"],
+      [], [-fstack-protector-all])])
+
+  check_cc_cxx_flag([-fPIE],
+   [check_link_flag([-fPIE -pie],
+     [HARDEN_CFLAGS="$HARDEN_CFLAGS -fPIE"
+      HARDEN_LDFLAGS="$HARDEN_LDFLAGS -pie"],
+     [check_link_flag([-fPIE -Wl,-pie],
+       [HARDEN_CFLAGS="$HARDEN_CFLAGS -fPIE"
+        HARDEN_LDFLAGS="$HARDEN_LDFLAGS -Wl,-pie"])])])
+
+  check_link_flag([-Wl,-z,relro],
+   [HARDEN_LDFLAGS="$HARDEN_LDFLAGS -Wl,-z,relro"
+    check_link_flag([-Wl,-z,now], [HARDEN_LDFLAGS="$HARDEN_LDFLAGS -Wl,-z,now"])])])
+AC_SUBST([HARDEN_CFLAGS])
+AC_SUBST([HARDEN_LDFLAGS])
+
+# Also check for a few non-hardening-related flags.
+MISC_CXXFLAGS=""
+AC_LANG_PUSH(C++)
+AX_CHECK_COMPILE_FLAG([-fno-default-inline],
+  [MISC_CXXFLAGS="$MISC_CXXFLAGS -fno-default-inline"], [], [-Werror])
+AX_CHECK_COMPILE_FLAG([-pipe],
+  [MISC_CXXFLAGS="$MISC_CXXFLAGS -pipe"], [], [-Werror])
+AC_LANG_POP(C++)
+AC_SUBST([MISC_CXXFLAGS])
+
+# End of flag tests.
+CC="$saved_CC"
+CXX="$saved_CXX"
+LD="$saved_LD"
+
 AC_ARG_ENABLE([client],
   [AS_HELP_STRING([--enable-client], [Build the mosh-client program @<:@yes@:>@])],
   [build_client="$enableval"],
@@ -101,12 +176,31 @@ AC_ARG_WITH([skalibs-libdir],
      [specify exact library dir for skalibs libraries])],
   [SKALIBS_LDFLAGS="-L$withval"])
 
-AM_CONDITIONAL([COND_THIRD_LIBSTDDJB], [test x"$with_skalibs" = xno])
+STDDJB_CPPFLAGS=""
+STDDJB_LDFLAGS=""
 AS_IF([test x"$with_skalibs" != xno],
   [AX_CHECK_LIBRARY([SKALIBS], [selfpipe.h], [stddjb], [],
      [AC_MSG_ERROR([Unable to find skalibs.])])
    AC_SUBST([STDDJB_CPPFLAGS], ["$SKALIBS_CPPFLAGS"])
    AC_SUBST([STDDJB_LDFLAGS], ["$SKALIBS_LDFLAGS -lstddjb"])])
+
+have_signalfd="no"
+AC_CHECK_DECL([signalfd],
+  [have_signalfd="yes"
+   AC_DEFINE([HAVE_SIGNALFD], [1],
+     [Define if signalfd is available.])],
+  , [[#include <sys/signalfd.h>]])
+
+AS_IF([test x"$have_signalfd" = xno],
+  [AC_DEFINE([USE_LIBSTDDJB], [1],
+    [Define if we should call functions from libstddjb (part of skalibs)])])
+AM_CONDITIONAL([USE_LIBSTDDJB],
+  [test x"$have_signalfd" = xno])
+
+# Build the bundled libstddjb only if we'll use it and we don't have a
+# path for skalibs.
+AM_CONDITIONAL([COND_THIRD_LIBSTDDJB],
+  [test x"$have_signalfd" = xno && test x"$with_skalibs" = xno])
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/time.h term.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
@@ -163,11 +257,6 @@ AC_CHECK_DECL([pipe2],
      [Define if pipe2 is available.])],
   , [[#define _GNU_SOURCE
       #include <unistd.h>]])
-
-AC_CHECK_DECL([signalfd],
-  [AC_DEFINE([HAVE_SIGNALFD], [1],
-     [Define if signalfd is available.])],
-  , [[#include <sys/signalfd.h>]])
 
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
