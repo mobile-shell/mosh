@@ -117,7 +117,7 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb,
 
   if ( (row >= fb.ds.get_height())
        || (col >= fb.ds.get_width()) ) {
-    assert( false );
+    //    assert( false );
     //    fprintf( stderr, "Crazy cursor (%d,%d)!\n", row, col );
     return IncorrectOrExpired;
   }
