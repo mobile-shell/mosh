@@ -57,90 +57,33 @@ Other features
 Getting Mosh
 ------------
 
-  Mosh is packaged for various operating systems.
+  [The Mosh web site](http://mosh.mit.edu/#getting) has information about
+  packages for many operating systems, as well as instructions for building
+  from source.
 
-  * [Debian][] unstable
-
-        sudo apt-get install mosh
-
-  * [Ubuntu][], through a PPA
-
-        sudo apt-get install python-software-properties
-        sudo add-apt-repository ppa:keithw/mosh
-        sudo apt-get update
-        sudo apt-get install mosh
-
-  * [MacPorts][]
-
-        sudo port install mosh
-
-  * [Homebrew][]
-
-        brew install mobile-shell
-
-  [Debian]:   http://packages.debian.org/sid/mosh
-  [Ubuntu]:   https://launchpad.net/~keithw/+archive/mosh
-  [MacPorts]: https://trac.macports.org/browser/trunk/dports/net/mosh/Portfile
-  [Homebrew]: http://mxcl.github.com/homebrew/
-
-Building from source
---------------------
-
-  On a Unix-like system you can build Mosh from source using the following
-  commands:
-
-    ./autogen.sh
-    ./configure
-    make
-    make install   # as root
-
-  `configure` accepts standard options, like `--prefix` to set the installation
-  prefix.  Pass `--help` for a full listing.
-
-  To build and use Mosh you will need
-
-  * [GNU Autotools][]
-  * the [Protocol Buffers][] library and compiler
-  * [Boost][]
-  * `ncurses`
-  * `zlib`
-  * the Perl module [IO::Pty][]
-
-  including development packages where applicable.
-
-  If `libutempter` is available, `mosh-server` will record sessions in the
-  `utmp` file, which makes them visible to commands like `who`.
-
-  The file `debian/control` contains a list of the relevant Debian packages.
-
-  [GNU Autotools]:    http://www.gnu.org/software/autoconf/
-  [Protocol Buffers]: http://code.google.com/p/protobuf/
-  [Boost]:            http://www.boost.org/
-  [IO::Pty]:          http://search.cpan.org/~toddr/IO-Tty/Pty.pm
+  Note that `mosh-client` receives an AES session key as an environment
+  variable.  If you are porting Mosh to a new operating system, please make
+  sure that a running process's environment variables are not readable by other
+  users.  We have confirmed that this is the case on GNU/Linux, OS X, and
+  FreeBSD.
 
 Usage
 -----
 
-  The `mosh-client` binary must be installed on the user's machine, and
-  the `mosh-server` binary on the remote host.
+  The `mosh-client` binary must exist on the user's machine, and the
+  `mosh-server` binary on the remote host.
 
   The user runs:
 
     $ mosh [user@]host
 
-  A command may also be specified, for example:
+  If the `mosh-client` or `mosh-server` binaries live outside the user's
+  `$PATH`, `mosh` accepts the arguments `--client=PATH` and `--server=PATH` to
+  select alternate locations. More options are documented in the mosh(1) manual
+  page.
 
-    $ mosh host -- screen -r
-
-  If the `mosh-client` or `mosh-server` binaries are installed outside the
-  user's PATH, `mosh` accepts the arguments `--client=PATH` and
-  `--server=PATH` to select alternate locations. More options are
-  documented in the mosh(1) manual page.
-
-  Mosh supports 256-color mode as long as the user's own terminal
-  does.  Generally this means the `TERM` environment variable must be
-  set to `xterm-256color` or `screen-256color-bce` before running
-  `mosh`.
+  There are [more examples](http://mosh.mit.edu/#usage) and a
+  [FAQ](http://mosh.mit.edu/#faq) on the Mosh web site.
 
 How it works
 ------------
@@ -196,3 +139,7 @@ More info
   * `mosh-users@mit.edu` mailing list:
 
     <http://mailman.mit.edu/mailman/listinfo/mosh-users>
+
+  * `#mosh` channel on [Freenode IRC](http://freenode.net/)
+
+    http://webchat.freenode.net/?channels=mosh
