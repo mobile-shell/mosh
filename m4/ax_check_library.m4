@@ -60,7 +60,7 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 3
+#serial 4
 
 AC_DEFUN([AX_CHECK_LIBRARY], [
   AC_ARG_VAR($1[_CPPFLAGS], [C preprocessor flags for ]$1[ headers])
