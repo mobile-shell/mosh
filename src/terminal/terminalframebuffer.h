@@ -106,8 +106,8 @@ namespace Terminal {
 
   class Row {
   public:
-    typedef std::vector<Cell> cells_t;
-    cells_t cells;
+    typedef std::vector<Cell> cells_type;
+    cells_type cells;
 
     Row( size_t s_width, int background_color )
       : cells( s_width, Cell( background_color ) )
@@ -224,8 +224,8 @@ namespace Terminal {
 
   class Framebuffer {
   private:
-    typedef std::deque<Row> rows_t;
-    rows_t rows;
+    typedef std::deque<Row> rows_type;
+    rows_type rows;
     std::deque<wchar_t> icon_name;
     std::deque<wchar_t> window_title;
     unsigned int bell_count;

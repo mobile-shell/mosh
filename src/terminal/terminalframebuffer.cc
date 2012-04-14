@@ -322,10 +322,10 @@ void Framebuffer::soft_reset( void )
 
 void Framebuffer::posterize( void )
 {
-  for ( rows_t::iterator i = rows.begin();
+  for ( rows_type::iterator i = rows.begin();
         i != rows.end();
         i++ ) {
-    for ( Row::cells_t::iterator j = i->cells.begin();
+    for ( Row::cells_type::iterator j = i->cells.begin();
           j != i->cells.end();
           j++ ) {
       j->renditions.posterize();
@@ -340,7 +340,7 @@ void Framebuffer::resize( int s_width, int s_height )
 
   rows.resize( s_height, newrow() );
 
-  for ( rows_t::iterator i = rows.begin();
+  for ( rows_type::iterator i = rows.begin();
 	i != rows.end();
 	i++ ) {
     i->set_wrap( false );
@@ -540,7 +540,7 @@ void Renditions::posterize( void )
 
 void Row::reset( int background_color )
 {
-  for ( cells_t::iterator i = cells.begin();
+  for ( cells_type::iterator i = cells.begin();
 	i != cells.end();
 	i++ ) {
     i->reset( background_color );
