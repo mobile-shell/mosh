@@ -218,6 +218,7 @@ namespace Terminal {
   class Framebuffer {
   private:
     std::deque<Row> rows;
+    std::deque<wchar_t> icon_name;
     std::deque<wchar_t> window_title;
     unsigned int bell_count;
 
@@ -283,7 +284,9 @@ namespace Terminal {
     void reset( void );
     void soft_reset( void );
 
+    void set_icon_name( const std::deque<wchar_t> &s ) { icon_name = s; }
     void set_window_title( const std::deque<wchar_t> &s ) { window_title = s; }
+    const std::deque<wchar_t> & get_icon_name( void ) const { return icon_name; }
     const std::deque<wchar_t> & get_window_title( void ) const { return window_title; }
 
     void prefix_window_title( const std::deque<wchar_t> &s );

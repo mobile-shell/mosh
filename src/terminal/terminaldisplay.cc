@@ -42,19 +42,45 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     frame.append( "\x07" );
   }
 
-  /* has window title changed? */
+  /* has icon name or window title changed? */
   if ( (!initialized)
+       || (f.get_icon_name() != frame.last_frame.get_icon_name())
        || (f.get_window_title() != frame.last_frame.get_window_title()) ) {
-      /* set window title */
-    frame.append( "\033]0;" );
-    const std::deque<wchar_t> &window_title( f.get_window_title() );
-    for ( BOOST_AUTO( i, window_title.begin() );
-	  i != window_title.end();
-	  i++ ) {
-      snprintf( tmp, 64, "%lc", *i );
-      frame.append( tmp );
+      /* set icon name and window title */
+    if ( f.get_icon_name() == f.get_window_title() ) {
+      /* write combined Icon Name and Window Title */
+      frame.append( "\033]0;" );
+      const std::deque<wchar_t> &window_title( f.get_window_title() );
+      for ( BOOST_AUTO( i, window_title.begin() );
+	    i != window_title.end();
+	    i++ ) {
+	snprintf( tmp, 64, "%lc", *i );
+	frame.append( tmp );
+      }
+      frame.append( "\033\\" );
+    } else {
+      /* write Icon Name */
+      frame.append( "\033]1;" );
+      const std::deque<wchar_t> &icon_name( f.get_icon_name() );
+      for ( BOOST_AUTO( i, icon_name.begin() );
+	    i != icon_name.end();
+	    i++ ) {
+	snprintf( tmp, 64, "%lc", *i );
+	frame.append( tmp );
+      }
+      frame.append( "\033\\" );
+
+      frame.append( "\033]2;" );
+      const std::deque<wchar_t> &window_title( f.get_window_title() );
+      for ( BOOST_AUTO( i, window_title.begin() );
+	    i != window_title.end();
+	    i++ ) {
+	snprintf( tmp, 64, "%lc", *i );
+	frame.append( tmp );
+      }
+      frame.append( "\033\\" );
     }
-    frame.append( "\033\\" );
+
   }
 
   /* has reverse video state changed? */

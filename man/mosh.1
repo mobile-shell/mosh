@@ -114,6 +114,16 @@ server. Otherwise, \fBmosh\fP will choose a port between 60000 and
 The escape sequence to shut down the connection is \fBCtrl-^ .\fP
 (typically typed with Ctrl-Shift-6, then a period).
 
+.SH ENVIRONMENT VARIABLES
+
+.TP
+.B MOSH_PREDICTION_DISPLAY
+Controls local echo as described above.
+
+.TP
+.B MOSH_TITLE_NOPREFIX
+When set, inhibits prepending "[mosh]" to window title.
+
 .SH SEE ALSO
 .BR mosh-client (1),
 .BR mosh-server (1).

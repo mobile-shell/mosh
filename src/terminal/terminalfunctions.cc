@@ -506,12 +506,29 @@ static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );
 void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
 {
   if ( OSC_string.size() >= 2 ) {
-    if ( (OSC_string[ 0 ] == L'0')
+    if ( ( (OSC_string[ 0 ] == L'0')
+	   || (OSC_string[ 0 ] == L'1')
+	   || (OSC_string[ 0 ] == L'2') )
 	 && (OSC_string[ 1 ] == L';') ) {
       std::deque<wchar_t> newtitle( OSC_string.begin(), OSC_string.end() );
       newtitle.erase( newtitle.begin() );
       newtitle.erase( newtitle.begin() );
-      fb->set_window_title( newtitle );
+
+      switch ( OSC_string[ 0 ] ) {
+      case L'0':
+	fb->set_icon_name( newtitle );
+	fb->set_window_title( newtitle );
+	break;
+      case L'1':
+	fb->set_icon_name( newtitle );
+	break;
+      case L'2':
+	fb->set_window_title( newtitle );
+	break;
+      default:
+	break;
+      }
+
       act->handled = true;
     }
   }

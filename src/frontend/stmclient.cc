@@ -79,7 +79,9 @@ void STMClient::init( void )
   swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
 
   /* Add our name to window title */
-  overlays.set_title_prefix( wstring( L"[mosh] " ) );
+  if ( !getenv( "MOSH_TITLE_NOPREFIX" ) ) {
+    overlays.set_title_prefix( wstring( L"[mosh] " ) );
+  }
 }
 
 void STMClient::shutdown( void )
