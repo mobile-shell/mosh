@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-#ifdef HAVE_PIPE2
+#ifdef HAVE_PIPE2_CLOEXEC
 #define HASPIPE2
 #else
 #undef HASPIPE2
