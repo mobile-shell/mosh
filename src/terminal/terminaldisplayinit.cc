@@ -70,7 +70,9 @@ Display::Display( bool use_environment )
       has_bce = false;
     }
 
-    /* check colors */
+    /* posterization disabled because server now only advertises
+       xterm-256color when client has colors = 256 */
+    /*
     char colors_name[] = "colors";
     int color_val = tigetnum( colors_name );
     if ( color_val == -2 ) {
@@ -78,5 +80,6 @@ Display::Display( bool use_environment )
     } else if ( color_val < 256 ) {
       posterize_colors = true;
     }
+    */
   }
 }
