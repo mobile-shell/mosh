@@ -59,13 +59,13 @@ namespace Network {
 
     MyState current_state;
 
-    typedef list< TimestampedState<MyState> > sent_states_t;
-    sent_states_t sent_states;
+    typedef list< TimestampedState<MyState> > sent_states_type;
+    sent_states_type sent_states;
     /* first element: known, acknowledged receiver state */
     /* last element: last sent state */
 
     /* somewhere in the middle: the assumed state of the receiver */
-    typename sent_states_t::iterator assumed_receiver_state;
+    typename sent_states_type::iterator assumed_receiver_state;
 
     /* for fragment creation */
     Fragmenter fragmenter;

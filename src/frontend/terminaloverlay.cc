@@ -299,7 +299,7 @@ void TitleEngine::set_prefix( const wstring s )
 
 void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const
 {
-  for ( overlay_cells_t::const_iterator it = overlay_cells.begin();
+  for ( overlay_cells_type::const_iterator it = overlay_cells.begin();
         it != overlay_cells.end();
         it++ ) {
     it->apply( fb, confirmed_epoch, row_num, flag );
@@ -313,13 +313,13 @@ void PredictionEngine::apply( Framebuffer &fb ) const
 						 || (display_preference == Always) );
 
   if ( show ) {
-    for ( cursors_t::const_iterator it = cursors.begin();
+    for ( cursors_type::const_iterator it = cursors.begin();
           it != cursors.end();
           it++ ) {
       it->apply( fb, confirmed_epoch );
     }
 
-    for ( overlays_t::const_iterator it = overlays.begin();
+    for ( overlays_type::const_iterator it = overlays.begin();
           it != overlays.end();
           it++ ) {
       it->apply( fb, confirmed_epoch, flagging );
@@ -337,10 +337,10 @@ void PredictionEngine::kill_epoch( uint64_t epoch, const Framebuffer &fb )
 					    prediction_epoch ) );
   cursor().active = true;
 
-  for ( overlays_t::iterator i = overlays.begin();
+  for ( overlays_type::iterator i = overlays.begin();
         i != overlays.end();
         i++ ) {
-    for ( overlay_cells_t::iterator j = i->overlay_cells.begin();
+    for ( overlay_cells_type::iterator j = i->overlay_cells.begin();
           j != i->overlay_cells.end();
           j++ ) {
       if ( j->tentative( epoch - 1 ) ) {
@@ -413,9 +413,9 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
   /* go through cell predictions */
 
-  overlays_t::iterator i = overlays.begin();
+  overlays_type::iterator i = overlays.begin();
   while ( i != overlays.end() ) {
-    overlays_t::iterator inext = i;
+    overlays_type::iterator inext = i;
     inext++;
     if ( (i->row_num < 0) || (i->row_num >= fb.ds.get_height()) ) {
       overlays.erase( i );
@@ -423,7 +423,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
       continue;
     }
 
-    for ( overlay_cells_t::iterator j = i->overlay_cells.begin();
+    for ( overlay_cells_type::iterator j = i->overlay_cells.begin();
           j != i->overlay_cells.end();
           j++ ) {
       switch ( j->get_validity( fb, i->row_num,
@@ -532,7 +532,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
   }
 
   /* NB: switching from list to another STL container could break this code.
-     So we don't use the cursors_t typedef. */
+     So we don't use the cursors_type typedef. */
   for ( list<ConditionalCursorMove>::iterator it = cursors.begin();
         it != cursors.end(); ) {
     if ( it->get_validity( fb, local_frame_acked, local_frame_late_acked ) != Pending ) {
@@ -545,7 +545,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
 ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_cols )
 {
-  overlays_t::iterator it =
+  overlays_type::iterator it =
     find_if( overlays.begin(), overlays.end(),
 	     bind2nd( mem_fun_ref( &ConditionalOverlayRow::row_num_eq ), row_num ) );
 
@@ -755,11 +755,11 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
   init_cursor( fb );
   cursor().col = 0;
   if ( cursor().row == fb.ds.get_height() - 1 ) {
-    for ( overlays_t::iterator i = overlays.begin();
+    for ( overlays_type::iterator i = overlays.begin();
           i != overlays.end();
           i++ ) {
       i->row_num--;
-      for ( overlay_cells_t::iterator j = i->overlay_cells.begin();
+      for ( overlay_cells_type::iterator j = i->overlay_cells.begin();
             j != i->overlay_cells.end();
             j++ ) {
 	if ( j->active ) {
@@ -770,7 +770,7 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
 
     /* make blank prediction for last row */
     ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
-    for ( overlay_cells_t::iterator j = the_row.overlay_cells.begin();
+    for ( overlay_cells_type::iterator j = the_row.overlay_cells.begin();
           j != the_row.overlay_cells.end();
           j++ ) {
       j->active = true;
@@ -799,10 +799,10 @@ bool PredictionEngine::active( void ) const
     return true;
   }
 
-  for ( overlays_t::const_iterator i = overlays.begin();
+  for ( overlays_type::const_iterator i = overlays.begin();
         i != overlays.end();
         i++ ) {
-    for ( overlay_cells_t::const_iterator j = i->overlay_cells.begin();
+    for ( overlay_cells_type::const_iterator j = i->overlay_cells.begin();
           j != i->overlay_cells.end();
           j++ ) {
       if ( j->active ) {
