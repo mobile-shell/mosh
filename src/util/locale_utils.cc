@@ -29,19 +29,50 @@
 
 #include "locale_utils.h"
 
-void assert_utf8_locale( void ) {
-  /* Verify locale calls for UTF-8 */
-  if ( strcmp( nl_langinfo( CODESET ), "UTF-8" ) != 0 &&
-       strcmp( nl_langinfo( CODESET ), "utf-8" ) != 0 ) {
-    fprintf( stderr, "mosh requires a UTF-8 locale.\n" );
-    exit( 1 );
+const char *locale_charset( void )
+{
+  static const char ASCII_name[] = "US-ASCII (ANSI_X3.4-1968)";
+
+  /* Produce more pleasant name of US-ASCII */
+  const char *ret = nl_langinfo( CODESET );
+
+  if ( strcmp( ret, "ANSI_X3.4-1968" ) == 0 ) {
+    ret = ASCII_name;
   }
+
+  return ret;
+}
+
+bool is_utf8_locale( void ) {
+  /* Verify locale calls for UTF-8 */
+  if ( strcmp( locale_charset(), "UTF-8" ) != 0 &&
+       strcmp( locale_charset(), "utf-8" ) != 0 ) {
+    return 0;
+  }
+  return 1;
 }
 
 void set_native_locale( void ) {
   /* Adopt native locale */
   if ( NULL == setlocale( LC_ALL, "" ) ) {
     perror( "setlocale" );
-    exit( 1 );
   }
+}
+
+void clear_locale_variables( void ) {
+  unsetenv( "LANG" );
+  unsetenv( "LANGUAGE" );
+  unsetenv( "LC_CTYPE" );
+  unsetenv( "LC_NUMERIC" );
+  unsetenv( "LC_TIME" );
+  unsetenv( "LC_COLLATE" );
+  unsetenv( "LC_MONETARY" );
+  unsetenv( "LC_MESSAGES" );
+  unsetenv( "LC_PAPER" );
+  unsetenv( "LC_NAME" );
+  unsetenv( "LC_ADDRESS" );
+  unsetenv( "LC_TELEPHONE" );
+  unsetenv( "LC_MEASUREMENT" );
+  unsetenv( "LC_IDENTIFICATION" );
+  unsetenv( "LC_ALL" );
 }

@@ -57,7 +57,7 @@ int main( int argc __attribute__((unused)),
   struct termios saved_termios, raw_termios, child_termios;
 
   set_native_locale();
-  assert_utf8_locale();
+  assert( is_utf8_locale() );
 
   if ( tcgetattr( STDIN_FILENO, &saved_termios ) < 0 ) {
     perror( "tcgetattr" );

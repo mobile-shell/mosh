@@ -64,6 +64,18 @@ pass between client and server. By default, \fBmosh\fP uses the ports
 between 60000 and 61000, but allows the user to request a particular
 UDP port instead.
 
+\fBmosh\fP will do its best to arrange a UTF-8 character set locale on
+the client and server. The client must have locale-related environment
+variables that specify UTF-8. \fBmosh\fP will pass these client
+variables to the \fBmosh-server\fP on its command line, but in most
+cases they will not need to be used. \fBmosh-server\fP first attempts
+to use its own locale-related environment variables, which come from
+the system default configuration (sometimes /etc/default/locale) or
+from having been passed over the SSH connection. But if these
+variables don't call for the use of UTF-8, \fBmosh-server\fP will
+apply the locale-related environment variables from the client and try
+again.
+
 .SH OPTIONS
 .TP
 .B \fIcommand\fP

@@ -19,7 +19,9 @@
 #ifndef LOCALE_UTILS_HPP
 #define LOCALE_UTILS_HPP
 
-void assert_utf8_locale( void );
+const char *locale_charset( void );
+bool is_utf8_locale( void );
 void set_native_locale( void );
+void clear_locale_variables( void );
 
 #endif

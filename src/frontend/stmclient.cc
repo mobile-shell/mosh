@@ -49,7 +49,12 @@
 
 void STMClient::init( void )
 {
-  assert_utf8_locale();
+  if ( !is_utf8_locale() ) {
+    fprintf( stderr, "mosh-client needs a UTF-8 native locale to run.\n\n" );
+    fprintf( stderr, "Unfortunately, the locale environment variables currently specify\nthe character set \"%s\".\n\n", locale_charset() );
+    int unused __attribute((unused)) = system( "locale" );
+    exit( 1 );
+  }
 
   /* Verify terminal configuration */
   if ( tcgetattr( STDIN_FILENO, &saved_termios ) < 0 ) {

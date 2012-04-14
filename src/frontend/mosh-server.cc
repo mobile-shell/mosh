@@ -72,7 +72,7 @@ using namespace std;
 
 void print_usage( const char *argv0 )
 {
-  fprintf( stderr, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT] [-c COLORS] [-- COMMAND...]\n", argv0 );
+  fprintf( stderr, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
 }
 
 /* Simple spinloop */
@@ -113,6 +113,7 @@ int main( int argc, char *argv[] )
   int colors = 0;
   bool verbose = false; /* don't close stdin/stdout/stderr */
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
+  list<string> locale_vars;
 
   /* strip off command */
   for ( int i = 0; i < argc; i++ ) {
@@ -130,7 +131,7 @@ int main( int argc, char *argv[] )
        && (strcmp( argv[ 1 ], "new" ) == 0) ) {
     /* new option syntax */
     int opt;
-    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:sv" )) != -1 ) {
+    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:svl:" )) != -1 ) {
       switch ( opt ) {
       case 'i':
 	desired_ip = optarg;
@@ -147,6 +148,9 @@ int main( int argc, char *argv[] )
 	break;
       case 'v':
 	verbose = true;
+	break;
+      case 'l':
+	locale_vars.push_back( string( optarg ) );
 	break;
       default:
 	print_usage( argv[ 0 ] );
@@ -203,7 +207,28 @@ int main( int argc, char *argv[] )
 
   /* Adopt implementation locale */
   set_native_locale();
-  assert_utf8_locale();
+  if ( !is_utf8_locale() ) {
+    /* apply locale-related environment variables from client */
+    clear_locale_variables();
+    for ( list<string>::const_iterator i = locale_vars.begin();
+	  i != locale_vars.end();
+	  i++ ) {
+      char *env_string = strdup( i->c_str() );
+      assert( env_string );
+      if ( 0 != putenv( env_string ) ) {
+	perror( "putenv" );
+      }
+    }
+
+    /* check again */
+    set_native_locale();
+    if ( !is_utf8_locale() ) {
+      fprintf( stderr, "mosh-server needs a UTF-8 native locale to run.\n\n" );
+      fprintf( stderr, "Unfortunately, the locale environment variables currently specify\nthe character set \"%s\".\n\n", locale_charset() );
+      int unused __attribute((unused)) = system( "locale" );
+      exit( 1 );
+    }
+  }
 
   try {
     return run_server( desired_ip, desired_port, command, colors, verbose );

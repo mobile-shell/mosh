@@ -196,6 +196,10 @@ if ( $pid == 0 ) { # child
     push @server, ( '-p', $port_request );
   }
 
+  for ( &locale_vars ) {
+    push @server, ( '-l', $_ );
+  }
+
   if ( scalar @command > 0 ) {
     push @server, '--', @command;
   }
@@ -237,3 +241,17 @@ if ( $pid == 0 ) { # child
 }
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }
+
+sub locale_vars {
+  my @names = qw[LANG LANGUAGE LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT LC_IDENTIFICATION LC_ALL];
+
+  my @assignments;
+
+  for ( @names ) {
+    if ( defined $ENV{ $_ } ) {
+      push @assignments, $_ . q{=} . $ENV{ $_ };
+    }
+  }
+
+  return @assignments;
+}
