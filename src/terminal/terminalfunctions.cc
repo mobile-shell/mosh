@@ -316,6 +316,12 @@ void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
   int top = dispatch->getparam( 0, 1 );
   int bottom = dispatch->getparam( 1, fb->ds.get_height() );
 
+  if ( (bottom <= top)
+       || (top > fb->ds.get_height())
+       || (top == 0 && bottom == 1) ) {
+    return; /* invalid, xterm ignores */
+  }
+
   fb->ds.set_scrolling_region( top - 1, bottom - 1 );
   fb->ds.move_row( 0 );
   fb->ds.move_col( 0 );
