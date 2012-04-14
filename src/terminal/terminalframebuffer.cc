@@ -546,6 +546,13 @@ void Row::reset( int background_color )
 
 void Framebuffer::prefix_window_title( const std::deque<wchar_t> &s )
 {
+  if ( icon_name == window_title ) {
+    /* preserve equivalence */
+    for ( BOOST_AUTO( i, s.rbegin() ); i != s.rend(); i++ ) {
+      icon_name.push_front( *i );
+    }
+  }
+
   for ( BOOST_AUTO( i, s.rbegin() ); i != s.rend(); i++ ) {
     window_title.push_front( *i );
   }
