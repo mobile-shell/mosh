@@ -66,7 +66,7 @@ void serve( int host_fd,
 	    ServerConnection &network );
 
 int run_server( const char *desired_ip, const char *desired_port,
-		char *command[], const int colors );
+		char *command[], const int colors, bool verbose );
 
 using namespace std;
 
@@ -111,6 +111,8 @@ int main( int argc, char *argv[] )
   char *desired_port = NULL;
   char **command = NULL;
   int colors = 0;
+  bool verbose = false; /* don't close stdin/stdout/stderr */
+  /* Will cause mosh-server not to correctly detach on old versions of sshd. */
 
   /* strip off command */
   for ( int i = 0; i < argc; i++ ) {
@@ -128,7 +130,7 @@ int main( int argc, char *argv[] )
        && (strcmp( argv[ 1 ], "new" ) == 0) ) {
     /* new option syntax */
     int opt;
-    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:s" )) != -1 ) {
+    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:sv" )) != -1 ) {
       switch ( opt ) {
       case 'i':
 	desired_ip = optarg;
@@ -142,6 +144,9 @@ int main( int argc, char *argv[] )
 	break;
       case 'c':
 	colors = myatoi( optarg );
+	break;
+      case 'v':
+	verbose = true;
 	break;
       default:
 	print_usage( argv[ 0 ] );
@@ -201,7 +206,7 @@ int main( int argc, char *argv[] )
   assert_utf8_locale();
 
   try {
-    return run_server( desired_ip, desired_port, command, colors );
+    return run_server( desired_ip, desired_port, command, colors, verbose );
   } catch ( Network::NetworkException e ) {
     fprintf( stderr, "Network exception: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -214,7 +219,7 @@ int main( int argc, char *argv[] )
 }
 
 int run_server( const char *desired_ip, const char *desired_port,
-		char *command[], const int colors ) {
+		char *command[], const int colors, bool verbose ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -332,6 +337,12 @@ int run_server( const char *desired_ip, const char *desired_port,
     }
   } else {
     /* parent */
+    if ( !verbose ) {
+      /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
+      close( STDIN_FILENO );
+      close( STDOUT_FILENO );
+      close( STDERR_FILENO );
+    }
 
     #ifdef HAVE_UTEMPTER
     /* make utmp entry */
