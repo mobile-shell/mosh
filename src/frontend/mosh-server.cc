@@ -72,7 +72,7 @@ using namespace std;
 
 void print_usage( const char *argv0 )
 {
-  fprintf( stderr, "Usage: %s new [-s] [-i LOCALADDR] [-p PORT] [-c COLORS] [-- COMMAND...]\n", argv0 );
+  fprintf( stderr, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT] [-c COLORS] [-- COMMAND...]\n", argv0 );
 }
 
 /* Simple spinloop */

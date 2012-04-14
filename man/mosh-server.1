@@ -21,6 +21,7 @@ mosh-server \- server-side helper for mosh
 .B mosh-server
 new
 [\-s]
+[\-v]
 [\-i IP]
 [\-p port]
 [\-c colors]
@@ -58,6 +59,10 @@ command-line options.
 bind to the local interface used for an incoming SSH connection, given
 in the \fBSSH_CONNECTION\fP environment variable (for multihomed
 hosts)
+
+.TP
+.B \-v
+Print some debugging information even after detaching.
 
 .TP
 .B \-i \fIIP\fP
