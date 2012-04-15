@@ -74,7 +74,7 @@ AC_ARG_WITH([utempter],
   [with_utempter="$withval"],
   [with_utempter="check"])
 AS_IF([test x"$with_utempter" != xno],
-  [AC_SEARCH_LIBS([utempter_remove_added_record], [utempter],
+  [AC_SEARCH_LIBS([utempter_remove_record], [utempter],
     [AC_DEFINE([HAVE_UTEMPTER], [1], [Define if libutempter is available.])],
     [AS_IF([test x"$with_utempter" = xcheck],
       [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])],
