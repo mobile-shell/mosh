@@ -34,7 +34,8 @@ namespace Terminal {
     Terminal::Emulator terminal;
     Terminal::Display display;
 
-    std::list< std::pair<uint64_t, uint64_t> > input_history;
+    typedef std::list< std::pair<uint64_t, uint64_t> > input_history_type;
+    input_history_type input_history;
     uint64_t echo_ack;
 
     static const int ECHO_TIMEOUT = 50; /* for late ack */

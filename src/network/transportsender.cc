@@ -16,8 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/lambda/lambda.hpp>
-#include <boost/typeof/typeof.hpp>
 #include <algorithm>
 #include <list>
 #include <stdio.h>
@@ -27,7 +25,6 @@
 #include "transportsender.h"
 #include "transportfragment.h"
 
-using namespace boost::lambda;
 using namespace Network;
 using namespace std;
 
@@ -184,7 +181,7 @@ void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t 
 {
   sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
   if ( sent_states.size() > 32 ) { /* limit on state queue */
-    BOOST_AUTO( last, sent_states.end() );
+    typename sent_states_type::iterator last = sent_states.end();
     for ( int i = 0; i < 16; i++ ) { last--; }
     sent_states.erase( last ); /* erase state from middle of queue */
   }
@@ -290,7 +287,9 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
 
   vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU() );
 
-  for ( BOOST_AUTO( i, fragments.begin() ); i != fragments.end(); i++ ) {
+  for ( vector<Fragment>::iterator i = fragments.begin();
+        i != fragments.end();
+        i++ ) {
     connection->send( i->tostring() );
 
     if ( verbose ) {
@@ -311,9 +310,10 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
 {
   /* Ignore ack if we have culled the state it's acknowledging */
 
-  if ( sent_states.end() != find_if( sent_states.begin(), sent_states.end(),
-				     (&_1)->*&TimestampedState<MyState>::num == ack_num ) ) {
-    sent_states.remove_if( (&_1)->*&TimestampedState<MyState>::num < ack_num );
+  if ( sent_states.end() !=
+       find_if( sent_states.begin(), sent_states.end(),
+		bind2nd( mem_fun_ref( &TimestampedState<MyState>::num_eq ), ack_num ) ) ) {
+    sent_states.remove_if( bind2nd( mem_fun_ref( &TimestampedState<MyState>::num_lt ), ack_num ) );
   }
 
   assert( !sent_states.empty() );

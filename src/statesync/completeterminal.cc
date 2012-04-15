@@ -16,9 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/typeof/typeof.hpp>
-#include <boost/lambda/lambda.hpp>
-
 #include "completeterminal.h"
 #include "fatal_assert.h"
 
@@ -28,7 +25,6 @@ using namespace std;
 using namespace Parser;
 using namespace Terminal;
 using namespace HostBuffers;
-using namespace boost::lambda;
 
 string Complete::act( const string &str )
 {
@@ -107,18 +103,25 @@ bool Complete::operator==( Complete const &x ) const
   return (terminal == x.terminal) && (echo_ack == x.echo_ack);
 }
 
+static bool old_ack(uint64_t newest_echo_ack, const pair<uint64_t, uint64_t> p)
+{
+  return p.first < newest_echo_ack;
+}
+
 bool Complete::set_echo_ack( uint64_t now )
 {
   bool ret = false;
   uint64_t newest_echo_ack = 0;
 
-  for ( BOOST_AUTO( i, input_history.begin() ); i != input_history.end(); i++ ) {
+  for ( input_history_type::const_iterator i = input_history.begin();
+        i != input_history.end();
+        i++ ) {
     if ( i->second < now - ECHO_TIMEOUT ) {
       newest_echo_ack = i->first;
     }
   }
 
-  input_history.remove_if( (&_1)->*&pair<uint64_t, uint64_t>::first < newest_echo_ack );
+  input_history.remove_if( bind1st( ptr_fun( old_ack ), newest_echo_ack ) );
 
   if ( echo_ack != newest_echo_ack ) {
     ret = true;
@@ -140,7 +143,7 @@ int Complete::wait_time( uint64_t now ) const
     return INT_MAX;
   }
 
-  BOOST_AUTO( it, input_history.begin() );
+  input_history_type::const_iterator it = input_history.begin();
   it++;
 
   uint64_t next_echo_ack_time = it->second + ECHO_TIMEOUT;

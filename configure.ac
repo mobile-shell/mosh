@@ -157,8 +157,6 @@ AS_IF([test x"$with_utempter" != xno],
 
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
-AX_BOOST_BASE(, , [AC_MSG_ERROR([Unable to find boost libraries.])])
-
 AC_ARG_WITH([skalibs],
   [AS_HELP_STRING([--with-skalibs[=DIR]],
      [root directory of skalibs installation])],

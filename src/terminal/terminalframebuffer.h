@@ -96,11 +96,18 @@ namespace Terminal {
 	       || ( (contents.size() == 1) && ( (contents.front() == 0x20)
 						|| (contents.front() == 0xA0) ) ) );
     }
+
+    bool contents_match ( const Cell& other ) const
+    {
+      return ( is_blank() && other.is_blank() )
+             || ( contents == other.contents );
+    }
   };
 
   class Row {
   public:
-    std::vector<Cell> cells;
+    typedef std::vector<Cell> cells_type;
+    cells_type cells;
 
     Row( size_t s_width, int background_color )
       : cells( s_width, Cell( background_color ) )
@@ -217,7 +224,8 @@ namespace Terminal {
 
   class Framebuffer {
   private:
-    std::deque<Row> rows;
+    typedef std::deque<Row> rows_type;
+    rows_type rows;
     std::deque<wchar_t> icon_name;
     std::deque<wchar_t> window_title;
     unsigned int bell_count;
