@@ -95,6 +95,13 @@ int main( int argc, char *argv[] )
   char *predict_mode = getenv( "MOSH_PREDICTION_DISPLAY" );
   /* can be NULL */
 
+  /* Read actual IP to connect to, use passed DNS name for display */
+  char *env_ip = getenv( "MOSH_IP" );
+  /* can be NULL */
+  if (env_ip != NULL) {
+    ip = env_ip;
+  }
+
   char *key = strdup( env_key );
   if ( key == NULL ) {
     perror( "strdup" );
