@@ -48,6 +48,7 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 -n      --predict=never      never use local echo
 
 -p NUM  --port=NUM           server-side UDP port
+-P NUM  --sshport=NUM        server-side SSH port (if SSH is running on a non-standard port)
 
         --help               this message
         --version            version and copyright information
@@ -72,6 +73,7 @@ sub predict_check {
   }
 }
 
+my $ssh_port=22;
 GetOptions( 'client=s' => \$client,
 	    'server=s' => \$server,
 	    'predict=s' => \$predict,
@@ -79,6 +81,8 @@ GetOptions( 'client=s' => \$client,
 	    'a' => sub { $predict = 'always' },
 	    'n' => sub { $predict = 'never' },
 	    'p=i' => \$port_request,
+	    'P=i' => \$ssh_port,
+	    'sshport=i' => \$ssh_port,
 	    'help' => \$help,
 	    'version' => \$version,
 	    'fake-proxy!' => \my $fake_proxy ) or die $usage;
@@ -205,7 +209,7 @@ if ( $pid == 0 ) { # child
   }
 
   my $quoted_self = shell_quote( $0 );
-  exec 'ssh', '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-t', $userhost, '--', "$server " . shell_quote( @server );
+  exec 'ssh', "-p$ssh_port", '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-t', $userhost, '--', "$server " . shell_quote( @server );
   die "Cannot exec ssh: $!\n";
 } else { # server
   my ( $ip, $port, $key );
