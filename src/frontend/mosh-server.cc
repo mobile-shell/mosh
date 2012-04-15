@@ -307,6 +307,14 @@ int run_server( const char *desired_ip, const char *desired_port,
   fprintf( stderr, "\nWarning: termios IUTF8 flag not defined.\nCharacter-erase of multibyte character sequence\nprobably does not work properly on this platform.\n" );
 #endif /* HAVE_IUTF8 */
 
+  /* close file descriptors */
+  if ( !verbose ) {
+    /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
+    close( STDIN_FILENO );
+    close( STDOUT_FILENO );
+    close( STDERR_FILENO );
+  }
+
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, &child_termios, &window_size );
 
@@ -362,12 +370,6 @@ int run_server( const char *desired_ip, const char *desired_port,
     }
   } else {
     /* parent */
-    if ( !verbose ) {
-      /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
-      close( STDIN_FILENO );
-      close( STDOUT_FILENO );
-      close( STDERR_FILENO );
-    }
 
     #ifdef HAVE_UTEMPTER
     /* make utmp entry */
