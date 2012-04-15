@@ -60,12 +60,10 @@ void Emulator::print( const Parser::Print *act )
       fb.get_mutable_row( -1 )->set_wrap( true );
       fb.ds.move_col( 0 );
       fb.move_rows_autoscroll( 1 );
-    }
-
-    /* wrap 2-cell chars if no room, even without will-wrap flag */
-    if ( fb.ds.auto_wrap_mode
-	 && (chwidth == 2)
-	 && (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
+    } else if ( fb.ds.auto_wrap_mode
+		&& (chwidth == 2)
+		&& (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
+      /* wrap 2-cell chars if no room, even without will-wrap flag */
       fb.reset_cell( this_cell );
       fb.get_mutable_row( -1 )->set_wrap( false );
       /* There doesn't seem to be a consistent way to get the
