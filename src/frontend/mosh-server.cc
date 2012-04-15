@@ -388,16 +388,16 @@ int run_server( const char *desired_ip, const char *desired_port,
 	       e.text.c_str() );
     }
 
+    #ifdef HAVE_UTEMPTER
+    utempter_remove_record( master );
+    #endif
+
     if ( close( master ) < 0 ) {
       perror( "close" );
       exit( 1 );
     }
 
     delete network;
-
-    #ifdef HAVE_UTEMPTER
-    utempter_remove_added_record();
-    #endif
   }
 
   printf( "\n[mosh-server is exiting.]\n" );
@@ -510,7 +510,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  /* update utmp entry if we have become "connected" */
 	  if ( (!connected_utmp)
 	       || ( saved_addr.s_addr != network.get_remote_ip().s_addr ) ) {
-	    utempter_remove_added_record();
+	    utempter_remove_record( host_fd );
 
 	    saved_addr = network.get_remote_ip();
 
@@ -607,7 +607,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       /* update utmp if has been more than 10 seconds since heard from client */
       if ( connected_utmp ) {
 	if ( time_since_remote_state > 10000 ) {
-	  utempter_remove_added_record();
+	  utempter_remove_record( host_fd );
 
 	  char tmp[ 64 ];
 	  snprintf( tmp, 64, "mosh [%d]", getpid() );
