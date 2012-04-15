@@ -310,9 +310,9 @@ int run_server( const char *desired_ip, const char *desired_port,
   /* close file descriptors */
   if ( !verbose ) {
     /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
-    close( STDIN_FILENO );
-    close( STDOUT_FILENO );
-    close( STDERR_FILENO );
+    fclose( stdin );
+    fclose( stdout );
+    fclose( stderr );
   }
 
   /* Fork child process */
