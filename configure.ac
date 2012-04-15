@@ -201,7 +201,7 @@ AM_CONDITIONAL([COND_THIRD_LIBSTDDJB],
   [test x"$have_signalfd" = xno && test x"$with_skalibs" = xno])
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/time.h term.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/time.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
 
 AC_CHECK_HEADERS([pty.h util.h libutil.h])
 AC_CHECK_HEADERS([endian.h sys/endian.h])
@@ -226,6 +226,9 @@ AC_FUNC_MBRTOWC
 AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langinfo posix_memalign setenv setlocale sigaction socket strchr strdup strerror strtol wcwidth])
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
+
+AS_IF([test x"$__CYGWIN__" != x && test x"$TINFO_CPPFLAGS" = x],
+  [TINFO_CPPFLAGS="-I/usr/include/ncurses"])
 
 PKG_CHECK_MODULES([TINFO], [tinfo], ,
   [PKG_CHECK_MODULES([TINFO], [ncurses], ,
