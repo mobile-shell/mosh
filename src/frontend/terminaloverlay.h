@@ -134,7 +134,7 @@ namespace Overlay {
     bool need_countup( uint64_t ts ) const { return ts - last_word_from_server > 6500; }
     void adjust_message( void );
     void apply( Framebuffer &fb ) const;
-    void set_notification_string( const wstring s_message ) { message = s_message; message_expiration = timestamp() + 1000; }
+    void set_notification_string( const wstring &s_message, bool permanent = false ) { message = s_message; if ( permanent ) { message_expiration = -1; } else { message_expiration = timestamp() + 1000; } }
     const wstring &get_notification_string( void ) const { return message; }
     void server_heard( uint64_t s_last_word ) { last_word_from_server = s_last_word; }
     uint64_t get_message_expiration( void ) const { return message_expiration; }

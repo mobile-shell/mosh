@@ -87,6 +87,10 @@ void STMClient::init( void )
   if ( !getenv( "MOSH_TITLE_NOPREFIX" ) ) {
     overlays.set_title_prefix( wstring( L"[mosh] " ) );
   }
+
+  wchar_t tmp[ 128 ];
+  swprintf( tmp, 128, L"Nothing received from server on UDP port %d.", port );
+  connecting_notification = wstring( tmp );
 }
 
 void STMClient::shutdown( void )
@@ -109,6 +113,10 @@ void STMClient::shutdown( void )
     fprintf( stderr, "mosh did not make a successful connection to %s:%d.\n", ip.c_str(), port );
     fprintf( stderr, "Please verify that UDP port %d is not firewalled and can reach the server.\n\n", port );
     fprintf( stderr, "(By default, mosh uses a UDP port between 60000 and 61000. The -p option\nselects a specific UDP port number.)\n" );
+  } else if ( network ) {
+    if ( !clean_shutdown ) {
+      fprintf( stderr, "\n\nmosh did not shut down cleanly. Please note that the\nmosh-server process may still be running on the server.\n" );
+    }
   }
 }
 
@@ -223,7 +231,7 @@ bool STMClient::process_user_input( int fd )
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
 	  if ( network->has_remote_addr() && (!network->shutdown_in_progress()) ) {
-	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting on user request..." ) );
+	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting on user request..." ), true );
 	    network->start_shutdown();
 	    return true;
 	  } else {
@@ -328,7 +336,7 @@ void STMClient::main( void )
 	  if ( !network->has_remote_addr() ) {
 	    break;
 	  } else if ( !network->shutdown_in_progress() ) {
-	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ) );
+	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ), true );
 	    network->start_shutdown();
 	  }
 	}
@@ -346,7 +354,7 @@ void STMClient::main( void )
 	  if ( !network->has_remote_addr() ) {
 	    break;
 	  } else if ( !network->shutdown_in_progress() ) {
-	    overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ) );
+	    overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ), true );
 	    network->start_shutdown();
 	  }
 	}
@@ -364,13 +372,14 @@ void STMClient::main( void )
 	if ( !network->has_remote_addr() ) {
 	  break;
 	} else if ( !network->shutdown_in_progress() ) {
-	  overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ) );
+	  overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ), true );
 	  network->start_shutdown();
 	}
       }
 
       /* quit if our shutdown has been acknowledged */
       if ( network->shutdown_in_progress() && network->shutdown_acknowledged() ) {
+	clean_shutdown = true;
 	break;
       }
 
@@ -381,14 +390,11 @@ void STMClient::main( void )
 
       /* quit if we received and acknowledged a shutdown request */
       if ( network->counterparty_shutdown_ack_sent() ) {
+	clean_shutdown = true;
 	break;
       }
 
       /* write diagnostic message if can't reach server */
-      wchar_t tmp[ 128 ];
-      swprintf( tmp, 128, L"Nothing received from server on UDP port %d.", port );
-      wstring connecting_notification( tmp );
-
       if ( still_connecting()
 	   && (!network->shutdown_in_progress())
 	   && (timestamp() - network->get_latest_remote_state().timestamp > 250) ) {

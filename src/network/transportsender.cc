@@ -159,7 +159,9 @@ void TransportSender<MyState>::tick( void )
 template <class MyState>
 void TransportSender<MyState>::send_empty_ack( void )
 {
-  assert ( timestamp() >= next_ack_time );
+  uint64_t now = timestamp();
+
+  assert( now >= next_ack_time );
 
   uint64_t new_num = sent_states.back().num + 1;
 
@@ -169,10 +171,10 @@ void TransportSender<MyState>::send_empty_ack( void )
   }
 
   //  sent_states.push_back( TimestampedState<MyState>( sent_states.back().timestamp, new_num, current_state ) );
-  add_sent_state( sent_states.back().timestamp, new_num, current_state );
+  add_sent_state( now, new_num, current_state );
   send_in_fragments( "", new_num );
 
-  next_ack_time = timestamp() + ACK_INTERVAL;
+  next_ack_time = now + ACK_INTERVAL;
   next_send_time = uint64_t(-1);
 }
 

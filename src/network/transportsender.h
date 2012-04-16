@@ -43,7 +43,7 @@ namespace Network {
     static const int SEND_INTERVAL_MAX = 250; /* ms between frames */
     static const int ACK_INTERVAL = 3000; /* ms between empty acks */
     static const int ACK_DELAY = 100; /* ms before delayed ack */
-    static const int SHUTDOWN_RETRIES = 3; /* number of shutdown packets to send before giving up */
+    static const int SHUTDOWN_RETRIES = 16; /* number of shutdown packets to send before giving up */
     static const int ACTIVE_RETRY_TIMEOUT = 10000; /* attempt to resend at frame rate */
 
     /* helper methods for tick() */
