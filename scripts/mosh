@@ -192,10 +192,10 @@ if ( (not defined $colors)
 my $pid = fork;
 die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
+  $pty->close_slave();
+  open STDOUT, ">&", $pty or die;
+  open STDERR, ">&", $pty or die;
   close $pty;
-  open STDOUT, ">&", $pty_slave->fileno() or die;
-  open STDERR, ">&", $pty_slave->fileno() or die;
-  close $pty_slave;
 
   my @server = ( 'new', '-s' );
 
@@ -218,8 +218,7 @@ if ( $pid == 0 ) { # child
   die "Cannot exec ssh: $!\n";
 } else { # server
   my ( $ip, $port, $key );
-  $pty->close_slave();
-  LINE: while ( <$pty> ) {
+  LINE: while ( <$pty_slave> ) {
     chomp;
     if ( m{^MOSH IP } ) {
       ( $ip ) = m{^MOSH IP (\S+)\s*$} or die "Bad MOSH IP string: $_\n";
