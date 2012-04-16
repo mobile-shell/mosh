@@ -39,6 +39,7 @@
 #include <arpa/inet.h>
 #include <getopt.h>
 #include <time.h>
+#include <paths.h>
 
 #include "sigfd.h"
 #include "completeterminal.h"
@@ -66,7 +67,7 @@ void serve( int host_fd,
 	    ServerConnection &network );
 
 int run_server( const char *desired_ip, const char *desired_port,
-		char *command[], const int colors, bool verbose );
+		const string &command_path, char *command_argv[], const int colors, bool verbose );
 
 using namespace std;
 
@@ -109,7 +110,8 @@ int main( int argc, char *argv[] )
 
   char *desired_ip = NULL;
   char *desired_port = NULL;
-  char **command = NULL;
+  string command_path;
+  char **command_argv = NULL;
   int colors = 0;
   bool verbose = false; /* don't close stdin/stdout/stderr */
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
@@ -119,7 +121,7 @@ int main( int argc, char *argv[] )
   for ( int i = 0; i < argc; i++ ) {
     if ( 0 == strcmp( argv[ i ], "--" ) ) { /* -- is mandatory */
       if ( i != argc - 1 ) {
-	command = argv + i + 1;
+	command_argv = argv + i + 1;
       }
       argc = i; /* rest of options before -- */
       break;
@@ -187,7 +189,7 @@ int main( int argc, char *argv[] )
 
   /* Get shell */
   char *my_argv[ 2 ];
-  if ( !command ) {
+  if ( !command_argv ) {
     /* get shell name */
     struct passwd *pw = getpwuid( geteuid() );
     if ( pw == NULL ) {
@@ -195,14 +197,32 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
-    string shell_name( pw->pw_shell );
-    if ( shell_name.empty() ) { /* empty shell means Bourne shell */
-      shell_name = "/bin/sh";
+    string shell_path( pw->pw_shell );
+    if ( shell_path.empty() ) { /* empty shell means Bourne shell */
+      shell_path = _PATH_BSHELL;
     }
 
-    my_argv[ 0 ] = pw->pw_shell;
+    command_path = shell_path;
+
+    string shell_name;
+
+    size_t shell_slash( shell_path.rfind('/') );
+    if ( shell_slash == string::npos ) {
+      shell_name = shell_path;
+    } else {
+      shell_name = shell_path.substr(shell_slash + 1);
+    }
+
+    /* prepend '-' to make login shell */
+    shell_name = '-' + shell_name;
+
+    my_argv[ 0 ] = strdup( shell_name.c_str() );
     my_argv[ 1 ] = NULL;
-    command = my_argv;
+    command_argv = my_argv;
+  }
+
+  if ( command_path.empty() ) {
+    command_path = command_argv[0];
   }
 
   /* Adopt implementation locale */
@@ -231,7 +251,7 @@ int main( int argc, char *argv[] )
   }
 
   try {
-    return run_server( desired_ip, desired_port, command, colors, verbose );
+    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose );
   } catch ( Network::NetworkException e ) {
     fprintf( stderr, "Network exception: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -244,7 +264,7 @@ int main( int argc, char *argv[] )
 }
 
 int run_server( const char *desired_ip, const char *desired_port,
-		char *command[], const int colors, bool verbose ) {
+		const string &command_path, char *command_argv[], const int colors, bool verbose ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -357,14 +377,7 @@ int run_server( const char *desired_ip, const char *desired_port,
       exit( 1 );
     }
 
-    /* prepend '-' to make login shell */
-    string executable( command[ 0 ] );
-    string argv0 = "-" + executable;
-
-    command[ 0 ] = strdup( argv0.c_str() );
-    fatal_assert( command[ 0 ] );
-    
-    if ( execvp( executable.c_str(), command ) < 0 ) {
+    if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
       perror( "execvp" );
       _exit( 1 );
     }
