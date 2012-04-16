@@ -32,19 +32,25 @@ void Cell::reset( int background_color )
   wrap = false;
 }
 
+void DrawState::reinitialize_tabs( unsigned int start )
+{
+  assert( default_tabs );
+  for ( unsigned int i = start; i < tabs.size(); i++ ) {
+    tabs[ i ] = ( (i % 8) == 0 );
+  }
+}
+
 DrawState::DrawState( int s_width, int s_height )
   : width( s_width ), height( s_height ),
     cursor_col( 0 ), cursor_row( 0 ),
-    combining_char_col( 0 ), combining_char_row( 0 ), tabs( s_width ),
+    combining_char_col( 0 ), combining_char_row( 0 ), default_tabs( true ), tabs( s_width ),
     scrolling_region_top_row( 0 ), scrolling_region_bottom_row( height - 1 ),
     renditions( 0 ), save(),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true ),
     insert_mode( false ), cursor_visible( true ), reverse_video( false ),
     application_mode_cursor_keys( false )
 {
-  for ( int i = 0; i < width; i++ ) {
-    tabs[ i ] = ( (i % 8) == 0 );
-  }
+  reinitialize_tabs( 0 );
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
@@ -204,19 +210,6 @@ int DrawState::limit_bottom( void )
   return origin_mode ? scrolling_region_bottom_row : height - 1;
 }
 
-std::vector<int> DrawState::get_tabs( void )
-{
-  std::vector<int> ret;
-
-  for ( int i = 0; i < width; i++ ) {
-    if ( tabs[ i ] ) {
-      ret.push_back( i );
-    }
-  }
-
-  return ret;
-}
-
 void Framebuffer::apply_renditions_to_current_cell( void )
 {
   get_mutable_cell()->renditions = ds.get_renditions();
@@ -361,16 +354,15 @@ void DrawState::resize( int s_width, int s_height )
     scrolling_region_bottom_row = s_height - 1;
   }
 
+  tabs.resize( s_width );
+  if ( default_tabs ) {
+    reinitialize_tabs( width );
+  }
+
   width = s_width;
   height = s_height;
 
   snap_cursor_to_border();
-
-  /* reset tab stops */
-  tabs = std::vector< bool >( width );
-  for ( int i = 0; i < width; i++ ) {
-    tabs[ i ] = ( (i % 8) == 0 );
-  }
 
   /* saved cursor will be snapped to border on restore */
 

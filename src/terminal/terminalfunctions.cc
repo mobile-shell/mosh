@@ -191,13 +191,20 @@ void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   int col = fb->ds.get_next_tab();
   if ( col == -1 ) { /* no tabs, go to end of line */
-    fb->ds.move_col( fb->ds.get_width() - 1 );
+  /* A horizontal tab is the only operation that (1) can keep the wrap
+     flag but (2) starts a new grapheme. */
+    if ( fb->ds.get_cursor_col() == fb->ds.get_width() - 1 ) {
+      fb->ds.move_col( fb->ds.get_width() - 1, false );
+      fb->ds.move_col( 1, true, true );
+    } else {
+      fb->ds.move_col( fb->ds.get_width() - 1, false );
+    }
   } else {
-    fb->ds.move_col( col );
+    fb->ds.move_col( col, false );
   }
 }
 
-static Function func_Ctrl_HT( CONTROL, "\x09", Ctrl_HT );
+static Function func_Ctrl_HT( CONTROL, "\x09", Ctrl_HT, false );
 
 /* horizontal tab set */
 void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
@@ -216,6 +223,7 @@ void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
     fb->ds.clear_tab( fb->ds.get_cursor_col() );    
     break;
   case 3: /* clear all tab stops */
+    fb->ds.clear_default_tabs();
     for ( int x = 0; x < fb->ds.get_width(); x++ ) {
       fb->ds.clear_tab( x );
     }

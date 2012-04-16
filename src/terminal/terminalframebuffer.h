@@ -157,7 +157,10 @@ namespace Terminal {
     int cursor_col, cursor_row;
     int combining_char_col, combining_char_row;
 
+    bool default_tabs;
     std::vector<bool> tabs;
+
+    void reinitialize_tabs( unsigned int start );
 
     int scrolling_region_top_row, scrolling_region_bottom_row;
 
@@ -189,9 +192,9 @@ namespace Terminal {
 
     void set_tab( void );
     void clear_tab( int col );
+    void clear_default_tabs( void ) { default_tabs = false; }
+    /* Default tabs can't be restored without resetting the draw state. */
     int get_next_tab( void );
-
-    std::vector<int> get_tabs( void );
 
     void set_scrolling_region( int top, int bottom );
 
