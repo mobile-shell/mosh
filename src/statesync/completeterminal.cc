@@ -153,3 +153,26 @@ int Complete::wait_time( uint64_t now ) const
     return next_echo_ack_time - now;
   }
 }
+
+bool Complete::compare( const Complete &other ) const
+{
+  bool ret = false;
+  for ( int x = 0; x < terminal.get_fb().ds.get_width(); x++ ) {
+    for ( int y = 0; y < terminal.get_fb().ds.get_height(); y++ ) {
+      if ( terminal.get_fb().get_cell( y, x )->compare( *other.terminal.get_fb().get_cell( y, x ) ) ) {
+	fprintf( stderr, "Cell (%d, %d) differs.\n", y, x );
+	ret = true;
+      }
+    }
+  }
+
+  if ( (terminal.get_fb().ds.get_cursor_row() != other.terminal.get_fb().ds.get_cursor_row())
+       || (terminal.get_fb().ds.get_cursor_col() != other.terminal.get_fb().ds.get_cursor_col()) ) {
+    fprintf( stderr, "Cursor mismatch: (%d, %d) vs. (%d, %d).\n",
+	     terminal.get_fb().ds.get_cursor_row(), terminal.get_fb().ds.get_cursor_col(),
+	     other.terminal.get_fb().ds.get_cursor_row(), other.terminal.get_fb().ds.get_cursor_col() );
+    ret = true;
+  }
+
+  return ret;
+}

@@ -366,7 +366,7 @@ void DrawState::resize( int s_width, int s_height )
 
   snap_cursor_to_border();
 
-  tabs.resize( width );
+  tabs.clear();
 
   /* saved cursor will be snapped to border on restore */
 
@@ -482,11 +482,6 @@ std::string Renditions::sgr( void ) const
 
 /* Reduce 256 "standard" colors to the 8 ANSI colors. */
 
-/* We could do something fancy like find the nearest system color in
-   the deltaE(2000) sense, but for "business graphics," the colorimetric
-   intent is probably less important than just having separate colors
-   be separate as much as possible. */
-
 /* Terminal emulators generally agree on the (R',G',B') values of the
    "standard" 256-color pallette beyond #15, but for the first 16
    colors there is disagreement. Most terminal emulators are roughly
@@ -572,4 +567,41 @@ wchar_t Cell::debug_contents( void ) const
   } else {
     return contents.front();
   }
+}
+
+bool Cell::compare( const Cell &other ) const
+{
+  bool ret = false;
+
+  if ( !contents_match( other ) ) {
+    ret = true;
+    fprintf( stderr, "Contents: %lc vs. %lc\n",
+	     debug_contents(), other.debug_contents() );
+  }
+
+  if ( fallback != other.fallback ) {
+    ret = true;
+    fprintf( stderr, "fallback: %d vs. %d\n",
+	     fallback, other.fallback );
+  }
+
+  if ( width != other.width ) {
+    ret = true;
+    fprintf( stderr, "width: %d vs. %d\n",
+	     width, other.width );
+  }
+
+  if ( !(renditions == other.renditions) ) {
+    ret = true;
+    fprintf( stderr, "renditions: %s vs. %s\n",
+	     renditions.sgr().c_str(), other.renditions.sgr().c_str() );
+  }
+
+  if ( wrap != other.wrap ) {
+    ret = true;
+    fprintf( stderr, "wrap: %d vs. %d\n",
+	     wrap, other.wrap );
+  }
+
+  return ret;
 }

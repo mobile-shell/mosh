@@ -60,6 +60,8 @@ namespace Terminal {
     std::string diff_from( const Complete &existing ) const;
     void apply_string( std::string diff );
     bool operator==( const Complete &x ) const;
+
+    bool compare( const Complete &other ) const;
   };
 }
 

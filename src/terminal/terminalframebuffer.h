@@ -102,6 +102,8 @@ namespace Terminal {
       return ( is_blank() && other.is_blank() )
              || ( contents == other.contents );
     }
+
+    bool compare( const Cell &other ) const;
   };
 
   class Row {

@@ -77,6 +77,8 @@ namespace Network {
     string diff_from( const UserStream &existing ) const;
     void apply_string( string diff );
     bool operator==( const UserStream &x ) const { return actions == x.actions; }
+
+    bool compare( const UserStream & ) const { return false; }
   };
 }
 

@@ -143,6 +143,15 @@ void TransportSender<MyState>::tick( void )
     
   string diff = current_state.diff_from( assumed_receiver_state->state );
 
+  /* verify diff has round-trip identity (modulo Unicode fallback rendering) */
+  /*
+  MyState newstate( assumed_receiver_state->state );
+  newstate.apply_string( diff );
+  if ( current_state.compare( newstate ) ) {
+    fprintf( stderr, "Diff: %s\n", diff.c_str() );
+  }
+  */
+
   if ( diff.empty() && (now >= next_ack_time) ) {
     send_empty_ack();
     return;
