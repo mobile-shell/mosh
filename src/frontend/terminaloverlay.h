@@ -191,6 +191,8 @@ namespace Overlay {
 
     unsigned int send_interval;
 
+    int last_height, last_width;
+
   public:
     enum DisplayPreference {
       Always,
@@ -227,6 +229,7 @@ namespace Overlay {
 			       glitch_trigger( 0 ),
 			       last_quick_confirmation( 0 ),
 			       send_interval( 250 ),
+			       last_height( 0 ), last_width( 0 ),
 			       display_preference( Adaptive )
     {
     }

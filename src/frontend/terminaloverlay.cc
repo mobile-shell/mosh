@@ -388,6 +388,13 @@ void PredictionEngine::cull( const Framebuffer &fb )
     return;
   }
 
+  if ( (last_height != fb.ds.get_height())
+       || (last_width != fb.ds.get_width()) ) {
+    last_height = fb.ds.get_height();
+    last_width = fb.ds.get_width();
+    reset();
+  }
+
   uint64_t now = timestamp();
 
   /* control srtt_trigger with hysteresis */
