@@ -244,7 +244,7 @@ if test -z "$poll_LIBS"; then
 fi
 
 AC_MSG_CHECKING([whether pipe2(..., O_CLOEXEC) is supported])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
 #include <unistd.h>
 #include <fcntl.h>
 int pipefd[2];
