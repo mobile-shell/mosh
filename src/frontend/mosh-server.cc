@@ -83,6 +83,8 @@ void print_usage( const char *argv0 )
   fprintf( stderr, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
 }
 
+void print_motd( void );
+
 /* Simple spinloop */
 void spin( void )
 {
@@ -355,6 +357,11 @@ int run_server( const char *desired_ip, const char *desired_port,
 
     setsid(); /* may fail */
 
+    /* reopen stdio */
+    stdin = fdopen( STDIN_FILENO, "r" );
+    stdout = fdopen( STDOUT_FILENO, "w" );
+    stderr = fdopen( STDERR_FILENO, "w" );
+
     /* unblock signals */
     sigset_t signals_to_block;
     fatal_assert( sigemptyset( &signals_to_block ) == 0 );
@@ -383,6 +390,8 @@ int run_server( const char *desired_ip, const char *desired_port,
       perror( "unsetenv" );
       exit( 1 );
     }
+
+    print_motd();
 
     if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
       perror( "execvp" );
@@ -664,4 +673,29 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       }
     }
   }
+}
+
+/* OpenSSH prints the motd on startup, so we will too */
+void print_motd( void )
+{
+  FILE *motd = fopen( "/etc/motd", "r" );
+  if ( !motd ) {
+    return; /* don't report error on missing or forbidden motd */
+  }
+
+  const int BUFSIZE = 256;
+
+  char buffer[ BUFSIZE ];
+  while ( 1 ) {
+    size_t bytes_read = fread( buffer, 1, BUFSIZE, motd );
+    if ( bytes_read == 0 ) {
+      break; /* don't report error */
+    }
+    size_t bytes_written = fwrite( buffer, 1, bytes_read, stdout );
+    if ( bytes_written == 0 ) {
+      break;
+    }
+  }
+
+  fclose( motd );
 }
