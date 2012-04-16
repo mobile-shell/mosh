@@ -39,7 +39,10 @@
 #include <arpa/inet.h>
 #include <getopt.h>
 #include <time.h>
+
+#ifdef HAVE_PATHS_H
 #include <paths.h>
+#endif
 
 #include "sigfd.h"
 #include "completeterminal.h"
@@ -56,6 +59,10 @@
 
 #if FORKPTY_IN_LIBUTIL
 #include <libutil.h>
+#endif
+
+#ifndef _PATH_BSHELL
+#define _PATH_BSHELL "/bin/sh"
 #endif
 
 #include "networktransport.cc"
