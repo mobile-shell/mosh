@@ -235,7 +235,7 @@ PKG_CHECK_MODULES([TINFO], [tinfo], ,
      [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
         [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
          AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -ltinfo"])],
-        [AX_CHECK_LIBRARY([TINFO], [curses.h], [ncurses],
+        [AX_CHECK_LIBRARY([NCURSES], [curses.h], [ncurses],
            [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
             AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -lncurses"])],
            [AC_MSG_ERROR([Unable to find libtinfo or libncurses])])])])])
