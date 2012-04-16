@@ -214,7 +214,7 @@ int main( int argc, char *argv[] )
 	  i != locale_vars.end();
 	  i++ ) {
       char *env_string = strdup( i->c_str() );
-      assert( env_string );
+      fatal_assert( env_string );
       if ( 0 != putenv( env_string ) ) {
 	perror( "putenv" );
       }

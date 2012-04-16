@@ -44,6 +44,7 @@
 #include "user.h"
 #include "terminaloverlay.h"
 #include "locale_utils.h"
+#include "fatal_assert.h"
 
 const int ITERATIONS = 100000;
 
@@ -61,7 +62,7 @@ int main( void )
 
   /* Adopt native locale */
   set_native_locale();
-  assert( is_utf8_locale() );
+  fatal_assert( is_utf8_locale() );
 
   for ( int i = 0; i < ITERATIONS; i++ ) {
     /* type a character */
