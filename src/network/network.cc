@@ -266,11 +266,8 @@ void Connection::send( string s )
   ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
 
-  if ( server ) { return; } /* No need to spin; just treat as dropped packet. */
-
-  if ( bytes_sent == static_cast<ssize_t>( p.size() ) ) {
-    return;
-  } else {
+  if ( (!server) /* Server treats all sendto()s as successful. */
+       && (bytes_sent != static_cast<ssize_t>( p.size() )) ) {
     throw NetworkException( "sendto", errno );
   }
 }
