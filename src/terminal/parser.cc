@@ -116,7 +116,7 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
     } else if ( bytes_parsed > 0 ) {
       /* parsed into pwc, accept */
       assert( bytes_parsed <= buf_len );
-      memcpy( buf, buf + bytes_parsed, buf_len - bytes_parsed );
+      memmove( buf, buf + bytes_parsed, buf_len - bytes_parsed );
       buf_len = buf_len - bytes_parsed;
     } else {
       throw std::string( "Unknown return value from mbrtowc" );
