@@ -96,7 +96,7 @@ home directory.
 .B \-\-ssh=\fICOMMAND\fP
 OpenSSH command to remotely execute mosh-server on remote machine (default: "ssh")
 
-An alternate ssh port can be specified with, \fIe.g.\fP, \-\-ssh="ssh -p 2222".
+An alternate ssh port can be specified with, \fIe.g.\fP, \-\-ssh="ssh \-p 2222".
 
 .TP
 .B \-\-predict=\fIWHEN\fP
@@ -130,7 +130,8 @@ server. Otherwise, \fBmosh\fP will choose a port between 60000 and
 .SH ESCAPE SEQUENCE
 
 The escape sequence to shut down the connection is \fBCtrl-^ .\fP
-(typically typed with Ctrl-Shift-6, then a period).
+(typically typed with Ctrl-Shift-6, then a period). To send a literal
+Ctrl-^, type \fBCtrl-^ ^\fP.
 
 .SH ENVIRONMENT VARIABLES
 
