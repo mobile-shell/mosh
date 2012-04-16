@@ -243,18 +243,23 @@ if test -z "$poll_LIBS"; then
    AC_CHECK_LIB([poll], [poll], [poll_LIBS="-lpoll"])
 fi
 
+AC_MSG_CHECKING([whether pipe2(..., O_CLOEXEC) is supported])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+#include <unistd.h>
+#include <fcntl.h>
+int pipefd[2];
+]], [[(void) pipe2(pipefd, O_CLOEXEC);]])],
+  [AC_DEFINE([HAVE_PIPE2_CLOEXEC], [1],
+     [Define if pipe2(..., O_CLOEXEC) is available.])
+   AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])])
+
 AC_CHECK_DECLS([__builtin_bswap64, __builtin_ctz])
 
 AC_CHECK_DECL([mach_absolute_time],
   [AC_DEFINE([HAVE_MACH_ABSOLUTE_TIME], [1],
      [Define if mach_absolute_time is available.])],
   , [[#include <mach/mach_time.h>]])
-
-AC_CHECK_DECL([pipe2],
-  [AC_DEFINE([HAVE_PIPE2], [1],
-     [Define if pipe2 is available.])],
-  , [[#define _GNU_SOURCE
-      #include <unistd.h>]])
 
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
@@ -267,7 +272,7 @@ AC_CHECK_DECL([htobe64],
   [AC_CHECK_DECL([OSSwapHostToBigInt64],
      [AC_DEFINE([HAVE_OSX_SWAP], [1],
         [Define if OSSwapHostToBigInt64 and friends exist.])],
-     [AC_MSG_ERROR([Unable to find byte swapping functions])],
+     [AC_MSG_WARN([Unable to find byte swapping functions; using built-in routines.])],
      [[#include <libkern/OSByteOrder.h>]])],
   [[#if defined(HAVE_ENDIAN_H)
 #include <endian.h>
