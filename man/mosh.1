@@ -86,11 +86,17 @@ Command to run on remote host. By default, \fBmosh\fP executes a login shell.
 path to client helper on local machine (default: "mosh-client")
 
 .TP
-.B \-\-server=\fIPATH\fP
-path to server helper on remote machine (default: "mosh-server")
+.B \-\-server=\fICOMMAND\fP
+command to run server helper on remote machine (default: "mosh-server")
 
 The server helper is unprivileged and can be installed in the user's
 home directory.
+
+.TP
+.B \-\-ssh=\fICOMMAND\fP
+OpenSSH command to remotely execute mosh-server on remote machine (default: "ssh")
+
+An alternate ssh port can be specified with, \fIe.g.\fP, \-\-ssh="ssh -p 2222".
 
 .TP
 .B \-\-predict=\fIWHEN\fP
