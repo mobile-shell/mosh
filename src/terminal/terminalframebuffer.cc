@@ -366,7 +366,11 @@ void DrawState::resize( int s_width, int s_height )
 
   snap_cursor_to_border();
 
-  tabs.clear();
+  /* reset tab stops */
+  tabs = std::vector< bool >( width );
+  for ( int i = 0; i < width; i++ ) {
+    tabs[ i ] = ( (i % 8) == 0 );
+  }
 
   /* saved cursor will be snapped to border on restore */
 
