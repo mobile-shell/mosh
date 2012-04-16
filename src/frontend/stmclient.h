@@ -56,7 +56,7 @@ private:
   bool still_connecting( void )
   {
     /* Initially, network == NULL */
-    return ( !network ) || ( network->get_remote_state_num() == 0 );
+    return network && ( network->get_remote_state_num() == 0 );
   }
 
 public:
