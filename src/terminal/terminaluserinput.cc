@@ -16,33 +16,59 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <assert.h>
 #include "terminaluserinput.h"
 
 using namespace Terminal;
+using namespace std;
 
-std::string UserInput::input( const Parser::UserByte *act,
-			      bool application_mode_cursor_keys )
+string UserInput::input( const Parser::UserByte *act,
+			 bool application_mode_cursor_keys )
 {
-  char translated_str[ 2 ] = { act->c, 0 };
+  act->handled = true;
 
   /* The user will always be in application mode. If stm is not in
      application mode, convert user's cursor control function to an
      ANSI cursor control sequence */
 
-  /* We don't need lookahead to do this for 7-bit. */
+  /* We need to look ahead one byte in the SS3 state to see if
+     the next byte will be A, B, C, or D (cursor control keys). */
 
-  if ( (!application_mode_cursor_keys)
-       && (last_byte == 0x1b) /* ESC */
-       && (act->c == 'O') ) { /* ESC O = 7-bit SS3 = application mode */
-    translated_str[ 0 ] = '[';
+  switch ( state ) {
+  case Ground:
+    if ( act->c == 0x1b ) { /* ESC */
+      state = ESC;
+    }
+    return string( &act->c, 1 );
+    break;
+
+  case ESC:
+    if ( act->c == 'O' ) { /* ESC O = 7-bit SS3 */
+      state = SS3;
+      return string();
+    } else {
+      state = Ground;
+      return string( &act->c, 1 );
+    }
+    break;
+
+  case SS3:
+    state = Ground;
+    if ( (!application_mode_cursor_keys)
+	 && (act->c >= 'A')
+	 && (act->c <= 'D') ) {
+      char translated_cursor[ 2 ] = { '[', act->c };
+      return string( translated_cursor, 2 );
+    } else {
+      char original_cursor[ 2 ] = { 'O', act->c };
+      return string( original_cursor, 2 );
+    }
+    break;
   }
 
   /* This doesn't handle the 8-bit SS3 C1 control, which would be
      two octets in UTF-8. Fortunately nobody seems to send this. */
 
-  last_byte = act->c;
-
-  act->handled = true;
-
-  return std::string( translated_str, 1 );
+  assert( false );
+  return string();
 }

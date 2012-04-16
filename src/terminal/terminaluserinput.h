@@ -24,18 +24,25 @@
 
 namespace Terminal {
   class UserInput {
+  public:
+    enum UserInputState {
+      Ground,
+      ESC,
+      SS3
+    };
+
   private:
-    wchar_t last_byte;
+    UserInputState state;
 
   public:
     UserInput()
-      : last_byte( -1 )
+      : state( Ground )
     {}
 
     std::string input( const Parser::UserByte *act,
 		       bool application_mode_cursor_keys );
 
-    bool operator==( const UserInput &x ) const { return last_byte == x.last_byte; }
+    bool operator==( const UserInput &x ) const { return state == x.state; }
   };
 }
 
