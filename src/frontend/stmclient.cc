@@ -104,6 +104,12 @@ void STMClient::shutdown( void )
     perror( "tcsetattr" );
     exit( 1 );
   }
+
+  if ( still_connecting() ) {
+    fprintf( stderr, "mosh did not make a successful connection to %s:%d.\n", ip.c_str(), port );
+    fprintf( stderr, "Please verify that UDP port %d is not firewalled and can reach the server.\n\n", port );
+    fprintf( stderr, "(By default, mosh uses a UDP port between 60000 and 61000. The -p option\nselects a specific UDP port number.)\n" );
+  }
 }
 
 void STMClient::main_init( void )
@@ -378,10 +384,19 @@ void STMClient::main( void )
 	break;
       }
 
-      static const wstring connecting_notification( L"Connecting..." );
+      /* write diagnostic message if can't reach server */
+      wchar_t tmp[ 128 ];
+      swprintf( tmp, 128, L"Nothing received from server on UDP port %d.", port );
+      wstring connecting_notification( tmp );
+
       if ( still_connecting()
 	   && (!network->shutdown_in_progress())
 	   && (timestamp() - network->get_latest_remote_state().timestamp > 250) ) {
+	if ( timestamp() - network->get_latest_remote_state().timestamp > 15000 ) {
+	  if ( !network->shutdown_in_progress() ) {
+	    network->start_shutdown();
+	  }
+	}
 	overlays.get_notification_engine().set_notification_string( connecting_notification );
       } else if ( (network->get_remote_state_num() != 0)
 		  && (overlays.get_notification_engine().get_notification_string()
