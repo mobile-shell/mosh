@@ -74,7 +74,8 @@ void serve( int host_fd,
 	    ServerConnection &network );
 
 int run_server( const char *desired_ip, const char *desired_port,
-		const string &command_path, char *command_argv[], const int colors, bool verbose );
+		const string &command_path, char *command_argv[],
+		const int colors, bool verbose, bool with_motd );
 
 using namespace std;
 
@@ -196,6 +197,8 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  bool with_motd = false;
+
   /* Get shell */
   char *my_argv[ 2 ];
   if ( !command_argv ) {
@@ -228,6 +231,8 @@ int main( int argc, char *argv[] )
     my_argv[ 0 ] = strdup( shell_name.c_str() );
     my_argv[ 1 ] = NULL;
     command_argv = my_argv;
+
+    with_motd = true;
   }
 
   if ( command_path.empty() ) {
@@ -260,7 +265,7 @@ int main( int argc, char *argv[] )
   }
 
   try {
-    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose );
+    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd );
   } catch ( Network::NetworkException e ) {
     fprintf( stderr, "Network exception: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -273,7 +278,8 @@ int main( int argc, char *argv[] )
 }
 
 int run_server( const char *desired_ip, const char *desired_port,
-		const string &command_path, char *command_argv[], const int colors, bool verbose ) {
+		const string &command_path, char *command_argv[],
+		const int colors, bool verbose, bool with_motd ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -391,7 +397,9 @@ int run_server( const char *desired_ip, const char *desired_port,
       exit( 1 );
     }
 
-    print_motd();
+    if ( with_motd ) {
+      print_motd();
+    }
 
     if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
       perror( "execvp" );
