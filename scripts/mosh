@@ -38,6 +38,8 @@ my $ssh = 'ssh';
 my $help = undef;
 my $version = undef;
 
+my @cmdline = @ARGV;
+
 my $usage =
 qq{Usage: $0 [options] [--] [user@]host [command...]
         --client=PATH        mosh client on local machine
@@ -244,7 +246,7 @@ if ( $pid == 0 ) { # child
   # Now start real mosh client
   $ENV{ 'MOSH_KEY' } = $key;
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
-  exec {$client} ($client, $ip, $port);
+  exec {$client} ("$client @cmdline |", $ip, $port);
 }
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }
