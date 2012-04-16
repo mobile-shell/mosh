@@ -56,6 +56,8 @@ namespace Terminal {
 
     bool has_bce; /* erases result in cell filled with background color */
 
+    bool has_title; /* supports window title and icon name */
+
     int posterize_colors; /* downsample input colors >8 to [0..7] */
 
     void put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const;
