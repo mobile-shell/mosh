@@ -25,11 +25,13 @@
 
 #include <curses.h>
 #include <term.h>
+#include <stdlib.h>
+#include <string.h>
 
 using namespace Terminal;
 
 Display::Display( bool use_environment )
-  : has_ech( true ), has_bce( true ), posterize_colors( false )
+  : has_ech( true ), has_bce( true ), has_title( true ), posterize_colors( false )
 {
   if ( use_environment ) {
     int errret = -2;
@@ -68,6 +70,28 @@ Display::Display( bool use_environment )
       throw std::string( "Invalid terminfo boolean capability " ) + bce_name;
     } else if ( bce_val == 0 ) {
       has_bce = false;
+    }
+
+    /* Check if we can set the window title and icon name.  terminfo does not
+       have reliable information on this, so we hardcode a whitelist of
+       terminal type prefixes.  This is the list from Debian's default
+       screenrc, plus "screen" itself (which also covers tmux). */
+    static const char * const title_term_types[] = {
+      "xterm", "rxvt", "kterm", "Eterm", "screen"
+    };
+
+    has_title = false;
+    const char *term_type = getenv( "TERM" );
+    if ( term_type ) {
+      for ( size_t i = 0;
+            i < sizeof( title_term_types ) / sizeof( const char * );
+            i++ ) {
+        if ( 0 == strncmp( term_type, title_term_types[ i ],
+                           strlen( title_term_types[ i ] ) ) ) {
+          has_title = true;
+          break;
+        }
+      }
     }
 
     /* posterization disabled because server now only advertises
