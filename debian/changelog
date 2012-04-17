@@ -1,3 +1,9 @@
+mosh (1.1.94a-1) unstable; urgency=low
+
+  * Bump base version
+
+ -- Keith Winstein <keithw@mit.edu>  Tue, 17 Apr 2012 02:36:30 -0400
+
 mosh (1.1.94-2) unstable; urgency=low
 
   * Disable conflicting Debian/Ubuntu stack protector flags
