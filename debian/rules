@@ -12,6 +12,7 @@
 # Through Autoconf we set hardening flags that are actually more aggressive
 # than the Ubuntu defaults, but they conflict with same.
 export DEB_BUILD_MAINT_OPTIONS = hardening=-stackprotector
+-include /usr/share/dpkg/buildflags.mk
 
 %:
 	dh $@ --with autoreconf
