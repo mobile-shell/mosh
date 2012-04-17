@@ -113,6 +113,7 @@ namespace Crypto {
   };
 
   void disable_dumping_core( void );
+  void reenable_dumping_core( void );
 }
 
 #endif
