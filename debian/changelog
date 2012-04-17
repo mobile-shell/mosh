@@ -1,3 +1,39 @@
+mosh (1.1.94-1) unstable; urgency=low
+
+  * Release pre-candidate for mosh 1.2
+
+  * Remove Boost as a dependency (Keegan McAllister)
+
+  * More friendly error messages in some common cases
+
+  * Now passes locale-related env vars over the connection
+
+  * Remove skalibs as a depenency on Debian/Ubuntu (Keegan McAllister)
+
+  * Fix startup script to no longer hang on some Macs (Jay Freeman)
+
+  * Fix argument parsing on FreeBSD (Daniel O'Connor)
+
+  * Use binary hardening flags where available (Keegan McAllister)
+
+  * Several improvements to terminal emulation correctness
+
+  * Now prints message of the day (motd)
+
+  * Allows core dumps of subsidiary applications if desired
+
+  * Cleaner execution of subsidiary shell (Jay Freeman)
+
+  * Fix leaking utmp entries (Ed Schouten)
+
+  * Add support for Cygwin (Joshua Pollack)
+
+  * Add support for RHEL/CentOS 5 (Reini Urban)
+
+  * Use less CPU when server's network is down
+
+  * Disable posterization of 256colors to 8 ANSI colors
+
 mosh (1.1.3a-1) unstable; urgency=low
 
   * Support 16-color escape sequences (Anders Kaseorg)
