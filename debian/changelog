@@ -1,3 +1,9 @@
+mosh (1.1.94b-1) unstable; urgency=low
+
+  * Improved Debian rule to disable conflicting stack protector flags
+
+ -- Keith Winstein <keithw@mit.edu>  Tue, 17 Apr 2012 03:24:23 -0400
+
 mosh (1.1.94a-1) unstable; urgency=low
 
   * Bump base version
