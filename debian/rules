@@ -11,7 +11,7 @@
 
 # Through Autoconf we set hardening flags that are actually more aggressive
 # than the Ubuntu defaults, but they conflict with same.
-export DEB_BUILD_HARDENING_STACKPROTECTOR=0
+export DEB_BUILD_MAINT_OPTIONS = hardening=-stackprotector
 
 %:
 	dh $@ --with autoreconf
