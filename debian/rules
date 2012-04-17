@@ -9,6 +9,10 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+# Through Autoconf we set hardening flags that are actually more aggressive
+# than the Ubuntu defaults, but they conflict with same.
+export DEB_BUILD_HARDENING_STACKPROTECTOR=0
+
 %:
 	dh $@ --with autoreconf
 
