@@ -34,6 +34,8 @@ mosh (1.1.94-1) unstable; urgency=low
 
   * Disable posterization of 256colors to 8 ANSI colors
 
+ -- Keith Winstein <keithw@mit.edu>  Mon, 16 Apr 2012 21:16:28 -0400
+
 mosh (1.1.3a-1) unstable; urgency=low
 
   * Support 16-color escape sequences (Anders Kaseorg)
