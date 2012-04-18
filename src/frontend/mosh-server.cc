@@ -295,7 +295,9 @@ int run_server( const char *desired_ip, const char *desired_port,
   Network::UserStream blank;
   ServerConnection *network = new ServerConnection( terminal, blank, desired_ip, desired_port );
 
-  /* network.set_verbose(); */
+  if ( verbose ) {
+    network->set_verbose();
+  }
 
   printf( "\nMOSH CONNECT %d %s\n", network->port(), network->get_key().c_str() );
   fflush( stdout );
