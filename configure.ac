@@ -143,18 +143,6 @@ AC_ARG_ENABLE([examples],
   [build_examples="no"])
 AM_CONDITIONAL([BUILD_EXAMPLES], [test x"$build_examples" != xno])
 
-# Checks for libraries.
-AC_ARG_WITH([utempter],
-  [AS_HELP_STRING([--with-utempter], [write utmp entries using libutempter @<:@check@:>@])],
-  [with_utempter="$withval"],
-  [with_utempter="check"])
-AS_IF([test x"$with_utempter" != xno],
-  [AC_SEARCH_LIBS([utempter_remove_record], [utempter],
-    [AC_DEFINE([HAVE_UTEMPTER], [1], [Define if libutempter is available.])],
-    [AS_IF([test x"$with_utempter" = xcheck],
-      [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])],
-      [AC_MSG_ERROR([--with-utempter was given but libutempter was not found.])])])])
-
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
 AC_ARG_WITH([skalibs],
