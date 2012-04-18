@@ -31,9 +31,6 @@
 #include <pwd.h>
 #include <typeinfo>
 #include <signal.h>
-#ifdef HAVE_UTEMPTER
-#include <utempter.h>
-#endif
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -74,8 +71,7 @@ void serve( int host_fd,
 	    ServerConnection &network );
 
 int run_server( const char *desired_ip, const char *desired_port,
-		const string &command_path, char *command_argv[],
-		const int colors, bool verbose, bool with_motd );
+		char **command, const int colors, bool verbose );
 
 using namespace std;
 
@@ -120,8 +116,7 @@ int main( int argc, char *argv[] )
 
   char *desired_ip = NULL;
   char *desired_port = NULL;
-  string command_path;
-  char **command_argv = NULL;
+  char **command = NULL;
   int colors = 0;
   bool verbose = false; /* don't close stdin/stdout/stderr */
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
@@ -131,7 +126,7 @@ int main( int argc, char *argv[] )
   for ( int i = 0; i < argc; i++ ) {
     if ( 0 == strcmp( argv[ i ], "--" ) ) { /* -- is mandatory */
       if ( i != argc - 1 ) {
-	command_argv = argv + i + 1;
+	command = argv + i + 1;
       }
       argc = i; /* rest of options before -- */
       break;
@@ -197,48 +192,6 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  bool with_motd = false;
-
-  /* Get shell */
-  char *my_argv[ 2 ];
-  if ( !command_argv ) {
-    /* get shell name */
-    struct passwd *pw = getpwuid( geteuid() );
-    if ( pw == NULL ) {
-      perror( "getpwuid" );
-      exit( 1 );
-    }
-
-    string shell_path( pw->pw_shell );
-    if ( shell_path.empty() ) { /* empty shell means Bourne shell */
-      shell_path = _PATH_BSHELL;
-    }
-
-    command_path = shell_path;
-
-    string shell_name;
-
-    size_t shell_slash( shell_path.rfind('/') );
-    if ( shell_slash == string::npos ) {
-      shell_name = shell_path;
-    } else {
-      shell_name = shell_path.substr(shell_slash + 1);
-    }
-
-    /* prepend '-' to make login shell */
-    shell_name = '-' + shell_name;
-
-    my_argv[ 0 ] = strdup( shell_name.c_str() );
-    my_argv[ 1 ] = NULL;
-    command_argv = my_argv;
-
-    with_motd = true;
-  }
-
-  if ( command_path.empty() ) {
-    command_path = command_argv[0];
-  }
-
   /* Adopt implementation locale */
   set_native_locale();
   if ( !is_utf8_locale() ) {
@@ -265,7 +218,7 @@ int main( int argc, char *argv[] )
   }
 
   try {
-    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd );
+    return run_server( desired_ip, desired_port, command, colors, verbose );
   } catch ( Network::NetworkException e ) {
     fprintf( stderr, "Network exception: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -278,8 +231,7 @@ int main( int argc, char *argv[] )
 }
 
 int run_server( const char *desired_ip, const char *desired_port,
-		const string &command_path, char *command_argv[],
-		const int colors, bool verbose, bool with_motd ) {
+		char **command, const int colors, bool verbose ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -350,6 +302,44 @@ int run_server( const char *desired_ip, const char *desired_port,
     fclose( stderr );
   }
 
+  /* Get shell */
+  char *my_argv[ 6 ];
+  if ( !command ) {
+    const char *login = "/usr/bin/login";
+    if ( access( "/bin/login", X_OK ) == 0 ) {
+      login = "/bin/login";
+    }
+
+    char *user = getenv( "LOGNAME" );
+    uid_t uid = getuid();
+
+    struct passwd * passwd;
+
+    if ( user ) {
+      passwd = getpwnam( user );
+      if ( passwd->pw_uid != uid ) {
+        user = NULL;
+      }
+    }
+
+    if ( !user ) {
+      passwd = getpwuid( uid );
+      user = passwd->pw_name;
+    }
+
+    char host[ 1024 ];
+    snprintf( host, 1024, "mosh:user.%u", getpid() );
+
+    my_argv[ 0 ] = strdup( login );
+    my_argv[ 1 ] = strdup( "-f" );
+    my_argv[ 2 ] = strdup( "-h" );
+    my_argv[ 3 ] = strdup( host );
+    my_argv[ 4 ] = strdup( user );
+    my_argv[ 5 ] = NULL;
+
+    command = my_argv;
+  }
+
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, &child_termios, &window_size );
 
@@ -360,6 +350,11 @@ int run_server( const char *desired_ip, const char *desired_port,
 
   if ( child == 0 ) {
     /* child */
+
+    if ( setuid( 0 ) )
+      abort();
+    if ( setgid( 0 ) )
+      abort();
 
     setsid(); /* may fail */
 
@@ -397,25 +392,19 @@ int run_server( const char *desired_ip, const char *desired_port,
       exit( 1 );
     }
 
-    if ( with_motd ) {
-      print_motd();
-    }
-
     Crypto::reenable_dumping_core();
 
-    if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
+    if ( execvp( command[0], command ) < 0 ) {
       perror( "execvp" );
       _exit( 1 );
     }
   } else {
     /* parent */
 
-    #ifdef HAVE_UTEMPTER
-    /* make utmp entry */
-    char tmp[ 64 ];
-    snprintf( tmp, 64, "mosh [%d]", getpid() );
-    utempter_add_record( master, tmp );
-    #endif
+    if ( setuid( getuid() ) )
+      abort();
+    if ( setgid( getgid() ) )
+      abort();
 
     try {
       serve( master, terminal, *network );
@@ -426,10 +415,6 @@ int run_server( const char *desired_ip, const char *desired_port,
       fprintf( stderr, "Crypto exception: %s\n",
 	       e.text.c_str() );
     }
-
-    #ifdef HAVE_UTEMPTER
-    utempter_remove_record( master );
-    #endif
 
     if ( close( master ) < 0 ) {
       perror( "close" );
@@ -469,13 +454,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   pollfds[ 2 ].events = POLLIN;
 
   uint64_t last_remote_num = network.get_remote_state_num();
-
-  #ifdef HAVE_UTEMPTER
-  bool connected_utmp = false;
-
-  struct in_addr saved_addr;
-  saved_addr.s_addr = 0;
-  #endif
 
   while ( 1 ) {
     try {
@@ -544,22 +522,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	    break;
 	  }
-
-	  #ifdef HAVE_UTEMPTER
-	  /* update utmp entry if we have become "connected" */
-	  if ( (!connected_utmp)
-	       || ( saved_addr.s_addr != network.get_remote_ip().s_addr ) ) {
-	    utempter_remove_record( host_fd );
-
-	    saved_addr = network.get_remote_ip();
-
-	    char tmp[ 64 ];
-	    snprintf( tmp, 64, "%s via mosh [%d]", inet_ntoa( saved_addr ), getpid() );
-	    utempter_add_record( host_fd, tmp );
-
-	    connected_utmp = true;
-	  }
-	  #endif
 	}
       }
       
@@ -642,21 +604,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	break;
       }
 
-      #ifdef HAVE_UTEMPTER
-      /* update utmp if has been more than 10 seconds since heard from client */
-      if ( connected_utmp ) {
-	if ( time_since_remote_state > 10000 ) {
-	  utempter_remove_record( host_fd );
-
-	  char tmp[ 64 ];
-	  snprintf( tmp, 64, "mosh [%d]", getpid() );
-	  utempter_add_record( host_fd, tmp );
-
-	  connected_utmp = false;
-	}
-      }
-      #endif
-
       if ( terminal.set_echo_ack( now ) ) {
 	/* update client with new echo ack */
 	if ( !network.shutdown_in_progress() ) {
@@ -683,29 +630,4 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       }
     }
   }
-}
-
-/* OpenSSH prints the motd on startup, so we will too */
-void print_motd( void )
-{
-  FILE *motd = fopen( "/etc/motd", "r" );
-  if ( !motd ) {
-    return; /* don't report error on missing or forbidden motd */
-  }
-
-  const int BUFSIZE = 256;
-
-  char buffer[ BUFSIZE ];
-  while ( 1 ) {
-    size_t bytes_read = fread( buffer, 1, BUFSIZE, motd );
-    if ( bytes_read == 0 ) {
-      break; /* don't report error */
-    }
-    size_t bytes_written = fwrite( buffer, 1, bytes_read, stdout );
-    if ( bytes_written == 0 ) {
-      break;
-    }
-  }
-
-  fclose( motd );
 }
