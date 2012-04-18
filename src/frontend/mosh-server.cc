@@ -321,6 +321,12 @@ int run_server( const char *desired_ip, const char *desired_port,
   if ( the_pid < 0 ) {
     perror( "fork" );
   } else if ( the_pid > 0 ) {
+
+#ifdef __APPLE__
+    /* XXX: horrible race condition */
+    sleep(2);
+#endif
+
     _exit( 0 );
   }
 
