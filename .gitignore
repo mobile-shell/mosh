@@ -5,6 +5,8 @@
 .deps
 Makefile
 Makefile.in
+.cproject
+.project
 
 /INSTALL
 /aclocal.m4
