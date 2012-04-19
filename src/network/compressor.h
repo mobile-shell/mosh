@@ -14,8 +14,8 @@ namespace Network {
     Compressor() : buffer( NULL ) { buffer = new unsigned char[ BUFFER_SIZE ]; }
     ~Compressor() { if ( buffer ) { delete[] buffer; } }
 
-    std::string compress_str( const std::string input );
-    std::string uncompress_str( const std::string input );
+    std::string compress_str( const std::string &input );
+    std::string uncompress_str( const std::string &input );
 
     /* unused */
     Compressor( const Compressor & );

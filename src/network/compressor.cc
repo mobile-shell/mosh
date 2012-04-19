@@ -6,7 +6,7 @@
 using namespace Network;
 using namespace std;
 
-string Compressor::compress_str( const string input )
+string Compressor::compress_str( const string &input )
 {
   long unsigned int len = BUFFER_SIZE;
   dos_assert( Z_OK == compress( buffer, &len,
@@ -15,7 +15,7 @@ string Compressor::compress_str( const string input )
   return string( reinterpret_cast<char *>( buffer ), len );
 }
 
-string Compressor::uncompress_str( const string input )
+string Compressor::uncompress_str( const string &input )
 {
   long unsigned int len = BUFFER_SIZE;
   dos_assert( Z_OK == uncompress( buffer, &len,
