@@ -39,6 +39,7 @@
 #include <arpa/inet.h>
 #include <getopt.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #ifdef HAVE_PATHS_H
 #include <paths.h>
@@ -85,6 +86,8 @@ void print_usage( const char *argv0 )
 }
 
 void print_motd( void );
+void chdir_homedir( void );
+bool motd_hushed( void );
 
 /* Simple spinloop */
 void spin( void )
@@ -399,7 +402,9 @@ int run_server( const char *desired_ip, const char *desired_port,
       exit( 1 );
     }
 
-    if ( with_motd ) {
+    chdir_homedir();
+
+    if ( with_motd && (!motd_hushed()) ) {
       print_motd();
     }
 
@@ -710,4 +715,28 @@ void print_motd( void )
   }
 
   fclose( motd );
+}
+
+void chdir_homedir( void )
+{
+  struct passwd *pw = getpwuid( geteuid() );
+  if ( pw == NULL ) {
+    perror( "getpwuid" );
+    /* non-fatal */
+  }
+
+  if ( chdir( pw->pw_dir ) < 0 ) {
+    perror( "chdir" );
+  }
+
+  if ( setenv( "PWD", pw->pw_dir, 1 ) < 0 ) {
+    perror( "setenv" );
+  }
+}
+
+bool motd_hushed( void )
+{
+  /* must be in home directory already */
+  struct stat buf;
+  return (0 == lstat( ".hushlogin", &buf ));
 }
