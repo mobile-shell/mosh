@@ -764,6 +764,8 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
   init_cursor( fb );
   cursor().col = 0;
   if ( cursor().row == fb.ds.get_height() - 1 ) {
+    /* Don't try to predict scroll until we have versioned cell predictions */
+    /*
     for ( overlays_type::iterator i = overlays.begin();
           i != overlays.end();
           i++ ) {
@@ -776,6 +778,7 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
 	}
       }
     }
+    */
 
     /* make blank prediction for last row */
     ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
