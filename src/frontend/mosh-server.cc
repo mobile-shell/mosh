@@ -245,6 +245,10 @@ int main( int argc, char *argv[] )
   /* Adopt implementation locale */
   set_native_locale();
   if ( !is_utf8_locale() ) {
+    /* save details for diagnostic */
+    LocaleVar native_ctype = get_ctype();
+    string native_charset( locale_charset() );
+
     /* apply locale-related environment variables from client */
     clear_locale_variables();
     for ( list<string>::const_iterator i = locale_vars.begin();
@@ -260,8 +264,12 @@ int main( int argc, char *argv[] )
     /* check again */
     set_native_locale();
     if ( !is_utf8_locale() ) {
+      LocaleVar client_ctype = get_ctype();
+      string client_charset( locale_charset() );
+
       fprintf( stderr, "mosh-server needs a UTF-8 native locale to run.\n\n" );
-      fprintf( stderr, "Unfortunately, the locale environment variables currently specify\nthe character set \"%s\".\n\n", locale_charset() );
+      fprintf( stderr, "Unfortunately, the local environment (%s) specifies\nthe character set \"%s\",\n\n", native_ctype.str().c_str(), native_charset.c_str() );
+      fprintf( stderr, "The client-supplied environment (%s) specifies\nthe character set \"%s\".\n\n", client_ctype.str().c_str(), client_charset.c_str() );
       int unused __attribute((unused)) = system( "locale" );
       exit( 1 );
     }

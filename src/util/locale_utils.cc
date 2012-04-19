@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <locale.h>
+#include <errno.h>
+#include <string>
 
 #if HAVE_LANGINFO_H
 #include <langinfo.h>
@@ -29,9 +31,34 @@
 
 #include "locale_utils.h"
 
+using namespace std;
+
+const string LocaleVar::str( void ) const
+{
+  if ( name.empty() ) {
+    return string( "[no charset variables]" );
+  } else {
+    return name + "=" + value;
+  }
+}
+
+const LocaleVar get_ctype( void )
+{
+  /* Reimplement the search logic, just for diagnostics */
+  if ( const char *all = getenv( "LC_ALL" ) ) {
+    return LocaleVar( "LC_ALL", all );
+  } else if ( const char *ctype = getenv( "LC_CTYPE" ) ) {
+    return LocaleVar( "LC_CTYPE", ctype );
+  } else if ( const char *lang = getenv( "LANG" ) ) {
+    return LocaleVar( "LANG", lang );
+  } else {
+    return LocaleVar( "", "" );
+  }
+}
+
 const char *locale_charset( void )
 {
-  static const char ASCII_name[] = "US-ASCII (ANSI_X3.4-1968)";
+  static const char ASCII_name[] = "US-ASCII";
 
   /* Produce more pleasant name of US-ASCII */
   const char *ret = nl_langinfo( CODESET );
@@ -55,7 +82,18 @@ bool is_utf8_locale( void ) {
 void set_native_locale( void ) {
   /* Adopt native locale */
   if ( NULL == setlocale( LC_ALL, "" ) ) {
-    perror( "setlocale" );
+    int saved_errno = errno;
+    if ( saved_errno == ENOENT ) {
+      LocaleVar ctype( get_ctype() );
+      fprintf( stderr, "The locale requested by %s isn't available here.\n", ctype.str().c_str() );
+      if ( !ctype.name.empty() ) {
+	fprintf( stderr, "Running `locale-gen %s' may be necessary.\n\n",
+		 ctype.value.c_str() );
+      }
+    } else {
+      errno = saved_errno;
+      perror( "setlocale" );
+    }
   }
 }
 
