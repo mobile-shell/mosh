@@ -172,7 +172,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   if ( desired_ip_addr != INADDR_ANY ) {
     try {
       if ( try_bind( sock, desired_ip_addr, desired_port_no ) ) { return; }
-    } catch ( NetworkException e ) {
+    } catch ( const NetworkException& e ) {
       struct in_addr sin_addr;
       sin_addr.s_addr = desired_ip_addr;
       fprintf( stderr, "Error binding to IP %s: %s: %s\n",
@@ -184,7 +184,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   /* now try any local interface */
   try {
     if ( try_bind( sock, INADDR_ANY, desired_port_no ) ) { return; }
-  } catch ( NetworkException e ) {
+  } catch ( const NetworkException& e ) {
     fprintf( stderr, "Error binding to any interface: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
     throw; /* this time it's fatal */
