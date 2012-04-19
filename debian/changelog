@@ -1,3 +1,19 @@
+mosh (1.1.94d-1) unstable; urgency=low
+
+  * More helpful locale-related error messages
+
+  * Improve prediction transparency
+
+  * Honor .hushlogin
+
+  * Set PWD to deal with home directories that are symlinks
+
+  * Back off overlay frame rate when all timing tests have fired (saves CPU)
+
+  * -v flag now makes server more verbose
+
+ -- Keith Winstein <keithw@mit.edu>  Thu, 19 Apr 2012 02:44:48 -0400
+
 mosh (1.1.94c-1) unstable; urgency=low
 
   * Further improved Debian rule to disable conflicting stack protector flags
