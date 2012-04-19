@@ -285,8 +285,10 @@ int OverlayManager::wait_time( void )
     next_expiry = 1000;
   }
 
-  if ( predictions.active() && ( next_expiry > 20 ) ) {
-    next_expiry = 20;
+  if ( predictions.timing_tests_necessary()
+       && predictions.active()
+       && ( next_expiry > 50 ) ) {
+    next_expiry = 50;
   }
 
   return next_expiry;

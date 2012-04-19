@@ -214,6 +214,11 @@ namespace Overlay {
 
     bool active( void ) const;
 
+    bool timing_tests_necessary( void ) const {
+      /* Are there any timing-based triggers that haven't fired yet? */
+      return !( glitch_trigger && flagging );
+    }
+
     void set_local_frame_sent( uint64_t x ) { local_frame_sent = x; }
     void set_local_frame_acked( uint64_t x ) { local_frame_acked = x; }
     void set_local_frame_late_acked( uint64_t x ) { local_frame_late_acked = x; }
