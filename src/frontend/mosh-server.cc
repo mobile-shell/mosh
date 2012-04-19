@@ -303,7 +303,7 @@ int run_server( const char *desired_ip, const char *desired_port,
   }
 
   /* Get shell */
-  char *my_argv[ 6 ];
+  char *my_argv[ 7 ];
   if ( !command ) {
     const char *login = "/usr/bin/login";
     if ( access( "/bin/login", X_OK ) == 0 ) {
@@ -334,8 +334,9 @@ int run_server( const char *desired_ip, const char *desired_port,
     my_argv[ 1 ] = strdup( "-f" );
     my_argv[ 2 ] = strdup( "-h" );
     my_argv[ 3 ] = strdup( host );
-    my_argv[ 4 ] = strdup( user );
-    my_argv[ 5 ] = NULL;
+    my_argv[ 4 ] = strdup( "--" );
+    my_argv[ 5 ] = strdup( user );
+    my_argv[ 6 ] = NULL;
 
     command = my_argv;
   }
