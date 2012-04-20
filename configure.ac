@@ -264,8 +264,7 @@ AC_CACHE_CHECK([whether poll can handle ptys],
   AS_IF([test "x$poll_LIBS" != "x"],
     [LIBS="$LIBS $poll_LIBS"])
 
-  AS_IF([test "x$FORKPTY_IN_LIBUTIL" != "x"],
-    [LIBS="$LIBS -lutil"])
+  LIBS="$LIBS -lutil"
 
   AC_RUN_IFELSE([AC_LANG_PROGRAM([[
 #include <unistd.h>
@@ -275,6 +274,9 @@ AC_CACHE_CHECK([whether poll can handle ptys],
 #include <pty.h>
 #elif HAVE_UTIL_H
 #include <util.h>
+#endif
+#if FORKPTY_IN_LIBUTIL
+#include <libutil.h>
 #endif
 #include <sys/poll.h>
 
