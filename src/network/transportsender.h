@@ -39,7 +39,7 @@ namespace Network {
   {
   private:
     /* timing parameters */
-    static const int SEND_INTERVAL_MIN = 20; /* ms between frames */
+    static const int SEND_INTERVAL_MIN = 10; /* ms between frames */
     static const int SEND_INTERVAL_MAX = 250; /* ms between frames */
     static const int ACK_INTERVAL = 3000; /* ms between empty acks */
     static const int ACK_DELAY = 100; /* ms before delayed ack */
