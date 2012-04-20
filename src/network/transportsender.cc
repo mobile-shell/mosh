@@ -42,7 +42,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     shutdown_tries( 0 ),
     ack_num( 0 ),
     pending_data_ack( false ),
-    SEND_MINDELAY( 15 ),
+    SEND_MINDELAY( 8 ),
     last_heard( 0 ),
     prng()
 {
