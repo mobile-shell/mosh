@@ -240,6 +240,11 @@ PKG_CHECK_MODULES([TINFO], [tinfo], ,
             AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -lncurses"])],
            [AC_MSG_ERROR([Unable to find libtinfo or libncurses])])])])])
 
+AC_CHECK_DECL([forkpty],
+  [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
+     [Define if libutil.h necessary for forkpty().])],
+  , [[#include <libutil.h>]])
+
 AC_ARG_VAR([poll_CFLAGS], [C compiler flags for poll])
 AC_ARG_VAR([poll_LIBS], [linker flags for poll])
 AS_IF([test -z "$poll_LIBS"], [
@@ -258,6 +263,9 @@ AC_CACHE_CHECK([whether poll can handle ptys],
 
   AS_IF([test "x$poll_LIBS" != "x"],
     [LIBS="$LIBS $poll_LIBS"])
+
+  AS_IF([test "x$FORKPTY_IN_LIBUTIL" != "x"],
+    [LIBS="$LIBS -lutil"])
 
   AC_RUN_IFELSE([AC_LANG_PROGRAM([[
 #include <unistd.h>
@@ -317,11 +325,6 @@ AC_CHECK_DECL([mach_absolute_time],
   [AC_DEFINE([HAVE_MACH_ABSOLUTE_TIME], [1],
      [Define if mach_absolute_time is available.])],
   , [[#include <mach/mach_time.h>]])
-
-AC_CHECK_DECL([forkpty],
-  [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
-     [Define if libutil.h necessary for forkpty().])],
-  , [[#include <libutil.h>]])
 
 AC_CHECK_DECL([htobe64],
   [AC_DEFINE([HAVE_HTOBE64], [1],
