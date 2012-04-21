@@ -473,18 +473,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   fatal_assert( sigfd_trap( SIGTERM ) == 0 );
   fatal_assert( sigfd_trap( SIGINT ) == 0 );
 
-  /* prepare to poll for events */
-  struct pollfd pollfds[ 3 ];
-
-  pollfds[ 0 ].fd = network.fd();
-  pollfds[ 0 ].events = POLLIN;
-
-  pollfds[ 1 ].fd = host_fd;
-  pollfds[ 1 ].events = POLLIN;
-
-  pollfds[ 2 ].fd = signal_fd;
-  pollfds[ 2 ].events = POLLIN;
-
   uint64_t last_remote_num = network.get_remote_state_num();
 
   #ifdef HAVE_UTEMPTER
@@ -504,7 +492,39 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
         poll_timeout = min( poll_timeout, timeout_if_no_client );
       }
 
-      int active_fds = poll( pollfds, 3, poll_timeout );
+      struct timeval poll_timeval;
+      poll_timeval.tv_sec = poll_timeout % 1000 / 1000;
+      poll_timeval.tv_usec = poll_timeout % 1000 * 1000;
+
+      struct timeval *poll_pointer = NULL;
+      if ( poll_timeout > 0 ) {
+	poll_pointer = &poll_timeval;
+      }
+
+      fd_set readfds;
+      FD_ZERO( &readfds );
+
+      fd_set exceptfds;
+      FD_ZERO( &exceptfds );
+
+      int maxfd = -1;
+
+      FD_SET( network.fd(), &readfds );
+      FD_SET( network.fd(), &exceptfds );
+      if ( maxfd < network.fd() )
+	maxfd = network.fd();
+
+      FD_SET( host_fd, &readfds );
+      FD_SET( host_fd, &exceptfds );
+      if ( maxfd < host_fd )
+	maxfd = host_fd;
+
+      FD_SET( signal_fd, &readfds );
+      FD_SET( signal_fd, &exceptfds );
+      if ( maxfd < signal_fd )
+	maxfd = signal_fd;
+
+      int active_fds = select(maxfd + 1, &readfds, NULL, &exceptfds, poll_pointer );
       if ( active_fds < 0 && errno == EINTR ) {
 	continue;
       } else if ( active_fds < 0 ) {
@@ -515,7 +535,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       now = Network::timestamp();
       uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
 
-      if ( pollfds[ 0 ].revents & POLLIN ) {
+      if ( FD_ISSET( network.fd(), &readfds ) ) {
 	/* packet received from the network */
 	network.recv();
 	
@@ -580,38 +600,35 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
       
-      if ( pollfds[ 1 ].revents & POLLIN ) {
+      if ( FD_ISSET( host_fd, &readfds ) ) {
 	/* input from the host needs to be fed to the terminal */
 	const int buf_size = 16384;
 	char buf[ buf_size ];
 	
 	/* fill buffer if possible */
-	ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
-	if ( bytes_read == 0 ) { /* EOF */
+	ssize_t bytes_read = read( host_fd, buf, buf_size );
+	if ( bytes_read <= 0 ) { /* EOF */
 	  if ( !network.has_remote_addr() ) {
 	    spin(); /* let 60-second timer take care of this */
 	  } else if ( !network.shutdown_in_progress() ) {
 	    network.start_shutdown();
 	  }
-	} else if ( bytes_read < 0 ) {
-	  perror( "read" );
-	  return;
-	}
-	
-	string terminal_to_host = terminal.act( string( buf, bytes_read ) );
-	
-	/* update client with new state of terminal */
-	if ( !network.shutdown_in_progress() ) {
-	  network.set_current_state( terminal );
-	}
+	} else {
+	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
 
-	/* write any writeback octets back to the host */
-	if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	  break;
+	  /* update client with new state of terminal */
+	  if ( !network.shutdown_in_progress() ) {
+	    network.set_current_state( terminal );
+	  }
+
+	  /* write any writeback octets back to the host */
+	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
+	    break;
+	  }
 	}
       }
 
-      if ( pollfds[ 2 ].revents & POLLIN ) {
+      if ( FD_ISSET( signal_fd, &readfds ) ) {
 	/* shutdown signal */
 	int signo = sigfd_read();
 	if ( signo == 0 ) {
@@ -628,14 +645,12 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
       
-      if ( (pollfds[ 0 ].revents)
-	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+      if ( FD_ISSET( network.fd(), &exceptfds ) ) {
 	/* network problem */
 	break;
       }
 
-      if ( (pollfds[ 1 ].revents)
-	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+      if ( FD_ISSET( host_fd, &exceptfds ) ) {
 	/* host problem */
 	if ( network.has_remote_addr() ) {
 	  network.start_shutdown();
