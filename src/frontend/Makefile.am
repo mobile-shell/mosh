@@ -3,6 +3,10 @@ if COND_THIRD_LIBSTDDJB
   STDDJB_LDFLAGS += $(top_builddir)/third/libstddjb/libstddjb.a
   STDDJB_CPPFLAGS += -I$(top_srcdir)/third/libstddjb
 endif
+if COND_THIRD_POLL
+  poll_LIBS += $(top_builddir)/third/poll/libpoll.a
+  poll_CFLAGS += -I$(top_srcdir)/third/poll
+endif
 
 AM_CPPFLAGS = -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I../protobufs -I$(srcdir)/../util $(STDDJB_CPPFLAGS) $(TINFO_CFLAGS) $(protobuf_CFLAGS) $(poll_CFLAGS)
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)

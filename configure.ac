@@ -304,11 +304,6 @@ if ( pollfds[ 0 ].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
   LIBS="$save_LIBS"
 ])
 AM_CONDITIONAL([COND_THIRD_POLL], [test "x$ac_cv_poll_pty" = "xno"])
-AM_COND_IF([COND_THIRD_POLL],
-  [
-    poll_CFLAGS="-I\$(top_srcdir)/third/poll"
-    poll_LIBS="\$(top_builddir)/third/poll/libpoll.a"
-  ])
 
 AC_MSG_CHECKING([whether pipe2(..., O_CLOEXEC) is supported])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE

@@ -3,6 +3,10 @@ if COND_THIRD_LIBSTDDJB
   STDDJB_LDFLAGS += $(top_builddir)/third/libstddjb/libstddjb.a
   STDDJB_CPPFLAGS += -I$(top_srcdir)/third/libstddjb
 endif
+if COND_THIRD_POLL
+  poll_LIBS += $(top_builddir)/third/poll/libpoll.a
+  poll_CFLAGS += -I$(top_srcdir)/third/poll
+endif
 
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
 AM_LDFLAGS  = $(HARDEN_LDFLAGS)
