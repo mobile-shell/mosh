@@ -1,3 +1,13 @@
+mosh (1.1.94e-1) unstable; urgency=low
+
+  * Improve responsiveness on fast links
+
+  * Include poll implementation for Mac OS X
+
+  * Use protobufs' zero-copy gzip stream
+
+ -- Keith Winstein <keithw@mit.edu>  Sun, 22 Apr 2012 16:59:25 -0400
+
 mosh (1.1.94d-1) unstable; urgency=low
 
   * More helpful locale-related error messages
