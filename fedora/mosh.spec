@@ -11,6 +11,7 @@ Source0:	https://github.com/downloads/keithw/mosh/mosh-%{version}.tar.gz
 BuildRequires:	protobuf-compiler
 BuildRequires:	protobuf-devel
 BuildRequires:	libutempter-devel
+BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
 Requires:	openssh-clients
 Requires:	perl-IO-Tty
@@ -43,6 +44,9 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
+* Sun Apr 22 2012 Keith Winstein <mosh-devel@mit.edu> - 1.2-1
+- Update to mosh 1.2.
+
 * Wed Apr 3 2012 Keith Winstein <mosh-devel@mit.edu> - 1.1.3-1
 - Update to mosh 1.1.3.
 

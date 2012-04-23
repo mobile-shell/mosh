@@ -1,3 +1,9 @@
+mosh (1.1.95-1) unstable; urgency=low
+
+  * Eliminate PPC32 dependence on posix_memalign()
+
+ -- Keith Winstein <keithw@mit.edu>  Sun, 22 Apr 2012 23:18:13 -0400
+
 mosh (1.1.94e-1) unstable; urgency=low
 
   * Improve responsiveness on fast links
