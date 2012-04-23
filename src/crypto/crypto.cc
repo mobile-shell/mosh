@@ -138,13 +138,9 @@ string Base64Key::printable_key( void ) const
 }
 
 Session::Session( Base64Key s_key )
-  : key( s_key ), ctx( NULL ), blocks_encrypted( 0 )
+  : key( s_key ), ctx_buf( ae_ctx_sizeof() ),
+    ctx( (ae_ctx *)ctx_buf.data() ), blocks_encrypted( 0 )
 {
-  ctx = ae_allocate( NULL );
-  if ( ctx == NULL ) {
-    throw CryptoException( "Could not allocate AES-OCB context." );
-  }
-
   if ( AE_SUCCESS != ae_init( ctx, key.data(), 16, 12, 16 ) ) {
     throw CryptoException( "Could not initialize AES-OCB context." );
   }
@@ -155,8 +151,6 @@ Session::~Session()
   if ( ae_clear( ctx ) != AE_SUCCESS ) {
     throw CryptoException( "Could not clear AES-OCB context." );
   }
-
-  ae_free( ctx );
 }
 
 Nonce::Nonce( uint64_t val )

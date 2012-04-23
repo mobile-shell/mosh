@@ -623,28 +623,7 @@ static block getL(const ae_ctx *ctx, unsigned tz)
 /* 32-bit SSE2 and Altivec systems need to be forced to allocate memory
    on 16-byte alignments. (I believe all major 64-bit systems do already.) */
 
-ae_ctx* ae_allocate(void *misc)
-{ 
-	void *p;
-	(void) misc;                     /* misc unused in this implementation */
-	#if (__SSE2__ && !_M_X64 && !_M_AMD64 && !__amd64__)
-    	p = _mm_malloc(sizeof(ae_ctx),16); 
-	#elif (__ALTIVEC__ && !__PPC64__)
-		if (posix_memalign(&p,16,sizeof(ae_ctx)) != 0) p = NULL;
-	#else
-		p = malloc(sizeof(ae_ctx));
-	#endif
-	return (ae_ctx *)p;
-}
-
-void ae_free(ae_ctx *ctx)
-{
-	#if (__SSE2__ && !_M_X64 && !_M_AMD64 && !__amd64__)
-		_mm_free(ctx);
-	#else
-		free(ctx);
-	#endif
-}
+/* Mosh uses its own AlignedBuffer class, not ae_allocate() or ae_free(). */
 
 /* ----------------------------------------------------------------------- */
 

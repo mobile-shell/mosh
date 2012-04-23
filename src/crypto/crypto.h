@@ -98,6 +98,7 @@ namespace Crypto {
   class Session {
   private:
     Base64Key key;
+    AlignedBuffer ctx_buf;
     ae_ctx *ctx;
     uint64_t blocks_encrypted;
     
