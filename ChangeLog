@@ -16,8 +16,6 @@
 
 	* Add support for FreeBSD, Cygwin, RHEL/CentOS 5, OS X 10.5 on PPC.
 
-	* Use faster gzip implementation (Anders Kaseorg)
-
 	* Use binary hardening flags where available (Keegan McAllister)
 
 	* Responsiveness and CPU-usage improvements
