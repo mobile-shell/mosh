@@ -1,5 +1,5 @@
 Name:		mosh
-Version:	1.1.3
+Version:	1.2
 Release:	1%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
