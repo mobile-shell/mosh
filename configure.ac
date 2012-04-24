@@ -227,9 +227,6 @@ AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langi
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
-AS_IF([test x"$__CYGWIN__" != x && test x"$TINFO_CPPFLAGS" = x],
-  [AC_SUBST([CPPFLAGS], ["$CPPFLAGS -I/usr/include/ncurses"])])
-
 PKG_CHECK_MODULES([TINFO], [tinfo], ,
   [PKG_CHECK_MODULES([TINFO], [ncurses], ,
      [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
@@ -238,7 +235,11 @@ PKG_CHECK_MODULES([TINFO], [tinfo], ,
         [AX_CHECK_LIBRARY([NCURSES], [curses.h], [ncurses],
            [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
             AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -lncurses"])],
-           [AC_MSG_ERROR([Unable to find libtinfo or libncurses])])])])])
+           [AC_SUBST([CPPFLAGS], ["$CPPFLAGS -I/usr/include/ncurses"])
+	    AX_CHECK_LIBRARY([CYGWINNCURSES], [term.h], [ncurses],
+              [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS -I/usr/include/ncurses"])
+               AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -lncurses"])],
+	      [AC_MSG_ERROR([Unable to find libtinfo or libncurses.])])])])])])
 
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
