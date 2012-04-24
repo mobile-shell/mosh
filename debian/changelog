@@ -1,3 +1,13 @@
+mosh (1.1.98-1) unstable; urgency=low
+
+  * Fix build problems on Cygwin
+
+  * Fix build problems on Debian armel/armhf
+
+  * Fix alignment problems on ARM
+
+ -- Keith Winstein <keithw@mit.edu>  Tue, 24 Apr 2012 19:00:03 -0400
+
 mosh (1.1.97-1) unstable; urgency=low
 
   * Revert use of protobufs' zero-copy gzip stream

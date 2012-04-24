@@ -16,7 +16,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-my $MOSH_VERSION = '1.1.97';
+my $MOSH_VERSION = '1.1.98';
 
 use warnings;
 use strict;
