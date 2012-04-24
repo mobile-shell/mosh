@@ -155,6 +155,8 @@ AS_IF([test x"$with_utempter" != xno],
       [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])],
       [AC_MSG_ERROR([--with-utempter was given but libutempter was not found.])])])])
 
+AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
+
 AC_ARG_WITH([skalibs],
   [AS_HELP_STRING([--with-skalibs[=DIR]],
      [root directory of skalibs installation])],

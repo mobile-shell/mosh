@@ -17,15 +17,13 @@
 */
 
 #include <assert.h>
-#include <google/protobuf/io/gzip_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include "byteorder.h"
 #include "transportfragment.h"
 #include "transportinstruction.pb.h"
+#include "compressor.h"
 #include "fatal_assert.h"
 
-using namespace google::protobuf::io;
 using namespace Network;
 using namespace TransportBuffers;
 
@@ -117,24 +115,15 @@ Instruction FragmentAssembly::get_assembly( void )
 {
   assert( fragments_arrived == fragments_total );
 
-  ZeroCopyInputStream **streams = new ZeroCopyInputStream *[fragments_total];
+  string encoded;
+
   for ( int i = 0; i < fragments_total; i++ ) {
     assert( fragments.at( i ).initialized );
-    streams[i] = new ArrayInputStream( fragments.at( i ).contents.data(),
-				       fragments.at( i ).contents.size() );
+    encoded += fragments.at( i ).contents;
   }
 
   Instruction ret;
-  {
-    ConcatenatingInputStream stream( streams, fragments_total );
-    GzipInputStream gzip_stream( &stream, GzipInputStream::ZLIB );
-    fatal_assert( ret.ParseFromZeroCopyStream( &gzip_stream ) );
-  }
-
-  for ( int i = 0; i < fragments_total; i++ ) {
-    delete streams[i];
-  }
-  delete[] streams;
+  fatal_assert( ret.ParseFromString( get_compressor().uncompress_str( encoded ) ) );
 
   fragments.clear();
   fragments_arrived = 0;
@@ -169,18 +158,7 @@ vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, int MTU )
   last_instruction = inst;
   last_MTU = MTU;
 
-  string payload;
-  {
-    StringOutputStream stream( &payload );
-    GzipOutputStream::Options gzip_options;
-    gzip_options.format = GzipOutputStream::ZLIB;
-    GzipOutputStream gzip_stream( &stream, gzip_options );
-    fatal_assert( inst.SerializeToZeroCopyStream( &gzip_stream ) );
-    if ( !gzip_stream.Close() ) {
-      throw std::string( "zlib error: " ) + gzip_stream.ZlibErrorMessage();
-    }
-  }
-
+  string payload = get_compressor().compress_str( inst.SerializeAsString() );
   uint16_t fragment_num = 0;
   vector<Fragment> ret;
 
