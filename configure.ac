@@ -228,7 +228,7 @@ AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langi
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
 AS_IF([test x"$__CYGWIN__" != x && test x"$TINFO_CPPFLAGS" = x],
-  [TINFO_CPPFLAGS="-I/usr/include/ncurses"])
+  [AC_SUBST([CPPFLAGS], ["$CPPFLAGS -I/usr/include/ncurses"])])
 
 PKG_CHECK_MODULES([TINFO], [tinfo], ,
   [PKG_CHECK_MODULES([TINFO], [ncurses], ,
