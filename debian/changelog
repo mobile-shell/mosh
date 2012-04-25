@@ -1,3 +1,9 @@
+mosh (1.1.99b-1) unstable; urgency=low
+
+  * Update THANKS and copyright information
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 25 Apr 2012 02:53:21 -0400
+
 mosh (1.1.99a-1) unstable; urgency=low
 
   * Fix using broken system poll on OS X 10.6
