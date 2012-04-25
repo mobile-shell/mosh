@@ -244,7 +244,8 @@ PKG_CHECK_MODULES([TINFO], [tinfo], ,
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
      [Define if libutil.h necessary for forkpty().])],
-  , [[#include <libutil.h>]])
+  , [[#include <sys/types.h>
+  #include <libutil.h>]])
 
 AC_ARG_VAR([poll_CFLAGS], [C compiler flags for poll])
 AC_ARG_VAR([poll_LIBS], [linker flags for poll])
