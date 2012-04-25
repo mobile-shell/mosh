@@ -1,3 +1,9 @@
+mosh (1.1.99a-1) unstable; urgency=low
+
+  * Fix using broken system poll on OS X 10.6
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 25 Apr 2012 02:30:44 -0400
+
 mosh (1.1.99-1) unstable; urgency=low
 
   * Fix build problems on FreeBSD 7 and 8
