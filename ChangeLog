@@ -12,6 +12,8 @@
 
 	* Fix terminal emulation and argument parsing on FreeBSD
 
+	* Fix alignment problems on ARM
+
 	* Now prints message of the day
 
 	* Add support for FreeBSD, Cygwin, RHEL/CentOS 5, OS X 10.5 on PPC.
