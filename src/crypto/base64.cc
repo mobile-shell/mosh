@@ -42,7 +42,7 @@
  *
  */
 
-#include "config.h"
+// #include <config.h>
 
 /* Get prototype. */
 #include "base64.h"
