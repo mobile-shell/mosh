@@ -1,8 +1,14 @@
-2012-04-99 Keith Winstein <mosh-devel@mit.edu>
+2012-04-26 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.2 released.
 
 	* Remove Boost as a dependency (Keegan McAllister)
+
+	* Add support for FreeBSD, Cygwin, RHEL/CentOS 5, OS X 10.5 on PPC.
+
+	* More verbose and helpful diagnostics. Server now has -v flag.
+
+	* Client now has --ssh= flag to set SSH options (like port)
 
 	* Remove skalibs as a dependency on Debian/Ubuntu (Keegan McAllister)
 
@@ -16,15 +22,11 @@
 
 	* Now prints message of the day
 
-	* Add support for FreeBSD, Cygwin, RHEL/CentOS 5, OS X 10.5 on PPC.
-
 	* Use binary hardening flags where available (Keegan McAllister)
 
 	* Responsiveness and CPU-usage improvements
 
-	* Several terminal-emulation bug fixes
-
-	* More verbose and helpful diagnostics. Server now has -v flag.
+	* Several terminal-emulation improvements and bug fixes
 
 2012-04-03 Keith Winstein <mosh-devel@mit.edu>
 
