@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([mosh], [1.1.94d], [mosh-devel@mit.edu])
+AC_INIT([mosh], [1.2], [mosh-devel@mit.edu])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
@@ -227,9 +227,6 @@ AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langi
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
-AS_IF([test x"$__CYGWIN__" != x && test x"$TINFO_CPPFLAGS" = x],
-  [TINFO_CPPFLAGS="-I/usr/include/ncurses"])
-
 PKG_CHECK_MODULES([TINFO], [tinfo], ,
   [PKG_CHECK_MODULES([TINFO], [ncurses], ,
      [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
@@ -238,12 +235,17 @@ PKG_CHECK_MODULES([TINFO], [tinfo], ,
         [AX_CHECK_LIBRARY([NCURSES], [curses.h], [ncurses],
            [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
             AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -lncurses"])],
-           [AC_MSG_ERROR([Unable to find libtinfo or libncurses])])])])])
+           [AC_SUBST([CPPFLAGS], ["$CPPFLAGS -I/usr/include/ncurses"])
+	    AX_CHECK_LIBRARY([CYGWINNCURSES], [term.h], [ncurses],
+              [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS -I/usr/include/ncurses"])
+               AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -lncurses"])],
+	      [AC_MSG_ERROR([Unable to find libtinfo or libncurses.])])])])])])
 
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
      [Define if libutil.h necessary for forkpty().])],
-  , [[#include <libutil.h>]])
+  , [[#include <sys/types.h>
+  #include <libutil.h>]])
 
 AC_ARG_VAR([poll_CFLAGS], [C compiler flags for poll])
 AC_ARG_VAR([poll_LIBS], [linker flags for poll])
@@ -304,11 +306,6 @@ if ( pollfds[ 0 ].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
   LIBS="$save_LIBS"
 ])
 AM_CONDITIONAL([COND_THIRD_POLL], [test "x$ac_cv_poll_pty" = "xno"])
-AM_COND_IF([COND_THIRD_POLL],
-  [
-    poll_CFLAGS="-I\$(top_srcdir)/third/poll"
-    poll_LIBS="\$(top_builddir)/third/poll/libpoll.a"
-  ])
 
 AC_MSG_CHECKING([whether pipe2(..., O_CLOEXEC) is supported])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE

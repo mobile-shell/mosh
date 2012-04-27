@@ -34,7 +34,7 @@ using namespace Crypto;
 
 PRNG prng;
 
-const size_t MESSAGE_SIZE_MAX     = 4096;
+const size_t MESSAGE_SIZE_MAX     = (2048 - 16);
 const size_t MESSAGES_PER_SESSION = 256;
 const size_t NUM_SESSIONS         = 64;
 

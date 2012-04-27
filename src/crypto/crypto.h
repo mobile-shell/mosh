@@ -73,8 +73,11 @@ namespace Crypto {
   };
 
   class Nonce {
+  public:
+    static const int NONCE_LEN = 12;
+
   private:
-    char bytes[ 12 ] __attribute__((__aligned__ (16)));
+    char bytes[ NONCE_LEN ];
 
   public:
     Nonce( uint64_t val );
@@ -98,10 +101,17 @@ namespace Crypto {
   class Session {
   private:
     Base64Key key;
+    AlignedBuffer ctx_buf;
     ae_ctx *ctx;
     uint64_t blocks_encrypted;
+
+    AlignedBuffer plaintext_buffer;
+    AlignedBuffer ciphertext_buffer;
+    AlignedBuffer nonce_buffer;
     
   public:
+    static const int RECEIVE_MTU = 2048;
+
     Session( Base64Key s_key );
     ~Session();
     

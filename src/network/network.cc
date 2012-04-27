@@ -276,20 +276,20 @@ string Connection::recv( void )
 {
   struct sockaddr_in packet_remote_addr;
 
-  char buf[ RECEIVE_MTU ];
+  char buf[ Session::RECEIVE_MTU ];
 
   socklen_t addrlen = sizeof( packet_remote_addr );
 
-  ssize_t received_len = recvfrom( sock, buf, RECEIVE_MTU, 0, (sockaddr *)&packet_remote_addr, &addrlen );
+  ssize_t received_len = recvfrom( sock, buf, Session::RECEIVE_MTU, 0, (sockaddr *)&packet_remote_addr, &addrlen );
 
   if ( received_len < 0 ) {
     throw NetworkException( "recvfrom", errno );
   }
 
-  if ( received_len > RECEIVE_MTU ) {
+  if ( received_len > Session::RECEIVE_MTU ) {
     char buffer[ 2048 ];
     snprintf( buffer, 2048, "Received oversize datagram (size %d) and limit is %d\n",
-	      static_cast<int>( received_len ), RECEIVE_MTU );
+	      static_cast<int>( received_len ), Session::RECEIVE_MTU );
     throw NetworkException( buffer, errno );
   }
 

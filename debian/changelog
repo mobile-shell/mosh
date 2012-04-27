@@ -1,3 +1,65 @@
+mosh (1.2-1) unstable; urgency=low
+
+  * Version 1.2 released.
+
+ -- Keith Winstein <keithw@mit.edu>  Thu, 26 Apr 2012 01:35:59 -0400
+
+mosh (1.1.99b-1) unstable; urgency=low
+
+  * Update THANKS and copyright information
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 25 Apr 2012 02:53:21 -0400
+
+mosh (1.1.99a-1) unstable; urgency=low
+
+  * Fix using broken system poll on OS X 10.6
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 25 Apr 2012 02:30:44 -0400
+
+mosh (1.1.99-1) unstable; urgency=low
+
+  * Fix build problems on FreeBSD 7 and 8
+
+ -- Keith Winstein <keithw@mit.edu>  Tue, 24 Apr 2012 23:52:22 -0400
+
+mosh (1.1.98-1) unstable; urgency=low
+
+  * Fix build problems on Cygwin
+
+  * Fix build problems on Debian armel/armhf
+
+  * Fix alignment problems on ARM
+
+ -- Keith Winstein <keithw@mit.edu>  Tue, 24 Apr 2012 19:00:03 -0400
+
+mosh (1.1.97-1) unstable; urgency=low
+
+  * Revert use of protobufs' zero-copy gzip stream
+
+ -- Keith Winstein <keithw@mit.edu>  Mon, 23 Apr 2012 22:53:44 -0400
+
+mosh (1.1.96-1) unstable; urgency=low
+
+  * Include binary hardening check script in GNU-style tar.gz
+
+ -- Keith Winstein <keithw@mit.edu>  Mon, 23 Apr 2012 20:21:14 -0400
+
+mosh (1.1.95-1) unstable; urgency=low
+
+  * Eliminate PPC32 dependence on posix_memalign()
+
+ -- Keith Winstein <keithw@mit.edu>  Sun, 22 Apr 2012 23:18:13 -0400
+
+mosh (1.1.94e-1) unstable; urgency=low
+
+  * Improve responsiveness on fast links
+
+  * Include poll implementation for Mac OS X
+
+  * Use protobufs' zero-copy gzip stream
+
+ -- Keith Winstein <keithw@mit.edu>  Sun, 22 Apr 2012 16:59:25 -0400
+
 mosh (1.1.94d-1) unstable; urgency=low
 
   * More helpful locale-related error messages

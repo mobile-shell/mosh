@@ -138,13 +138,12 @@ string Base64Key::printable_key( void ) const
 }
 
 Session::Session( Base64Key s_key )
-  : key( s_key ), ctx( NULL ), blocks_encrypted( 0 )
+  : key( s_key ), ctx_buf( ae_ctx_sizeof() ),
+    ctx( (ae_ctx *)ctx_buf.data() ), blocks_encrypted( 0 ),
+    plaintext_buffer( RECEIVE_MTU ),
+    ciphertext_buffer( RECEIVE_MTU ),
+    nonce_buffer( Nonce::NONCE_LEN )
 {
-  ctx = ae_allocate( NULL );
-  if ( ctx == NULL ) {
-    throw CryptoException( "Could not allocate AES-OCB context." );
-  }
-
   if ( AE_SUCCESS != ae_init( ctx, key.data(), 16, 12, 16 ) ) {
     throw CryptoException( "Could not initialize AES-OCB context." );
   }
@@ -155,8 +154,6 @@ Session::~Session()
   if ( ae_clear( ctx ) != AE_SUCCESS ) {
     throw CryptoException( "Could not clear AES-OCB context." );
   }
-
-  ae_free( ctx );
 }
 
 Nonce::Nonce( uint64_t val )
@@ -200,20 +197,19 @@ string Session::encrypt( Message plaintext )
   const size_t pt_len = plaintext.text.size();
   const int ciphertext_len = pt_len + 16;
 
-  AlignedBuffer ciphertext( ciphertext_len );
-  AlignedBuffer pt( pt_len, plaintext.text.data() );
+  assert( (size_t)ciphertext_len <= ciphertext_buffer.len() );
+  assert( pt_len <= plaintext_buffer.len() );
 
-  if ( (uint64_t( plaintext.nonce.data() ) & 0xf) != 0 ) {
-    throw CryptoException( "Bad alignment." );
-  }
+  memcpy( plaintext_buffer.data(), plaintext.text.data(), pt_len );
+  memcpy( nonce_buffer.data(), plaintext.nonce.data(), Nonce::NONCE_LEN );
 
   if ( ciphertext_len != ae_encrypt( ctx,                                     /* ctx */
-				     plaintext.nonce.data(),                  /* nonce */
-				     pt.data(),                               /* pt */
-				     pt.len(),                                /* pt_len */
+				     nonce_buffer.data(),                     /* nonce */
+				     plaintext_buffer.data(),                 /* pt */
+				     pt_len,                                  /* pt_len */
 				     NULL,                                    /* ad */
 				     0,                                       /* ad_len */
-				     ciphertext.data(),                       /* ct */
+				     ciphertext_buffer.data(),                /* ct */
 				     NULL,                                    /* tag */
 				     AE_FINALIZE ) ) {                        /* final */
     throw CryptoException( "ae_encrypt() returned error." );
@@ -241,7 +237,7 @@ string Session::encrypt( Message plaintext )
     throw CryptoException( "Encrypted 2^47 blocks.", true );
   }
 
-  string text( ciphertext.data(), ciphertext.len() );
+  string text( ciphertext_buffer.data(), ciphertext_len );
 
   return plaintext.nonce.cc_str() + text;
 }
@@ -262,23 +258,26 @@ Message Session::decrypt( string ciphertext )
     exit( 1 );
   }
 
-  Nonce __attribute__((__aligned__ (16))) nonce( str, 8 );
-  AlignedBuffer body( body_len, str + 8 );
-  AlignedBuffer plaintext( pt_len );
+  assert( (size_t)body_len <= ciphertext_buffer.len() );
+  assert( (size_t)pt_len <= plaintext_buffer.len() );
 
-  if ( pt_len != ae_decrypt( ctx,               /* ctx */
-			     nonce.data(),      /* nonce */
-			     body.data(),       /* ct */
-			     body.len(),        /* ct_len */
-			     NULL,              /* ad */
-			     0,                 /* ad_len */
-			     plaintext.data(),  /* pt */
-			     NULL,              /* tag */
-			     AE_FINALIZE ) ) {  /* final */
+  Nonce nonce( str, 8 );
+  memcpy( ciphertext_buffer.data(), str + 8, body_len );
+  memcpy( nonce_buffer.data(), nonce.data(), Nonce::NONCE_LEN );
+
+  if ( pt_len != ae_decrypt( ctx,                      /* ctx */
+			     nonce_buffer.data(),      /* nonce */
+			     ciphertext_buffer.data(), /* ct */
+			     body_len,                 /* ct_len */
+			     NULL,                     /* ad */
+			     0,                        /* ad_len */
+			     plaintext_buffer.data(),  /* pt */
+			     NULL,                     /* tag */
+			     AE_FINALIZE ) ) {         /* final */
     throw CryptoException( "Packet failed integrity check." );
   }
 
-  Message ret( nonce, string( plaintext.data(), plaintext.len() ) );
+  Message ret( nonce, string( plaintext_buffer.data(), pt_len ) );
 
   return ret;
 }
