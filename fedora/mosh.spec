@@ -1,6 +1,6 @@
 Name:		mosh
 Version:	1.2
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
 License:	GPLv3+
@@ -30,8 +30,9 @@ Mosh is a remote terminal application that supports:
 
 %build
 # Use upstream's more aggressive hardening instead of Fedora's defaults
+export CFLAGS="-g -O2" CXXFLAGS="-g -O2"
 %configure --enable-compile-warnings=error
-make %{?_smp_mflags} CFLAGS="" CXXFLAGS=""
+make %{?_smp_mflags}
 
 
 %install
@@ -49,7 +50,10 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
-* Fri Apr 27 2012 Alexander Chernyakhovsky <achernya@mit.edu> - 1.2
+* Sat Apr 28 2012 Alexander Chernyakhovsky <achernya@mit.edu> - 1.2-2
+- Add -g and -O2 CFLAGS
+
+* Fri Apr 27 2012 Alexander Chernyakhovsky <achernya@mit.edu> - 1.2-1
 - Update to mosh 1.2.
 
 * Mon Mar 26 2012 Alexander Chernyakhovsky <achernya@mit.edu> - 1.1.1-1
