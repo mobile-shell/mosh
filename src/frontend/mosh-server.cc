@@ -277,11 +277,11 @@ int main( int argc, char *argv[] )
 
   try {
     return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd );
-  } catch ( Network::NetworkException e ) {
+  } catch ( const Network::NetworkException& e ) {
     fprintf( stderr, "Network exception: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
     return 1;
-  } catch ( Crypto::CryptoException e ) {
+  } catch ( const Crypto::CryptoException& e ) {
     fprintf( stderr, "Crypto exception: %s\n",
 	     e.text.c_str() );
     return 1;
@@ -436,10 +436,10 @@ int run_server( const char *desired_ip, const char *desired_port,
 
     try {
       serve( master, terminal, *network );
-    } catch ( Network::NetworkException e ) {
+    } catch ( const Network::NetworkException& e ) {
       fprintf( stderr, "Network exception: %s: %s\n",
 	       e.function.c_str(), strerror( e.the_errno ) );
-    } catch ( Crypto::CryptoException e ) {
+    } catch ( const Crypto::CryptoException& e ) {
       fprintf( stderr, "Crypto exception: %s\n",
 	       e.text.c_str() );
     }
@@ -689,10 +689,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       }
 
       network.tick();
-    } catch ( Network::NetworkException e ) {
+    } catch ( const Network::NetworkException& e ) {
       fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );
       spin();
-    } catch ( Crypto::CryptoException e ) {
+    } catch ( const Crypto::CryptoException& e ) {
       if ( e.fatal ) {
         throw;
       } else {
