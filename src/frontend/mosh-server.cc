@@ -45,13 +45,6 @@
 #include <paths.h>
 #endif
 
-#include "sigfd.h"
-#include "completeterminal.h"
-#include "swrite.h"
-#include "user.h"
-#include "fatal_assert.h"
-#include "locale_utils.h"
-
 #if HAVE_PTY_H
 #include <pty.h>
 #elif HAVE_UTIL_H
@@ -61,6 +54,14 @@
 #if FORKPTY_IN_LIBUTIL
 #include <libutil.h>
 #endif
+
+#include "sigfd.h"
+#include "completeterminal.h"
+#include "swrite.h"
+#include "user.h"
+#include "fatal_assert.h"
+#include "locale_utils.h"
+#include "pty_compat.h"
 
 #ifndef _PATH_BSHELL
 #define _PATH_BSHELL "/bin/sh"

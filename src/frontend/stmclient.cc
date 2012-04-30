@@ -44,6 +44,7 @@
 #include "user.h"
 #include "fatal_assert.h"
 #include "locale_utils.h"
+#include "pty_compat.h"
 
 #include "networktransport.cc"
 
