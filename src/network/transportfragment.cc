@@ -64,9 +64,10 @@ Fragment::Fragment( string &x )
 {
   assert( x.size() >= frag_header_len );
 
-  uint64_t *data64 = (uint64_t *)x.data();
+  uint64_t data64;
   uint16_t *data16 = (uint16_t *)x.data();
-  id = be64toh( data64[ 0 ] );
+  memcpy( &data64, x.data(), sizeof( data64 ) );
+  id = be64toh( data64 );
   fragment_num = be16toh( data16[ 4 ] );
   final = ( fragment_num & 0x8000 ) >> 15;
   fragment_num &= 0x7FFF;
