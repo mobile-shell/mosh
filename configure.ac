@@ -161,6 +161,9 @@ AS_IF([test x"$with_utempter" != xno],
 
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
+AC_SEARCH_LIBS(socket, socket)
+AC_SEARCH_LIBS(inet_addr, nsl)
+
 AC_ARG_WITH([skalibs],
   [AS_HELP_STRING([--with-skalibs[=DIR]],
      [root directory of skalibs installation])],
