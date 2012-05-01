@@ -201,6 +201,7 @@ bool STMClient::process_network_input( void )
   
   /* Now give hints to the overlays */
   overlays.get_notification_engine().server_heard( network->get_latest_remote_state().timestamp );
+  overlays.get_notification_engine().server_acked( network->get_sent_state_acked_timestamp() );
 
   overlays.get_prediction_engine().set_local_frame_acked( network->get_sent_state_acked() );
   overlays.get_prediction_engine().set_send_interval( network->send_interval() );

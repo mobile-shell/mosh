@@ -153,6 +153,7 @@ void ConditionalCursorMove::apply( Framebuffer &fb, uint64_t confirmed_epoch ) c
 
 NotificationEngine::NotificationEngine()
   : last_word_from_server( timestamp() ),
+    last_acked_state( timestamp() ),
     message(),
     message_expiration( -1 )
 {}
@@ -188,15 +189,32 @@ void NotificationEngine::apply( Framebuffer &fb ) const
   /* write message */
   wchar_t tmp[ 128 ];
 
+  /* We want to prefer the "last contact" message if we simply haven't
+     heard from the server in a while, but print the "last reply" message
+     if the problem is uplink-only. */
+
+  double since_heard = (double)(now - last_word_from_server) / 1000.0;
+  double since_ack = (double)(now - last_acked_state) / 1000.0;
+  const char server_message[] = "contact";
+  const char reply_message[] = "reply";
+
+  double time_elapsed = since_heard;
+  const char *explanation = server_message;
+
+  if ( reply_late( now ) && (!server_late( now )) ) {
+    time_elapsed = since_ack;
+    explanation = reply_message;
+  }
+
   if ( message.empty() && (!time_expired) ) {
     return;
   } else if ( message.empty() && time_expired ) {
-    swprintf( tmp, 128, L"mosh: Last contact %.0f seconds ago. [To quit: Ctrl-^ .]", (double)(now - last_word_from_server) / 1000.0 );
+    swprintf( tmp, 128, L"mosh: Last %s %.0f seconds ago. [To quit: Ctrl-^ .]", explanation, time_elapsed );
   } else if ( (!message.empty()) && (!time_expired) ) {
     swprintf( tmp, 128, L"mosh: %ls [To quit: Ctrl-^ .]", message.c_str() );
   } else {
-    swprintf( tmp, 128, L"mosh: %ls (%.0f s without contact.) [To quit: Ctrl-^ .]", message.c_str(),
-	      (double)(now - last_word_from_server) / 1000.0 );
+    swprintf( tmp, 128, L"mosh: %ls (%.0f s without %s.) [To quit: Ctrl-^ .]", message.c_str(),
+	      time_elapsed, explanation );
   }
 
   wstring string_to_draw( tmp );

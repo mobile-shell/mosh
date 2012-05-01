@@ -126,6 +126,7 @@ namespace Network {
     bool get_shutdown_in_progress( void ) const { return shutdown_in_progress; }
     bool get_shutdown_acknowledged( void ) const { return sent_states.front().num == uint64_t(-1); }
     bool get_counterparty_shutdown_acknowledged( void ) const { return fragmenter.last_ack_sent() == uint64_t(-1); }
+    uint64_t get_sent_state_acked_timestamp( void ) const { return sent_states.front().timestamp; }
     uint64_t get_sent_state_acked( void ) const { return sent_states.front().num; }
     uint64_t get_sent_state_last( void ) const { return sent_states.back().num; }
 
