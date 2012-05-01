@@ -46,6 +46,11 @@
 #include "locale_utils.h"
 #include "fatal_assert.h"
 
+/* For newer skalibs */
+extern "C" {
+  const char *PROG = "benchmark";
+}
+
 const int ITERATIONS = 100000;
 
 using namespace Terminal;

@@ -68,6 +68,11 @@
 
 #include "networktransport.cc"
 
+/* For newer skalibs */
+extern "C" {
+  const char *PROG = "mosh-server";
+}
+
 typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConnection;
 
 void serve( int host_fd,
