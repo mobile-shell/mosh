@@ -251,66 +251,6 @@ AC_CHECK_DECL([forkpty],
   , [[#include <sys/types.h>
   #include <libutil.h>]])
 
-AC_ARG_VAR([poll_CFLAGS], [C compiler flags for poll])
-AC_ARG_VAR([poll_LIBS], [linker flags for poll])
-AS_IF([test -z "$poll_LIBS"], [
-  AC_CHECK_LIB([poll], [poll], [poll_LIBS="-lpoll"])
-])
-
-# Check to make sure poll() can handle stdin and ptys
-AC_CACHE_CHECK([whether poll can handle ptys],
-               [ac_cv_poll_pty],
-[
-  save_CFLAGS="$CFLAGS"
-  save_LIBS="$LIBS"
-
-  AS_IF([test "x$poll_CFLAGS" != "x"],
-    [CFLAGS="$CFLAGS $poll_CFLAGS"])
-
-  AS_IF([test "x$poll_LIBS" != "x"],
-    [LIBS="$LIBS $poll_LIBS"])
-
-  LIBS="$LIBS -lutil"
-
-  AC_RUN_IFELSE([AC_LANG_PROGRAM([[
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#if HAVE_PTY_H
-#include <pty.h>
-#elif HAVE_UTIL_H
-#include <util.h>
-#endif
-#if FORKPTY_IN_LIBUTIL
-#include <libutil.h>
-#endif
-#include <sys/poll.h>
-
-int master, slave;
-struct pollfd pollfds[ 1 ];
-]], [[
-if ( openpty( &master, &slave, NULL, NULL, NULL ) < 0 ) {
-   perror( "openpty" );
-   exit( 1 );
-}
-pollfds[ 0 ].fd = master;
-pollfds[ 0 ].events = POLLIN;
-int active_fds = poll( pollfds, 1, 100 );
-if ( active_fds < 0 ) {
-   perror( "poll" );
-   exit( 1 );
-}
-if ( pollfds[ 0 ].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
-   exit( 2 );
-}
-]])],
-	[ac_cv_poll_pty=yes],
-	[ac_cv_poll_pty=no])
-  CFLAGS="$save_CFLAGS"
-  LIBS="$save_LIBS"
-])
-AM_CONDITIONAL([COND_THIRD_POLL], [test "x$ac_cv_poll_pty" = "xno"])
-
 AC_MSG_CHECKING([whether pipe2(..., O_CLOEXEC) is supported])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
 #include <unistd.h>
@@ -366,7 +306,6 @@ AC_CONFIG_FILES([
   Makefile
   third/Makefile
   third/libstddjb/Makefile
-  third/poll/Makefile
   src/Makefile
   src/crypto/Makefile
   src/frontend/Makefile
