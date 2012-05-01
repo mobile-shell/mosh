@@ -25,7 +25,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -51,6 +50,7 @@
 #include "user.h"
 #include "fatal_assert.h"
 #include "locale_utils.h"
+#include "select.h"
 
 #if HAVE_PTY_H
 #include <pty.h>
@@ -474,16 +474,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   fatal_assert( sigfd_trap( SIGINT ) == 0 );
 
   /* prepare to poll for events */
-  struct pollfd pollfds[ 3 ];
-
-  pollfds[ 0 ].fd = network.fd();
-  pollfds[ 0 ].events = POLLIN;
-
-  pollfds[ 1 ].fd = host_fd;
-  pollfds[ 1 ].events = POLLIN;
-
-  pollfds[ 2 ].fd = signal_fd;
-  pollfds[ 2 ].events = POLLIN;
+  Select sel;
+  sel.add_fd( network.fd() );
+  sel.add_fd( host_fd );
+  sel.add_fd( signal_fd );
 
   uint64_t last_remote_num = network.get_remote_state_num();
 
@@ -499,23 +493,23 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       uint64_t now = Network::timestamp();
 
       const int timeout_if_no_client = 60000;
-      int poll_timeout = min( network.wait_time(), terminal.wait_time( now ) );
+      int timeout = min( network.wait_time(), terminal.wait_time( now ) );
       if ( !network.has_remote_addr() ) {
-        poll_timeout = min( poll_timeout, timeout_if_no_client );
+        timeout = min( timeout, timeout_if_no_client );
       }
 
-      int active_fds = poll( pollfds, 3, poll_timeout );
+      int active_fds = sel.select( timeout );
       if ( active_fds < 0 && errno == EINTR ) {
 	continue;
       } else if ( active_fds < 0 ) {
-	perror( "poll" );
+	perror( "select" );
 	break;
       }
 
       now = Network::timestamp();
       uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
 
-      if ( pollfds[ 0 ].revents & POLLIN ) {
+      if ( sel.read( network.fd() ) ) {
 	/* packet received from the network */
 	network.recv();
 	
@@ -580,13 +574,13 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
       
-      if ( pollfds[ 1 ].revents & POLLIN ) {
+      if ( sel.read( host_fd ) ) {
 	/* input from the host needs to be fed to the terminal */
 	const int buf_size = 16384;
 	char buf[ buf_size ];
 	
 	/* fill buffer if possible */
-	ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
+	ssize_t bytes_read = read( host_fd, buf, buf_size );
 	if ( bytes_read == 0 ) { /* EOF */
 	  if ( !network.has_remote_addr() ) {
 	    spin(); /* let 60-second timer take care of this */
@@ -611,7 +605,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
 
-      if ( pollfds[ 2 ].revents & POLLIN ) {
+      if ( sel.read( signal_fd ) ) {
 	/* shutdown signal */
 	int signo = sigfd_read();
 	if ( signo == 0 ) {
@@ -628,14 +622,12 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
       
-      if ( (pollfds[ 0 ].revents)
-	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+      if ( sel.error( network.fd() ) ) {
 	/* network problem */
 	break;
       }
 
-      if ( (pollfds[ 1 ].revents)
-	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+      if ( sel.error( host_fd ) ) {
 	/* host problem */
 	if ( network.has_remote_addr() ) {
 	  network.start_shutdown();
