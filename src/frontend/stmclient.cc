@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -44,6 +43,7 @@
 #include "user.h"
 #include "fatal_assert.h"
 #include "locale_utils.h"
+#include "select.h"
 
 #include "networktransport.cc"
 
@@ -299,16 +299,10 @@ void STMClient::main( void )
   main_init();
 
   /* prepare to poll for events */
-  struct pollfd pollfds[ 3 ];
-
-  pollfds[ 0 ].fd = network->fd();
-  pollfds[ 0 ].events = POLLIN;
-
-  pollfds[ 1 ].fd = STDIN_FILENO;
-  pollfds[ 1 ].events = POLLIN;
-
-  pollfds[ 2 ].fd = signal_fd;
-  pollfds[ 2 ].events = POLLIN;
+  Select sel;
+  sel.add_fd( network->fd() );
+  sel.add_fd( STDIN_FILENO );
+  sel.add_fd( signal_fd );
 
   while ( 1 ) {
     try {
@@ -321,22 +315,22 @@ void STMClient::main( void )
 	wait_time = min( 250, wait_time );
       }
 
-      int active_fds = poll( pollfds, 3, wait_time );
+      int active_fds = sel.select( wait_time );
       if ( active_fds < 0 && errno == EINTR ) {
 	continue;
       } else if ( active_fds < 0 ) {
-	perror( "poll" );
+	perror( "select" );
 	break;
       }
 
-      if ( pollfds[ 0 ].revents & POLLIN ) {
+      if ( sel.read( network->fd() ) ) {
 	/* packet received from the network */
 	if ( !process_network_input() ) { return; }
       }
     
-      if ( pollfds[ 1 ].revents & POLLIN ) {
+      if ( sel.read( STDIN_FILENO ) ) {
 	/* input from the user needs to be fed to the network */
-	if ( !process_user_input( pollfds[ 1 ].fd ) ) {
+	if ( !process_user_input( STDIN_FILENO ) ) {
 	  if ( !network->has_remote_addr() ) {
 	    break;
 	  } else if ( !network->shutdown_in_progress() ) {
@@ -346,7 +340,7 @@ void STMClient::main( void )
 	}
       }
 
-      if ( pollfds[ 2 ].revents & POLLIN ) {
+      if ( sel.read( signal_fd ) ) {
 	int signo = sigfd_read();
 
 	if ( signo == SIGWINCH ) {
@@ -364,14 +358,12 @@ void STMClient::main( void )
 	}
       }
 
-      if ( (pollfds[ 0 ].revents)
-	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+      if ( sel.error( network->fd() ) ) {
 	/* network problem */
 	break;
       }
 
-      if ( (pollfds[ 1 ].revents)
-	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+      if ( sel.error( STDIN_FILENO ) ) {
 	/* user problem */
 	if ( !network->has_remote_addr() ) {
 	  break;
