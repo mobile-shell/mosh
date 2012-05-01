@@ -21,6 +21,7 @@
 #include <list>
 #include <typeinfo>
 #include <limits.h>
+#include <stdio.h>
 
 #include "terminaloverlay.h"
 
@@ -490,6 +491,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	  }
 	  */
 
+	  fprintf( stderr, "WRONG PREDICTION\n" );
 	  reset();
 	  return;
 	}
