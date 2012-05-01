@@ -382,6 +382,8 @@ Renditions::Renditions( int s_background )
 /* This routine cannot be used to set a color beyond the 16-color set. */
 void Renditions::set_rendition( int num )
 {
+  num = 0;
+
   if ( num == 0 ) {
     bold = underlined = blink = inverse = invisible = false;
     foreground_color = background_color = 0;
@@ -421,6 +423,8 @@ void Renditions::set_rendition( int num )
 
 void Renditions::set_foreground_color( int num )
 {
+  return;
+
   if ( (0 <= num) && (num <= 255) ) {
     foreground_color = 30 + num;
   }
@@ -428,6 +432,8 @@ void Renditions::set_foreground_color( int num )
 
 void Renditions::set_background_color( int num )
 {
+  return;
+
   if ( (0 <= num) && (num <= 255) ) {
     background_color = 40 + num;
   }

@@ -41,6 +41,8 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
     return;
   }
 
+  flag = false;
+
   if ( unknown ) {
     if ( flag && ( col != fb.ds.get_width() - 1 ) ) {
       fb.get_mutable_cell( row, col )->renditions.underlined = true;
@@ -282,9 +284,11 @@ void OverlayManager::apply( Framebuffer &fb )
 {
   predictions.cull( fb );
   predictions.apply( fb );
+  /*
   notifications.adjust_message();
   notifications.apply( fb );
   title.apply( fb );
+  */
 }
 
 int OverlayManager::wait_time( void )

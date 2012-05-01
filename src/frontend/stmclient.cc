@@ -141,10 +141,19 @@ void STMClient::main_init( void )
   fatal_assert( sigfd_trap( SIGCONT ) == 0 );
 
   /* get initial window size */
+
+  fatal_assert( getenv( "MOSH_WIDTH" ) );
+  fatal_assert( getenv( "MOSH_HEIGHT" ) );
+
+  window_size.ws_col = atoi( getenv( "MOSH_WIDTH" ) );
+  window_size.ws_row = atoi( getenv( "MOSH_HEIGHT" ) );
+
+  /*
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
     perror( "ioctl TIOCGWINSZ" );
     return;
   }  
+  */
 
   /* local state */
   local_framebuffer = new Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
