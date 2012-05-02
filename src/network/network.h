@@ -42,6 +42,7 @@ namespace Network {
     string function;
     int the_errno;
     NetworkException( string s_function, int s_errno ) : function( s_function ), the_errno( s_errno ) {}
+    NetworkException() : function( "<none>" ), the_errno( 0 ) {}
   };
 
   enum Direction {
@@ -101,6 +102,11 @@ namespace Network {
     double SRTT;
     double RTTVAR;
 
+    /* Exception from send(), to be delivered if the frontend asks for it,
+       without altering control flow. */
+    bool have_send_exception;
+    NetworkException send_exception;
+
     Packet new_packet( string &s_payload );
 
   public:
@@ -121,6 +127,11 @@ namespace Network {
     double get_SRTT( void ) const { return SRTT; }
 
     const struct in_addr & get_remote_ip( void ) const { return remote_addr.sin_addr; }
+
+    const NetworkException *get_send_exception( void ) const
+    {
+      return have_send_exception ? &send_exception : NULL;
+    }
   };
 }
 

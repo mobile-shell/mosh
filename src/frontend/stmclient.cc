@@ -415,6 +415,11 @@ void STMClient::main( void )
       }
 
       network->tick();
+
+      const Network::NetworkException *exn = network->get_send_exception();
+      if ( exn ) {
+        overlays.get_notification_engine().set_network_exception( *exn );
+      }
     } catch ( Network::NetworkException e ) {
       if ( !network->shutdown_in_progress() ) {
         overlays.get_notification_engine().set_network_exception( e );
