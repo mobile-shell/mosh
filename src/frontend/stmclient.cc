@@ -417,9 +417,7 @@ void STMClient::main( void )
       network->tick();
     } catch ( Network::NetworkException e ) {
       if ( !network->shutdown_in_progress() ) {
-	wchar_t tmp[ 128 ];
-	swprintf( tmp, 128, L"%s: %s", e.function.c_str(), strerror( e.the_errno ) );
-	overlays.get_notification_engine().set_notification_string( wstring( tmp ) );
+        overlays.get_notification_engine().set_network_exception( e );
       }
 
       struct timespec req;
