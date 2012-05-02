@@ -131,7 +131,9 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     expected_receiver_seq( 0 ),
     RTT_hit( false ),
     SRTT( 1000 ),
-    RTTVAR( 500 )
+    RTTVAR( 500 ),
+    have_send_exception( false ),
+    send_exception()
 {
   setup();
 
@@ -238,7 +240,9 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     expected_receiver_seq( 0 ),
     RTT_hit( false ),
     SRTT( 1000 ),
-    RTTVAR( 500 )
+    RTTVAR( 500 ),
+    have_send_exception( false ),
+    send_exception()
 {
   setup();
 
@@ -266,9 +270,14 @@ void Connection::send( string s )
   ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
 
-  if ( (!server) /* Server treats all sendto()s as successful. */
-       && (bytes_sent != static_cast<ssize_t>( p.size() )) ) {
-    throw NetworkException( "sendto", errno );
+  if ( bytes_sent == static_cast<ssize_t>( p.size() ) ) {
+    have_send_exception = false;
+  } else {
+    /* Notify the frontend on sendto() failure, but don't alter control flow.
+       sendto() success is not very meaningful because packets can be lost in
+       flight anyway. */
+    have_send_exception = true;
+    send_exception = NetworkException( "sendto", errno );
   }
 }
 
