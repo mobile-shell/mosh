@@ -92,6 +92,8 @@ namespace Network {
     PRNG prng;
     const string make_chaff( void );
 
+    uint64_t mindelay_clock; /* time of first pending change to current state */
+
   public:
     /* constructor */
     TransportSender( Connection *s_connection, MyState &initial_state );

@@ -44,7 +44,8 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     pending_data_ack( false ),
     SEND_MINDELAY( 8 ),
     last_heard( 0 ),
-    prng()
+    prng(),
+    mindelay_clock( -1 )
 {
 }
 
@@ -78,16 +79,22 @@ void TransportSender<MyState>::calculate_timers( void )
     next_ack_time = now + ACK_DELAY;
   }
 
-  if ( ( !(current_state == assumed_receiver_state->state)
-	 && (last_heard + ACTIVE_RETRY_TIMEOUT > now) )
-       || !(current_state == sent_states.back().state) ) { /* pending data to send */
-    if ( next_send_time > now + SEND_MINDELAY ) {
-      next_send_time = now + SEND_MINDELAY;
+  if ( !(current_state == sent_states.back().state) ) {
+    if ( mindelay_clock == uint64_t( -1 ) ) {
+      mindelay_clock = now;
     }
 
-    if ( next_send_time < sent_states.back().timestamp + send_interval() ) {
-      next_send_time = sent_states.back().timestamp + send_interval();
+    next_send_time = max( mindelay_clock + SEND_MINDELAY,
+			  sent_states.back().timestamp + send_interval() );
+  } else if ( !(current_state == assumed_receiver_state->state)
+	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
+    next_send_time = sent_states.back().timestamp + send_interval();
+    if ( mindelay_clock != uint64_t( -1 ) ) {
+      next_send_time = max( next_send_time, mindelay_clock + SEND_MINDELAY );
     }
+  } else if ( !(current_state == sent_states.front().state )
+	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
+    next_send_time = sent_states.back().timestamp + connection->timeout() + ACK_DELAY;
   } else {
     next_send_time = uint64_t(-1);
   }
@@ -152,16 +159,15 @@ void TransportSender<MyState>::tick( void )
   }
   */
 
+
   if ( diff.empty() && (now >= next_ack_time) ) {
     send_empty_ack();
-    return;
-  }
-
-  if ( !diff.empty() && ( (now >= next_send_time)
+    mindelay_clock = uint64_t( -1 );
+  } else if ( !diff.empty() && ( (now >= next_send_time)
 			  || (now >= next_ack_time) ) ) {
     /* Send diffs or ack */
     send_to_receiver( diff );
-    return;
+    mindelay_clock = uint64_t( -1 );
   }
 }
 
