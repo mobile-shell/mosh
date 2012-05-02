@@ -277,6 +277,21 @@ void NotificationEngine::adjust_message( void )
   }  
 }
 
+int NotificationEngine::wait_time( void ) const
+{
+  uint64_t next_expiry = INT_MAX;
+
+  uint64_t now = timestamp();
+
+  next_expiry = std::min( next_expiry, message_expiration - now );
+
+  if ( need_countup( now ) ) {
+    next_expiry = std::min( next_expiry, uint64_t( 1000 ) );
+  }
+
+  return next_expiry;
+}
+
 void OverlayManager::apply( Framebuffer &fb )
 {
   predictions.cull( fb );
@@ -284,31 +299,6 @@ void OverlayManager::apply( Framebuffer &fb )
   notifications.adjust_message();
   notifications.apply( fb );
   title.apply( fb );
-}
-
-int OverlayManager::wait_time( void )
-{
-  uint64_t next_expiry = INT_MAX;
-
-  uint64_t now = timestamp();
-
-  uint64_t message_delay = notifications.get_message_expiration() - now;
-
-  if ( message_delay < next_expiry ) {
-    next_expiry = message_delay;
-  }
-
-  if ( notifications.need_countup( now ) && ( next_expiry > 1000 ) ) {
-    next_expiry = 1000;
-  }
-
-  if ( predictions.timing_tests_necessary()
-       && predictions.active()
-       && ( next_expiry > 50 ) ) {
-    next_expiry = 50;
-  }
-
-  return next_expiry;
 }
 
 void TitleEngine::set_prefix( const wstring s )

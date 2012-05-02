@@ -133,16 +133,17 @@ namespace Overlay {
     bool message_is_network_exception;
     uint64_t message_expiration;
 
-  public:
     bool server_late( uint64_t ts ) const { return (ts - last_word_from_server) > 6500; }
     bool reply_late( uint64_t ts ) const { return (ts - last_acked_state) > 10000; }
     bool need_countup( uint64_t ts ) const { return server_late( ts ) || reply_late( ts ); }
+
+  public:
     void adjust_message( void );
     void apply( Framebuffer &fb ) const;
     const wstring &get_notification_string( void ) const { return message; }
     void server_heard( uint64_t s_last_word ) { last_word_from_server = s_last_word; }
     void server_acked( uint64_t s_last_acked ) { last_acked_state = s_last_acked; }
-    uint64_t get_message_expiration( void ) const { return message_expiration; }
+    int wait_time( void ) const;
 
     void set_notification_string( const wstring &s_message, bool permanent = false )
     {
@@ -236,6 +237,13 @@ namespace Overlay {
   private:
     DisplayPreference display_preference;
 
+    bool active( void ) const;
+
+    bool timing_tests_necessary( void ) const {
+      /* Are there any timing-based triggers that haven't fired yet? */
+      return !( glitch_trigger && flagging );
+    }
+
   public:
     void set_display_preference( DisplayPreference s_pref ) { display_preference = s_pref; }
 
@@ -245,18 +253,18 @@ namespace Overlay {
 
     void reset( void );
 
-    bool active( void ) const;
-
-    bool timing_tests_necessary( void ) const {
-      /* Are there any timing-based triggers that haven't fired yet? */
-      return !( glitch_trigger && flagging );
-    }
-
     void set_local_frame_sent( uint64_t x ) { local_frame_sent = x; }
     void set_local_frame_acked( uint64_t x ) { local_frame_acked = x; }
     void set_local_frame_late_acked( uint64_t x ) { local_frame_late_acked = x; }
 
     void set_send_interval( unsigned int x ) { send_interval = x; }
+
+    int wait_time( void ) const
+    {
+      return ( timing_tests_necessary() && active() )
+          ? 50
+          : INT_MAX;
+    }
 
     PredictionEngine( void ) : last_byte( 0 ), parser(), overlays(), cursors(),
 			       local_frame_sent( 0 ), local_frame_acked( 0 ),
@@ -300,7 +308,10 @@ namespace Overlay {
 
     OverlayManager() : notifications(), predictions(), title() {}
 
-    int wait_time( void );
+    int wait_time( void ) const
+    {
+      return std::min( notifications.wait_time(), predictions.wait_time() );
+    }
   };
 }
 
