@@ -44,7 +44,8 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     pending_data_ack( false ),
     SEND_MINDELAY( 8 ),
     last_heard( 0 ),
-    prng()
+    prng(),
+    mindelay_clock( -1 )
 {
 }
 
@@ -79,8 +80,12 @@ void TransportSender<MyState>::calculate_timers( void )
   }
 
   if ( !(current_state == sent_states.back().state) ) { /* pending data to send */
-    if ( next_send_time > now + SEND_MINDELAY ) {
-      next_send_time = now + SEND_MINDELAY;
+    if ( mindelay_clock == uint64_t( -1 ) ) {
+      mindelay_clock = now;
+    }
+
+    if ( next_send_time > mindelay_clock + SEND_MINDELAY ) {
+      next_send_time = mindelay_clock + SEND_MINDELAY;
     }
 
     if ( next_send_time < sent_states.back().timestamp + send_interval() ) {
@@ -157,15 +162,13 @@ void TransportSender<MyState>::tick( void )
 
   if ( diff.empty() && (now >= next_ack_time) ) {
     send_empty_ack();
-    return;
-  }
-
-  if ( !diff.empty() && ( (now >= next_send_time)
+  } else if ( !diff.empty() && ( (now >= next_send_time)
 			  || (now >= next_ack_time) ) ) {
     /* Send diffs or ack */
     send_to_receiver( diff );
-    return;
   }
+
+  mindelay_clock = uint64_t( -1 );
 }
 
 template <class MyState>
