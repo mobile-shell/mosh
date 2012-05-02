@@ -34,18 +34,18 @@ using std::pair;
 using namespace TransportBuffers;
 
 namespace Network {
+  /* timing parameters */
+  const int SEND_INTERVAL_MIN = 20; /* ms between frames */
+  const int SEND_INTERVAL_MAX = 250; /* ms between frames */
+  const int ACK_INTERVAL = 3000; /* ms between empty acks */
+  const int ACK_DELAY = 100; /* ms before delayed ack */
+  const int SHUTDOWN_RETRIES = 16; /* number of shutdown packets to send before giving up */
+  const int ACTIVE_RETRY_TIMEOUT = 10000; /* attempt to resend at frame rate */
+
   template <class MyState>
   class TransportSender
   {
   private:
-    /* timing parameters */
-    static const int SEND_INTERVAL_MIN = 20; /* ms between frames */
-    static const int SEND_INTERVAL_MAX = 250; /* ms between frames */
-    static const int ACK_INTERVAL = 3000; /* ms between empty acks */
-    static const int ACK_DELAY = 100; /* ms before delayed ack */
-    static const int SHUTDOWN_RETRIES = 16; /* number of shutdown packets to send before giving up */
-    static const int ACTIVE_RETRY_TIMEOUT = 10000; /* attempt to resend at frame rate */
-
     /* helper methods for tick() */
     void update_assumed_receiver_state( void );
     void rationalize_states( void );
