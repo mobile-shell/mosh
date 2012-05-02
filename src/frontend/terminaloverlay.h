@@ -21,6 +21,7 @@
 
 #include "terminalframebuffer.h"
 #include "network.h"
+#include "transportsender.h"
 #include "parser.h"
 
 #include <vector>
@@ -129,6 +130,7 @@ namespace Overlay {
     uint64_t last_word_from_server;
     uint64_t last_acked_state;
     wstring message;
+    bool message_is_network_exception;
     uint64_t message_expiration;
 
   public:
@@ -150,13 +152,24 @@ namespace Overlay {
       } else {
         message_expiration = timestamp() + 1000;
       }
+      message_is_network_exception = false;
     }
 
     void set_network_exception( const NetworkException &e )
     {
       wchar_t tmp[ 128 ];
       swprintf( tmp, 128, L"%s: %s", e.function.c_str(), strerror( e.the_errno ) );
-      set_notification_string( wstring( tmp ) );
+
+      message = tmp;
+      message_is_network_exception = true;
+      message_expiration = timestamp() + Network::ACK_INTERVAL + 100;
+    }
+
+    void clear_network_exception()
+    {
+      if ( message_is_network_exception ) {
+        set_notification_string( wstring( L"" ) );
+      }
     }
 
     NotificationEngine();

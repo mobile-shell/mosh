@@ -153,6 +153,7 @@ NotificationEngine::NotificationEngine()
   : last_word_from_server( timestamp() ),
     last_acked_state( timestamp() ),
     message(),
+    message_is_network_exception( false ),
     message_expiration( -1 )
 {}
 
