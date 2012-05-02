@@ -78,13 +78,16 @@ void TransportSender<MyState>::calculate_timers( void )
     next_ack_time = now + ACK_DELAY;
   }
 
-  if ( ( !(current_state == assumed_receiver_state->state)
-	 && (last_heard + ACTIVE_RETRY_TIMEOUT > now) )
-       || !(current_state == sent_states.back().state) ) { /* pending data to send */
+  if ( !(current_state == sent_states.back().state) ) { /* pending data to send */
     if ( next_send_time > now + SEND_MINDELAY ) {
       next_send_time = now + SEND_MINDELAY;
     }
 
+    if ( next_send_time < sent_states.back().timestamp + send_interval() ) {
+      next_send_time = sent_states.back().timestamp + send_interval();
+    }
+  } else if ( ( !(current_state == assumed_receiver_state->state)
+		&& (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) ) {
     if ( next_send_time < sent_states.back().timestamp + send_interval() ) {
       next_send_time = sent_states.back().timestamp + send_interval();
     }
