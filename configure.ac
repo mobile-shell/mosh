@@ -288,6 +288,11 @@ AC_CHECK_DECL([htobe64],
 #include <sys/endian.h>
 #endif]])
 
+AC_CHECK_DECL([getline],
+  [AC_DEFINE([HAVE_GETLINE], [1],
+  [Define if getline exists.])],
+  , [[#include <stdio.h>]])
+
 AC_CHECK_DECL([IP_MTU_DISCOVER],
   [AC_DEFINE([HAVE_IP_MTU_DISCOVER], [1],
      [Define if IP_MTU_DISCOVER is a valid sockopt.])],

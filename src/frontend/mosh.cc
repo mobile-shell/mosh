@@ -43,6 +43,49 @@
 #include <libutil.h>
 #endif
 
+#if !HAVE_GETLINE
+ssize_t getline( char ** restrict linep,
+    size_t * restrict linecapp,
+    FILE * restrict stream ) {
+  size_t num_read = 0;
+  if ( !linep || !linecapp ) {
+    errno = EINVAL;
+    return -1;
+  }
+  if ( !*linep ) {
+    *linecapp = 0;
+  }
+  while ( 1 ) {
+    int ch = getc( stream );
+    if ( ch == EOF ) {
+      return num_read ? (ssize_t)num_read : -1;
+    }
+    if ( num_read + 1 >= *linecapp ) {
+      char *new_line = *linep;
+      size_t new_linecap = *linecapp;
+      if ( *linecapp > SSIZE_MAX - 4096 ) {
+        errno = EOVERFLOW;
+        return -1;
+      }
+      new_linecap += 4096;
+      new_line = (char *)realloc( new_line, new_linecap );
+      if ( !new_line ) {
+        return -1;
+      }
+      *linecapp = new_linecap;
+      *linep = new_line;
+    }
+    (*linep)[num_read++] = ch;
+    // so that we can safely return at any time,
+    (*linep)[num_read] = '\0';
+    if (ch == '\n') {
+      return num_read;
+    }
+  }
+  return -1;
+}
+#endif
+
 using namespace std;
 
 static const char *const MOSH_VERSION = "1.2";
