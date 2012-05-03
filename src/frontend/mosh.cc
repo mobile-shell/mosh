@@ -17,6 +17,8 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
 #include <vector>
 #include <map>
 #include <stdio.h>
@@ -37,7 +39,7 @@
 #include <util.h>
 #endif
 
-#if FORKPTY_IN_LIBUTIL
+#if OPENPTY_IN_LIBUTIL
 #include <libutil.h>
 #endif
 
@@ -236,7 +238,7 @@ int main( int argc, char *_argv[] )
     string host = argv[optind++];
     string port = argv[optind++];
 
-    int sockfd;
+    int sockfd = -1;
     struct addrinfo hints, *servinfo, *p;
     int rv;
 
@@ -295,21 +297,28 @@ int main( int argc, char *_argv[] )
     exit( 0 );
   }
 
-  if ( argc - optind < 1 )
+  if ( argc - optind < 1 ) {
     die( usage_format, argv[0] );
+  }
 
   string userhost = argv[optind++];
   char **command = &argv[optind];
   int commands = argc - optind;
 
   int pipe_fd[2];
-  pipe( pipe_fd );
+  if ( pipe( pipe_fd ) < 0 ) {
+    die( "%s: pipe: %d", argv[0], errno );
+  }
 
   string color_invocation = client + " -c";
   FILE *color_file = popen( color_invocation.c_str(), "r" );
-  size_t n;
-  char *buf = fgetln( color_file, &n );
-  if ( !buf ) {
+  if ( !color_file ) {
+    die( "%s: popen: %d", argv[0], errno );
+  }
+  char *buf = NULL;
+  size_t buf_sz = 0;
+  ssize_t n;
+  if ( ( n = getline( &buf, &buf_sz, color_file ) ) < 0 ) {
     die( "%s: Can't count colors: %d", argv[0], errno );
   }
   string colors = string( buf, n );
@@ -382,7 +391,7 @@ int main( int argc, char *_argv[] )
 
   FILE *pty_file = fdopen( pty, "r" );
   string line;
-  while ( ( buf = fgetln( pty_file, &n ) ) ) {
+  while ( ( n = getline( &buf, &buf_sz, pty_file ) ) >= 0 ) {
     line = string( buf, n );
     line = line.erase( line.find_last_not_of( "\n" ) );
     if ( line.compare( 0, 8, "MOSH IP " ) == 0 ) {
