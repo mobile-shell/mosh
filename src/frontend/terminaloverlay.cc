@@ -288,7 +288,13 @@ int NotificationEngine::wait_time( void ) const
   next_expiry = std::min( next_expiry, message_expiration - now );
 
   if ( need_countup( now ) ) {
-    next_expiry = std::min( next_expiry, uint64_t( 1000 ) );
+    uint64_t countup_interval = 1000;
+    if ( ( now - last_word_from_server ) > 60000 ) {
+      /* If we've been disconnected for 60 seconds, save power by updating the
+         display less often.  See #243. */
+      countup_interval = Network::ACK_INTERVAL;
+    }
+    next_expiry = std::min( next_expiry, countup_interval );
   }
 
   return next_expiry;
