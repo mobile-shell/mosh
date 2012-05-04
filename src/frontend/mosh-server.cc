@@ -387,11 +387,6 @@ int run_server( const char *desired_ip, const char *desired_port,
   if ( child == 0 ) {
     /* child */
 
-    /* reopen stdio */
-    stdin = fdopen( STDIN_FILENO, "r" );
-    stdout = fdopen( STDOUT_FILENO, "w" );
-    stderr = fdopen( STDERR_FILENO, "w" );
-
     /* unblock signals */
     sigset_t signals_to_block;
     fatal_assert( sigemptyset( &signals_to_block ) == 0 );
