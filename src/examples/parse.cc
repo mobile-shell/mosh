@@ -122,7 +122,7 @@ void emulate_terminal( int fd )
 {
   Parser::UTF8Parser parser;
 
-  Select sel;
+  Select &sel = Select::get_instance();
   sel.add_fd( STDIN_FILENO );
   sel.add_fd( fd );
 

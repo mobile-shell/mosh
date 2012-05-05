@@ -58,7 +58,7 @@ int main( int argc, char *argv[] )
   fprintf( stderr, "Port bound is %d, key is %s\n", n->port(), n->get_key().c_str() );
 
   if ( server ) {
-    Select sel;
+    Select &sel = Select::get_instance();
     sel.add_fd( n->fd() );
     uint64_t last_num = n->get_remote_state_num();
     while ( true ) {
@@ -100,7 +100,7 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
-    Select sel;
+    Select &sel = Select::get_instance();
     sel.add_fd( STDIN_FILENO );
     sel.add_fd( n->fd() );
 

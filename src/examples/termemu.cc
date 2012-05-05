@@ -227,7 +227,7 @@ void emulate_terminal( int fd )
   /* open display */
   Terminal::Display display( true ); /* use TERM to initialize */
 
-  Select sel;
+  Select &sel = Select::get_instance();
   sel.add_fd( STDIN_FILENO );
   sel.add_fd( fd );
   sel.add_fd( signal_fd );

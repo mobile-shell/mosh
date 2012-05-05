@@ -33,6 +33,17 @@ static fd_set dummy_fd_set;
 /* Convenience wrapper for select(2). */
 class Select {
 public:
+  static Select &get_instance( void ) {
+    // NB: not thread-safe
+    if ( !instance ) {
+      instance = new Select;
+    }
+    return *instance;
+  }
+
+private:
+  static Select *instance;
+
   Select()
     : max_fd( -1 )
 
@@ -47,6 +58,11 @@ public:
     FD_ZERO( &error_fds );
   }
 
+  /* not implemented */
+  Select( const Select & );
+  Select &operator=( const Select & );
+
+public:
   void add_fd( int fd )
   {
     if ( fd > max_fd ) {
