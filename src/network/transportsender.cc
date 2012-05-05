@@ -157,7 +157,7 @@ void TransportSender<MyState>::tick( void )
     MyState newstate( assumed_receiver_state->state );
     newstate.apply_string( diff );
     if ( current_state.compare( newstate ) ) {
-      fprintf( stderr, "Diff: %s\n", diff.c_str() );
+      fprintf( stderr, "Warning, round-trip Instruction verification failed!\n" );
     }
   }
 

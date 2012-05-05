@@ -589,8 +589,7 @@ bool Cell::compare( const Cell &other ) const
 
   if ( !(renditions == other.renditions) ) {
     ret = true;
-    fprintf( stderr, "renditions: %s vs. %s\n",
-	     renditions.sgr().c_str(), other.renditions.sgr().c_str() );
+    fprintf( stderr, "renditions differ\n" );
   }
 
   if ( wrap != other.wrap ) {
