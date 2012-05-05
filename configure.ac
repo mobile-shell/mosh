@@ -18,8 +18,7 @@ AS_IF([test x"$PROTOC" = x],
   [AC_MSG_ERROR([cannot find protoc, the Protocol Buffers compiler])])
 
 # automake 1.12 seems to require this, but automake 1.11 doesn't recognize it
-m4_pattern_allow([AM_PROG_AR])
-AM_PROG_AR
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""
