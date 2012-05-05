@@ -592,15 +592,16 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	
 	/* fill buffer if possible */
 	ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
-	if ( bytes_read == 0 ) { /* EOF */
+
+        /* If the pty slave is closed, reading from the master can fail with
+           EIO (see #264).  So we treat errors on read() like EOF. */
+        if ( bytes_read <= 0 ) {
+          bytes_read = 0;
 	  if ( !network.has_remote_addr() ) {
 	    spin(); /* let 60-second timer take care of this */
 	  } else if ( !network.shutdown_in_progress() ) {
 	    network.start_shutdown();
 	  }
-	} else if ( bytes_read < 0 ) {
-	  perror( "read" );
-	  return;
 	}
 	
 	string terminal_to_host = terminal.act( string( buf, bytes_read ) );
