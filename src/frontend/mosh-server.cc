@@ -319,12 +319,12 @@ int run_server( const char *desired_ip, const char *desired_port,
   fflush( stdout );
 
   /* don't let signals kill us */
-  sigset_t signals_to_block;
-
-  fatal_assert( sigemptyset( &signals_to_block ) == 0 );
-  fatal_assert( sigaddset( &signals_to_block, SIGHUP ) == 0 );
-  fatal_assert( sigaddset( &signals_to_block, SIGPIPE ) == 0 );
-  fatal_assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
+  struct sigaction sa;
+  sa.sa_handler = SIG_IGN;
+  sa.sa_flags = 0;
+  fatal_assert( 0 == sigfillset( &sa.sa_mask ) );
+  fatal_assert( 0 == sigaction( SIGHUP, &sa, NULL ) );
+  fatal_assert( 0 == sigaction( SIGPIPE, &sa, NULL ) );
 
   struct termios child_termios;
 
@@ -388,10 +388,13 @@ int run_server( const char *desired_ip, const char *desired_port,
     stdout = fdopen( STDOUT_FILENO, "w" );
     stderr = fdopen( STDERR_FILENO, "w" );
 
-    /* unblock signals */
-    sigset_t signals_to_block;
-    fatal_assert( sigemptyset( &signals_to_block ) == 0 );
-    fatal_assert( sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) == 0 );
+    /* reenable signals */
+    struct sigaction sa;
+    sa.sa_handler = SIG_DFL;
+    sa.sa_flags = 0;
+    fatal_assert( 0 == sigfillset( &sa.sa_mask ) );
+    fatal_assert( 0 == sigaction( SIGHUP, &sa, NULL ) );
+    fatal_assert( 0 == sigaction( SIGPIPE, &sa, NULL ) );
 
     /* close server-related file descriptors */
     delete network;
