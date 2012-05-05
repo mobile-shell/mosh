@@ -19,3 +19,5 @@
 #include "select.h"
 
 Select *Select::instance = NULL;
+
+fd_set Select::dummy_fd_set;
