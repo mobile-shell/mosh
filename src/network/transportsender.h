@@ -48,6 +48,7 @@ namespace Network {
 
     /* helper methods for tick() */
     void update_assumed_receiver_state( void );
+    void attempt_prospective_resend_optimization( string &proposed_diff );
     void rationalize_states( void );
     void send_to_receiver( string diff );
     void send_empty_ack( void );

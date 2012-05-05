@@ -150,6 +150,8 @@ void TransportSender<MyState>::tick( void )
     
   string diff = current_state.diff_from( assumed_receiver_state->state );
 
+  attempt_prospective_resend_optimization( diff );
+
   /* verify diff has round-trip identity (modulo Unicode fallback rendering) */
   /*
   MyState newstate( assumed_receiver_state->state );
@@ -348,4 +350,27 @@ template <class MyState>
 void TransportSender<MyState>::set_ack_num( uint64_t s_ack_num )
 {
   ack_num = s_ack_num;
+}
+
+/* Investigate diff against known receiver state instead */
+/* Mutates proposed_diff */
+template <class MyState>
+void TransportSender<MyState>::attempt_prospective_resend_optimization( string &proposed_diff )
+{
+  if ( assumed_receiver_state == sent_states.begin() ) {
+    return;
+  }
+
+  string resend_diff = current_state.diff_from( sent_states.front().state );
+
+  /* We do a prophylactic resend if it would make the diff shorter,
+     or if it would lengthen it by no more than 100 bytes and still be
+     less than 1000 bytes. */
+
+  if ( (resend_diff.size() <= proposed_diff.size())
+       || ( (resend_diff.size() < 1000)
+	    && (resend_diff.size() - proposed_diff.size() < 100) ) ) {
+    assumed_receiver_state = sent_states.begin();
+    proposed_diff = resend_diff;
+  }
 }

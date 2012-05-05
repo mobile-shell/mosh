@@ -117,8 +117,8 @@ void Transport<MyState, RemoteState>::recv( void )
       }
     }
     if ( verbose ) {
-      fprintf( stderr, "[%u] Received state %d [ack %d]\n",
-	       (unsigned int)(timestamp() % 100000), (int)new_state.num, (int)inst.ack_num() );
+      fprintf( stderr, "[%u] Received state %d [coming from %d, ack %d]\n",
+	       (unsigned int)(timestamp() % 100000), (int)new_state.num, (int)inst.old_num(), (int)inst.ack_num() );
     }
     received_states.push_back( new_state );
     sender.set_ack_num( received_states.back().num );
