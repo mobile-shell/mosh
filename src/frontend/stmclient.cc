@@ -36,7 +36,6 @@
 #include <util.h>
 #endif
 
-#include "sigfd.h"
 #include "stmclient.h"
 #include "swrite.h"
 #include "completeterminal.h"
@@ -125,20 +124,14 @@ void STMClient::shutdown( void )
 
 void STMClient::main_init( void )
 {
-  /* establish a fd for signals */
-  signal_fd = sigfd_init();
-  if ( signal_fd < 0 ) {
-    perror( "sigfd_init" );
-    return;
-  }
-
-  fatal_assert( sigfd_trap( SIGWINCH ) == 0 );
-  fatal_assert( sigfd_trap( SIGTERM ) == 0 );
-  fatal_assert( sigfd_trap( SIGINT ) == 0 );
-  fatal_assert( sigfd_trap( SIGHUP ) == 0 );
-  fatal_assert( sigfd_trap( SIGPIPE ) == 0 );
-  fatal_assert( sigfd_trap( SIGTSTP ) == 0 );
-  fatal_assert( sigfd_trap( SIGCONT ) == 0 );
+  Select &sel = Select::get_instance();
+  sel.add_signal( SIGWINCH );
+  sel.add_signal( SIGTERM );
+  sel.add_signal( SIGINT );
+  sel.add_signal( SIGHUP );
+  sel.add_signal( SIGPIPE );
+  sel.add_signal( SIGTSTP );
+  sel.add_signal( SIGCONT );
 
   /* get initial window size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -302,7 +295,6 @@ void STMClient::main( void )
   Select &sel = Select::get_instance();
   sel.add_fd( network->fd() );
   sel.add_fd( STDIN_FILENO );
-  sel.add_fd( signal_fd );
 
   while ( 1 ) {
     try {
@@ -316,9 +308,7 @@ void STMClient::main( void )
       }
 
       int active_fds = sel.select( wait_time );
-      if ( active_fds < 0 && errno == EINTR ) {
-	continue;
-      } else if ( active_fds < 0 ) {
+      if ( active_fds < 0 ) {
 	perror( "select" );
 	break;
       }
@@ -340,22 +330,24 @@ void STMClient::main( void )
 	}
       }
 
-      if ( sel.read( signal_fd ) ) {
-	int signo = sigfd_read();
+      if ( sel.signal( SIGWINCH ) ) {
+        /* resize */
+        if ( !process_resize() ) { return; }
+      }
 
-	if ( signo == SIGWINCH ) {
-	  /* resize */
-	  if ( !process_resize() ) { return; }
-	} else if ( signo > 0 ) {
-	  /* shutdown signal */
-
-	  if ( !network->has_remote_addr() ) {
-	    break;
-	  } else if ( !network->shutdown_in_progress() ) {
-	    overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ), true );
-	    network->start_shutdown();
-	  }
-	}
+      if ( sel.signal( SIGTERM )
+           || sel.signal( SIGINT )
+           || sel.signal( SIGHUP )
+           || sel.signal( SIGPIPE )
+           || sel.signal( SIGTSTP )
+           || sel.signal( SIGCONT ) ) {
+        /* shutdown signal */
+        if ( !network->has_remote_addr() ) {
+          break;
+        } else if ( !network->shutdown_in_progress() ) {
+          overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ), true );
+          network->start_shutdown();
+        }
       }
 
       if ( sel.error( network->fd() ) ) {
