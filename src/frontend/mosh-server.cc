@@ -479,7 +479,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   fatal_assert( sigfd_trap( SIGINT ) == 0 );
 
   /* prepare to poll for events */
-  Select sel;
+  Select &sel = Select::get_instance();
   sel.add_fd( network.fd() );
   sel.add_fd( host_fd );
   sel.add_fd( signal_fd );

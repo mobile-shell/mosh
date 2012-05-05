@@ -29,7 +29,7 @@ termemu_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a ../statesync
 
 ntester_SOURCES = ntester.cc
 ntester_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I../protobufs $(protobuf_CFLAGS)
-ntester_LDADD = ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a -lutil -lm $(protobuf_LIBS)
+ntester_LDADD = ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a ../util/libmoshutil.a -lutil -lm $(protobuf_LIBS)
 
 benchmark_SOURCES = benchmark.cc
 benchmark_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I../protobufs -I$(srcdir)/../frontend -I$(srcdir)/../crypto -I$(srcdir)/../network $(STDDJB_CPPFLAGS) $(protobuf_CFLAGS)

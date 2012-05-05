@@ -299,7 +299,7 @@ void STMClient::main( void )
   main_init();
 
   /* prepare to poll for events */
-  Select sel;
+  Select &sel = Select::get_instance();
   sel.add_fd( network->fd() );
   sel.add_fd( STDIN_FILENO );
   sel.add_fd( signal_fd );
