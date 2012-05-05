@@ -49,7 +49,6 @@
 #include "swrite.h"
 #include "fatal_assert.h"
 #include "locale_utils.h"
-#include "sigfd.h"
 #include "select.h"
 
 /* For newer skalibs */
@@ -198,15 +197,6 @@ bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame,
 
 void emulate_terminal( int fd )
 {
-  /* establish WINCH fd and start listening for signal */
-  int signal_fd = sigfd_init();
-  if ( signal_fd < 0 ) {
-    perror( "sigfd_init" );
-    return;
-  }
-
-  fatal_assert( sigfd_trap(SIGWINCH) == 0 );
-
   /* get current window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -230,7 +220,7 @@ void emulate_terminal( int fd )
   Select &sel = Select::get_instance();
   sel.add_fd( STDIN_FILENO );
   sel.add_fd( fd );
-  sel.add_fd( signal_fd );
+  sel.add_signal( SIGWINCH );
 
   swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
 
@@ -238,9 +228,7 @@ void emulate_terminal( int fd )
 
   while ( 1 ) {
     int active_fds = sel.select( timeout );
-    if ( active_fds < 0 && errno == EINTR ) {
-      continue;
-    } else if ( active_fds < 0 ) {
+    if ( active_fds < 0 ) {
       perror( "select" );
       break;
     }
@@ -285,10 +273,7 @@ void emulate_terminal( int fd )
       if ( swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	break;
       }
-    } else if ( sel.read( signal_fd ) ) {
-      /* resize */
-      fatal_assert( sigfd_read() == SIGWINCH );
-
+    } else if ( sel.signal( SIGWINCH ) ) {
       /* get new size */
       if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
 	perror( "ioctl TIOCGWINSZ" );
