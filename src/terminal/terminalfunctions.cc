@@ -191,17 +191,15 @@ void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   int col = fb->ds.get_next_tab();
   if ( col == -1 ) { /* no tabs, go to end of line */
-  /* A horizontal tab is the only operation that (1) can keep the wrap
-     flag but (2) starts a new grapheme. */
-    if ( fb->ds.get_cursor_col() == fb->ds.get_width() - 1 ) {
-      fb->ds.move_col( fb->ds.get_width() - 1, false );
-      fb->ds.move_col( 1, true, true );
-    } else {
-      fb->ds.move_col( fb->ds.get_width() - 1, false );
-    }
-  } else {
-    fb->ds.move_col( col, false );
+    col = fb->ds.get_width() - 1;
   }
+
+  /* A horizontal tab is the only operation that preserves but
+     does not set the wrap state. It also starts a new grapheme. */
+
+  bool wrap_state_save = fb->ds.next_print_will_wrap;
+  fb->ds.move_col( col, false );
+  fb->ds.next_print_will_wrap = wrap_state_save;
 }
 
 static Function func_Ctrl_HT( CONTROL, "\x09", Ctrl_HT, false );
