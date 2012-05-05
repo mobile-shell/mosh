@@ -41,6 +41,10 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
     return;
   }
 
+  if ( replacement.is_blank() && fb.get_cell( row, col )->is_blank() ) {
+    flag = false;
+  }
+
   if ( unknown ) {
     if ( flag && ( col != fb.ds.get_width() - 1 ) ) {
       fb.get_mutable_cell( row, col )->renditions.underlined = true;
@@ -49,12 +53,6 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
   }
 
   if ( !(*(fb.get_cell( row, col )) == replacement) ) {
-    /*
-    if ( replacement.is_blank() && fb.get_cell( row, col )->is_blank() ) {
-      return;
-    }
-    */
-
     *(fb.get_mutable_cell( row, col )) = replacement;
     if ( flag ) {
       fb.get_mutable_cell( row, col )->renditions.underlined = true;
