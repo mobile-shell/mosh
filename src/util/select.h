@@ -20,15 +20,17 @@
 #define SELECT_HPP
 
 #include <string.h>
+#include <errno.h>
+#include <signal.h>
 #include <sys/select.h>
 
-/* We don't need these on POSIX.1-2001 systems, but there's little reason
-   not to include them. */
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include "fatal_assert.h"
 
-/* Convenience wrapper for select(2). */
+/* Convenience wrapper for pselect(2).
+
+   Any signals blocked by calling sigprocmask() outside this code will still be
+   received during Select::select().  So don't do that. */
+
 class Select {
 public:
   static Select &get_instance( void ) {
@@ -44,16 +46,26 @@ private:
 
   Select()
     : max_fd( -1 )
+    , got_any_signal( 0 )
 
     /* These initializations are not used; they are just
        here to appease -Weffc++. */
     , all_fds( dummy_fd_set )
     , read_fds( dummy_fd_set )
     , error_fds( dummy_fd_set )
+    , empty_sigset( dummy_sigset )
   {
     FD_ZERO( &all_fds );
     FD_ZERO( &read_fds );
     FD_ZERO( &error_fds );
+
+    clear_got_signal();
+    fatal_assert( 0 == sigemptyset( &empty_sigset ) );
+  }
+
+  void clear_got_signal( void )
+  {
+    memset( got_signal, 0, sizeof( got_signal ) );
   }
 
   /* not implemented */
@@ -69,23 +81,54 @@ public:
     FD_SET( fd, &all_fds );
   }
 
+  void add_signal( int signum )
+  {
+    fatal_assert( signum >= 0 );
+    fatal_assert( signum <= MAX_SIGNAL_NUMBER );
+
+    /* Block the signal so we don't get it outside of pselect(). */
+    sigset_t to_block;
+    fatal_assert( 0 == sigemptyset( &to_block ) );
+    fatal_assert( 0 == sigaddset( &to_block, signum ) );
+    fatal_assert( 0 == sigprocmask( SIG_BLOCK, &to_block, NULL ) );
+
+    /* Register a handler, which will only be called when pselect()
+       is interrupted by a (possibly queued) signal. */
+    struct sigaction sa;
+    sa.sa_flags = 0;
+    sa.sa_handler = &handle_signal;
+    fatal_assert( 0 == sigfillset( &sa.sa_mask ) );
+    fatal_assert( 0 == sigaction( signum, &sa, NULL ) );
+  }
+
   int select( int timeout )
   {
     memcpy( &read_fds,  &all_fds, sizeof( read_fds  ) );
     memcpy( &error_fds, &all_fds, sizeof( error_fds ) );
+    clear_got_signal();
+    got_any_signal = 0;
 
-    struct timeval tv;
-    struct timeval *tvp = NULL;
+    struct timespec ts;
+    struct timespec *tsp = NULL;
 
     if ( timeout >= 0 ) {
       // timeout in milliseconds
-      tv.tv_sec  = timeout / 1000;
-      tv.tv_usec = 1000 * (timeout % 1000);
-      tvp = &tv;
+      ts.tv_sec  = timeout / 1000;
+      ts.tv_nsec = 1000000 * (long( timeout ) % 1000);
+      tsp = &ts;
     }
     // negative timeout means wait forever
 
-    return ::select( max_fd + 1, &read_fds, NULL, &error_fds, tvp );
+    int ret = ::pselect( max_fd + 1, &read_fds, NULL, &error_fds, tsp, &empty_sigset );
+
+    if ( ( ret == -1 ) && ( errno == EINTR ) ) {
+      /* The user should process events as usual. */
+      FD_ZERO( &read_fds );
+      FD_ZERO( &error_fds );
+      ret = 0;
+    }
+
+    return ret;
   }
 
   bool read( int fd ) const
@@ -98,10 +141,36 @@ public:
     return FD_ISSET( fd, &error_fds );
   }
 
+  bool signal( int signum ) const
+  {
+    fatal_assert( signum >= 0 );
+    fatal_assert( signum <= MAX_SIGNAL_NUMBER );
+    return got_signal[ signum ];
+  }
+
+  bool any_signal( void ) const
+  {
+    return got_any_signal;
+  }
+
 private:
+  static const int MAX_SIGNAL_NUMBER = 64;
+
+  static void handle_signal( int signum );
+
   int max_fd;
-  static fd_set dummy_fd_set;
+
+  /* We assume writes to these ints are atomic, though we also try to mask out
+     concurrent signal handlers. */
+  int got_any_signal;
+  int got_signal[ MAX_SIGNAL_NUMBER + 1 ];
+
   fd_set all_fds, read_fds, error_fds;
+
+  sigset_t empty_sigset;
+
+  static fd_set dummy_fd_set;
+  static sigset_t dummy_sigset;
 };
 
 #endif
