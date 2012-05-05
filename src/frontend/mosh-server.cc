@@ -44,7 +44,6 @@
 #include <paths.h>
 #endif
 
-#include "sigfd.h"
 #include "completeterminal.h"
 #include "swrite.h"
 #include "user.h"
@@ -471,21 +470,12 @@ int run_server( const char *desired_ip, const char *desired_port,
 
 void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
 {
-  /* establish fd for shutdown signals */
-  int signal_fd = sigfd_init();
-  if ( signal_fd < 0 ) {
-    perror( "sigfd_init" );
-    return;
-  }
-
-  fatal_assert( sigfd_trap( SIGTERM ) == 0 );
-  fatal_assert( sigfd_trap( SIGINT ) == 0 );
-
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
   sel.add_fd( network.fd() );
   sel.add_fd( host_fd );
-  sel.add_fd( signal_fd );
+  sel.add_signal( SIGTERM );
+  sel.add_signal( SIGINT );
 
   uint64_t last_remote_num = network.get_remote_state_num();
 
@@ -507,9 +497,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       }
 
       int active_fds = sel.select( timeout );
-      if ( active_fds < 0 && errno == EINTR ) {
-	continue;
-      } else if ( active_fds < 0 ) {
+      if ( active_fds < 0 ) {
 	perror( "select" );
 	break;
       }
@@ -614,16 +602,8 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
 
-      if ( sel.read( signal_fd ) ) {
+      if ( sel.any_signal() ) {
 	/* shutdown signal */
-	int signo = sigfd_read();
-	if ( signo == 0 ) {
-	  break;
-	} else if ( signo < 0 ) {
-	  perror( "sigfd_read" );
-	  break;
-	}
-
 	if ( network.has_remote_addr() && (!network.shutdown_in_progress()) ) {
 	  network.start_shutdown();
 	} else {
