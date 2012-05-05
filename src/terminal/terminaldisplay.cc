@@ -203,8 +203,11 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     if ( (frame.y < f.ds.get_height() - 1)
 	 && f.get_row( frame.y )->get_wrap() ) {
       frame.x = last_x;
-      frame.force_next_put = true;
-      put_cell( initialized, frame, f );
+
+      while ( frame.x < f.ds.get_width() ) {
+	frame.force_next_put = true;
+	put_cell( initialized, frame, f );
+      }
 
       /* next write will wrap */
       frame.cursor_x = 0;
