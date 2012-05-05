@@ -51,11 +51,6 @@
 #include "locale_utils.h"
 #include "select.h"
 
-/* For newer skalibs */
-extern "C" {
-  const char *PROG = "termemu";
-}
-
 const size_t buf_size = 16384;
 
 void emulate_terminal( int fd );
