@@ -37,7 +37,6 @@
 #include <util.h>
 #endif
 
-#include "sigfd.h"
 #include "swrite.h"
 #include "completeterminal.h"
 #include "user.h"
