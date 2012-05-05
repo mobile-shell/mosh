@@ -28,8 +28,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-static fd_set dummy_fd_set;
-
 /* Convenience wrapper for select(2). */
 class Select {
 public:
@@ -102,6 +100,7 @@ public:
 
 private:
   int max_fd;
+  static fd_set dummy_fd_set;
   fd_set all_fds, read_fds, error_fds;
 };
 
