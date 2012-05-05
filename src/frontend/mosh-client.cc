@@ -30,11 +30,6 @@
 #include <curses.h>
 #include <term.h>
 
-/* For newer skalibs */
-extern "C" {
-  const char *PROG = "mosh-client";
-}
-
 void usage( const char *argv0 ) {
   fprintf( stderr, "mosh-client (%s)\n", PACKAGE_STRING );
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );

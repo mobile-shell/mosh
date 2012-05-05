@@ -160,49 +160,6 @@ AS_IF([test x"$with_utempter" != xno],
 
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
-AC_ARG_WITH([skalibs],
-  [AS_HELP_STRING([--with-skalibs[=DIR]],
-     [root directory of skalibs installation])],
-  [with_skalibs=$withval
-   AS_IF([test x"$withval" != xyes],
-     [SKALIBS_CPPFLAGS="-I$withval/include"
-      SKALIBS_LDFLAGS="-L$withval/lib"])],
-  [with_skalibs=no])
-AC_ARG_WITH([skalibs-include],
-  [AS_HELP_STRING([--with-skalibs-include=DIR],
-     [specify exact include dir for skalibs headers])],
-  [SKALIBS_CPPFLAGS="-I$withval"])
-AC_ARG_WITH([skalibs-libdir],
-  [AS_HELP_STRING([--with-skalibs-libdir=DIR],
-     [specify exact library dir for skalibs libraries])],
-  [SKALIBS_LDFLAGS="-L$withval"])
-
-STDDJB_CPPFLAGS=""
-STDDJB_LDFLAGS=""
-AS_IF([test x"$with_skalibs" != xno],
-  [AX_CHECK_LIBRARY([SKALIBS], [selfpipe.h], [stddjb], [],
-     [AC_MSG_ERROR([Unable to find skalibs.])])
-   AC_SUBST([STDDJB_CPPFLAGS], ["$SKALIBS_CPPFLAGS"])
-   AC_SUBST([STDDJB_LDFLAGS], ["$SKALIBS_LDFLAGS -lstddjb"])])
-
-have_signalfd="no"
-AC_CHECK_DECL([signalfd],
-  [have_signalfd="yes"
-   AC_DEFINE([HAVE_SIGNALFD], [1],
-     [Define if signalfd is available.])],
-  , [[#include <sys/signalfd.h>]])
-
-AS_IF([test x"$have_signalfd" = xno],
-  [AC_DEFINE([USE_LIBSTDDJB], [1],
-    [Define if we should call functions from libstddjb (part of skalibs)])])
-AM_CONDITIONAL([USE_LIBSTDDJB],
-  [test x"$have_signalfd" = xno])
-
-# Build the bundled libstddjb only if we'll use it and we don't have a
-# path for skalibs.
-AM_CONDITIONAL([COND_THIRD_LIBSTDDJB],
-  [test x"$have_signalfd" = xno && test x"$with_skalibs" = xno])
-
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
 
@@ -303,8 +260,6 @@ PKG_CHECK_MODULES([protobuf], [protobuf])
 
 AC_CONFIG_FILES([
   Makefile
-  third/Makefile
-  third/libstddjb/Makefile
   src/Makefile
   src/crypto/Makefile
   src/frontend/Makefile
