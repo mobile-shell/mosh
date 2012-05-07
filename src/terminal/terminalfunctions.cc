@@ -229,7 +229,8 @@ void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
   }
 }
 
-static Function func_CSI_TBC( CSI, "g", CSI_TBC );
+/* TBC preserves wrap state */
+static Function func_CSI_TBC( CSI, "g", CSI_TBC, false );
 
 static bool *get_DEC_mode( int param, Framebuffer *fb ) {
   switch ( param ) {
