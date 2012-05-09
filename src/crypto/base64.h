@@ -26,9 +26,6 @@
 /* Get size_t. */
 # include <stddef.h>
 
-/* Get bool. */
-# include <stdbool.h>
-
 /* This uses that the expression (n+(k-1))/k means the smallest
    integer >= n/k, i.e., the ceiling of n/k.  */
 # define BASE64_LENGTH(inlen) ((((inlen) + 2) / 3) * 4)

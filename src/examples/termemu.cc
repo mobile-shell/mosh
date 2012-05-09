@@ -51,6 +51,7 @@
 #include "fatal_assert.h"
 #include "locale_utils.h"
 #include "sigfd.h"
+#include "pty_compat.h"
 
 /* For newer skalibs */
 extern "C" {

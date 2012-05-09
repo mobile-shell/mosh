@@ -23,6 +23,7 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/poll.h>
@@ -45,13 +46,6 @@
 #include <paths.h>
 #endif
 
-#include "sigfd.h"
-#include "completeterminal.h"
-#include "swrite.h"
-#include "user.h"
-#include "fatal_assert.h"
-#include "locale_utils.h"
-
 #if HAVE_PTY_H
 #include <pty.h>
 #elif HAVE_UTIL_H
@@ -61,6 +55,14 @@
 #if FORKPTY_IN_LIBUTIL
 #include <libutil.h>
 #endif
+
+#include "sigfd.h"
+#include "completeterminal.h"
+#include "swrite.h"
+#include "user.h"
+#include "fatal_assert.h"
+#include "locale_utils.h"
+#include "pty_compat.h"
 
 #ifndef _PATH_BSHELL
 #define _PATH_BSHELL "/bin/sh"
@@ -342,10 +344,6 @@ int run_server( const char *desired_ip, const char *desired_port,
     _exit( 0 );
   }
 
-  if ( setsid() < 0 ) {
-    perror( "setsid" );
-  }
-
   fprintf( stderr, "\nmosh-server (%s)\n", PACKAGE_STRING );
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
@@ -367,9 +365,20 @@ int run_server( const char *desired_ip, const char *desired_port,
   /* close file descriptors */
   if ( !verbose ) {
     /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
-    fclose( stdin );
-    fclose( stdout );
-    fclose( stderr );
+    int nullfd;
+
+    nullfd = open( "/dev/null", O_RDWR );
+    if ( nullfd == -1 ) {
+      perror( "dup2" );
+      exit( 1 );
+    }
+
+    if ( dup2 ( nullfd, STDIN_FILENO ) < 0 ||
+         dup2 ( nullfd, STDOUT_FILENO ) < 0 ||
+         dup2 ( nullfd, STDERR_FILENO ) < 0 ) {
+      perror( "dup2" );
+      exit( 1 );
+    }
   }
 
   /* Fork child process */
@@ -382,11 +391,6 @@ int run_server( const char *desired_ip, const char *desired_port,
 
   if ( child == 0 ) {
     /* child */
-
-    /* reopen stdio */
-    stdin = fdopen( STDIN_FILENO, "r" );
-    stdout = fdopen( STDOUT_FILENO, "w" );
-    stderr = fdopen( STDERR_FILENO, "w" );
 
     /* unblock signals */
     sigset_t signals_to_block;
