@@ -88,9 +88,7 @@ ssize_t getline( char ** restrict linep,
 
 using namespace std;
 
-static const char *const MOSH_VERSION = "1.2";
-
-inline string shell_quote_string( string x )
+inline string shell_quote_string( const string &x )
 {
   string result = "'";
   string rest = x;
@@ -108,10 +106,12 @@ inline string shell_quote_string( string x )
 }
 
 template <typename SequenceT>
-inline string shell_quote( SequenceT &sequence )
+inline string shell_quote( const SequenceT &sequence )
 {
   string result;
-  for ( typename SequenceT::iterator i = sequence.begin(); i != sequence.end(); i++ ) {
+  for ( typename SequenceT::const_iterator i = sequence.begin();
+        i != sequence.end();
+        i++ ) {
     result += shell_quote_string( *i ) + " ";
   }
   return result.substr( 0, result.size() - 1 );
@@ -156,19 +156,19 @@ static const char *version_format =
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.";
 
-static char **argv;
+static const char *key_valid_char_set =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/+";
 
-void predict_check( string predict, bool env_set )
+static char *argv0;
+
+void predict_check( const string &predict, bool env_set )
 {
   if ( predict != "adaptive" &&
        predict != "always" &&
        predict != "never" ) {
-    string explanation;
-    if ( env_set ) {
-      explanation = " (MOSH_PREDICTION_DISPLAY in environment)";
-    }
-    fprintf( stderr, "%s: Unknown mode \"%s\"%s.\n", argv[0], predict.c_str(), explanation.c_str() );
-    die( usage_format, argv[0] );
+    fprintf( stderr, "%s: Unknown mode \"%s\"%s.\n", argv0, predict.c_str(),
+        env_set ? " (MOSH_PREDICTION_DISPLAY in environment)" : "" );
+    die( usage_format, argv0 );
   }
 }
 
@@ -178,8 +178,11 @@ void cat( int ifd, int ofd )
   ssize_t n;
   while ( 1 ) {
     n = read( ifd, buf, sizeof( buf ) );
-    if ( n==-1 && errno == EINTR ) {
-      continue;
+    if ( n==-1 ) {
+      if (errno == EINTR ) {
+        continue;
+      }
+      break;
     }
     if ( n==0 ) {
       break;
@@ -191,9 +194,9 @@ void cat( int ifd, int ofd )
   }
 }
 
-int main( int argc, char *_argv[] )
+int main( int argc, char *argv[] )
 {
-  argv = _argv;
+  argv0 = argv[0];
   string client = "mosh-client";
   string server = "mosh-server";
   string ssh = "ssh";
@@ -254,7 +257,7 @@ int main( int argc, char *_argv[] )
     die( usage_format, argv[0] );
   }
   if ( version ) {
-    die( version_format, MOSH_VERSION );
+    die( version_format, PACKAGE_VERSION );
   }
 
   if ( predict.size() ) {
@@ -271,7 +274,9 @@ int main( int argc, char *_argv[] )
     if ( port_request.find_first_not_of( "0123456789" ) != string::npos ||
          atoi( port_request.c_str() ) < 0 ||
          atoi( port_request.c_str() ) > 65535 ) {
-      die( "%s: Server-side port (%s) must be within valid range [0..65535].", argv[0], port_request.c_str() );
+      die( "%s: Server-side port (%s) must be within valid range [0..65535].",
+           argv[0],
+           port_request.c_str() );
     }
   }
 
@@ -289,8 +294,14 @@ int main( int argc, char *_argv[] )
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ( ( rv = getaddrinfo( host.c_str(), port_request.size() ? port_request.c_str() : "ssh", &hints, &servinfo ) ) != 0 ) {
-      die( "%s: Could not resolve hostname %s: getaddrinfo: %s", argv[0], host.c_str(), gai_strerror( rv ) );
+    if ( ( rv = getaddrinfo( host.c_str(),
+                             port_request.size() ? port_request.c_str() : "ssh",
+                             &hints,
+                             &servinfo ) ) != 0 ) {
+      die( "%s: Could not resolve hostname %s: getaddrinfo: %s",
+           argv[0],
+           host.c_str(),
+           gai_strerror( rv ) );
     }
 
     // loop through all the results and connect to the first we can
@@ -375,7 +386,10 @@ int main( int argc, char *_argv[] )
 
   int pty, pty_slave;
   struct winsize ws;
-  ioctl( 0, TIOCGWINSZ, &ws );
+  if ( ioctl( 0, TIOCGWINSZ, &ws ) == -1 ) {
+    die( "%s: ioctl: %d", argv[0], errno );
+  }
+
   if ( openpty( &pty, &pty_slave, NULL, NULL, &ws ) == -1 ) {
     die( "%s: openpty: %d", argv[0], errno );
   }
@@ -449,7 +463,7 @@ int main( int argc, char *_argv[] )
       }
       string rest = line.substr( port_end + 1 );
       size_t key_end = rest.find_last_not_of( " \t\n\r" );
-      size_t key_valid_end = rest.find_last_of( "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/+" );
+      size_t key_valid_end = rest.find_last_of( key_valid_char_set );
       if ( key_valid_end == key_end && key_end + 1 == 22 ) {
         key = rest.substr( 0, key_end + 1 );
       }
@@ -461,7 +475,8 @@ int main( int argc, char *_argv[] )
   waitpid( pid, NULL, 0 );
 
   if ( !ip.size() ) {
-    die( "%s: Did not find remote IP address (is SSH ProxyCommand disabled?).", argv[0] );
+    die( "%s: Did not find remote IP address (is SSH ProxyCommand disabled?).",
+         argv[0] );
   }
 
   if ( !key.size() || !port.size() ) {
