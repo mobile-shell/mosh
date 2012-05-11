@@ -235,11 +235,15 @@
 	}
 #elif __ARM_NEON__
     #include <arm_neon.h>
-    typedef int8x16_t block;      /* Yay! Endian-neutral reads! */
-    #define xor_block(x,y)             veorq_s8(x,y)
-    #define zero_block()               vdupq_n_s8(0)
+    typedef struct{int8x16_t v;} block;      /* Yay! Endian-neutral reads! */
+    static inline block _block(const int8x16_t &v) {
+        block out = {v};
+        return out;
+    }
+    #define xor_block(x,y)             _block(veorq_s8(x.v,y.v))
+    #define zero_block()               _block(vdupq_n_s8(0))
     static inline int unequal_blocks(block a, block b) {
-		int64x2_t t=veorq_s64((int64x2_t)a,(int64x2_t)b);
+		int64x2_t t=veorq_s64((int64x2_t)a.v,(int64x2_t)b.v);
 		return (vgetq_lane_s64(t,0)|vgetq_lane_s64(t,1))!=0;
     }
     #define swap_if_le(b)          (b)  /* Using endian-neutral int8x16_t */
@@ -251,19 +255,19 @@
 		uint64x2_t lo = *(uint64x2_t *)(KtopStr+1);   /* hi = B C */
 		int64x2_t ls = vdupq_n_s64(bot);
 		int64x2_t rs = vqaddq_s64(k64,ls);
-		block rval = (block)veorq_u64(vshlq_u64(hi,ls),vshlq_u64(lo,rs));
+		block rval = _block((int8x16_t)veorq_u64(vshlq_u64(hi,ls),vshlq_u64(lo,rs)));
 		if (little.endian)
-			rval = vrev64q_s8(rval);
+			rval.v = vrev64q_s8(rval.v);
 		return rval;
 	}
 	static inline block double_block(block b)
 	{
-		const block mask = {135,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-		block tmp = vshrq_n_s8(b,7);
+		const int8x16_t mask = {135,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+		int8x16_t tmp = vshrq_n_s8(b.v,7);
 		tmp = vandq_s8(tmp, mask);
 		tmp = vextq_s8(tmp, tmp, 1);  /* Rotate high byte to end */
-		b = vshlq_n_s8(b,1);
-		return veorq_s8(tmp,b);
+		b.v = vshlq_n_s8(b.v,1);
+		return _block(veorq_s8(tmp,b.v));
 	}
 #else
     typedef struct { uint64_t l,r; } block;
