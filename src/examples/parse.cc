@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <errno.h>
-#include <sys/poll.h>
 #include <string.h>
 #include <locale.h>
 #include <wchar.h>
@@ -43,6 +42,7 @@
 #include "swrite.h"
 #include "locale_utils.h"
 #include "fatal_assert.h"
+#include "select.h"
 
 const size_t buf_size = 1024;
 
@@ -121,34 +121,30 @@ int main( int argc __attribute__((unused)),
 void emulate_terminal( int fd )
 {
   Parser::UTF8Parser parser;
-  struct pollfd pollfds[ 2 ];
 
-  pollfds[ 0 ].fd = STDIN_FILENO;
-  pollfds[ 0 ].events = POLLIN;
-
-  pollfds[ 1 ].fd = fd;
-  pollfds[ 1 ].events = POLLIN;
+  Select &sel = Select::get_instance();
+  sel.add_fd( STDIN_FILENO );
+  sel.add_fd( fd );
 
   while ( 1 ) {
-    int active_fds = poll( pollfds, 2, -1 );
+    int active_fds = sel.select( -1 );
     if ( active_fds <= 0 ) {
-      perror( "poll" );
+      perror( "select" );
       return;
     }
 
-    if ( pollfds[ 0 ].revents & POLLIN ) {
+    if ( sel.read( STDIN_FILENO ) ) {
       if ( copy( STDIN_FILENO, fd ) < 0 ) {
 	return;
       }
-    } else if ( pollfds[ 1 ].revents & POLLIN ) {
+    } else if ( sel.read( fd ) ) {
       if ( vt_parser( fd, &parser ) < 0 ) {
 	return;
       }
-    } else if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
-		& (POLLERR | POLLHUP | POLLNVAL) ) {
+    } else if ( sel.error( STDIN_FILENO ) || sel.error( fd ) ) {
       return;
     } else {
-      fprintf( stderr, "poll mysteriously woken up\n" );
+      fprintf( stderr, "select mysteriously woken up\n" );
     }
   }
 }

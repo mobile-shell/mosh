@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -38,18 +37,12 @@
 #include <util.h>
 #endif
 
-#include "sigfd.h"
 #include "swrite.h"
 #include "completeterminal.h"
 #include "user.h"
 #include "terminaloverlay.h"
 #include "locale_utils.h"
 #include "fatal_assert.h"
-
-/* For newer skalibs */
-extern "C" {
-  const char *PROG = "benchmark";
-}
 
 const int ITERATIONS = 100000;
 

@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <errno.h>
-#include <sys/poll.h>
 #include <string.h>
 #include <locale.h>
 #include <wchar.h>
@@ -50,12 +49,7 @@
 #include "swrite.h"
 #include "fatal_assert.h"
 #include "locale_utils.h"
-#include "sigfd.h"
-
-/* For newer skalibs */
-extern "C" {
-  const char *PROG = "termemu";
-}
+#include "select.h"
 
 const size_t buf_size = 16384;
 
@@ -190,7 +184,7 @@ bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame,
    3. Resize events (from a SIGWINCH signal) get turned into
       "Resize" actions and applied to the terminal.
 
-   At every event from poll(), we run the tick() function to
+   At every event from select(), we run the tick() function to
    possibly print a new frame (if we haven't printed one in the
    last 1/50 second). The new frames are "differential" -- they
    assume the previous frame was sent to the real terminal.
@@ -198,15 +192,6 @@ bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame,
 
 void emulate_terminal( int fd )
 {
-  /* establish WINCH fd and start listening for signal */
-  int signal_fd = sigfd_init();
-  if ( signal_fd < 0 ) {
-    perror( "sigfd_init" );
-    return;
-  }
-
-  fatal_assert( sigfd_trap(SIGWINCH) == 0 );
-
   /* get current window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -227,36 +212,28 @@ void emulate_terminal( int fd )
   /* open display */
   Terminal::Display display( true ); /* use TERM to initialize */
 
-  struct pollfd pollfds[ 3 ];
-
-  pollfds[ 0 ].fd = STDIN_FILENO;
-  pollfds[ 0 ].events = POLLIN;
-
-  pollfds[ 1 ].fd = fd;
-  pollfds[ 1 ].events = POLLIN;
-
-  pollfds[ 2 ].fd = signal_fd;
-  pollfds[ 2 ].events = POLLIN;
+  Select &sel = Select::get_instance();
+  sel.add_fd( STDIN_FILENO );
+  sel.add_fd( fd );
+  sel.add_signal( SIGWINCH );
 
   swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
 
-  int poll_timeout = -1;
+  int timeout = -1;
 
   while ( 1 ) {
-    int active_fds = poll( pollfds, 3, poll_timeout );
-    if ( active_fds < 0 && errno == EINTR ) {
-      continue;
-    } else if ( active_fds < 0 ) {
-      perror( "poll" );
+    int active_fds = sel.select( timeout );
+    if ( active_fds < 0 ) {
+      perror( "select" );
       break;
     }
 
-    if ( pollfds[ 0 ].revents & POLLIN ) {
+    if ( sel.read( STDIN_FILENO ) ) {
       /* input from user */
       char buf[ buf_size ];
 
       /* fill buffer if possible */
-      ssize_t bytes_read = read( pollfds[ 0 ].fd, buf, buf_size );
+      ssize_t bytes_read = read( STDIN_FILENO, buf, buf_size );
       if ( bytes_read == 0 ) { /* EOF */
 	return;
       } else if ( bytes_read < 0 ) {
@@ -274,12 +251,12 @@ void emulate_terminal( int fd )
       if ( swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	break;
       }
-    } else if ( pollfds[ 1 ].revents & POLLIN ) {
+    } else if ( sel.read( fd ) ) {
       /* input from host */
       char buf[ buf_size ];
 
       /* fill buffer if possible */
-      ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
+      ssize_t bytes_read = read( fd, buf, buf_size );
       if ( bytes_read == 0 ) { /* EOF */
 	return;
       } else if ( bytes_read < 0 ) {
@@ -291,10 +268,7 @@ void emulate_terminal( int fd )
       if ( swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	break;
       }
-    } else if ( pollfds[ 2 ].revents & POLLIN ) {
-      /* resize */
-      fatal_assert( sigfd_read() == SIGWINCH );
-
+    } else if ( sel.signal( SIGWINCH ) ) {
       /* get new size */
       if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
 	perror( "ioctl TIOCGWINSZ" );
@@ -310,17 +284,16 @@ void emulate_terminal( int fd )
 	perror( "ioctl TIOCSWINSZ" );
 	return;
       }
-    } else if ( (pollfds[ 0 ].revents | pollfds[ 1 ].revents)
-		& (POLLERR | POLLHUP | POLLNVAL) ) {
+    } else if ( sel.error( STDIN_FILENO ) || sel.error( fd ) ) {
       break;
     }
 
     Terminal::Framebuffer new_frame( complete.get_fb() );
 
     if ( tick( state, new_frame, display ) ) { /* there was a frame */
-      poll_timeout = -1;
+      timeout = -1;
     } else {
-      poll_timeout = 20;
+      timeout = 20;
     }
   }
 

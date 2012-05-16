@@ -160,49 +160,6 @@ AS_IF([test x"$with_utempter" != xno],
 
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
-AC_ARG_WITH([skalibs],
-  [AS_HELP_STRING([--with-skalibs[=DIR]],
-     [root directory of skalibs installation])],
-  [with_skalibs=$withval
-   AS_IF([test x"$withval" != xyes],
-     [SKALIBS_CPPFLAGS="-I$withval/include"
-      SKALIBS_LDFLAGS="-L$withval/lib"])],
-  [with_skalibs=no])
-AC_ARG_WITH([skalibs-include],
-  [AS_HELP_STRING([--with-skalibs-include=DIR],
-     [specify exact include dir for skalibs headers])],
-  [SKALIBS_CPPFLAGS="-I$withval"])
-AC_ARG_WITH([skalibs-libdir],
-  [AS_HELP_STRING([--with-skalibs-libdir=DIR],
-     [specify exact library dir for skalibs libraries])],
-  [SKALIBS_LDFLAGS="-L$withval"])
-
-STDDJB_CPPFLAGS=""
-STDDJB_LDFLAGS=""
-AS_IF([test x"$with_skalibs" != xno],
-  [AX_CHECK_LIBRARY([SKALIBS], [selfpipe.h], [stddjb], [],
-     [AC_MSG_ERROR([Unable to find skalibs.])])
-   AC_SUBST([STDDJB_CPPFLAGS], ["$SKALIBS_CPPFLAGS"])
-   AC_SUBST([STDDJB_LDFLAGS], ["$SKALIBS_LDFLAGS -lstddjb"])])
-
-have_signalfd="no"
-AC_CHECK_DECL([signalfd],
-  [have_signalfd="yes"
-   AC_DEFINE([HAVE_SIGNALFD], [1],
-     [Define if signalfd is available.])],
-  , [[#include <sys/signalfd.h>]])
-
-AS_IF([test x"$have_signalfd" = xno],
-  [AC_DEFINE([USE_LIBSTDDJB], [1],
-    [Define if we should call functions from libstddjb (part of skalibs)])])
-AM_CONDITIONAL([USE_LIBSTDDJB],
-  [test x"$have_signalfd" = xno])
-
-# Build the bundled libstddjb only if we'll use it and we don't have a
-# path for skalibs.
-AM_CONDITIONAL([COND_THIRD_LIBSTDDJB],
-  [test x"$have_signalfd" = xno && test x"$with_skalibs" = xno])
-
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
 
@@ -249,66 +206,6 @@ AC_CHECK_DECL([forkpty],
      [Define if libutil.h necessary for forkpty().])],
   , [[#include <sys/types.h>
   #include <libutil.h>]])
-
-AC_ARG_VAR([poll_CFLAGS], [C compiler flags for poll])
-AC_ARG_VAR([poll_LIBS], [linker flags for poll])
-AS_IF([test -z "$poll_LIBS"], [
-  AC_CHECK_LIB([poll], [poll], [poll_LIBS="-lpoll"])
-])
-
-# Check to make sure poll() can handle stdin and ptys
-AC_CACHE_CHECK([whether poll can handle ptys],
-               [ac_cv_poll_pty],
-[
-  save_CFLAGS="$CFLAGS"
-  save_LIBS="$LIBS"
-
-  AS_IF([test "x$poll_CFLAGS" != "x"],
-    [CFLAGS="$CFLAGS $poll_CFLAGS"])
-
-  AS_IF([test "x$poll_LIBS" != "x"],
-    [LIBS="$LIBS $poll_LIBS"])
-
-  LIBS="$LIBS -lutil"
-
-  AC_RUN_IFELSE([AC_LANG_PROGRAM([[
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#if HAVE_PTY_H
-#include <pty.h>
-#elif HAVE_UTIL_H
-#include <util.h>
-#endif
-#if FORKPTY_IN_LIBUTIL
-#include <libutil.h>
-#endif
-#include <sys/poll.h>
-
-int master, slave;
-struct pollfd pollfds[ 1 ];
-]], [[
-if ( openpty( &master, &slave, NULL, NULL, NULL ) < 0 ) {
-   perror( "openpty" );
-   exit( 1 );
-}
-pollfds[ 0 ].fd = master;
-pollfds[ 0 ].events = POLLIN;
-int active_fds = poll( pollfds, 1, 100 );
-if ( active_fds < 0 ) {
-   perror( "poll" );
-   exit( 1 );
-}
-if ( pollfds[ 0 ].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
-   exit( 2 );
-}
-]])],
-	[ac_cv_poll_pty=yes],
-	[ac_cv_poll_pty=no])
-  CFLAGS="$save_CFLAGS"
-  LIBS="$save_LIBS"
-])
-AM_CONDITIONAL([COND_THIRD_POLL], [test "x$ac_cv_poll_pty" = "xno"])
 
 AC_MSG_CHECKING([whether pipe2(..., O_CLOEXEC) is supported])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
@@ -363,9 +260,6 @@ PKG_CHECK_MODULES([protobuf], [protobuf])
 
 AC_CONFIG_FILES([
   Makefile
-  third/Makefile
-  third/libstddjb/Makefile
-  third/poll/Makefile
   src/Makefile
   src/crypto/Makefile
   src/frontend/Makefile

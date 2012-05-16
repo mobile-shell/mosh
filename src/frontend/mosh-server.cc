@@ -25,7 +25,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -45,12 +44,12 @@
 #include <paths.h>
 #endif
 
-#include "sigfd.h"
 #include "completeterminal.h"
 #include "swrite.h"
 #include "user.h"
 #include "fatal_assert.h"
 #include "locale_utils.h"
+#include "select.h"
 
 #if HAVE_PTY_H
 #include <pty.h>
@@ -67,11 +66,6 @@
 #endif
 
 #include "networktransport.cc"
-
-/* For newer skalibs */
-extern "C" {
-  const char *PROG = "mosh-server";
-}
 
 typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConnection;
 
@@ -319,12 +313,12 @@ int run_server( const char *desired_ip, const char *desired_port,
   fflush( stdout );
 
   /* don't let signals kill us */
-  sigset_t signals_to_block;
-
-  fatal_assert( sigemptyset( &signals_to_block ) == 0 );
-  fatal_assert( sigaddset( &signals_to_block, SIGHUP ) == 0 );
-  fatal_assert( sigaddset( &signals_to_block, SIGPIPE ) == 0 );
-  fatal_assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
+  struct sigaction sa;
+  sa.sa_handler = SIG_IGN;
+  sa.sa_flags = 0;
+  fatal_assert( 0 == sigfillset( &sa.sa_mask ) );
+  fatal_assert( 0 == sigaction( SIGHUP, &sa, NULL ) );
+  fatal_assert( 0 == sigaction( SIGPIPE, &sa, NULL ) );
 
   struct termios child_termios;
 
@@ -388,10 +382,13 @@ int run_server( const char *desired_ip, const char *desired_port,
     stdout = fdopen( STDOUT_FILENO, "w" );
     stderr = fdopen( STDERR_FILENO, "w" );
 
-    /* unblock signals */
-    sigset_t signals_to_block;
-    fatal_assert( sigemptyset( &signals_to_block ) == 0 );
-    fatal_assert( sigprocmask( SIG_SETMASK, &signals_to_block, NULL ) == 0 );
+    /* reenable signals */
+    struct sigaction sa;
+    sa.sa_handler = SIG_DFL;
+    sa.sa_flags = 0;
+    fatal_assert( 0 == sigfillset( &sa.sa_mask ) );
+    fatal_assert( 0 == sigaction( SIGHUP, &sa, NULL ) );
+    fatal_assert( 0 == sigaction( SIGPIPE, &sa, NULL ) );
 
     /* close server-related file descriptors */
     delete network;
@@ -468,27 +465,12 @@ int run_server( const char *desired_ip, const char *desired_port,
 
 void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
 {
-  /* establish fd for shutdown signals */
-  int signal_fd = sigfd_init();
-  if ( signal_fd < 0 ) {
-    perror( "sigfd_init" );
-    return;
-  }
-
-  fatal_assert( sigfd_trap( SIGTERM ) == 0 );
-  fatal_assert( sigfd_trap( SIGINT ) == 0 );
-
   /* prepare to poll for events */
-  struct pollfd pollfds[ 3 ];
-
-  pollfds[ 0 ].fd = network.fd();
-  pollfds[ 0 ].events = POLLIN;
-
-  pollfds[ 1 ].fd = host_fd;
-  pollfds[ 1 ].events = POLLIN;
-
-  pollfds[ 2 ].fd = signal_fd;
-  pollfds[ 2 ].events = POLLIN;
+  Select &sel = Select::get_instance();
+  sel.add_fd( network.fd() );
+  sel.add_fd( host_fd );
+  sel.add_signal( SIGTERM );
+  sel.add_signal( SIGINT );
 
   uint64_t last_remote_num = network.get_remote_state_num();
 
@@ -504,23 +486,21 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       uint64_t now = Network::timestamp();
 
       const int timeout_if_no_client = 60000;
-      int poll_timeout = min( network.wait_time(), terminal.wait_time( now ) );
+      int timeout = min( network.wait_time(), terminal.wait_time( now ) );
       if ( !network.has_remote_addr() ) {
-        poll_timeout = min( poll_timeout, timeout_if_no_client );
+        timeout = min( timeout, timeout_if_no_client );
       }
 
-      int active_fds = poll( pollfds, 3, poll_timeout );
-      if ( active_fds < 0 && errno == EINTR ) {
-	continue;
-      } else if ( active_fds < 0 ) {
-	perror( "poll" );
+      int active_fds = sel.select( timeout );
+      if ( active_fds < 0 ) {
+	perror( "select" );
 	break;
       }
 
       now = Network::timestamp();
       uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
 
-      if ( pollfds[ 0 ].revents & POLLIN ) {
+      if ( sel.read( network.fd() ) ) {
 	/* packet received from the network */
 	network.recv();
 	
@@ -585,22 +565,23 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
       
-      if ( pollfds[ 1 ].revents & POLLIN ) {
+      if ( sel.read( host_fd ) ) {
 	/* input from the host needs to be fed to the terminal */
 	const int buf_size = 16384;
 	char buf[ buf_size ];
 	
 	/* fill buffer if possible */
-	ssize_t bytes_read = read( pollfds[ 1 ].fd, buf, buf_size );
-	if ( bytes_read == 0 ) { /* EOF */
+	ssize_t bytes_read = read( host_fd, buf, buf_size );
+
+        /* If the pty slave is closed, reading from the master can fail with
+           EIO (see #264).  So we treat errors on read() like EOF. */
+        if ( bytes_read <= 0 ) {
+          bytes_read = 0;
 	  if ( !network.has_remote_addr() ) {
 	    spin(); /* let 60-second timer take care of this */
 	  } else if ( !network.shutdown_in_progress() ) {
 	    network.start_shutdown();
 	  }
-	} else if ( bytes_read < 0 ) {
-	  perror( "read" );
-	  return;
 	}
 	
 	string terminal_to_host = terminal.act( string( buf, bytes_read ) );
@@ -616,16 +597,8 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
 
-      if ( pollfds[ 2 ].revents & POLLIN ) {
+      if ( sel.any_signal() ) {
 	/* shutdown signal */
-	int signo = sigfd_read();
-	if ( signo == 0 ) {
-	  break;
-	} else if ( signo < 0 ) {
-	  perror( "sigfd_read" );
-	  break;
-	}
-
 	if ( network.has_remote_addr() && (!network.shutdown_in_progress()) ) {
 	  network.start_shutdown();
 	} else {
@@ -633,14 +606,12 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
       
-      if ( (pollfds[ 0 ].revents)
-	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+      if ( sel.error( network.fd() ) ) {
 	/* network problem */
 	break;
       }
 
-      if ( (pollfds[ 1 ].revents)
-	   & (POLLERR | POLLHUP | POLLNVAL) ) {
+      if ( sel.error( host_fd ) ) {
 	/* host problem */
 	if ( network.has_remote_addr() ) {
 	  network.start_shutdown();
