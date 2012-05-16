@@ -81,10 +81,16 @@ void Dispatcher::parse_params( void )
 
     errno = 0;
     char *endptr;
-    int val = strtol( segment_begin, &endptr, 10 );
+    long val = strtol( segment_begin, &endptr, 10 );
     if ( endptr == segment_begin ) {
       val = -1;
     }
+
+    if ( val > PARAM_MAX || errno == ERANGE ) {
+      val = -1;
+      errno = 0;
+    }
+
     if ( errno == 0 || segment_begin == endptr ) {
       parsed_params.push_back( val );
     }
@@ -95,10 +101,16 @@ void Dispatcher::parse_params( void )
   /* get last param */
   errno = 0;
   char *endptr;
-  int val = strtol( segment_begin, &endptr, 10 );
+  long val = strtol( segment_begin, &endptr, 10 );
   if ( endptr == segment_begin ) {
     val = -1;
   }
+
+  if ( val > PARAM_MAX || errno == ERANGE ) {
+    val = -1;
+    errno = 0;
+  }
+
   if ( errno == 0 || segment_begin == endptr ) {
     parsed_params.push_back( val );
   }
@@ -115,10 +127,6 @@ int Dispatcher::getparam( size_t N, int defaultval )
 
   if ( parsed_params.size() > N ) {
     ret = parsed_params[ N ];
-  }
-
-  if ( ret > PARAM_MAX ) {
-    ret = defaultval;
   }
 
   if ( ret < 1 ) ret = defaultval;
