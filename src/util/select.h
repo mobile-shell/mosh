@@ -34,16 +34,12 @@
 class Select {
 public:
   static Select &get_instance( void ) {
-    // NB: not thread-safe
-    if ( !instance ) {
-      instance = new Select;
-    }
-    return *instance;
+    /* COFU may or may not be thread-safe, depending on compiler */
+    static Select instance;
+    return instance;
   }
 
 private:
-  static Select *instance;
-
   Select()
     : max_fd( -1 )
     , got_any_signal( 0 )
