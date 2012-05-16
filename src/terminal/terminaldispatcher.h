@@ -77,6 +77,9 @@ namespace Terminal {
     void parse_params( void );
 
   public:
+    static const int PARAM_MAX = 65535;
+    /* prevent evil escape sequences from causing long loops */
+
     std::string terminal_to_host; /* this is the reply string */
 
     Dispatcher();

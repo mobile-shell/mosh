@@ -116,6 +116,11 @@ int Dispatcher::getparam( size_t N, int defaultval )
   if ( parsed_params.size() > N ) {
     ret = parsed_params[ N ];
   }
+
+  if ( ret > PARAM_MAX ) {
+    ret = defaultval;
+  }
+
   if ( ret < 1 ) ret = defaultval;
 
   return ret;
