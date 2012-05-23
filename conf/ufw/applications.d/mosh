@@ -1,0 +1,4 @@
+[mosh]
+title=Mosh (mobile shell)
+description=Mobile shell that supports roaming and intelligent local echo
+ports=60000:61000/udp

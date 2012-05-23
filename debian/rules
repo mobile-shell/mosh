@@ -20,4 +20,5 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=-stackprotector
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		--disable-silent-rules \
+		--enable-ufw \
 		--enable-compile-warnings=error

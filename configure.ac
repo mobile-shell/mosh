@@ -135,7 +135,7 @@ AC_ARG_ENABLE([server],
 AM_CONDITIONAL([BUILD_SERVER], [test x"$build_server" != xno])
 
 AC_ARG_ENABLE([tests],
-  [AS_HELP_STRING([--enable-tests], [Build tests])],
+  [AS_HELP_STRING([--enable-tests], [Build tests @<:@no@:>@])],
   [build_tests="$enableval"],
   [build_tests="no"])
 AM_CONDITIONAL([BUILD_TESTS], [test x"$build_tests" != xno])
@@ -145,6 +145,18 @@ AC_ARG_ENABLE([examples],
   [build_examples="$enableval"],
   [build_examples="no"])
 AM_CONDITIONAL([BUILD_EXAMPLES], [test x"$build_examples" != xno])
+
+AC_ARG_ENABLE([ufw],
+  [AS_HELP_STRING([--enable-ufw], [Install firewall profile for ufw (Uncomplicated Firewall) @<:@no@:>@])],
+  [install_ufw="$enableval"],
+  [install_ufw="no"])
+AM_CONDITIONAL([INSTALL_UFW], [test x"$install_ufw" != xno])
+
+AC_ARG_ENABLE([completion],
+  [AS_HELP_STRING([--enable-completion], [Install bash_completion rule @<:@yes@:>@])],
+  [install_completion="$enableval"],
+  [install_completion="yes"])
+AM_CONDITIONAL([INSTALL_COMPLETION], [test x"$install_completion" != xno])
 
 # Checks for libraries.
 AC_ARG_WITH([utempter],
@@ -286,5 +298,6 @@ AC_CONFIG_FILES([
   src/examples/Makefile
   src/tests/Makefile
   man/Makefile
+  conf/Makefile
 ])
 AC_OUTPUT
