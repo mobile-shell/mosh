@@ -23,6 +23,10 @@
 
 	* Remove use of poll() and OS X poll workaround. (Keegan McAllister)
 
+	* Include bash_completion file (ejeffrey)
+
+	* Include UFW firewall profile (Fumihito YOSHIDA)
+
 2012-04-26 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.2 released.
