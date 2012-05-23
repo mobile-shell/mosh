@@ -157,7 +157,7 @@ std::string Emulator::open( void )
 
 std::string Emulator::close( void )
 {
-  return std::string( "\033[?1l\033[0m" );
+  return std::string( "\033[?1l\033[0m\033[?25h" );
 }
 
 void Emulator::resize( size_t s_width, size_t s_height )
