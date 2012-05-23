@@ -102,10 +102,13 @@ namespace Network {
     double SRTT;
     double RTTVAR;
 
-    /* Exception from send(), to be delivered if the frontend asks for it,
+    /* Exception from send() or recv(), to be delivered if the frontend asks for it,
        without altering control flow. */
     bool have_send_exception;
     NetworkException send_exception;
+
+    bool have_recv_exception;
+    NetworkException recv_exception;
 
     Packet new_packet( string &s_payload );
 
@@ -131,6 +134,11 @@ namespace Network {
     const NetworkException *get_send_exception( void ) const
     {
       return have_send_exception ? &send_exception : NULL;
+    }
+
+    const NetworkException *get_recv_exception( void ) const
+    {
+      return have_recv_exception ? &recv_exception : NULL;
     }
   };
 }
