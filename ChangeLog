@@ -1,3 +1,28 @@
+2012-05-XX Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 1.2.1 released.
+
+	* Improve performance on lossy links.
+
+	* New diagnostic message when link is dead in only one direction.
+
+	* Use less CPU when link is down. (Keegan McAllister)
+
+	* Use much less CPU when application or mosh-server sends
+	  large repeat counts (resolves CVE-2012-2385, reported by
+	  Timo Juhani Lindfors).
+
+	* Use less memory when mosh-server is malicious.
+
+	* Fix vttest regression re: wrapping and tabs.
+
+	* Enable roundtrip verifier of terminal emulator correctness
+	  when verbose.
+
+	* Remove skalibs as a dependency. (Keegan McAllister)
+
+	* Remove use of poll() and OS X poll workaround. (Keegan McAllister)
+
 2012-04-26 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.2 released.
