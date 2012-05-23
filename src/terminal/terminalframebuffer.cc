@@ -479,7 +479,7 @@ std::string Renditions::sgr( void ) const
 /* Reduce 256 "standard" colors to the 8 ANSI colors. */
 
 /* Terminal emulators generally agree on the (R',G',B') values of the
-   "standard" 256-color pallette beyond #15, but for the first 16
+   "standard" 256-color palette beyond #15, but for the first 16
    colors there is disagreement. Most terminal emulators are roughly
    self-consistent, except on Ubuntu's gnome-terminal where "ANSI
    blue" (#4) has been replaced with the aubergine system-wide
@@ -488,7 +488,7 @@ std::string Renditions::sgr( void ) const
 
    Terminal emulators that advertise "xterm" are inconsistent on the
    handling of initc to change the contents of a cell in the color
-   pallette. On RIS (reset to initial state) or choosing reset from
+   palette. On RIS (reset to initial state) or choosing reset from
    the user interface, xterm resets all entries, but gnome-terminal
    only resets entries beyond 16. (rxvt doesn't reset any entries,
    and Terminal.app ignores initc.) On initc, xterm applies changes

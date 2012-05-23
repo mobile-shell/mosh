@@ -53,7 +53,7 @@ void STMClient::init( void )
     string native_charset( locale_charset() );
 
     fprintf( stderr, "mosh-client needs a UTF-8 native locale to run.\n\n" );
-    fprintf( stderr, "Unfortunately, the client's environemnt (%s) specifies\nthe character set \"%s\".\n\n", native_ctype.str().c_str(), native_charset.c_str() );
+    fprintf( stderr, "Unfortunately, the client's environment (%s) specifies\nthe character set \"%s\".\n\n", native_ctype.str().c_str(), native_charset.c_str() );
     int unused __attribute((unused)) = system( "locale" );
     exit( 1 );
   }
