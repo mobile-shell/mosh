@@ -388,11 +388,12 @@ void STMClient::main( void )
 	   && (timestamp() - network->get_latest_remote_state().timestamp > 250) ) {
 	if ( timestamp() - network->get_latest_remote_state().timestamp > 15000 ) {
 	  if ( !network->shutdown_in_progress() ) {
-	    overlays.get_notification_engine().set_notification_string( wstring( L"Timed out waiting for server, exiting..." ), true );
+	    overlays.get_notification_engine().set_notification_string( wstring( L"Timed out waiting for server..." ), true );
 	    network->start_shutdown();
 	  }
+	} else {
+	  overlays.get_notification_engine().set_notification_string( connecting_notification );
 	}
-	overlays.get_notification_engine().set_notification_string( connecting_notification );
       } else if ( (network->get_remote_state_num() != 0)
 		  && (overlays.get_notification_engine().get_notification_string()
 		      == connecting_notification) ) {
