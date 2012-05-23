@@ -153,9 +153,9 @@ AC_ARG_ENABLE([ufw],
 AM_CONDITIONAL([INSTALL_UFW], [test x"$install_ufw" != xno])
 
 AC_ARG_ENABLE([completion],
-  [AS_HELP_STRING([--enable-completion], [Install bash_completion rule @<:@yes@:>@])],
+  [AS_HELP_STRING([--enable-completion], [Install bash_completion rule @<:@no@:>@])],
   [install_completion="$enableval"],
-  [install_completion="yes"])
+  [install_completion="no"])
 AM_CONDITIONAL([INSTALL_COMPLETION], [test x"$install_completion" != xno])
 
 # Checks for libraries.
