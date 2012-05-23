@@ -112,7 +112,7 @@ void STMClient::shutdown( void )
   }
 
   if ( still_connecting() ) {
-    fprintf( stderr, "mosh did not make a successful connection to %s:%d.\n", ip.c_str(), port );
+    fprintf( stderr, "\nmosh did not make a successful connection to %s:%d.\n", ip.c_str(), port );
     fprintf( stderr, "Please verify that UDP port %d is not firewalled and can reach the server.\n\n", port );
     fprintf( stderr, "(By default, mosh uses a UDP port between 60000 and 61000. The -p option\nselects a specific UDP port number.)\n" );
   } else if ( network ) {
@@ -388,6 +388,7 @@ void STMClient::main( void )
 	   && (timestamp() - network->get_latest_remote_state().timestamp > 250) ) {
 	if ( timestamp() - network->get_latest_remote_state().timestamp > 15000 ) {
 	  if ( !network->shutdown_in_progress() ) {
+	    overlays.get_notification_engine().set_notification_string( wstring( L"Timed out waiting for server, exiting..." ), true );
 	    network->start_shutdown();
 	  }
 	}
