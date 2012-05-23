@@ -127,12 +127,18 @@ public:
     return ret;
   }
 
-  bool read( int fd ) const
+  bool read( int fd )
+#if FD_ISSET_IS_CONST
+    const
+#endif
   {
     return FD_ISSET( fd, &read_fds );
   }
 
-  bool error( int fd ) const
+  bool error( int fd )
+#if FD_ISSET_IS_CONST
+    const
+#endif
   {
     return FD_ISSET( fd, &error_fds );
   }

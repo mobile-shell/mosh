@@ -218,6 +218,20 @@ int pipefd[2];
    AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])])
 
+AC_MSG_CHECKING([whether FD_ISSET() argument is const])
+AC_LANG_PUSH(C++)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/select.h>
+class T {
+public:
+  fd_set fds;
+  bool Fun( void ) const { return FD_ISSET( 0, &fds ); } };]],
+[[T x; return x.Fun();]])],
+  [AC_DEFINE([FD_ISSET_IS_CONST], [1],
+     [Define if FD_ISSET() fd_set argument is const.])
+   AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])])
+AC_LANG_POP(C++)
+
 AC_CHECK_DECLS([__builtin_bswap64, __builtin_ctz])
 
 AC_CHECK_DECL([mach_absolute_time],
