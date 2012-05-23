@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <assert.h>
 #include <iostream>
 
 #include "networktransport.h"
@@ -157,7 +156,7 @@ void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwawa
     i = inext;
   }
 
-  assert( received_states.size() > 0 );
+  fatal_assert( received_states.size() > 0 );
 }
 
 template <class MyState, class RemoteState>
