@@ -1,4 +1,4 @@
-2012-05-XX Keith Winstein <mosh-devel@mit.edu>
+2012-05-25 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.2.1 released.
 
@@ -23,9 +23,16 @@
 
 	* Remove use of poll() and OS X poll workaround. (Keegan McAllister)
 
-	* Include bash_completion file (ejeffrey)
+	* Include bash_completion file. (ejeffrey)
 
-	* Include UFW firewall profile (Fumihito YOSHIDA)
+	* Include UFW firewall profile. (Fumihito YOSHIDA)
+
+	* Warning on out-of-order/duplicated datagrams
+	  (or failed nonce increment).
+
+	* Clearer error message on invalid port number.
+
+	* Cleanups to quit scenario when firewalled.
 
 2012-04-26 Keith Winstein <mosh-devel@mit.edu>
 
