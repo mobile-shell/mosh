@@ -118,7 +118,7 @@ void Connection::setup( void )
  /* set diffserv values to AF42 + ECT */
   uint8_t dscp = 0x92;
   if ( setsockopt( sock, IPPROTO_IP, IP_TOS, &dscp, 1) < 0 ) {
-    throw NetworkException( "setsockopt on tos setting", errno );
+    perror( "setsockopt( IP_TOS )" );
   }
 }
 
