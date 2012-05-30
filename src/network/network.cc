@@ -139,9 +139,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     SRTT( 1000 ),
     RTTVAR( 500 ),
     have_send_exception( false ),
-    send_exception(),
-    have_recv_exception( false ),
-    recv_exception()
+    send_exception()
 {
   setup();
 
@@ -250,9 +248,7 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     SRTT( 1000 ),
     RTTVAR( 500 ),
     have_send_exception( false ),
-    send_exception(),
-    have_recv_exception( false ),
-    recv_exception()
+    send_exception()
 {
   setup();
 
@@ -316,11 +312,6 @@ string Connection::recv( void )
 
   dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
 
-  if ( p.seq < expected_receiver_seq ) {
-    have_recv_exception = true;
-    recv_exception = NetworkException( "Out-of-order or duplicated packet received", 0 );
-  }
-
   if ( p.seq >= expected_receiver_seq ) { /* don't use out-of-order packets for timestamp or targeting */
     expected_receiver_seq = p.seq + 1; /* this is security-sensitive because a replay attack could otherwise
 					  screw up the timestamp and targeting */
@@ -361,8 +352,6 @@ string Connection::recv( void )
 		 ntohs( remote_addr.sin_port ) );
       }
     }
-
-    have_recv_exception = false;
   }
 
   return p.payload; /* we do return out-of-order or duplicated packets to caller */
