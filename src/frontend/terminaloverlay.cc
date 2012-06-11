@@ -325,7 +325,8 @@ void PredictionEngine::apply( Framebuffer &fb ) const
 {
   bool show = (display_preference != Never) && ( srtt_trigger
 						 || glitch_trigger
-						 || (display_preference == Always) );
+						 || (display_preference == Always)
+						 || (display_preference == Experimental) );
 
   if ( show ) {
     for ( cursors_type::const_iterator it = cursors.begin();
@@ -461,7 +462,11 @@ void PredictionEngine::cull( const Framebuffer &fb )
 		   );
 	  */
 
-	  kill_epoch( j->tentative_until_epoch, fb );
+	  if ( display_preference == Experimental ) {
+	    j->reset();
+	  } else {
+	    kill_epoch( j->tentative_until_epoch, fb );
+	  }
 	  /*
 	  if ( j->display_time != uint64_t(-1) ) {
 	    fprintf( stderr, "TIMING %ld - %ld (TENT)\n", time(NULL), now - j->display_time );
@@ -481,8 +486,12 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	  }
 	  */
 
-	  reset();
-	  return;
+	  if ( display_preference == Experimental ) {
+	    j->reset();
+	  } else {
+	    reset();
+	    return;
+	  }
 	}
 	break;
       case Correct:
@@ -548,8 +557,12 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	       cursor().expiration_time,
 	       now );
       */
-      reset();
-      return;
+      if ( display_preference == Experimental ) {
+	cursors.clear();
+      } else {
+	reset();
+	return;
+      }
     }
   }
 
@@ -590,6 +603,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 {
   if ( display_preference == Never ) {
     return;
+  } else if ( display_preference == Experimental ) {
+    prediction_epoch = confirmed_epoch;
   }
 
   cull( fb );
@@ -810,7 +825,9 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
 
 void PredictionEngine::become_tentative( void )
 {
-  prediction_epoch++;
+  if ( display_preference != Experimental ) {
+    prediction_epoch++;
+  }
 
   /*
   fprintf( stderr, "Now tentative in epoch %lu (confirmed=%lu)\n",

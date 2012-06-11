@@ -231,7 +231,8 @@ namespace Overlay {
     enum DisplayPreference {
       Always,
       Never,
-      Adaptive
+      Adaptive,
+      Experimental
     };
 
   private:

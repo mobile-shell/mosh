@@ -47,9 +47,10 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
         --server=COMMAND     mosh server on remote machine
                                 (default: "mosh-server")
 
-        --predict=adaptive   local echo for slower links [default]
--a      --predict=always     use local echo even on fast links
--n      --predict=never      never use local echo
+        --predict=adaptive      local echo for slower links [default]
+-a      --predict=always        use local echo even on fast links
+-n      --predict=never         never use local echo
+        --predict=experimental  aggressively echo even when incorrect
 
 -p NUM  --port=NUM           server-side UDP port
 
@@ -72,7 +73,8 @@ There is NO WARRANTY, to the extent permitted by law.\n};
 sub predict_check {
   my ( $predict, $env_set ) = @_;
 
-  if ( not exists { adaptive => 0, always => 0, never => 0 }->{ $predict } ) {
+  if ( not exists { adaptive => 0, always => 0,
+		    never => 0, experimental => 0 }->{ $predict } ) {
     my $explanation = $env_set ? " (MOSH_PREDICTION_DISPLAY in environment)" : "";
     print STDERR qq{$0: Unknown mode \"$predict\"$explanation.\n\n};
 

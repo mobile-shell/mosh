@@ -82,6 +82,8 @@ public:
 	overlays.get_prediction_engine().set_display_preference( Overlay::PredictionEngine::Never );
       } else if ( !strcmp( predict_mode, "adaptive" ) ) {
 	overlays.get_prediction_engine().set_display_preference( Overlay::PredictionEngine::Adaptive );
+      } else if ( !strcmp( predict_mode, "experimental" ) ) {
+	overlays.get_prediction_engine().set_display_preference( Overlay::PredictionEngine::Experimental );
       } else {
 	fprintf( stderr, "Unknown prediction mode %s.\n", predict_mode );
 	exit( 1 );
