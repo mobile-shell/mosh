@@ -4,8 +4,6 @@
 
 	* Remove warning on out-of-order/duplicated datagrams
 
-	* Set IP DiffServ code point per Bufferbloat suggestion
-
 	* Add "experimental" prediction mode
 
 2012-05-25 Keith Winstein <mosh-devel@mit.edu>
