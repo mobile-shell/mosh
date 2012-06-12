@@ -116,10 +116,12 @@ void Connection::setup( void )
 #endif
 
  /* set diffserv values to AF42 + ECT */
+  /*
   uint8_t dscp = 0x92;
   if ( setsockopt( sock, IPPROTO_IP, IP_TOS, &dscp, 1) < 0 ) {
     //    perror( "setsockopt( IP_TOS )" );
   }
+  */
 }
 
 Connection::Connection( const char *desired_ip, const char *desired_port ) /* server */
