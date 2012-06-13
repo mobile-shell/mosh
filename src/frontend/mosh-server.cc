@@ -39,6 +39,7 @@
 #include <getopt.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 
 #ifdef HAVE_PATHS_H
 #include <paths.h>
@@ -71,7 +72,8 @@ typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConn
 
 void serve( int host_fd,
 	    Terminal::Complete &terminal,
-	    ServerConnection &network );
+	    ServerConnection &network,
+	    const char* pipename);
 
 int run_server( const char *desired_ip, const char *desired_port,
 		const string &command_path, char *command_argv[],
@@ -436,8 +438,13 @@ int run_server( const char *desired_ip, const char *desired_port,
     utempter_add_record( master, tmp );
     #endif
 
+    // open a named pipe for hole punching requests
+    char pipename[64];
+    snprintf(pipename, 64, "/tmp/.mosh_%d", getpid());
+    mknod(pipename, S_IFIFO | 0600, 0);
+
     try {
-      serve( master, terminal, *network );
+      serve( master, terminal, *network, pipename  );
     } catch ( const Network::NetworkException& e ) {
       fprintf( stderr, "Network exception: %s: %s\n",
 	       e.function.c_str(), strerror( e.the_errno ) );
@@ -449,6 +456,8 @@ int run_server( const char *desired_ip, const char *desired_port,
     #ifdef HAVE_UTEMPTER
     utempter_remove_record( master );
     #endif
+
+    unlink(pipename);
 
     if ( close( master ) < 0 ) {
       perror( "close" );
@@ -463,12 +472,48 @@ int run_server( const char *desired_ip, const char *desired_port,
   return 0;
 }
 
-void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
+void handle_fw_hole_request(ServerConnection &network, int pipe_fd)
 {
+  /* udp hole punching for firewall */
+  /* if we encounter an error, we just continue on*/
+  char buf[512];
+  char ip[512];
+  int port;
+  int num=read(pipe_fd, buf, 512);
+
+  if (num<0)
+    return; /* read failed */
+  buf[num]='\0';    
+  
+  if (sscanf(buf, "%s %d", ip, &port)!=2)
+    return; /* bad format */
+
+  struct sockaddr_in addr;
+  addr.sin_family=AF_INET;
+  if (inet_aton( ip, &(addr.sin_addr) ) == 0 )
+    return; /* bad format, again */
+    
+  addr.sin_port=htons((short)port);
+  
+  int s=network.fd();
+  /* try to send an empty dummy packet to the desired host/port to trick a
+     stateful firewall into forwarding packets from said host/port to us. */
+  int r=sendto(s, NULL, 0, MSG_EOR, (struct sockaddr*)&addr, sizeof(struct sockaddr_in));
+  if (r<0)
+    return;
+}
+
+
+
+void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network, const char* pipename )
+{
+  int pipe_fd=open(pipename, O_RDONLY| O_NDELAY);
+
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
   sel.add_fd( network.fd() );
   sel.add_fd( host_fd );
+  sel.add_fd( pipe_fd );
   sel.add_signal( SIGTERM );
   sel.add_signal( SIGINT );
 
@@ -620,6 +665,13 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
 
+      if ( sel.read( pipe_fd ) )
+	{
+	  handle_fw_hole_request(network, pipe_fd);
+	  close(pipe_fd);
+	  pipe_fd = open(pipename, O_RDONLY| O_NDELAY); 
+	}
+
       /* quit if our shutdown has been acknowledged */
       if ( network.shutdown_in_progress() && network.shutdown_acknowledged() ) {
 	break;
@@ -676,6 +728,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       }
     }
   }
+  close(pipe_fd);
 }
 
 /* OpenSSH prints the motd on startup, so we will too */

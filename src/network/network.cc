@@ -122,6 +122,7 @@ void Connection::setup( void )
   }
 }
 
+
 Connection::Connection( const char *desired_ip, const char *desired_port ) /* server */
   : sock( -1 ),
     has_remote_addr( false ),
@@ -231,7 +232,7 @@ bool Connection::try_bind( int socket, uint32_t s_addr, int port )
   return false;
 }
 
-Connection::Connection( const char *key_str, const char *ip, int port ) /* client */
+Connection::Connection( const char *key_str, const char *ip, int port, int client_port ) /* client */
   : sock( -1 ),
     has_remote_addr( false ),
     remote_addr(),
@@ -260,6 +261,10 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     char buffer[ 2048 ];
     snprintf( buffer, 2048, "Bad IP address (%s)", ip );
     throw NetworkException( buffer, saved_errno );
+  }
+
+  if ( client_port ) {
+    try_bind( sock, INADDR_ANY, client_port );
   }
 
   has_remote_addr = true;

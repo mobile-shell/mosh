@@ -33,7 +33,8 @@ private:
   std::string ip;
   int port;
   std::string key;
-
+  int client_port;
+  std::string fw_hole_command;
   struct termios saved_termios, raw_termios;
 
   struct winsize window_size;
@@ -61,8 +62,10 @@ private:
   }
 
 public:
-  STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode )
+STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode,
+	   int s_client_port, char* s_fw_hole_command )
     : ip( s_ip ), port( s_port ), key( s_key ),
+      client_port( s_client_port ), fw_hole_command( s_fw_hole_command ),
       saved_termios(), raw_termios(),
       window_size(),
       local_framebuffer( NULL ),

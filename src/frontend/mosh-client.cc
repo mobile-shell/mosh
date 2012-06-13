@@ -111,7 +111,16 @@ int main( int argc, char *argv[] )
   /* Read prediction preference */
   char *predict_mode = getenv( "MOSH_PREDICTION_DISPLAY" );
   /* can be NULL */
+  
+  int cport=0; 
+  char *client_port = getenv( "MOSH_CLIENT_PORT" );
+  if ( client_port )
+    cport=myatoi( client_port );
 
+  char* fw_hole_command = getenv( "MOSH_FW_HOLE_COMMAND" );
+  //turns out std::string handles NULL really badly
+  if (!fw_hole_command)
+    fw_hole_command="";
   char *key = strdup( env_key );
   if ( key == NULL ) {
     perror( "strdup" );
@@ -127,7 +136,7 @@ int main( int argc, char *argv[] )
   set_native_locale();
 
   try {
-    STMClient client( ip, port, key, predict_mode );
+    STMClient client( ip, port, key, predict_mode, cport, fw_hole_command );
     client.init();
 
     try {

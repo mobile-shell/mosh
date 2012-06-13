@@ -50,6 +50,8 @@ namespace Network {
     TO_CLIENT = 1
   };
 
+  void make_firewall_hole(int signum);
+
   class Packet {
   public:
     uint64_t seq;
@@ -76,7 +78,7 @@ namespace Network {
 
     static const int PORT_RANGE_LOW  = 60001;
     static const int PORT_RANGE_HIGH = 60999;
-
+    
     static bool try_bind( int socket, uint32_t s_addr, int port );
 
     int sock;
@@ -111,7 +113,7 @@ namespace Network {
 
   public:
     Connection( const char *desired_ip, const char *desired_port ); /* server */
-    Connection( const char *key_str, const char *ip, int port ); /* client */
+    Connection( const char *key_str, const char *ip, int port, int client_port ); /* client */
     ~Connection();
 
     void send( string s );
@@ -125,7 +127,7 @@ namespace Network {
 
     uint64_t timeout( void ) const;
     double get_SRTT( void ) const { return SRTT; }
-
+    
     const struct in_addr & get_remote_ip( void ) const { return remote_addr.sin_addr; }
 
     const NetworkException *get_send_exception( void ) const
