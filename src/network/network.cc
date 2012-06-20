@@ -73,7 +73,8 @@ string Packet::tostring( Session *session )
 {
   uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & SEQUENCE_MASK);
 
-  uint16_t ts_net[ 2 ] = { htobe16( timestamp ), htobe16( timestamp_reply ) };
+  uint16_t ts_net[ 2 ] = { static_cast<uint16_t>( htobe16( timestamp ) ),
+                           static_cast<uint16_t>( htobe16( timestamp_reply ) ) };
 
   string timestamps = string( (char *)ts_net, 2 * sizeof( uint16_t ) );
 
