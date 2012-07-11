@@ -224,6 +224,9 @@ if ( $pid == 0 ) { # child
   LINE: while ( <$pty_slave> ) {
     chomp;
     if ( m{^MOSH IP } ) {
+      if ( defined $ip ) {
+	die "$0 error: detected attempt to redefine MOSH IP.\n";
+      }
       ( $ip ) = m{^MOSH IP (\S+)\s*$} or die "Bad MOSH IP string: $_\n";
     } elsif ( m{^MOSH CONNECT } ) {
       if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) ([A-Za-z0-9/+]{22})\s*$} ) {
