@@ -140,6 +140,9 @@ if ( defined $fake_proxy ) {
 				    PeerPort => $port,
 				    Proto => "tcp" )
     or die "$0: connect to host $ip port $port: $!\n";
+  binmode($sock);
+  binmode(STDIN);
+  binmode(STDOUT);
 
   sub cat {
     my ( $from, $to ) = @_;
