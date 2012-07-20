@@ -11,6 +11,4 @@ libmoshcrypto_a_SOURCES = \
 	crypto.cc \
 	crypto.h \
 	ocb.cc \
-	prng.h \
-	rijndael-alg-fst.cc \
-	rijndael-alg-fst.h
+	prng.h
