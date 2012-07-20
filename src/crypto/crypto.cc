@@ -123,14 +123,13 @@ Base64Key::Base64Key()
 
 string Base64Key::printable_key( void ) const
 {
-  char base64[ 25 ];
+  char base64[ 24 ];
   
-  base64_encode( (char *)key, 16, base64, 25 );
+  base64_encode( (char *)key, 16, base64, 24 );
 
-  if ( (base64[ 24 ] != 0)
-       || (base64[ 23 ] != '=')
+  if ( (base64[ 23 ] != '=')
        || (base64[ 22 ] != '=') ) {
-    throw CryptoException( "Unexpected output from base64_encode." );
+    throw CryptoException( string( "Unexpected output from base64_encode: " ) + string( base64, 24 ) );
   }
 
   base64[ 22 ] = 0;
