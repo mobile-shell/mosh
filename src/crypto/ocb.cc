@@ -48,8 +48,8 @@
 
 /* This implementation has built-in support for multiple AES APIs. Set any
 /  one of the following to non-zero to specify which to use.               */
-#define USE_OPENSSL_AES      0  /* http://openssl.org                      */
-#define USE_REFERENCE_AES    1  /* Internet search: rijndael-alg-fst.c     */
+#define USE_OPENSSL_AES      1  /* http://openssl.org                      */
+#define USE_REFERENCE_AES    0  /* Internet search: rijndael-alg-fst.c     */
 #define USE_AES_NI           0  /* Uses compiler's intrinsics              */
 
 /* During encryption and decryption, various "L values" are required.
