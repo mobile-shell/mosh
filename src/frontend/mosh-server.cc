@@ -101,6 +101,7 @@ void print_usage( const char *argv0 )
 void print_motd( void );
 void chdir_homedir( void );
 bool motd_hushed( void );
+void warn_unattached( const char *ignore_entry );
 
 /* Simple spinloop */
 void spin( void )
@@ -380,6 +381,14 @@ int run_server( const char *desired_ip, const char *desired_port,
     fclose( stderr );
   }
 
+  char utmp_entry[ 64 ] = { 0 };
+
+#ifdef HAVE_UTEMPTER
+  /* make utmp entry */
+  snprintf( utmp_entry, 64, "mosh [%d]", getpid() );
+  utempter_add_record( master, utmp_entry );
+#endif
+
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, &child_termios, &window_size );
 
@@ -434,6 +443,8 @@ int run_server( const char *desired_ip, const char *desired_port,
       print_motd();
     }
 
+    warn_unattached( utmp_entry );
+
     Crypto::reenable_dumping_core();
 
     if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
@@ -442,13 +453,6 @@ int run_server( const char *desired_ip, const char *desired_port,
     }
   } else {
     /* parent */
-
-    #ifdef HAVE_UTEMPTER
-    /* make utmp entry */
-    char tmp[ 64 ];
-    snprintf( tmp, 64, "mosh [%d]", getpid() );
-    utempter_add_record( master, tmp );
-    #endif
 
     try {
       serve( master, terminal, *network );
@@ -739,4 +743,73 @@ bool motd_hushed( void )
   /* must be in home directory already */
   struct stat buf;
   return (0 == lstat( ".hushlogin", &buf ));
+}
+
+string mosh_read_line( FILE *file )
+{
+  string ret;
+  while ( !feof( file ) ) {
+    char next = getc( file );
+    if ( next == '\n' ) {
+      return ret;
+    }
+    ret.push_back( next );
+  }
+  return ret;
+}
+
+void warn_unattached( const char *ignore_entry )
+{
+  /* get username */
+  const struct passwd *pw = getpwuid( geteuid() );
+  if ( pw == NULL ) {
+    perror( "getpwuid" );
+    /* non-fatal */
+    return;
+  }
+
+  const string username( pw->pw_name );
+
+  /* look for unattached sessions */
+  FILE *who_cmd = popen( "who", "r" );
+
+  if ( who_cmd == NULL ) {
+    return;
+  }
+
+  vector< string > unattached_who_lines;
+
+  while ( !feof( who_cmd ) ) {
+    /* read the line */
+    const string line = mosh_read_line( who_cmd );
+
+    /* does line start with username? */
+    if ( line.substr( 0, username.size() + 1 ) == username + " " ) {
+      /* does line show unattached mosh session? */
+      if ( line.npos != line.find( "(mosh" ) ) {
+	/* is line showing _this_ mosh session? */
+	const string our_entry = string( "(" ) + ignore_entry + string( ")" );
+	if ( line.npos == line.find( our_entry ) ) {
+	  unattached_who_lines.push_back( line );
+	}
+      }
+    }
+  }
+
+  /* print out warning if necessary */
+  if ( unattached_who_lines.empty() ) {
+    return;
+  } else if ( unattached_who_lines.size() == 1 ) {
+    printf( "\nNote: This Mosh server is detached.\n" );
+  } else {
+    printf( "\nNote: These Mosh servers are detached.\n" );
+  }
+
+  for ( vector< string >::const_iterator it = unattached_who_lines.begin();
+	it != unattached_who_lines.end();
+	it++ ) {
+    printf( "%s\n", it->c_str() );
+  }
+
+  printf( "\n" );
 }
