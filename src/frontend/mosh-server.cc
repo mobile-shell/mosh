@@ -441,9 +441,8 @@ int run_server( const char *desired_ip, const char *desired_port,
 
     if ( with_motd && (!motd_hushed()) ) {
       print_motd();
+      warn_unattached( utmp_entry );
     }
-
-    warn_unattached( utmp_entry );
 
     Crypto::reenable_dumping_core();
 
@@ -808,7 +807,7 @@ void warn_unattached( const char *ignore_entry )
   for ( vector< string >::const_iterator it = unattached_who_lines.begin();
 	it != unattached_who_lines.end();
 	it++ ) {
-    printf( "%s\n", it->c_str() );
+    printf( "| %s\n", it->c_str() );
   }
 
   printf( "\n" );
