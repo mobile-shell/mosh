@@ -46,7 +46,7 @@
 #include "parserstatefamily.h"
 
 namespace Parser {
-  static const StateFamily family;
+  extern const StateFamily family;
 
   class Parser {
   private:
