@@ -38,6 +38,8 @@
 
 #include "parser.h"
 
+const Parser::StateFamily Parser::family;
+
 static void append_or_delete( Parser::Action *act,
 			      std::list<Parser::Action *>&vec )
 {
