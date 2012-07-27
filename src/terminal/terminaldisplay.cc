@@ -71,7 +71,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	snprintf( tmp, 64, "%lc", *i );
 	frame.append( tmp );
       }
-      frame.append( "\033\\" );
+      frame.append( "\007" );
+      /* ST is more correct, but BEL more widely supported */
     } else {
       /* write Icon Name */
       frame.append( "\033]1;" );
@@ -82,7 +83,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	snprintf( tmp, 64, "%lc", *i );
 	frame.append( tmp );
       }
-      frame.append( "\033\\" );
+      frame.append( "\007" );
 
       frame.append( "\033]2;" );
       const std::deque<wchar_t> &window_title( f.get_window_title() );
@@ -92,7 +93,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	snprintf( tmp, 64, "%lc", *i );
 	frame.append( tmp );
       }
-      frame.append( "\033\\" );
+      frame.append( "\007" );
     }
 
   }
