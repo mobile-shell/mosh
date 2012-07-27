@@ -39,6 +39,7 @@
 #include <sys/select.h>
 
 #include "fatal_assert.h"
+#include "timestamp.h"
 
 /* Convenience wrapper for pselect(2).
 
@@ -137,6 +138,8 @@ public:
       FD_ZERO( &error_fds );
       ret = 0;
     }
+
+    freeze_timestamp();
 
     return ret;
   }

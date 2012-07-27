@@ -64,6 +64,7 @@
 #include "fatal_assert.h"
 #include "locale_utils.h"
 #include "select.h"
+#include "timestamp.h"
 
 #if HAVE_PTY_H
 #include <pty.h>
@@ -114,6 +115,7 @@ void spin( void )
     req.tv_sec = 0;
     req.tv_nsec = 100000000; /* 0.1 sec */
     nanosleep( &req, NULL );
+    freeze_timestamp();
   }
 }
 

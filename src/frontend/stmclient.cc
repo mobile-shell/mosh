@@ -57,6 +57,7 @@
 #include "fatal_assert.h"
 #include "locale_utils.h"
 #include "select.h"
+#include "timestamp.h"
 
 #include "networktransport.cc"
 
@@ -431,6 +432,7 @@ void STMClient::main( void )
       req.tv_sec = 0;
       req.tv_nsec = 200000000; /* 0.2 sec */
       nanosleep( &req, NULL );
+      freeze_timestamp();
     } catch ( Crypto::CryptoException e ) {
       if ( e.fatal ) {
         throw;
