@@ -122,13 +122,29 @@ void spin( void )
 string get_SSH_IP( void )
 {
   const char *SSH_CONNECTION = getenv( "SSH_CONNECTION" );
-  fatal_assert( SSH_CONNECTION );
+  if ( !SSH_CONNECTION ) { /* Older sshds don't set this */
+    fprintf( stderr, "Warning: SSH_CONNECTION not found; binding to any interface.\n" );
+    return string( "0.0.0.0" );
+  }
   char *SSH_writable = strdup( SSH_CONNECTION );
   fatal_assert( SSH_writable );
+
   strtok( SSH_writable, " " );
   strtok( NULL, " " );
   const char *local_interface_IP = strtok( NULL, " " );
-  fatal_assert( local_interface_IP );
+  if ( !local_interface_IP ) {
+    fprintf( stderr, "Warning: Could not parse SSH_CONNECTION; binding to any interface.\n" );
+    return string( "0.0.0.0" );
+  }
+
+  /* Strip IPv6 prefix. */
+  const char IPv6_prefix[] = "::ffff:";
+
+  if ( ( strlen( local_interface_IP ) > strlen( IPv6_prefix ) )
+       && ( 0 == strncasecmp( local_interface_IP, IPv6_prefix, strlen( IPv6_prefix ) ) ) ) {
+    return string( local_interface_IP + strlen( IPv6_prefix ) );
+  }
+
   return string( local_interface_IP );
 }
 
