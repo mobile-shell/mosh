@@ -4,11 +4,12 @@ AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 LDADD = ../crypto/libmoshcrypto.a ../network/libmoshnetwork.a ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../util/libmoshutil.a ../protobufs/libmoshprotos.a -lm $(TINFO_LIBS) $(protobuf_LIBS) $(OPENSSL_LIBS)
 
 mosh_server_LDADD = $(LDADD) -lutil
+mosh_LDADD = $(LDADD) -lutil
 
 bin_PROGRAMS =
 
 if BUILD_CLIENT
-  bin_PROGRAMS += mosh-client
+  bin_PROGRAMS += mosh-client mosh
 endif
 
 if BUILD_SERVER
@@ -17,3 +18,4 @@ endif
 
 mosh_client_SOURCES = mosh-client.cc stmclient.cc stmclient.h terminaloverlay.cc terminaloverlay.h
 mosh_server_SOURCES = mosh-server.cc
+mosh_SOURCES = mosh.cc
