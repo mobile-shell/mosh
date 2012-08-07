@@ -40,7 +40,7 @@ static void fatal_error( const char *expression, const char *file, int line, con
 {
   fprintf( stderr, "Fatal assertion failure in function %s at %s:%d\nFailed test: %s\n",
            function, file, line, expression );
-  exit( 2 );
+  abort();
 }
 
 #define fatal_assert(expr)						\
