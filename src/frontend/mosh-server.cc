@@ -370,10 +370,6 @@ int run_server( const char *desired_ip, const char *desired_port,
     _exit( 0 );
   }
 
-  if ( setsid() < 0 ) {
-    perror( "setsid" );
-  }
-
   fprintf( stderr, "\nmosh-server (%s)\n", PACKAGE_STRING );
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
