@@ -37,6 +37,7 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
@@ -391,9 +392,20 @@ int run_server( const char *desired_ip, const char *desired_port,
   /* close file descriptors */
   if ( !verbose ) {
     /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
-    fclose( stdin );
-    fclose( stdout );
-    fclose( stderr );
+    int nullfd;
+
+    nullfd = open( "/dev/null", O_RDWR );
+    if ( nullfd == -1 ) {
+      perror( "dup2" );
+      exit( 1 );
+    }
+
+    if ( dup2 ( nullfd, STDIN_FILENO ) < 0 ||
+         dup2 ( nullfd, STDOUT_FILENO ) < 0 ||
+         dup2 ( nullfd, STDERR_FILENO ) < 0 ) {
+      perror( "dup2" );
+      exit( 1 );
+    }
   }
 
   char utmp_entry[ 64 ] = { 0 };
