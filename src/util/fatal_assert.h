@@ -46,6 +46,6 @@ static void fatal_error( const char *expression, const char *file, int line, con
 #define fatal_assert(expr)						\
   ((expr)								\
    ? (void)0								\
-   : fatal_error (__STRING(expr), __FILE__, __LINE__, __PRETTY_FUNCTION__ ))
+   : fatal_error (#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__ ))
 
 #endif
