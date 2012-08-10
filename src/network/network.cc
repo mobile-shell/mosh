@@ -211,11 +211,11 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   throw NetworkException( "Could not bind", errno );
 }
 
-bool Connection::try_bind( int socket, uint32_t s_addr, int port )
+bool Connection::try_bind( int socket, uint32_t addr, int port )
 {
   struct sockaddr_in local_addr;
   local_addr.sin_family = AF_INET;
-  local_addr.sin_addr.s_addr = s_addr;
+  local_addr.sin_addr.s_addr = addr;
 
   int search_low = PORT_RANGE_LOW, search_high = PORT_RANGE_HIGH;
 
