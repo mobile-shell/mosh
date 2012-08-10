@@ -62,6 +62,7 @@
 #include "completeterminal.h"
 #include "swrite.h"
 #include "fatal_assert.h"
+#include "pty_compat.h"
 #include "locale_utils.h"
 #include "select.h"
 
