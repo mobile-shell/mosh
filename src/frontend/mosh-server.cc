@@ -400,12 +400,7 @@ int run_server( const char *desired_ip, const char *desired_port,
   }
 
   char utmp_entry[ 64 ] = { 0 };
-
-#ifdef HAVE_UTEMPTER
-  /* make utmp entry */
   snprintf( utmp_entry, 64, "mosh [%d]", getpid() );
-  utempter_add_record( master, utmp_entry );
-#endif
 
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, &child_termios, &window_size );
@@ -470,6 +465,11 @@ int run_server( const char *desired_ip, const char *desired_port,
     }
   } else {
     /* parent */
+
+#ifdef HAVE_UTEMPTER
+    /* make utmp entry */
+    utempter_add_record( master, utmp_entry );
+#endif
 
     try {
       serve( master, terminal, *network );
