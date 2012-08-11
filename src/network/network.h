@@ -91,7 +91,7 @@ namespace Network {
     static const int PORT_RANGE_LOW  = 60001;
     static const int PORT_RANGE_HIGH = 60999;
 
-    static bool try_bind( int socket, uint32_t s_addr, int port );
+    static bool try_bind( int socket, uint32_t addr, int port );
 
     int sock;
     bool has_remote_addr;
