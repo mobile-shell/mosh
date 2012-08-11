@@ -198,7 +198,7 @@ AC_TYPE_UINTPTR_T
 # Checks for library functions.
 AC_FUNC_FORK
 AC_FUNC_MBRTOWC
-AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langinfo posix_memalign setenv setlocale sigaction socket strchr strdup strncasecmp strtok strerror strtol wcwidth])
+AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langinfo posix_memalign setenv setlocale sigaction socket strchr strdup strncasecmp strtok strerror strtol wcwidth cfmakeraw])
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
@@ -223,6 +223,12 @@ AC_CHECK_DECL([forkpty],
      [Define if libutil.h necessary for forkpty().])],
   , [[#include <sys/types.h>
   #include <libutil.h>]])
+
+AC_CHECK_LIB([util], [forkpty], [
+  AC_DEFINE([HAVE_FORKPTY],, [Define if you have forkpty().])
+  LIBUTIL="-lutil"
+  AC_SUBST([LIBUTIL])
+])
 
 AC_MSG_CHECKING([whether pipe2(..., O_CLOEXEC) is supported])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE

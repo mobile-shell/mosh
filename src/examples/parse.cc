@@ -56,6 +56,7 @@
 #include "swrite.h"
 #include "locale_utils.h"
 #include "fatal_assert.h"
+#include "pty_compat.h"
 #include "select.h"
 
 const size_t buf_size = 1024;

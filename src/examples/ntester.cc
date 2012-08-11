@@ -35,6 +35,7 @@
 
 #include "user.h"
 #include "fatal_assert.h"
+#include "pty_compat.h"
 #include "networktransport.cc"
 #include "select.h"
 
