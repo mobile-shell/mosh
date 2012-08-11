@@ -172,6 +172,9 @@ AS_IF([test x"$with_utempter" != xno],
 
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
+AC_SEARCH_LIBS([socket], [socket])
+AC_SEARCH_LIBS([inet_addr], [nsl])
+
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h], [], [AC_MSG_ERROR([Missing required header file.])])
 
