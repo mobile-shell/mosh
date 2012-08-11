@@ -30,6 +30,9 @@
     also delete it here.
 */
 
+#include "config.h"
+
+#if !defined(HAVE_FORKPTY) || !defined(HAVE_CFMAKERAW)
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -158,4 +161,5 @@ void my_cfmakeraw( struct termios *termios_p )
   termios_p->c_cc[VMIN] = 1; // read() is satisfied after 1 char
   termios_p->c_cc[VTIME] = 0; // No timer
 }
+#endif
 #endif
