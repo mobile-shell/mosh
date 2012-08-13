@@ -360,6 +360,8 @@ string Connection::recv( void )
       uint16_t now = timestamp16();
       double R = timestamp_diff( now, p.timestamp_reply );
 
+      last_heard = timestamp(); /* trigger on end-to-end-to-end connectivity */
+
       if ( R < 5000 ) { /* ignore large values, e.g. server was Ctrl-Zed */
 	if ( !RTT_hit ) { /* first measurement */
 	  SRTT = R;
@@ -377,7 +379,7 @@ string Connection::recv( void )
 
     /* auto-adjust to remote host */
     has_remote_addr = true;
-    last_heard = last_association = timestamp();
+    last_association = timestamp();
 
     if ( server ) { /* only client can roam */
       if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
