@@ -117,7 +117,6 @@ void Connection::reset( void )
     }
 
     setup();
-    last_association = timestamp();
   }
 }
 
@@ -158,8 +157,6 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     saved_timestamp( -1 ),
     saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
-    last_heard( -1 ),
-    last_association( -1 ),
     RTT_hit( false ),
     SRTT( 1000 ),
     RTTVAR( 500 ),
@@ -269,8 +266,6 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     saved_timestamp( -1 ),
     saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
-    last_heard( -1 ),
-    last_association( -1 ),
     RTT_hit( false ),
     SRTT( 1000 ),
     RTTVAR( 500 ),
@@ -290,7 +285,6 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
   }
 
   has_remote_addr = true;
-  last_association = timestamp();
 }
 
 void Connection::send( string s )
@@ -312,13 +306,6 @@ void Connection::send( string s )
        flight anyway. */
     have_send_exception = true;
     send_exception = NetworkException( "sendto", errno );
-  }
-
-  /* association timeout */
-  uint64_t now = timestamp();
-  if ( ( now - last_association > ASSOCIATION_TIMEOUT )
-       && ( now - last_heard > ASSOCIATION_TIMEOUT ) ) {
-    reset();
   }
 }
 
@@ -360,8 +347,6 @@ string Connection::recv( void )
       uint16_t now = timestamp16();
       double R = timestamp_diff( now, p.timestamp_reply );
 
-      last_heard = timestamp(); /* trigger on end-to-end-to-end connectivity */
-
       if ( R < 5000 ) { /* ignore large values, e.g. server was Ctrl-Zed */
 	if ( !RTT_hit ) { /* first measurement */
 	  SRTT = R;
@@ -379,7 +364,6 @@ string Connection::recv( void )
 
     /* auto-adjust to remote host */
     has_remote_addr = true;
-    last_association = timestamp();
 
     if ( server ) { /* only client can roam */
       if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)

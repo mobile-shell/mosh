@@ -91,8 +91,6 @@ namespace Network {
     static const int PORT_RANGE_LOW  = 60001;
     static const int PORT_RANGE_HIGH = 60999;
 
-    static const unsigned int ASSOCIATION_TIMEOUT = 20000; /* ms */
-
     static bool try_bind( int socket, uint32_t addr, int port );
 
     int sock;
@@ -114,8 +112,6 @@ namespace Network {
     uint64_t saved_timestamp_received_at;
     uint64_t expected_receiver_seq;
 
-    uint64_t last_heard, last_association;
-
     bool RTT_hit;
     double SRTT;
     double RTTVAR;
@@ -126,8 +122,6 @@ namespace Network {
     NetworkException send_exception;
 
     Packet new_packet( string &s_payload );
-
-    void reset( void );
 
   public:
     Connection( const char *desired_ip, const char *desired_port ); /* server */
@@ -152,6 +146,8 @@ namespace Network {
     {
       return have_send_exception ? &send_exception : NULL;
     }
+
+    void reset( void );
   };
 }
 
