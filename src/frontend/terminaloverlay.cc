@@ -742,6 +742,18 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	cell.tentative_until_epoch = prediction_epoch;
 	cell.expire( local_frame_sent + 1, now );
 	cell.replacement.renditions = fb.ds.get_renditions();
+
+	/* heuristic: match renditions of character to the left */
+	if ( cursor().col > 0 ) {
+	  ConditionalOverlayCell &prev_cell = the_row.overlay_cells[ cursor().col - 1 ];
+	  const Cell *prev_cell_actual = fb.get_cell( cursor().row, cursor().col - 1 );
+	  if ( prev_cell.active && (!prev_cell.unknown) ) {
+	    cell.replacement.renditions = prev_cell.replacement.renditions;
+	  } else {
+	    cell.replacement.renditions = prev_cell_actual->renditions;
+	  }
+	}
+
 	cell.replacement.contents.clear();
 	cell.replacement.contents.push_back( ch );
 	cell.original_contents.push_back( *fb.get_cell( cursor().row, cursor().col ) );
