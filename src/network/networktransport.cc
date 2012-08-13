@@ -80,6 +80,9 @@ void Transport<MyState, RemoteState>::recv( void )
 
     sender.process_acknowledgment_through( inst.ack_num() );
 
+    /* inform network layer of roundtrip (end-to-end-to-end) connectivity */
+    connection.set_last_roundtrip_success( sender.get_sent_state_acked_timestamp() );
+
     /* first, make sure we don't already have the new state */
     for ( typename list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
 	  i != received_states.end();

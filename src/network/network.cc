@@ -107,17 +107,15 @@ Packet Connection::new_packet( string &s_payload )
   return p;
 }
 
-void Connection::reset( void )
+void Connection::hop_port( void )
 {
-  if ( server ) {
-    has_remote_addr = false;
-  } else { /* client */
-    if ( close( sock ) < 0 ) {
-      throw NetworkException( "close", errno );
-    }
+  assert( !server );
 
-    setup();
+  if ( close( sock ) < 0 ) {
+    throw NetworkException( "close", errno );
   }
+
+  setup();
 }
 
 void Connection::setup( void )
@@ -127,6 +125,8 @@ void Connection::setup( void )
   if ( sock < 0 ) {
     throw NetworkException( "socket", errno );
   }
+
+  last_port_choice = timestamp();
 
   /* Disable path MTU discovery */
 #ifdef HAVE_IP_MTU_DISCOVER
@@ -157,6 +157,9 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     saved_timestamp( -1 ),
     saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
+    last_heard( -1 ),
+    last_port_choice( -1 ),
+    last_roundtrip_success( -1 ),
     RTT_hit( false ),
     SRTT( 1000 ),
     RTTVAR( 500 ),
@@ -266,6 +269,9 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     saved_timestamp( -1 ),
     saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
+    last_heard( -1 ),
+    last_port_choice( -1 ),
+    last_roundtrip_success( -1 ),
     RTT_hit( false ),
     SRTT( 1000 ),
     RTTVAR( 500 ),
@@ -306,6 +312,19 @@ void Connection::send( string s )
        flight anyway. */
     have_send_exception = true;
     send_exception = NetworkException( "sendto", errno );
+  }
+
+  uint64_t now = timestamp();
+  if ( server ) {
+    if ( now - last_heard > SERVER_ASSOCIATION_TIMEOUT ) {
+      has_remote_addr = false;
+      fprintf( stderr, "Server now detached from client.\n" );
+    }
+  } else { /* client */
+    if ( ( now - last_port_choice > PORT_HOP_INTERVAL )
+	 && ( now - last_roundtrip_success > PORT_HOP_INTERVAL ) ) {
+      hop_port();
+    }
   }
 }
 
@@ -364,6 +383,7 @@ string Connection::recv( void )
 
     /* auto-adjust to remote host */
     has_remote_addr = true;
+    last_heard = timestamp();
 
     if ( server ) { /* only client can roam */
       if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
