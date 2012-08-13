@@ -526,7 +526,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       const int timeout_if_no_client = 60000;
       int timeout = min( network.wait_time(), terminal.wait_time( now ) );
-      if ( !network.has_remote_addr() ) {
+      if ( !network.get_remote_state_num() ) {
         timeout = min( timeout, timeout_if_no_client );
       }
 
@@ -696,7 +696,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
 
-      if ( !network.has_remote_addr()
+      if ( !network.get_remote_state_num()
            && time_since_remote_state >= uint64_t( timeout_if_no_client ) ) {
         fprintf( stderr, "No connection within %d seconds.\n",
                  timeout_if_no_client / 1000 );
