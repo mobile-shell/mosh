@@ -534,6 +534,16 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	  }
 	}
 
+	/* match rest of row to the actual renditions */
+	{
+	  const Renditions &actual_renditions = fb.get_cell( i->row_num, j->col )->renditions;
+	  for ( overlay_cells_type::iterator k = j;
+		k != i->overlay_cells.end();
+		k++ ) {
+	    k->replacement.renditions = actual_renditions;
+	  }
+	}
+
 	/* no break */
       case CorrectNoCredit:
 	j->reset();
