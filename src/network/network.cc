@@ -295,7 +295,9 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
 
 void Connection::send( string s )
 {
-  assert( has_remote_addr );
+  if ( !has_remote_addr ) {
+    return;
+  }
 
   Packet px = new_packet( s );
 
