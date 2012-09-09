@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------
-/ OCB Version 3 Reference Code (Optimized C)     Last modified 13-JUL-2011
+/ OCB Version 3 Reference Code (Optimized C)     Last modified 08-SEP-2012
 /-------------------------------------------------------------------------
-/ Copyright (c) 2011 Ted Krovetz.
+/ Copyright (c) 2012 Ted Krovetz.
 /
 / Permission to use, copy, modify, and/or distribute this software for any
 / purpose with or without fee is hereby granted, provided that the above
@@ -18,6 +18,8 @@
 / Phillip Rogaway holds patents relevant to OCB. See the following for
 / his patent grant: http://www.cs.ucdavis.edu/~rogaway/ocb/grant.htm
 /
+/ Special thanks to Keegan McAllister for suggesting several good improvements
+/
 / Comments are welcome: Ted Krovetz <ted@krovetz.net> - Dedicated to Laurel K
 /------------------------------------------------------------------------- */
 
@@ -31,7 +33,7 @@
 /    So, when on machines with these facilities, all pointers passed to
 /    any function should be 16-byte aligned.
 /  - Plaintext and ciphertext pointers may be equal (ie, plaintext gets
-/    encrypted in-place), but no other pair of pointers may be equal.      
+/    encrypted in-place), but no other pair of pointers may be equal.
 /  - This code assumes all x86 processors have SSE2 and SSSE3 instructions
 /    when compiling under MSVC. If untrue, alter the #define.
 /  - This code is tested for C99 and recent versions of GCC and MSVC.      */
@@ -56,7 +58,7 @@
 /  The L values can be precomputed during initialization (requiring extra
 /  space in ae_ctx), generated as needed (slightly slowing encryption and
 /  decryption), or some combination of the two. L_TABLE_SZ specifies how many
-/  L values to precomute. L_TABLE_SZ must be at least 3. L_TABLE_SZ*16 bytes
+/  L values to precompute. L_TABLE_SZ must be at least 3. L_TABLE_SZ*16 bytes
 /  are used for L values in ae_ctx. Plaintext and ciphertexts shorter than
 /  2^L_TABLE_SZ blocks need no L values calculated dynamically.            */
 #define L_TABLE_SZ          16
@@ -122,7 +124,7 @@
 #else
 	#if (L_TABLE_SZ <= 9) && (L_TABLE_SZ_IS_ENOUGH)   /* < 2^13 byte texts */
 	static inline unsigned ntz(unsigned x) {
-		static const unsigned char tz_table[] = {0, 
+		static const unsigned char tz_table[] = {0,
 		2,3,2,4,2,3,2,5,2,3,2,4,2,3,2,6,2,3,2,4,2,3,2,5,2,3,2,4,2,3,2,7,
 		2,3,2,4,2,3,2,5,2,3,2,4,2,3,2,6,2,3,2,4,2,3,2,5,2,3,2,4,2,3,2,8,
 		2,3,2,4,2,3,2,5,2,3,2,4,2,3,2,6,2,3,2,4,2,3,2,5,2,3,2,4,2,3,2,7,
@@ -131,8 +133,8 @@
 	}
 	#else       /* From http://supertech.csail.mit.edu/papers/debruijn.pdf */
 	static inline unsigned ntz(unsigned x) {
-		static const unsigned char tz_table[32] = 
-		{ 0,  1, 28,  2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17,  4, 8, 
+		static const unsigned char tz_table[32] =
+		{ 0,  1, 28,  2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17,  4, 8,
 		 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18,  6, 11,  5, 10, 9};
 		return tz_table[((uint32_t)((x & -x) * 0x077CB531u)) >> 27];
 	}
@@ -282,7 +284,7 @@
     	} else
     		return b;
     }
-	
+
 	/* KtopStr is reg correct by 64 bits, return mem correct */
 	block gen_offset(uint64_t KtopStr[3], unsigned bot) {
         block rval;
@@ -302,7 +304,7 @@
 				 "adcs %H1,%H1,%H1\n\t"
 				 "adcs %0,%0,%0\n\t"
 				 "adcs %H0,%H0,%H0\n\t"
-			         "it cs\n\t"
+				 "it cs\n\t"
 				 "eorcs %1,%1,#135"
 		: "+r"(b.l), "+r"(b.r) : : "cc");
 		return b;
@@ -315,7 +317,7 @@
 		return b;
 	}
 	#endif
-    
+
 #endif
 
 /* ----------------------------------------------------------------------- */
@@ -420,7 +422,7 @@ static void AES_ecb_encrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
     x3 = _mm_xor_si128(x3,_mm_shuffle_epi32(x0, 255));                      \
     kp[idx+2] = x0; tmp = x3
 
-void AES_128_Key_Expansion(const unsigned char *userkey, void *key)
+static void AES_128_Key_Expansion(const unsigned char *userkey, void *key)
 {
     __m128i x0,x1,x2;
     __m128i *kp = (__m128i *)key;
@@ -438,7 +440,7 @@ void AES_128_Key_Expansion(const unsigned char *userkey, void *key)
     EXPAND_ASSIST(x0,x1,x2,x0,255,54);  kp[10] = x0;
 }
 
-void AES_192_Key_Expansion(const unsigned char *userkey, void *key)
+static void AES_192_Key_Expansion(const unsigned char *userkey, void *key)
 {
     __m128i x0,x1,x2,x3,tmp,*kp = (__m128i *)key;
     kp[0] = x0 = _mm_loadu_si128((__m128i*)userkey);
@@ -450,7 +452,7 @@ void AES_192_Key_Expansion(const unsigned char *userkey, void *key)
     EXPAND192_STEP(10,64);
 }
 
-void AES_256_Key_Expansion(const unsigned char *userkey, void *key)
+static void AES_256_Key_Expansion(const unsigned char *userkey, void *key)
 {
     __m128i x0,x1,x2,x3,*kp = (__m128i *)key;
     kp[0] = x0 = _mm_loadu_si128((__m128i*)userkey   );
@@ -471,7 +473,7 @@ void AES_256_Key_Expansion(const unsigned char *userkey, void *key)
     EXPAND_ASSIST(x0,x1,x2,x3,255,64); kp[14] = x0;
 }
 
-int AES_set_encrypt_key(const unsigned char *userKey, const int bits, AES_KEY *key)
+static int AES_set_encrypt_key(const unsigned char *userKey, const int bits, AES_KEY *key)
 {
     if (bits == 128) {
         AES_128_Key_Expansion (userKey,key);
@@ -486,7 +488,7 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits, AES_KEY *k
     return 0;
 }
 
- void AES_set_decrypt_key_fast(AES_KEY *dkey, const AES_KEY *ekey)
+static void AES_set_decrypt_key_fast(AES_KEY *dkey, const AES_KEY *ekey)
 {
     int j = 0;
     int i = ROUNDS(ekey);
@@ -499,7 +501,7 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits, AES_KEY *k
     dkey->rd_key[i] = ekey->rd_key[j];
 }
 
-int AES_set_decrypt_key(const unsigned char *userKey, const int bits, AES_KEY *key)
+static int AES_set_decrypt_key(const unsigned char *userKey, const int bits, AES_KEY *key)
 {
     AES_KEY temp_key;
     AES_set_encrypt_key(userKey,bits,&temp_key);
@@ -568,12 +570,12 @@ static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *ke
 / Each item in the OCB context is stored either "memory correct" or
 / "register correct". On big-endian machines, this is identical. On
 / little-endian machines, one must choose whether the byte-string
-/ is in the corrct order when it resides in memory or in registers.
+/ is in the correct order when it resides in memory or in registers.
 / It must be register correct whenever it is to be manipulated
 / arithmetically, but must be memory correct whenever it interacts
 / with the plaintext or ciphertext.
 /------------------------------------------------------------------------- */
- 
+
 struct _ae_ctx {
     block offset;                          /* Memory correct               */
     block checksum;                        /* Memory correct               */
@@ -641,10 +643,10 @@ int ae_init(ae_ctx *ctx, const void *key, int key_len, int nonce_len, int tag_le
 {
     unsigned i;
     block tmp_blk;
-    
+
     if (nonce_len != 12)
     	return AE_NOT_SUPPORTED;
-    
+
     /* Initialize encryption & decryption keys */
     #if (OCB_KEY_LEN > 0)
     key_len = OCB_KEY_LEN;
@@ -655,11 +657,11 @@ int ae_init(ae_ctx *ctx, const void *key, int key_len, int nonce_len, int tag_le
     #else
     AES_set_decrypt_key((unsigned char *)key, (int)(key_len*8), &ctx->decrypt_key);
     #endif
-    
+
     /* Zero things that need zeroing */
     ctx->cached_Top = ctx->ad_checksum = zero_block();
     ctx->ad_blocks_processed = 0;
-    
+
     /* Compute key-dependent values */
     AES_encrypt((unsigned char *)&ctx->cached_Top,
                             (unsigned char *)&ctx->Lstar, &ctx->encrypt_key);
@@ -676,7 +678,7 @@ int ae_init(ae_ctx *ctx, const void *key, int key_len, int nonce_len, int tag_le
     #if (OCB_TAG_LEN == 0)
     	ctx->tag_len = tag_len;
     #else
-    	(void) tag_len;  /* Supress var not used error */
+    	(void) tag_len;  /* Suppress var not used error */
     #endif
 
     return AE_SUCCESS;
@@ -710,13 +712,13 @@ static block gen_offset_from_nonce(ae_ctx *ctx, const void *nonce)
 	return gen_offset(ctx->KtopStr, idx);
 }
 
- void process_ad(ae_ctx *ctx, const void *ad, int ad_len, int final)
+static void process_ad(ae_ctx *ctx, const void *ad, int ad_len, int final)
 {
 	union { uint32_t u32[4]; uint8_t u8[16]; block bl; } tmp;
     block ad_offset, ad_checksum;
     const block *  adp = (block *)ad;
 	unsigned i,k,tz,remaining;
-    
+
     ad_offset = ctx->ad_offset;
     ad_checksum = ctx->ad_checksum;
     i = ad_len/(BPI*16);
@@ -767,7 +769,7 @@ static block gen_offset_from_nonce(ae_ctx *ctx, const void *nonce)
 
     if (final) {
 		block ta[BPI];
-		
+
         /* Process remaining associated data, compute its tag contribution */
         remaining = ((unsigned)ad_len) % (BPI*16);
         if (remaining) {
@@ -916,10 +918,10 @@ int ae_encrypt(ae_ctx     *  ctx,
 	    ctx->blocks_processed = block_num;
 		ctx->checksum = checksum;
     }
-    
+
     if (final) {
 		block ta[BPI+1], oa[BPI];
-				
+
         /* Process remaining plaintext and compute its tag contribution    */
         unsigned remaining = ((unsigned)pt_len) % (BPI*16);
         k = 0;                      /* How many blocks in ta[] need ECBing */
@@ -988,7 +990,7 @@ int ae_encrypt(ae_ctx     *  ctx,
 			case 2: ctp[1] = xor_block(ta[1], oa[1]);
 			case 1: ctp[0] = xor_block(ta[0], oa[0]);
 		}
-        
+
         /* Tag is placed at the correct location
          */
         if (tag) {
@@ -1014,6 +1016,28 @@ int ae_encrypt(ae_ctx     *  ctx,
 
 /* ----------------------------------------------------------------------- */
 
+/* Compare two regions of memory, taking a constant amount of time for a
+   given buffer size -- under certain assumptions about the compiler
+   and machine, of course.
+
+   Use this to avoid timing side-channel attacks.
+
+   Returns 0 for memory regions with equal contents; non-zero otherwise. */
+static int constant_time_memcmp(const void *av, const void *bv, size_t n) {
+    const uint8_t *a = (const uint8_t *) av;
+    const uint8_t *b = (const uint8_t *) bv;
+    uint8_t result = 0;
+    size_t i;
+
+    for (i=0; i<n; i++) {
+        result |= *a ^ *b;
+        a++;
+        b++;
+    }
+
+    return (int) result;
+}
+
 int ae_decrypt(ae_ctx     *ctx,
                const void *nonce,
                const void *ct,
@@ -1029,7 +1053,7 @@ int ae_decrypt(ae_ctx     *ctx,
     unsigned i, k;
     block       *ctp = (block *)ct;
     block       *ptp = (block *)pt;
-		
+
 	/* Reduce ct_len tag bundled in ct */
 	if ((final) && (!tag))
 		#if (OCB_TAG_LEN > 0)
@@ -1109,10 +1133,10 @@ int ae_decrypt(ae_ctx     *ctx,
 	    ctx->blocks_processed = block_num;
 		ctx->checksum = checksum;
     }
-    
+
     if (final) {
 		block ta[BPI+1], oa[BPI];
-				
+
         /* Process remaining plaintext and compute its tag contribution    */
         unsigned remaining = ((unsigned)ct_len) % (BPI*16);
         k = 0;                      /* How many blocks in ta[] need ECBing */
@@ -1176,7 +1200,7 @@ int ae_decrypt(ae_ctx     *ctx,
 			case 1: ptp[0] = xor_block(ta[0], oa[0]);
 				    checksum = xor_block(checksum, ptp[0]);
 		}
-		
+
 		/* Calculate expected tag */
         offset = xor_block(offset, ctx->Ldollar);
         tmp.bl = xor_block(offset, checksum);
@@ -1194,10 +1218,10 @@ int ae_decrypt(ae_ctx     *ctx,
 				int len = ctx->tag_len;
 			#endif
 			if (tag) {
-				if (memcmp(tag,tmp.u8,len) != 0)
+				if (constant_time_memcmp(tag,tmp.u8,len) != 0)
 					ct_len = AE_INVALID;
 			} else {
-				if (memcmp((char *)ct + ct_len,tmp.u8,len) != 0)
+				if (constant_time_memcmp((char *)ct + ct_len,tmp.u8,len) != 0)
 					ct_len = AE_INVALID;
 			}
 		}
@@ -1205,10 +1229,168 @@ int ae_decrypt(ae_ctx     *ctx,
     return ct_len;
  }
 
+/* ----------------------------------------------------------------------- */
+/* Simple test program                                                     */
+/* ----------------------------------------------------------------------- */
+
+#if 0
+
+#include <stdio.h>
+#include <time.h>
+
+#if __GNUC__
+	#define ALIGN(n) __attribute__ ((aligned(n)))
+#elif _MSC_VER
+	#define ALIGN(n) __declspec(align(n))
+#else /* Not GNU/Microsoft: delete alignment uses.     */
+	#define ALIGN(n)
+#endif
+
+static void pbuf(void *p, unsigned len, const void *s)
+{
+    unsigned i;
+    if (s)
+        printf("%s", (char *)s);
+    for (i = 0; i < len; i++)
+        printf("%02X", (unsigned)(((unsigned char *)p)[i]));
+    printf("\n");
+}
+
+static void vectors(ae_ctx *ctx, int len)
+{
+    ALIGN(16) char pt[128];
+    ALIGN(16) char ct[144];
+    ALIGN(16) char nonce[] = {0,1,2,3,4,5,6,7,8,9,10,11};
+    int i;
+    for (i=0; i < 128; i++) pt[i] = i;
+    i = ae_encrypt(ctx,nonce,pt,len,pt,len,ct,NULL,AE_FINALIZE);
+    printf("P=%d,A=%d: ",len,len); pbuf(ct, i, NULL);
+    i = ae_encrypt(ctx,nonce,pt,0,pt,len,ct,NULL,AE_FINALIZE);
+    printf("P=%d,A=%d: ",0,len); pbuf(ct, i, NULL);
+    i = ae_encrypt(ctx,nonce,pt,len,pt,0,ct,NULL,AE_FINALIZE);
+    printf("P=%d,A=%d: ",len,0); pbuf(ct, i, NULL);
+}
+
+void validate()
+{
+    ALIGN(16) char pt[1024];
+    ALIGN(16) char ct[1024];
+    ALIGN(16) char tag[16];
+    ALIGN(16) char nonce[12] = {0,};
+    ALIGN(16) char key[32] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    ALIGN(16) char valid[] = {0xB2,0xB4,0x1C,0xBF,0x9B,0x05,0x03,0x7D,
+                              0xA7,0xF1,0x6C,0x24,0xA3,0x5C,0x1C,0x94};
+    ae_ctx ctx;
+    char *val_buf, *next;
+    int i, len;
+
+    val_buf = (char *)malloc(22400 + 16);
+    next = val_buf = (char *)(((size_t)val_buf + 16) & ~((size_t)15));
+
+    if (0) {
+		ae_init(&ctx, key, 16, 12, 16);
+		/* pbuf(&ctx, sizeof(ctx), "CTX: "); */
+		vectors(&ctx,0);
+		vectors(&ctx,8);
+		vectors(&ctx,16);
+		vectors(&ctx,24);
+		vectors(&ctx,32);
+		vectors(&ctx,40);
+    }
+
+    memset(key,0,32);
+    memset(pt,0,128);
+    ae_init(&ctx, key, 16, 12, 16);
+
+    /* RFC Vector test */
+    for (i = 0; i < 128; i++) {
+        int first = ((i/3)/(BPI*16))*(BPI*16);
+        int second = first;
+        int third = i - (first + second);
+
+        nonce[11] = i;
+
+        if (0) {
+            ae_encrypt(&ctx,nonce,pt,i,pt,i,ct,NULL,AE_FINALIZE);
+            memcpy(next,ct,(size_t)i+16);
+            next = next+i+16;
+
+            ae_encrypt(&ctx,nonce,pt,i,pt,0,ct,NULL,AE_FINALIZE);
+            memcpy(next,ct,(size_t)i+16);
+            next = next+i+16;
+
+            ae_encrypt(&ctx,nonce,pt,0,pt,i,ct,NULL,AE_FINALIZE);
+            memcpy(next,ct,16);
+            next = next+16;
+        } else {
+            ae_encrypt(&ctx,nonce,pt,first,pt,first,ct,NULL,AE_PENDING);
+            ae_encrypt(&ctx,NULL,pt+first,second,pt+first,second,ct+first,NULL,AE_PENDING);
+            ae_encrypt(&ctx,NULL,pt+first+second,third,pt+first+second,third,ct+first+second,NULL,AE_FINALIZE);
+            memcpy(next,ct,(size_t)i+16);
+            next = next+i+16;
+
+            ae_encrypt(&ctx,nonce,pt,first,pt,0,ct,NULL,AE_PENDING);
+            ae_encrypt(&ctx,NULL,pt+first,second,pt,0,ct+first,NULL,AE_PENDING);
+            ae_encrypt(&ctx,NULL,pt+first+second,third,pt,0,ct+first+second,NULL,AE_FINALIZE);
+            memcpy(next,ct,(size_t)i+16);
+            next = next+i+16;
+
+            ae_encrypt(&ctx,nonce,pt,0,pt,first,ct,NULL,AE_PENDING);
+            ae_encrypt(&ctx,NULL,pt,0,pt+first,second,ct,NULL,AE_PENDING);
+            ae_encrypt(&ctx,NULL,pt,0,pt+first+second,third,ct,NULL,AE_FINALIZE);
+            memcpy(next,ct,16);
+            next = next+16;
+        }
+
+    }
+    nonce[11] = 0;
+    ae_encrypt(&ctx,nonce,NULL,0,val_buf,next-val_buf,ct,tag,AE_FINALIZE);
+    pbuf(tag,16,0);
+    if (memcmp(valid,tag,16) == 0)
+    	printf("Vectors: PASS\n");
+    else
+    	printf("Vectors: FAIL\n");
+
+
+    /* Encrypt/Decrypt test */
+    for (i = 0; i < 128; i++) {
+        int first = ((i/3)/(BPI*16))*(BPI*16);
+        int second = first;
+        int third = i - (first + second);
+
+        nonce[11] = i%128;
+
+        if (1) {
+            len = ae_encrypt(&ctx,nonce,val_buf,i,val_buf,i,ct,tag,AE_FINALIZE);
+            len = ae_encrypt(&ctx,nonce,val_buf,i,val_buf,-1,ct,tag,AE_FINALIZE);
+            len = ae_decrypt(&ctx,nonce,ct,len,val_buf,-1,pt,tag,AE_FINALIZE);
+            if (len == -1) { printf("Authentication error: %d\n", i); return; }
+            if (len != i) { printf("Length error: %d\n", i); return; }
+            if (memcmp(val_buf,pt,i)) { printf("Decrypt error: %d\n", i); return; }
+        } else {
+            len = ae_encrypt(&ctx,nonce,val_buf,i,val_buf,i,ct,NULL,AE_FINALIZE);
+            ae_decrypt(&ctx,nonce,ct,first,val_buf,first,pt,NULL,AE_PENDING);
+            ae_decrypt(&ctx,NULL,ct+first,second,val_buf+first,second,pt+first,NULL,AE_PENDING);
+            len = ae_decrypt(&ctx,NULL,ct+first+second,len-(first+second),val_buf+first+second,third,pt+first+second,NULL,AE_FINALIZE);
+            if (len == -1) { printf("Authentication error: %d\n", i); return; }
+            if (memcmp(val_buf,pt,i)) { printf("Decrypt error: %d\n", i); return; }
+        }
+
+    }
+    printf("Decrypt: PASS\n");
+}
+
+int main()
+{
+    validate();
+    return 0;
+}
+#endif
+
 #if USE_AES_NI
-char infoString[] = "OCB (AES-NI)";
+char infoString[] = "OCB3 (AES-NI)";
 #elif USE_REFERENCE_AES
-char infoString[] = "OCB (Reference AES)";
+char infoString[] = "OCB3 (Reference)";
 #elif USE_OPENSSL_AES
-char infoString[] = "OCB (OpenSSL AES)";
+char infoString[] = "OCB3 (OpenSSL)";
 #endif
