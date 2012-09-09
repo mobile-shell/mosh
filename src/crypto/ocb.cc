@@ -1233,7 +1233,7 @@ int ae_decrypt(ae_ctx     *ctx,
 /* Simple test program                                                     */
 /* ----------------------------------------------------------------------- */
 
-#if 0
+#if defined(OCB_TEST_PROGRAM)
 
 #include <stdio.h>
 #include <time.h>
