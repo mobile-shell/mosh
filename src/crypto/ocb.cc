@@ -1258,9 +1258,9 @@ static void pbuf(void *p, unsigned len, const void *s)
 
 static void vectors(ae_ctx *ctx, int len)
 {
-    ALIGN(16) char pt[128];
-    ALIGN(16) char ct[144];
-    ALIGN(16) char nonce[] = {0,1,2,3,4,5,6,7,8,9,10,11};
+    ALIGN(16) uint8_t pt[128];
+    ALIGN(16) uint8_t ct[144];
+    ALIGN(16) uint8_t nonce[] = {0,1,2,3,4,5,6,7,8,9,10,11};
     int i;
     for (i=0; i < 128; i++) pt[i] = i;
     i = ae_encrypt(ctx,nonce,pt,len,pt,len,ct,NULL,AE_FINALIZE);
@@ -1273,19 +1273,19 @@ static void vectors(ae_ctx *ctx, int len)
 
 void validate()
 {
-    ALIGN(16) char pt[1024];
-    ALIGN(16) char ct[1024];
-    ALIGN(16) char tag[16];
-    ALIGN(16) char nonce[12] = {0,};
-    ALIGN(16) char key[32] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-    ALIGN(16) char valid[] = {0xB2,0xB4,0x1C,0xBF,0x9B,0x05,0x03,0x7D,
-                              0xA7,0xF1,0x6C,0x24,0xA3,0x5C,0x1C,0x94};
+    ALIGN(16) uint8_t pt[1024];
+    ALIGN(16) uint8_t ct[1024];
+    ALIGN(16) uint8_t tag[16];
+    ALIGN(16) uint8_t nonce[12] = {0,};
+    ALIGN(16) uint8_t key[32] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    ALIGN(16) uint8_t valid[] = {0xB2,0xB4,0x1C,0xBF,0x9B,0x05,0x03,0x7D,
+                                 0xA7,0xF1,0x6C,0x24,0xA3,0x5C,0x1C,0x94};
     ae_ctx ctx;
-    char *val_buf, *next;
+    uint8_t *val_buf, *next;
     int i, len;
 
-    val_buf = (char *)malloc(22400 + 16);
-    next = val_buf = (char *)(((size_t)val_buf + 16) & ~((size_t)15));
+    val_buf = (uint8_t *)malloc(22400 + 16);
+    next = val_buf = (uint8_t *)(((size_t)val_buf + 16) & ~((size_t)15));
 
     if (0) {
 		ae_init(&ctx, key, 16, 12, 16);
