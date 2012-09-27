@@ -747,7 +747,7 @@ void chdir_homedir( void )
   struct passwd *pw = getpwuid( geteuid() );
   if ( pw == NULL ) {
     perror( "getpwuid" );
-    /* non-fatal */
+    return; /* non-fatal */
   }
 
   if ( chdir( pw->pw_dir ) < 0 ) {
