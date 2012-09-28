@@ -137,11 +137,20 @@ void Connection::setup( void )
   }
 #endif
 
- /* set diffserv values to AF42 + ECT */
+  /* set diffserv values to AF42 + ECT */
   uint8_t dscp = 0x92;
   if ( setsockopt( sock, IPPROTO_IP, IP_TOS, &dscp, 1) < 0 ) {
     //    perror( "setsockopt( IP_TOS )" );
   }
+
+  /* request explicit congestion notification on received datagrams */
+#ifdef HAVE_IP_RECVTOS
+  char tosflag = true;
+  socklen_t tosoptlen = sizeof( tosflag );
+  if ( setsockopt( sock, IPPROTO_IP, IP_RECVTOS, &tosflag, tosoptlen ) < 0 ) {
+    perror( "setsockopt( IP_RECVTOS )" );
+  }
+#endif
 }
 
 Connection::Connection( const char *desired_ip, const char *desired_port ) /* server */
@@ -332,26 +341,58 @@ void Connection::send( string s )
 
 string Connection::recv( void )
 {
+  /* receive source address, ECN, and payload in msghdr structure */
   struct sockaddr_in packet_remote_addr;
+  struct msghdr header;
+  struct iovec msg_iovec;
 
-  char buf[ Session::RECEIVE_MTU ];
+  char msg_payload[ Session::RECEIVE_MTU ];
+  char msg_control[ Session::RECEIVE_MTU ];
 
-  socklen_t addrlen = sizeof( packet_remote_addr );
+  /* receive source address */
+  header.msg_name = &packet_remote_addr;
+  header.msg_namelen = sizeof( packet_remote_addr );
 
-  ssize_t received_len = recvfrom( sock, buf, Session::RECEIVE_MTU, 0, (sockaddr *)&packet_remote_addr, &addrlen );
+  /* receive payload */
+  msg_iovec.iov_base = msg_payload;
+  msg_iovec.iov_len = Session::RECEIVE_MTU;
+  header.msg_iov = &msg_iovec;
+  header.msg_iovlen = 1;
+
+  /* receive explicit congestion notification */
+  header.msg_control = msg_control;
+  header.msg_controllen = Session::RECEIVE_MTU;
+
+  /* receive flags */
+  header.msg_flags = 0;
+
+  ssize_t received_len = recvmsg( sock, &header, 0 );
 
   if ( received_len < 0 ) {
     throw NetworkException( "recvfrom", errno );
   }
 
-  if ( received_len > Session::RECEIVE_MTU ) {
-    char buffer[ 2048 ];
-    snprintf( buffer, 2048, "Received oversize datagram (size %d) and limit is %d\n",
-	      static_cast<int>( received_len ), Session::RECEIVE_MTU );
-    throw NetworkException( buffer, errno );
+  if ( header.msg_flags & MSG_TRUNC ) {
+    throw NetworkException( "Received oversize datagram", errno );
   }
 
-  Packet p( string( buf, received_len ), &session );
+  /* receive ECN */
+  bool congestion_experienced = false;
+
+  struct cmsghdr *ecn_hdr = CMSG_FIRSTHDR( &header );
+  if ( ecn_hdr
+       && (ecn_hdr->cmsg_level == IPPROTO_IP)
+       && (ecn_hdr->cmsg_type == IP_TOS) ) {
+    /* got one */
+    uint8_t *ecn_octet_p = (uint8_t *)CMSG_DATA( ecn_hdr );
+    assert( ecn_octet_p );
+
+    if ( (*ecn_octet_p & 0x03) == 0x03 ) {
+      congestion_experienced = true;
+    }
+  }
+
+  Packet p( string( msg_payload, received_len ), &session );
 
   dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
 
@@ -362,6 +403,12 @@ string Connection::recv( void )
     if ( p.timestamp != uint16_t(-1) ) {
       saved_timestamp = p.timestamp;
       saved_timestamp_received_at = timestamp();
+
+      if ( congestion_experienced ) {
+	/* signal counterparty to slow down */
+	/* this will gradually slow the counterparty down to the minimum frame rate */
+	saved_timestamp -= CONGESTION_TIMESTAMP_PENALTY;
+      }
     }
 
     if ( p.timestamp_reply != uint16_t(-1) ) {

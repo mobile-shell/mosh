@@ -94,6 +94,8 @@ namespace Network {
     static const unsigned int SERVER_ASSOCIATION_TIMEOUT = 20000;
     static const unsigned int PORT_HOP_INTERVAL          = 20000;
 
+    static const int CONGESTION_TIMESTAMP_PENALTY = 500; /* ms */
+
     static bool try_bind( int socket, uint32_t addr, int port );
 
     int sock;

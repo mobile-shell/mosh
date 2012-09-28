@@ -279,7 +279,12 @@ AC_CHECK_DECL([htobe64],
 AC_CHECK_DECL([IP_MTU_DISCOVER],
   [AC_DEFINE([HAVE_IP_MTU_DISCOVER], [1],
      [Define if IP_MTU_DISCOVER is a valid sockopt.])],
-  , [[#include <netinet/ip.h>]])
+  , [[#include <netinet/in.h>]])
+
+AC_CHECK_DECL([IP_RECVTOS],
+  [AC_DEFINE([HAVE_IP_RECVTOS], [1],
+     [Define if IP_RECVTOS is a valid sockopt.])],
+  , [[#include <netinet/in.h>]])
 
 AC_CHECK_DECL([__STDC_ISO_10646__],
   [],
