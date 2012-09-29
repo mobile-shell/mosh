@@ -333,7 +333,7 @@ int run_server( const char *desired_ip, const char *desired_port,
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
     perror( "ioctl TIOCGWINSZ" );
-    fprintf( stderr, "If running with ssh, please use -t argument to provide a PTY.\n" );
+    fprintf( stderr, "If running with ssh, please use ssh -t to provide a PTY.\n" );
     exit( 1 );
   }
 
