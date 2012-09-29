@@ -180,6 +180,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h 
 
 AC_CHECK_HEADERS([pty.h util.h libutil.h paths.h])
 AC_CHECK_HEADERS([endian.h sys/endian.h])
+AC_CHECK_HEADERS([utmpx.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL

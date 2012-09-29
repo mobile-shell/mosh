@@ -55,6 +55,10 @@
 #include <time.h>
 #include <sys/stat.h>
 
+#ifdef HAVE_UTMPX_H
+#include <utmpx.h>
+#endif
+
 #ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif
@@ -104,7 +108,7 @@ void print_usage( const char *argv0 )
 void print_motd( void );
 void chdir_homedir( void );
 bool motd_hushed( void );
-void warn_unattached( const char *ignore_entry );
+void warn_unattached( const string & ignore_entry );
 
 /* Simple spinloop */
 void spin( void )
@@ -779,8 +783,9 @@ string mosh_read_line( FILE *file )
   return ret;
 }
 
-void warn_unattached( const char *ignore_entry )
+void warn_unattached( const string & ignore_entry )
 {
+#ifdef HAVE_UTMPX_H
   /* get username */
   const struct passwd *pw = getpwuid( geteuid() );
   if ( pw == NULL ) {
@@ -792,45 +797,37 @@ void warn_unattached( const char *ignore_entry )
   const string username( pw->pw_name );
 
   /* look for unattached sessions */
-  FILE *who_cmd = popen( "who", "r" );
+  vector< string > unattached_mosh_servers;
 
-  if ( who_cmd == NULL ) {
-    return;
-  }
-
-  vector< string > unattached_who_lines;
-
-  while ( !feof( who_cmd ) ) {
-    /* read the line */
-    const string line = mosh_read_line( who_cmd );
-
-    /* does line start with username? */
-    if ( line.substr( 0, username.size() + 1 ) == username + " " ) {
-      /* does line show unattached mosh session? */
-      if ( line.npos != line.find( "(mosh" ) ) {
-	/* is line showing _this_ mosh session? */
-	const string our_entry = string( "(" ) + ignore_entry + string( ")" );
-	if ( line.npos == line.find( our_entry ) ) {
-	  unattached_who_lines.push_back( line );
-	}
+  while ( struct utmpx *entry = getutxent() ) {
+    if ( (entry->ut_type == USER_PROCESS)
+	 && (username == string( entry->ut_user )) ) {
+      /* does line show unattached mosh session */
+      string text( entry->ut_host );
+      if ( (text.substr( 0, 5 ) == "mosh ")
+	   && (text != ignore_entry) ) {
+	unattached_mosh_servers.push_back( text );
       }
     }
   }
 
   /* print out warning if necessary */
-  if ( unattached_who_lines.empty() ) {
+  if ( unattached_mosh_servers.empty() ) {
     return;
-  } else if ( unattached_who_lines.size() == 1 ) {
-    printf( "\nNote: This Mosh server is detached.\n" );
+  } else if ( unattached_mosh_servers.size() == 1 ) {
+    printf( "\033[37;44mMosh: You have a detached Mosh session on this server (%s).\033[m\n\n",
+	    unattached_mosh_servers.front().c_str() );
   } else {
-    printf( "\nNote: These Mosh servers are detached.\n" );
-  }
+    string pid_string;
 
-  for ( vector< string >::const_iterator it = unattached_who_lines.begin();
-	it != unattached_who_lines.end();
-	it++ ) {
-    printf( "| %s\n", it->c_str() );
-  }
+    for ( vector< string >::const_iterator it = unattached_mosh_servers.begin();
+	  it != unattached_mosh_servers.end();
+	  it++ ) {
+      pid_string += "        - " + *it + "\n";
+    }
 
-  printf( "\n" );
+    printf( "\033[37;44mMosh: You have %d detached Mosh sessions on this server, with PIDs:\n%s\033[m\n",
+	    (int)unattached_mosh_servers.size(), pid_string.c_str() );
+  }
+#endif /* HAVE_UTMPX_H */
 }
