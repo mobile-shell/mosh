@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <sys/select.h>
+#include <assert.h>
 
 #include "fatal_assert.h"
 #include "timestamp.h"
@@ -149,6 +150,7 @@ public:
     const
 #endif
   {
+    assert( FD_ISSET( fd, &all_fds ) );
     return FD_ISSET( fd, &read_fds );
   }
 
@@ -157,6 +159,7 @@ public:
     const
 #endif
   {
+    assert( FD_ISSET( fd, &all_fds ) );
     return FD_ISSET( fd, &error_fds );
   }
 
