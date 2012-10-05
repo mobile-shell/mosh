@@ -76,7 +76,7 @@ Fragment::Fragment( string &x )
   : id( -1 ), fragment_num( -1 ), final( false ), initialized( true ),
     contents()
 {
-  assert( x.size() >= frag_header_len );
+  fatal_assert( x.size() >= frag_header_len );
   contents = string( x.begin() + frag_header_len, x.end() );
 
   uint64_t data64;
