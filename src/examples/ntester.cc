@@ -74,10 +74,14 @@ int main( int argc, char *argv[] )
 
   if ( server ) {
     Select &sel = Select::get_instance();
-    sel.add_fd( n->fd() );
     uint64_t last_num = n->get_remote_state_num();
     while ( true ) {
       try {
+	sel.clear_fds();
+	std::vector< int > fd_list( n->fds() );
+	assert( fd_list.size() == 1 ); /* servers don't hop */
+	int network_fd = fd_list.back();
+	sel.add_fd( network_fd );
 	if ( sel.select( n->wait_time() ) < 0 ) {
 	  perror( "select" );
 	  exit( 1 );
@@ -85,7 +89,7 @@ int main( int argc, char *argv[] )
 	
 	n->tick();
 
-	if ( sel.read( n->fd() ) ) {
+	if ( sel.read( network_fd ) ) {
 	  n->recv();
 
 	  if ( n->get_remote_state_num() != last_num ) {
@@ -116,10 +120,18 @@ int main( int argc, char *argv[] )
     }
 
     Select &sel = Select::get_instance();
-    sel.add_fd( STDIN_FILENO );
-    sel.add_fd( n->fd() );
 
     while( true ) {
+      sel.clear_fds();
+      sel.add_fd( STDIN_FILENO );
+
+      std::vector< int > fd_list( n->fds() );
+      for ( std::vector< int >::const_iterator it = fd_list.begin();
+	    it != fd_list.end();
+	    it++ ) {
+	sel.add_fd( *it );
+      }
+
       try {
 	if ( sel.select( n->wait_time() ) < 0 ) {
 	  perror( "select" );
@@ -133,7 +145,22 @@ int main( int argc, char *argv[] )
 	  n->get_current_state().push_back( Parser::UserByte( x ) );
 	}
 
-	if ( sel.read( n->fd() ) ) {
+	bool network_ready_to_read = false;
+	for ( std::vector< int >::const_iterator it = fd_list.begin();
+	      it != fd_list.end();
+	      it++ ) {
+	  if ( sel.read( *it ) ) {
+	    /* packet received from the network */
+	    /* we only read one socket each run */
+	    network_ready_to_read = true;
+	  }
+
+	  if ( sel.error( *it ) ) {
+	    break;
+	  }
+	}
+
+	if ( network_ready_to_read ) {
 	  n->recv();
 	}
       } catch ( NetworkException e ) {

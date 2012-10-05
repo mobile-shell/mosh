@@ -39,6 +39,8 @@
 #include <netinet/in.h>
 #include <string>
 #include <math.h>
+#include <vector>
+#include <assert.h>
 
 #include "crypto.h"
 
@@ -92,13 +94,32 @@ namespace Network {
     static const int PORT_RANGE_HIGH = 60999;
 
     static const unsigned int SERVER_ASSOCIATION_TIMEOUT = 40000;
-    static const unsigned int PORT_HOP_INTERVAL          = 30000;
+    static const unsigned int PORT_HOP_INTERVAL          = 10000;
+
+    static const unsigned int MAX_PORTS_OPEN             = 10;
+    static const unsigned int MAX_OLD_SOCKET_AGE         = 60000;
 
     static const int CONGESTION_TIMESTAMP_PENALTY = 500; /* ms */
 
     static bool try_bind( int socket, uint32_t addr, int port );
 
-    int sock;
+    class Socket
+    {
+    private:
+      int _fd;
+      mutable bool _moved;
+
+    public:
+      int fd( void ) const { assert( !_moved ); return _fd; }
+      void move( void ) const { assert( !_moved ); _moved = true; }
+      Socket();
+      ~Socket();
+
+      Socket( const Socket & other );
+      const Socket & operator=( const Socket & other );
+    };
+
+    std::deque< Socket > socks;
     bool has_remote_addr;
     struct sockaddr_in remote_addr;
 
@@ -134,14 +155,19 @@ namespace Network {
 
     void hop_port( void );
 
+    int sock( void ) const { assert( !socks.empty() ); return socks.back().fd(); }
+
+    void prune_sockets( void );
+
+    string recv_one( int sock_to_recv, bool nonblocking );
+
   public:
     Connection( const char *desired_ip, const char *desired_port ); /* server */
     Connection( const char *key_str, const char *ip, int port ); /* client */
-    ~Connection();
 
     void send( string s );
     string recv( void );
-    int fd( void ) const { return sock; }
+    const std::vector< int > fds( void ) const;
     int get_MTU( void ) const { return MTU; }
 
     int port( void ) const;

@@ -534,7 +534,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       /* poll for events */
       sel.clear_fds();
-      sel.add_fd( network.fd() );
+      std::vector< int > fd_list( network.fds() );
+      assert( fd_list.size() == 1 ); /* servers don't hop */
+      int network_fd = fd_list.back();
+      sel.add_fd( network_fd );
       sel.add_fd( host_fd );
 
       int active_fds = sel.select( timeout );
@@ -546,7 +549,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       now = Network::timestamp();
       uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
 
-      if ( sel.read( network.fd() ) ) {
+      if ( sel.read( network_fd ) ) {
 	/* packet received from the network */
 	network.recv();
 	
@@ -652,7 +655,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
       
-      if ( sel.error( network.fd() ) ) {
+      if ( sel.error( network_fd ) ) {
 	/* network problem */
 	break;
       }

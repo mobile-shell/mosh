@@ -324,7 +324,12 @@ void STMClient::main( void )
       /* poll for events */
       /* network->fd() can in theory change over time */
       sel.clear_fds();
-      sel.add_fd( network->fd() );
+      std::vector< int > fd_list( network->fds() );
+      for ( std::vector< int >::const_iterator it = fd_list.begin();
+	    it != fd_list.end();
+	    it++ ) {
+	sel.add_fd( *it );
+      }
       sel.add_fd( STDIN_FILENO );
 
       int active_fds = sel.select( wait_time );
@@ -333,8 +338,24 @@ void STMClient::main( void )
 	break;
       }
 
-      if ( sel.read( network->fd() ) ) {
-	/* packet received from the network */
+      bool network_ready_to_read = false;
+
+      for ( std::vector< int >::const_iterator it = fd_list.begin();
+	    it != fd_list.end();
+	    it++ ) {
+	if ( sel.read( *it ) ) {
+	  /* packet received from the network */
+	  /* we only read one socket each run */
+	  network_ready_to_read = true;
+	}
+
+	if ( sel.error( *it ) ) {
+	  /* network problem */
+	  break;
+	}
+      }
+
+      if ( network_ready_to_read ) {
 	if ( !process_network_input() ) { return; }
       }
     
@@ -368,11 +389,6 @@ void STMClient::main( void )
           overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ), true );
           network->start_shutdown();
         }
-      }
-
-      if ( sel.error( network->fd() ) ) {
-	/* network problem */
-	break;
       }
 
       if ( sel.error( STDIN_FILENO ) ) {

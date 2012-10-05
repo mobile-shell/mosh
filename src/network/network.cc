@@ -111,35 +111,54 @@ void Connection::hop_port( void )
 {
   assert( !server );
 
-  if ( close( sock ) < 0 ) {
-    throw NetworkException( "close", errno );
-  }
-
   setup();
+
+  prune_sockets();
 }
 
-void Connection::setup( void )
+void Connection::prune_sockets( void )
 {
-  /* create socket */
-  sock = socket( AF_INET, SOCK_DGRAM, 0 );
-  if ( sock < 0 ) {
-    throw NetworkException( "socket", errno );
+  /* don't keep old sockets if the new socket has been working for long enough */
+  if ( socks.size() > 1 ) {
+    if ( timestamp() - last_port_choice > MAX_OLD_SOCKET_AGE ) {
+      int num_to_kill = socks.size() - 1;
+      for ( int i = 0; i < num_to_kill; i++ ) {
+	socks.pop_front();
+      }
+    }
+  } else {
+    return;
   }
 
-  last_port_choice = timestamp();
+  /* make sure we don't have too many receive sockets open */
+  if ( socks.size() > MAX_PORTS_OPEN ) {
+    int num_to_kill = socks.size() - MAX_PORTS_OPEN;
+    for ( int i = 0; i < num_to_kill; i++ ) {
+      socks.pop_front();
+    }
+  }
+}
+
+Connection::Socket::Socket()
+  : _fd( socket( AF_INET, SOCK_DGRAM, 0 ) ),
+    _moved( false )
+{
+  if ( _fd < 0 ) {
+    throw NetworkException( "socket", errno );
+  }
 
   /* Disable path MTU discovery */
 #ifdef HAVE_IP_MTU_DISCOVER
   char flag = IP_PMTUDISC_DONT;
   socklen_t optlen = sizeof( flag );
-  if ( setsockopt( sock, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
+  if ( setsockopt( _fd, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
     throw NetworkException( "setsockopt", errno );
   }
 #endif
 
   /* set diffserv values to AF42 + ECT */
   uint8_t dscp = 0x92;
-  if ( setsockopt( sock, IPPROTO_IP, IP_TOS, &dscp, 1) < 0 ) {
+  if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, 1) < 0 ) {
     //    perror( "setsockopt( IP_TOS )" );
   }
 
@@ -147,14 +166,35 @@ void Connection::setup( void )
 #ifdef HAVE_IP_RECVTOS
   char tosflag = true;
   socklen_t tosoptlen = sizeof( tosflag );
-  if ( setsockopt( sock, IPPROTO_IP, IP_RECVTOS, &tosflag, tosoptlen ) < 0 ) {
+  if ( setsockopt( _fd, IPPROTO_IP, IP_RECVTOS, &tosflag, tosoptlen ) < 0 ) {
     perror( "setsockopt( IP_RECVTOS )" );
   }
 #endif
 }
 
+void Connection::setup( void )
+{
+  /* create socket */
+  socks.push_back( Socket() );
+
+  last_port_choice = timestamp();
+}
+
+const std::vector< int > Connection::fds( void ) const
+{
+  std::vector< int > ret;
+
+  for ( std::deque< Socket >::const_iterator it = socks.begin();
+	it != socks.end();
+	it++ ) {
+    ret.push_back( it->fd() );
+  }
+
+  return ret;
+}
+
 Connection::Connection( const char *desired_ip, const char *desired_port ) /* server */
-  : sock( -1 ),
+  : socks(),
     has_remote_addr( false ),
     remote_addr(),
     server( true ),
@@ -213,7 +253,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   /* try to bind to desired IP first */
   if ( desired_ip_addr != INADDR_ANY ) {
     try {
-      if ( try_bind( sock, desired_ip_addr, desired_port_no ) ) { return; }
+      if ( try_bind( sock(), desired_ip_addr, desired_port_no ) ) { return; }
     } catch ( const NetworkException& e ) {
       struct in_addr sin_addr;
       sin_addr.s_addr = desired_ip_addr;
@@ -225,7 +265,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
 
   /* now try any local interface */
   try {
-    if ( try_bind( sock, INADDR_ANY, desired_port_no ) ) { return; }
+    if ( try_bind( sock(), INADDR_ANY, desired_port_no ) ) { return; }
   } catch ( const NetworkException& e ) {
     fprintf( stderr, "Error binding to any interface: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -266,7 +306,7 @@ bool Connection::try_bind( int socket, uint32_t addr, int port )
 }
 
 Connection::Connection( const char *key_str, const char *ip, int port ) /* client */
-  : sock( -1 ),
+  : socks(),
     has_remote_addr( false ),
     remote_addr(),
     server( false ),
@@ -312,7 +352,7 @@ void Connection::send( string s )
 
   string p = px.tostring( &session );
 
-  ssize_t bytes_sent = sendto( sock, p.data(), p.size(), 0,
+  ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), 0,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
 
   if ( bytes_sent == static_cast<ssize_t>( p.size() ) ) {
@@ -341,6 +381,34 @@ void Connection::send( string s )
 
 string Connection::recv( void )
 {
+  assert( !socks.empty() );
+  for ( std::deque< Socket >::const_iterator it = socks.begin();
+	it != socks.end();
+	it++ ) {
+    bool islast = (it + 1) == socks.end();
+    string payload;
+    try {
+      payload = recv_one( it->fd(), !islast );
+    } catch ( NetworkException & e ) {
+      if ( (e.the_errno == EAGAIN)
+	   || (e.the_errno == EWOULDBLOCK) ) {
+	assert( !islast );
+	continue;
+      } else {
+	throw e;
+      }
+    }
+
+    /* succeeded */
+    prune_sockets();
+    return payload;
+  }
+  assert( false );
+  return "";
+}
+
+string Connection::recv_one( int sock_to_recv, bool nonblocking )
+{
   /* receive source address, ECN, and payload in msghdr structure */
   struct sockaddr_in packet_remote_addr;
   struct msghdr header;
@@ -366,10 +434,10 @@ string Connection::recv( void )
   /* receive flags */
   header.msg_flags = 0;
 
-  ssize_t received_len = recvmsg( sock, &header, 0 );
+  ssize_t received_len = recvmsg( sock_to_recv, &header, nonblocking ? MSG_DONTWAIT : 0 );
 
   if ( received_len < 0 ) {
-    throw NetworkException( "recvfrom", errno );
+    throw NetworkException( "recvmsg", errno );
   }
 
   if ( header.msg_flags & MSG_TRUNC ) {
@@ -456,7 +524,7 @@ int Connection::port( void ) const
   struct sockaddr_in local_addr;
   socklen_t addrlen = sizeof( local_addr );
 
-  if ( getsockname( sock, (sockaddr *)&local_addr, &addrlen ) < 0 ) {
+  if ( getsockname( sock(), (sockaddr *)&local_addr, &addrlen ) < 0 ) {
     throw NetworkException( "getsockname", errno );
   }
 
@@ -501,9 +569,27 @@ uint64_t Connection::timeout( void ) const
   return RTO;
 }
 
-Connection::~Connection()
+Connection::Socket::~Socket()
 {
-  if ( close( sock ) < 0 ) {
-    throw NetworkException( "close", errno );
+  if ( !_moved ) {
+    if ( close( _fd ) < 0 ) {
+      throw NetworkException( "close", errno );
+    }
   }
+}
+
+Connection::Socket::Socket( const Socket & other )
+  : _fd( other._fd ),
+    _moved( false )
+{
+  other.move();
+}
+
+const Connection::Socket & Connection::Socket::operator=( const Socket & other )
+{
+  _fd = other._fd;
+  
+  other.move();
+
+  return *this;
 }

@@ -74,9 +74,10 @@ string Fragment::tostring( void )
 
 Fragment::Fragment( string &x )
   : id( -1 ), fragment_num( -1 ), final( false ), initialized( true ),
-    contents( x.begin() + frag_header_len, x.end() )
+    contents()
 {
   assert( x.size() >= frag_header_len );
+  contents = string( x.begin() + frag_header_len, x.end() );
 
   uint64_t data64;
   uint16_t *data16 = (uint16_t *)x.data();

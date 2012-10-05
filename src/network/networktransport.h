@@ -103,7 +103,7 @@ namespace Network {
 
     const TimestampedState<RemoteState> & get_latest_remote_state( void ) const { return received_states.back(); }
 
-    int fd( void ) const { return connection.fd(); }
+    const std::vector< int > fds( void ) const { return connection.fds(); }
 
     void set_verbose( void ) { sender.set_verbose(); verbose = true; }
 
