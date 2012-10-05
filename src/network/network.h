@@ -92,7 +92,7 @@ namespace Network {
     static const int PORT_RANGE_HIGH = 60999;
 
     static const unsigned int SERVER_ASSOCIATION_TIMEOUT = 40000;
-    static const unsigned int PORT_HOP_INTERVAL          = 20000;
+    static const unsigned int PORT_HOP_INTERVAL          = 30000;
 
     static const int CONGESTION_TIMESTAMP_PENALTY = 500; /* ms */
 
