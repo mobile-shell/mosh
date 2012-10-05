@@ -210,19 +210,47 @@ void NotificationEngine::apply( Framebuffer &fb ) const
   double since_ack = (double)(now - last_acked_state) / 1000.0;
   const char server_message[] = "contact";
   const char reply_message[] = "reply";
+  const char tunit_seconds[] = "seconds";
+  const char tunit_minutes[] = "minutes";
+  const char tunit_minute[] = "minute";
+  const char tunit_hours[] = "hours";
+  const char tunit_hour[] = "hour";
+  const char tunit_days[] = "days";
+  const char tunit_day[] = "day";
 
   double time_elapsed = since_heard;
   const char *explanation = server_message;
+  const char *time_unit = tunit_seconds;
 
   if ( reply_late( now ) && (!server_late( now )) ) {
     time_elapsed = since_ack;
     explanation = reply_message;
   }
 
+  if ( time_elapsed > 172800 ) {
+    time_unit = tunit_days;
+    time_elapsed = time_elapsed / 86400;
+  } else if ( time_elapsed > 86400 ) {
+    time_unit = tunit_day;
+    time_elapsed = time_elapsed / 86400;
+  } else if ( time_elapsed > 7200 ) {
+    time_unit = tunit_hours;
+    time_elapsed = time_elapsed / 3600;
+  } else if ( time_elapsed > 3600 ) {
+    time_unit = tunit_hour;
+    time_elapsed = time_elapsed / 3600;
+  } else if ( time_elapsed > 120 ) {
+    time_unit = tunit_minutes;
+    time_elapsed = time_elapsed / 60;
+  } else if ( time_elapsed > 60 ) {
+    time_unit = tunit_minute;
+    time_elapsed = time_elapsed / 60;
+  }
+
   if ( message.empty() && (!time_expired) ) {
     return;
   } else if ( message.empty() && time_expired ) {
-    swprintf( tmp, 128, L"mosh: Last %s %.0f seconds ago. [To quit: Ctrl-^ .]", explanation, time_elapsed );
+    swprintf( tmp, 128, L"mosh: Last %s %.0f %s ago. [To quit: Ctrl-^ .]", explanation, time_elapsed, time_unit );
   } else if ( (!message.empty()) && (!time_expired) ) {
     swprintf( tmp, 128, L"mosh: %ls [To quit: Ctrl-^ .]", message.c_str() );
   } else {
