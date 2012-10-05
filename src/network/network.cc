@@ -408,6 +408,9 @@ string Connection::recv( void )
 	/* signal counterparty to slow down */
 	/* this will gradually slow the counterparty down to the minimum frame rate */
 	saved_timestamp -= CONGESTION_TIMESTAMP_PENALTY;
+	if ( server ) {
+	  fprintf( stderr, "Received explicit congestion notification.\n" );
+	}
       }
     }
 
