@@ -39,6 +39,7 @@
 #include "parser.h"
 
 #include <vector>
+#include <limits.h>
 
 namespace Overlay {
   using namespace Terminal;

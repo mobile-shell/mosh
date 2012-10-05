@@ -35,6 +35,8 @@
 
 #include "hostinput.pb.h"
 
+#include <limits.h>
+
 using namespace std;
 using namespace Parser;
 using namespace Terminal;

@@ -39,6 +39,8 @@
 #include "transportsender.h"
 #include "transportfragment.h"
 
+#include <limits.h>
+
 using namespace Network;
 using namespace std;
 
