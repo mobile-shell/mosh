@@ -309,8 +309,6 @@ void STMClient::main( void )
 
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
-  sel.add_fd( network->fd() );
-  sel.add_fd( STDIN_FILENO );
 
   while ( 1 ) {
     try {
@@ -322,6 +320,12 @@ void STMClient::main( void )
       if ( still_connecting() ) {
 	wait_time = min( 250, wait_time );
       }
+
+      /* poll for events */
+      /* network->fd() can in theory change over time */
+      sel.clear_fds();
+      sel.add_fd( network->fd() );
+      sel.add_fd( STDIN_FILENO );
 
       int active_fds = sel.select( wait_time );
       if ( active_fds < 0 ) {

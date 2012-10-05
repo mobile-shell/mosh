@@ -93,6 +93,11 @@ public:
     FD_SET( fd, &all_fds );
   }
 
+  void clear_fds( void )
+  {
+    FD_ZERO( &all_fds );
+  }
+
   void add_signal( int signum )
   {
     fatal_assert( signum >= 0 );

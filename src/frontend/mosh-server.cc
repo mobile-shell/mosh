@@ -510,8 +510,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 {
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
-  sel.add_fd( network.fd() );
-  sel.add_fd( host_fd );
   sel.add_signal( SIGTERM );
   sel.add_signal( SIGINT );
 
@@ -533,6 +531,11 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       if ( !network.get_remote_state_num() ) {
         timeout = min( timeout, timeout_if_no_client );
       }
+
+      /* poll for events */
+      sel.clear_fds();
+      sel.add_fd( network.fd() );
+      sel.add_fd( host_fd );
 
       int active_fds = sel.select( timeout );
       if ( active_fds < 0 ) {
