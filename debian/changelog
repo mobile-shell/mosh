@@ -1,3 +1,32 @@
+mosh (1.2.2.95rc1-1) unstable; urgency=low
+
+  * Security improvements:
+    * Use OpenSSL AES implementation
+    * Don't let bad server dictate IP (Felix Groebert)
+
+  * New features:
+    * Client hops ports to survive challenging client-side firewall
+    * Server stops sending to save client power (Daniel Drown)
+    * Set DiffServ code point and ECN-capable (Dave Täht)
+    * Slow down if explicit congestion notification received
+    * Warn about unattached Mosh sessions on login
+    * Compatible with KDE konsole (uses BEL to terminate OSC)
+    * Improved heuristic about color of predicted characters
+
+  * Bug fixes:
+    * Improved performance on systems with expensive time
+    * No longer choke on "ffff::" address for hosts with IPv6
+
+  * Platform support:
+    * Build on Solaris and IllumOS (Timo Sirainen, Ira Cooper)
+    * Build on ARM with gcc 4.7 (Alexander Chernyakhovsky)
+
+  * Licensing changes:
+    * Allow distribution on Apple App Stores
+    * Allow linking with OpenSSL
+
+ -- Keith Winstein <keithw@mit.edu>  Fri, 05 Oct 2012 19:45:51 -0400
+
 mosh (1.2.2-1) unstable; urgency=low
 
   * Version 1.2.2 released.

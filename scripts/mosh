@@ -30,7 +30,7 @@
 #   this exception statement from all source files in the program, then
 #   also delete it here.
 
-my $MOSH_VERSION = '1.2.2';
+my $MOSH_VERSION = '1.2.2.95rc1';
 
 use warnings;
 use strict;
