@@ -4,10 +4,10 @@ Priority: optional
 Maintainer: Keith Winstein <keithw@mit.edu>
 DM-Upload-Allowed: yes
 Build-Depends: debhelper (>= 7.0.50), autotools-dev, protobuf-compiler, libprotobuf-dev, dh-autoreconf, pkg-config, libutempter-dev, zlib1g-dev, libncurses5-dev, libssl-dev
-Standards-Version: 3.9.3
+Standards-Version: 3.9.4.0
 Homepage: http://mosh.mit.edu
 Vcs-Git: git://github.com/keithw/mosh.git
-Vcs-Browser: http://github.com/keithw/mosh
+Vcs-Browser: https://github.com/keithw/mosh
 
 Package: mosh
 Architecture: any
