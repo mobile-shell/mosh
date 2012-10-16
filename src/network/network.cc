@@ -352,7 +352,7 @@ void Connection::send( string s )
 
   string p = px.tostring( &session );
 
-  ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), 0,
+  ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
 			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
 
   if ( bytes_sent == static_cast<ssize_t>( p.size() ) ) {
