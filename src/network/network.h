@@ -86,7 +86,7 @@ namespace Network {
 
   class Connection {
   private:
-    static const int SEND_MTU = 1400;
+    static const int DEFAULT_SEND_MTU = 1300;
     static const uint64_t MIN_RTO = 50; /* ms */
     static const uint64_t MAX_RTO = 1000; /* ms */
 

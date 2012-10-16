@@ -198,7 +198,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     has_remote_addr( false ),
     remote_addr(),
     server( true ),
-    MTU( SEND_MTU ),
+    MTU( DEFAULT_SEND_MTU ),
     key(),
     session( key ),
     direction( TO_CLIENT ),
@@ -310,7 +310,7 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
     has_remote_addr( false ),
     remote_addr(),
     server( false ),
-    MTU( SEND_MTU ),
+    MTU( DEFAULT_SEND_MTU ),
     key( key_str ),
     session( key ),
     direction( TO_SERVER ),
@@ -363,6 +363,10 @@ void Connection::send( string s )
        flight anyway. */
     have_send_exception = true;
     send_exception = NetworkException( "sendto", errno );
+
+    if ( errno == EMSGSIZE ) {
+      MTU = 500; /* payload MTU of last resort */
+    }
   }
 
   uint64_t now = timestamp();
