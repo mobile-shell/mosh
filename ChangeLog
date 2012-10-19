@@ -1,9 +1,10 @@
-2012-10-xx Keith Winstein <mosh-devel@mit.edu>
+2012-10-19 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.2.3 released.
 
 	* Security improvements:
 		* Use OpenSSL AES implementation
+		* Update AES-OCB implementation (Keegan McAllister)
 		* Don't let bad server dictate IP (Felix Groebert)
 
 	* New features:
@@ -18,6 +19,7 @@
 	* Bug fixes:
 		* Improved performance on systems with expensive time
 		* No longer choke on "ffff::" address for hosts with IPv6
+		* More conservative MTU and datagram sizing
 
 	* Platform support:
 		* Build on Solaris and IllumOS (Timo Sirainen, Ira Cooper)

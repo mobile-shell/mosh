@@ -1,3 +1,13 @@
+mosh (1.2.3-1) unstable; urgency=low
+
+  * Version 1.2.3 released.
+
+  * Update AES-OCB implementation (Keegan McAllister)
+
+  * More conservative MTU and datagram sizing
+
+ -- Keith Winstein <keithw@mit.edu>  Fri, 19 Oct 2012 15:21:54 -0400
+
 mosh (1.2.2.95rc1-1) unstable; urgency=low
 
   * Security improvements:
