@@ -1,6 +1,6 @@
 Name:		mosh
 Version:	1.2.3
-Release:	2%{?dist}
+Release:	1%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
 License:	GPLv3+
@@ -13,8 +13,10 @@ BuildRequires:	protobuf-devel
 BuildRequires:	libutempter-devel
 BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
+BuildRequires:	openssl-devel
 Requires:	openssh-clients
 Requires:	perl-IO-Tty
+Requires:	openssl
 
 %description
 Mosh is a remote terminal application that supports:
@@ -50,8 +52,14 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
-* Fri Oct 19 2012 Keith Winstein <mosh-devel@mit.edu> - 1.2.3-1
-- Update to mosh 1.2.3.
+* Fri Oct 19 2012 Alexander Chernyakhovsky <achernya@mit.edu> - 1.2.3-1
+- Update to mosh 1.2.3
+
+* Fri Jul 20 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.2.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Wed Jun 13 2012 Alexander Chernyakhovsky <achernya@mit.edu> - 1.2.2-1
+- Update to mosh 1.2.2
 
 * Sat Apr 28 2012 Alexander Chernyakhovsky <achernya@mit.edu> - 1.2-2
 - Add -g and -O2 CFLAGS
