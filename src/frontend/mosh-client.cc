@@ -39,6 +39,7 @@
 #include "stmclient.h"
 #include "crypto.h"
 #include "locale_utils.h"
+#include "fatal_assert.h"
 
 /* these need to be included last because of conflicting defines */
 #include <curses.h>
@@ -71,6 +72,9 @@ int main( int argc, char *argv[] )
 {
   /* For security, make sure we don't dump core */
   Crypto::disable_dumping_core();
+
+  /* Detect edge case */
+  fatal_assert( argc > 0 );
 
   /* Get arguments */
   int opt;

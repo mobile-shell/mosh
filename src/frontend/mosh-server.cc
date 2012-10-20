@@ -81,6 +81,7 @@
 #include "pty_compat.h"
 #include "select.h"
 #include "timestamp.h"
+#include "fatal_assert.h"
 
 #ifndef _PATH_BSHELL
 #define _PATH_BSHELL "/bin/sh"
@@ -158,6 +159,9 @@ int main( int argc, char *argv[] )
 {
   /* For security, make sure we don't dump core */
   Crypto::disable_dumping_core();
+
+  /* Detect edge case */
+  fatal_assert( argc > 0 );
 
   char *desired_ip = NULL;
   char *desired_port = NULL;
