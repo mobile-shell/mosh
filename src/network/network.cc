@@ -35,6 +35,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
@@ -157,14 +158,14 @@ Connection::Socket::Socket()
 #endif
 
   /* set diffserv values to AF42 + ECT */
-  uint8_t dscp = 0x92;
-  if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, 1) < 0 ) {
+  int dscp = IPTOS_DSCP_AF42 | IPTOS_ECN_ECT0;
+  if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, sizeof (dscp)) < 0 ) {
     //    perror( "setsockopt( IP_TOS )" );
   }
 
   /* request explicit congestion notification on received datagrams */
 #ifdef HAVE_IP_RECVTOS
-  char tosflag = true;
+  int tosflag = true;
   socklen_t tosoptlen = sizeof( tosflag );
   if ( setsockopt( _fd, IPPROTO_IP, IP_RECVTOS, &tosflag, tosoptlen ) < 0 ) {
     perror( "setsockopt( IP_RECVTOS )" );
