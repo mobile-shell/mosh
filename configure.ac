@@ -318,3 +318,11 @@ AC_CONFIG_FILES([
   conf/Makefile
 ])
 AC_OUTPUT
+
+AC_MSG_NOTICE([ === Configuration results ===])
+AC_MSG_NOTICE([Version:             $PACKAGE_VERSION])
+AC_MSG_NOTICE([c++ compiler:        $CXX])
+AC_MSG_NOTICE([Warning CXXFLAGS:    $WARNING_CXXFLAGS])
+AC_MSG_NOTICE([Picky CXXFLAGS:      $PICKY_CXXFLAGS])
+AC_MSG_NOTICE([Harden CFLAGS:       $HARDEN_CFLAGS])
+AC_MSG_NOTICE([ =============================])
