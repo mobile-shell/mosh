@@ -103,7 +103,7 @@ using namespace std;
 
 void print_usage( const char *argv0 )
 {
-  fprintf( stderr, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
+  fprintf( stderr, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
 }
 
 void print_motd( void );
@@ -235,9 +235,9 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( desired_port
-       && ( strspn( desired_port, "0123456789" ) != strlen( desired_port ) ) ) {
-    fprintf( stderr, "%s: Bad UDP port (%s)\n", argv[ 0 ], desired_port );
+  int dpl, dph;
+  if ( desired_port && ! Connection::parse_portrange( desired_port, dpl, dph ) ) {
+    fprintf( stderr, "%s: Bad UDP port range (%s)\n", argv[ 0 ], desired_port );
     print_usage( argv[ 0 ] );
     exit( 1 );
   }

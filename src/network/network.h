@@ -101,7 +101,7 @@ namespace Network {
 
     static const int CONGESTION_TIMESTAMP_PENALTY = 500; /* ms */
 
-    static bool try_bind( int socket, uint32_t addr, int port );
+    static bool try_bind( int socket, uint32_t addr, int port_low, int port_high );
 
     class Socket
     {
@@ -185,6 +185,8 @@ namespace Network {
     }
 
     void set_last_roundtrip_success( uint64_t s_success ) { last_roundtrip_success = s_success; }
+
+    static bool parse_portrange( const char * desired_port_range, int & desired_port_low, int & desired_port_high );
   };
 }
 

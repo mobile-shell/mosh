@@ -223,20 +223,12 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   /* If an IP request is given, we try to bind to that IP, but we also
      try INADDR_ANY. If a port request is given, we bind only to that port. */
 
-  /* convert port number */
-  long int desired_port_no = 0;
+  /* convert port numbers */
+  int desired_port_low = 0;
+  int desired_port_high = 0;
 
-  if ( desired_port ) {
-    char *end;
-    errno = 0;
-    desired_port_no = strtol( desired_port, &end, 10 );
-    if ( (errno != 0) || (end != desired_port + strlen( desired_port )) ) {
-      throw NetworkException( "Invalid port number", errno );
-    }
-  }
-
-  if ( (desired_port_no < 0) || (desired_port_no > 65535) ) {
-    throw NetworkException( "Port number outside valid range [0..65535]", 0 );
+  if ( desired_port && !parse_portrange( desired_port, desired_port_low, desired_port_high ) ) {
+    throw NetworkException("Invalid port range", 0);
   }
 
   /* convert desired IP */
@@ -253,7 +245,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   /* try to bind to desired IP first */
   if ( desired_ip_addr != INADDR_ANY ) {
     try {
-      if ( try_bind( sock(), desired_ip_addr, desired_port_no ) ) { return; }
+      if ( try_bind( sock(), desired_ip_addr, desired_port_low, desired_port_high ) ) { return; }
     } catch ( const NetworkException& e ) {
       struct in_addr sin_addr;
       sin_addr.s_addr = desired_ip_addr;
@@ -265,7 +257,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
 
   /* now try any local interface */
   try {
-    if ( try_bind( sock(), INADDR_ANY, desired_port_no ) ) { return; }
+    if ( try_bind( sock(), INADDR_ANY, desired_port_low, desired_port_high ) ) { return; }
   } catch ( const NetworkException& e ) {
     fprintf( stderr, "Error binding to any interface: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -276,7 +268,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   throw NetworkException( "Could not bind", errno );
 }
 
-bool Connection::try_bind( int socket, uint32_t addr, int port )
+bool Connection::try_bind( int socket, uint32_t addr, int port_low, int port_high )
 {
   struct sockaddr_in local_addr;
   local_addr.sin_family = AF_INET;
@@ -284,8 +276,11 @@ bool Connection::try_bind( int socket, uint32_t addr, int port )
 
   int search_low = PORT_RANGE_LOW, search_high = PORT_RANGE_HIGH;
 
-  if ( port != 0 ) { /* port preference */
-    search_low = search_high = port;
+  if ( port_low != 0 ) { /* low port preference */
+    search_low = port_low;
+  }
+  if ( port_high != 0 ) { /* high port preference */
+    search_high = port_high;
   }
 
   for ( int i = search_low; i <= search_high; i++ ) {
@@ -596,4 +591,51 @@ const Connection::Socket & Connection::Socket::operator=( const Socket & other )
   other.move();
 
   return *this;
+}
+
+bool Connection::parse_portrange( const char * desired_port, int & desired_port_low, int & desired_port_high )
+{
+  /* parse "port" or "portlow:porthigh" */
+  desired_port_low = desired_port_high = 0;
+  char *end;
+  long value;
+
+  /* parse first (only?) port */
+  errno = 0;
+  value = strtol( desired_port, &end, 10 );
+  if ( (errno != 0) || (*end != '\0' && *end != ':') ) {
+    fprintf( stderr, "Invalid (low) port number (%s)\n", desired_port );
+    return false;
+  }
+  if ( (value < 0) || (value > 65535) ) {
+    fprintf( stderr, "(Low) port number %ld outside valid range [0..65535]\n", value );
+    return false;
+  }
+
+  desired_port_low = (int)value;
+  if (*end == '\0') { /* not a port range */
+    desired_port_high = desired_port_low;
+    return true;
+  }
+
+  /* port range; parse high port */
+  const char * cp = end + 1;
+  errno = 0;
+  value = strtol( cp, &end, 10 );
+  if ( (errno != 0) || (*end != '\0') ) {
+    fprintf( stderr, "Invalid high port number (%s)\n", cp );
+    return false;
+  }
+  if ( (value < 0) || (value > 65535) ) {
+    fprintf( stderr, "High port number %ld outside valid range [0..65535]\n", value );
+    return false;
+  }
+
+  desired_port_high = (int)value;
+  if ( desired_port_low > desired_port_high ) {
+    fprintf( stderr, "Low port %d greater than high port %d\n", desired_port_low, desired_port_high );
+    return false;
+  }
+
+  return true;
 }

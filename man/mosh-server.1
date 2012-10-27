@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH MOSH 1 "February 2012"
+.TH MOSH 1 "October 2012"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -22,9 +22,9 @@ mosh-server \- server-side helper for mosh
 new
 [\-s]
 [\-v]
-[\-i IP]
-[\-p port]
-[\-c colors]
+[\-i \fIIP\fP]
+[\-p \fIPORT\fP[:\fIPORT2\fP]]
+[\-c \fICOLORS\fP]
 [\-\- command...]
 .br
 .SH DESCRIPTION
@@ -69,8 +69,8 @@ Print some debugging information even after detaching.
 IP address of the local interface to bind (for multihomed hosts)
 
 .TP
-.B \-p \fIPORT\fP
-UDP port number to bind
+.B \-p \fIPORT\fP[:\fIPORT2\fP]
+UDP port number or port-range to bind
 
 .TP
 .B \-c \fICOLORS\fP

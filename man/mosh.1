@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH MOSH 1 "February 2012"
+.TH MOSH 1 "October 2012"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -121,8 +121,9 @@ Synonym for \-\-predict=always
 Synonym for \-\-predict=never
 
 .TP
-.B \-p \fINUM\fP, \-\-port=\fINUM\fP
-Use a particular server-side UDP port, for example, if this is the
+.B \-p \fIPORT\fP[:\fIPORT2\fP], \-\-port=\fIPORT\fP[:\fIPORT2\fP]
+Use a particular server-side UDP port or port range,
+for example, if this is the
 only port that is forwarded through a firewall to the
 server. Otherwise, \fBmosh\fP will choose a port between 60000 and
 61000.

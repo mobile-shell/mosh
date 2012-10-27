@@ -66,7 +66,8 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 -n      --predict=never         never use local echo
         --predict=experimental  aggressively echo even when incorrect
 
--p NUM  --port=NUM           server-side UDP port
+-p PORT[:PORT2]
+        --port=PORT[:PORT2]  server-side UDP port or range
 
         --ssh=COMMAND        ssh command to run when setting up session
                                 (example: "ssh -p 2222")
@@ -99,10 +100,10 @@ sub predict_check {
 GetOptions( 'client=s' => \$client,
 	    'server=s' => \$server,
 	    'predict=s' => \$predict,
-	    'port=i' => \$port_request,
+	    'port=s' => \$port_request,
 	    'a' => sub { $predict = 'always' },
 	    'n' => sub { $predict = 'never' },
-	    'p=i' => \$port_request,
+	    'p=s' => \$port_request,
 	    'ssh=s' => \$ssh,
 	    'help' => \$help,
 	    'version' => \$version,
@@ -122,12 +123,21 @@ if ( defined $predict ) {
 }
 
 if ( defined $port_request ) {
-  if ( $port_request =~ m{^[0-9]+$}
-       and $port_request >= 0
-       and $port_request <= 65535 ) {
-    # good port
+  if ( $port_request =~ m{^(?<low>\d+)(:(?<high>\d+))?$} ) {
+    # good port or port-range
+    if ( $+{low} <= 0 or $+{low} >= 65535 ) {
+      die "$0: Server-side (low) port ($+{low}) must be within valid range [0..65535].\n";
+    }
+    if ( defined $+{high} ) {
+      if ( $+{high} <= 0 or $+{high} >= 65535 ) {
+	die "$0: Server-side high port ($+{high}) must be within valid range [0..65535].\n";
+      }
+      if ( $+{low} > $+{high} ) {
+	die "$0: Server-side port range ($port_request): low port greater than high port.\n";
+      }
+    }
   } else {
-    die "$0: Server-side port ($port_request) must be within valid range [0..65535].\n";
+    die "$0: Server-side port ($port_request) not valid.\n";
   }
 }
 
