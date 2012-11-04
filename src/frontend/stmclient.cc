@@ -62,6 +62,21 @@
 
 #include "networktransport.cc"
 
+void STMClient::resume( void )
+{
+  /* Restore termios state */
+  if ( tcsetattr( STDIN_FILENO, TCSANOW, &raw_termios ) < 0 ) {
+      perror( "tcsetattr" );
+      exit( 1 );
+  }
+
+  /* Put terminal in application-cursor-key mode */
+  swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
+
+  /* Flag that outer terminal state is unknown */
+  repaint_requested = true;
+}
+
 void STMClient::init( void )
 {
   if ( !is_utf8_locale() ) {
@@ -146,7 +161,6 @@ void STMClient::main_init( void )
   sel.add_signal( SIGINT );
   sel.add_signal( SIGHUP );
   sel.add_signal( SIGPIPE );
-  sel.add_signal( SIGTSTP );
   sel.add_signal( SIGCONT );
 
   /* get initial window size */
@@ -376,12 +390,14 @@ void STMClient::main( void )
         if ( !process_resize() ) { return; }
       }
 
+      if ( sel.signal( SIGCONT ) ) {
+	resume();
+      }
+
       if ( sel.signal( SIGTERM )
            || sel.signal( SIGINT )
            || sel.signal( SIGHUP )
-           || sel.signal( SIGPIPE )
-           || sel.signal( SIGTSTP )
-           || sel.signal( SIGCONT ) ) {
+           || sel.signal( SIGPIPE ) ) {
         /* shutdown signal */
         if ( !network->has_remote_addr() ) {
           break;

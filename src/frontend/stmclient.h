@@ -74,6 +74,8 @@ private:
     return network && ( network->get_remote_state_num() == 0 );
   }
 
+  void resume( void ); /* restore state after SIGCONT */
+
 public:
   STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode )
     : ip( s_ip ), port( s_port ), key( s_key ),
