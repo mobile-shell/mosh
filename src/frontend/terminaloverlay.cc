@@ -35,6 +35,10 @@
 #include <list>
 #include <typeinfo>
 #include <limits.h>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <iomanip>
 
 #include "terminaloverlay.h"
 
@@ -171,6 +175,27 @@ NotificationEngine::NotificationEngine()
     message_expiration( -1 )
 {}
 
+static std::string human_readable_duration(int num_seconds) {
+    static int divisions[3] = {60, 60, 24};
+    std::stringstream buf;
+    if (num_seconds < divisions[0]) {
+        buf << num_seconds << " seconds";
+    } else {
+        std::vector<int> components;
+        for (unsigned int d = 0; d < sizeof(divisions)/sizeof(divisions[0]) && num_seconds > 0; num_seconds /= divisions[d++]) {
+            int comp = num_seconds % divisions[d];
+            components.push_back(comp);
+        }
+        if (num_seconds > 0) components.push_back(num_seconds);
+        std::vector<int>::const_reverse_iterator iter = components.rbegin();
+        buf << *(iter++);
+        for (; iter != components.rend(); ++iter) {
+            buf << ":" << std::setw(2) << std::setfill('0') << *iter;
+        }
+    }
+    return buf.str();
+}
+
 void NotificationEngine::apply( Framebuffer &fb ) const
 {
   uint64_t now = timestamp();
@@ -222,7 +247,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
   if ( message.empty() && (!time_expired) ) {
     return;
   } else if ( message.empty() && time_expired ) {
-    swprintf( tmp, 128, L"mosh: Last %s %.0f seconds ago. [To quit: Ctrl-^ .]", explanation, time_elapsed );
+    swprintf( tmp, 128, L"mosh: Last %s %s ago. [To quit: Ctrl-^ .]", explanation, human_readable_duration(time_elapsed).c_str() );
   } else if ( (!message.empty()) && (!time_expired) ) {
     swprintf( tmp, 128, L"mosh: %ls [To quit: Ctrl-^ .]", message.c_str() );
   } else {
