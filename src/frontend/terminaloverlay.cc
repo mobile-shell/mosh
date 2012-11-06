@@ -35,10 +35,6 @@
 #include <list>
 #include <typeinfo>
 #include <limits.h>
-#include <string>
-#include <sstream>
-#include <vector>
-#include <iomanip>
 
 #include "terminaloverlay.h"
 
@@ -176,24 +172,16 @@ NotificationEngine::NotificationEngine()
 {}
 
 static std::string human_readable_duration(int num_seconds) {
-    static int divisions[3] = {60, 60, 24};
-    std::stringstream buf;
-    if (num_seconds < divisions[0]) {
-        buf << num_seconds << " seconds";
-    } else {
-        std::vector<int> components;
-        for (unsigned int d = 0; d < sizeof(divisions)/sizeof(divisions[0]) && num_seconds > 0; num_seconds /= divisions[d++]) {
-            int comp = num_seconds % divisions[d];
-            components.push_back(comp);
-        }
-        if (num_seconds > 0) components.push_back(num_seconds);
-        std::vector<int>::const_reverse_iterator iter = components.rbegin();
-        buf << *(iter++);
-        for (; iter != components.rend(); ++iter) {
-            buf << ":" << std::setw(2) << std::setfill('0') << *iter;
-        }
-    }
-    return buf.str();
+  char tmp[ 128 ];
+  if ( num_seconds < 60 ) {
+    snprintf( tmp, 128, "%d seconds", num_seconds );
+  } else if ( num_seconds < 3600 ) {
+    snprintf( tmp, 128, "%d:%02d", num_seconds / 60, num_seconds % 60 );
+  } else {
+    snprintf( tmp, 128, "%d:%02d:%02d", num_seconds / 3600,
+	      (num_seconds / 60) % 60, num_seconds % 60 );
+  }
+  return tmp;
 }
 
 void NotificationEngine::apply( Framebuffer &fb ) const
