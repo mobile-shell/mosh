@@ -171,6 +171,19 @@ NotificationEngine::NotificationEngine()
     message_expiration( -1 )
 {}
 
+static std::string human_readable_duration( int num_seconds, const std::string seconds_abbr ) {
+  char tmp[ 128 ];
+  if ( num_seconds < 60 ) {
+    snprintf( tmp, 128, "%d %s", num_seconds, seconds_abbr.c_str() );
+  } else if ( num_seconds < 3600 ) {
+    snprintf( tmp, 128, "%d:%02d", num_seconds / 60, num_seconds % 60 );
+  } else {
+    snprintf( tmp, 128, "%d:%02d:%02d", num_seconds / 3600,
+	      (num_seconds / 60) % 60, num_seconds % 60 );
+  }
+  return tmp;
+}
+
 void NotificationEngine::apply( Framebuffer &fb ) const
 {
   uint64_t now = timestamp();
@@ -222,12 +235,13 @@ void NotificationEngine::apply( Framebuffer &fb ) const
   if ( message.empty() && (!time_expired) ) {
     return;
   } else if ( message.empty() && time_expired ) {
-    swprintf( tmp, 128, L"mosh: Last %s %.0f seconds ago. [To quit: Ctrl-^ .]", explanation, time_elapsed );
+    swprintf( tmp, 128, L"mosh: Last %s %s ago. [To quit: Ctrl-^ .]", explanation,
+	      human_readable_duration( time_elapsed, "seconds" ).c_str() );
   } else if ( (!message.empty()) && (!time_expired) ) {
     swprintf( tmp, 128, L"mosh: %ls [To quit: Ctrl-^ .]", message.c_str() );
   } else {
-    swprintf( tmp, 128, L"mosh: %ls (%.0f s without %s.) [To quit: Ctrl-^ .]", message.c_str(),
-	      time_elapsed, explanation );
+    swprintf( tmp, 128, L"mosh: %ls (%s without %s.) [To quit: Ctrl-^ .]", message.c_str(),
+	      human_readable_duration( time_elapsed, "s" ).c_str(), explanation );
   }
 
   wstring string_to_draw( tmp );
