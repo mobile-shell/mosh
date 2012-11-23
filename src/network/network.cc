@@ -140,8 +140,7 @@ void Connection::prune_sockets( void )
 }
 
 Connection::Socket::Socket()
-  : _fd( socket( AF_INET, SOCK_DGRAM, 0 ) ),
-    _moved( false )
+  : _fd( socket( AF_INET, SOCK_DGRAM, 0 ) )
 {
   if ( _fd < 0 ) {
     throw NetworkException( "socket", errno );
@@ -570,25 +569,26 @@ uint64_t Connection::timeout( void ) const
 
 Connection::Socket::~Socket()
 {
-  if ( !_moved ) {
-    if ( close( _fd ) < 0 ) {
-      throw NetworkException( "close", errno );
-    }
+  if ( close( _fd ) < 0 ) {
+    throw NetworkException( "close", errno );
   }
 }
 
 Connection::Socket::Socket( const Socket & other )
-  : _fd( other._fd ),
-    _moved( false )
+  : _fd( dup( other._fd ) )
 {
-  other.move();
+  if ( _fd < 0 ) {
+    throw NetworkException( "socket", errno );
+  }
 }
 
 const Connection::Socket & Connection::Socket::operator=( const Socket & other )
 {
-  _fd = other._fd;
+  _fd = dup( other._fd );
   
-  other.move();
+  if ( _fd < 0 ) {
+    throw NetworkException( "socket", errno );
+  }
 
   return *this;
 }

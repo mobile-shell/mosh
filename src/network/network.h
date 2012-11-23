@@ -107,11 +107,9 @@ namespace Network {
     {
     private:
       int _fd;
-      mutable bool _moved;
 
     public:
-      int fd( void ) const { assert( !_moved ); return _fd; }
-      void move( void ) const { assert( !_moved ); _moved = true; }
+      int fd( void ) const { return _fd; }
       Socket();
       ~Socket();
 
