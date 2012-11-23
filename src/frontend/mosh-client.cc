@@ -42,6 +42,11 @@
 #include "fatal_assert.h"
 
 /* these need to be included last because of conflicting defines */
+/*
+ * stmclient.h includes termios.h, and that will break termio/termios pull in on solaris
+ * solution is to include termio.h allso.
+ */
+#include <termio.h>
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/curses.h>
 #elif defined HAVE_NCURSESW_H
