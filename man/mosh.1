@@ -128,11 +128,12 @@ only port that is forwarded through a firewall to the
 server. Otherwise, \fBmosh\fP will choose a port between 60000 and
 61000.
 
-.SH ESCAPE SEQUENCE
+.SH ESCAPE SEQUENCES
 
 The escape sequence to shut down the connection is \fBCtrl-^ .\fP
 (typically typed with Ctrl-Shift-6, then a period). To send a literal
-Ctrl-^, type \fBCtrl-^ ^\fP.
+Ctrl-^, type \fBCtrl-^ ^\fP. The sequence \fBCtrl-^ Ctrl-Z\fP suspends the
+client.
 
 .SH ENVIRONMENT VARIABLES
 
