@@ -186,7 +186,7 @@ namespace Overlay {
     void clear_network_exception()
     {
       if ( message_is_network_exception ) {
-        set_notification_string( wstring( L"" ) );
+	message_expiration = std::min( message_expiration, timestamp() + 1000 );
       }
     }
 
