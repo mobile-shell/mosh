@@ -534,7 +534,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       int timeout = min( network.wait_time(), terminal.wait_time( now ) );
       if ( (!network.get_remote_state_num())
 	   || network.shutdown_in_progress() ) {
-        timeout = min( timeout, timeout_if_no_client );
+        timeout = min( timeout, 5000 );
       }
 
       /* poll for events */
@@ -682,9 +682,9 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       }
 
       #ifdef HAVE_UTEMPTER
-      /* update utmp if has been more than 10 seconds since heard from client */
+      /* update utmp if has been more than 30 seconds since heard from client */
       if ( connected_utmp ) {
-	if ( time_since_remote_state > 10000 ) {
+	if ( time_since_remote_state > 30000 ) {
 	  utempter_remove_record( host_fd );
 
 	  char tmp[ 64 ];
