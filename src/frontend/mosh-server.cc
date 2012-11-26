@@ -773,6 +773,13 @@ bool motd_hushed( void )
   return (0 == lstat( ".hushlogin", &buf ));
 }
 
+bool device_exists( const char *ut_line )
+{
+  string device_name = string( "/dev/" ) + string( ut_line );
+  struct stat buf;
+  return (0 == lstat( device_name.c_str(), &buf ));
+}
+
 string mosh_read_line( FILE *file )
 {
   string ret;
@@ -808,7 +815,8 @@ void warn_unattached( const string & ignore_entry )
       /* does line show unattached mosh session */
       string text( entry->ut_host );
       if ( (text.substr( 0, 5 ) == "mosh ")
-	   && (text != ignore_entry) ) {
+	   && (text != ignore_entry)
+	   && device_exists( entry->ut_line ) ) {
 	unattached_mosh_servers.push_back( text );
       }
     }
