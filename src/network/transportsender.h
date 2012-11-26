@@ -94,6 +94,7 @@ namespace Network {
     bool verbose;
     bool shutdown_in_progress;
     int shutdown_tries;
+    uint64_t shutdown_start;
 
     /* information about receiver state */
     uint64_t ack_num;
@@ -132,7 +133,7 @@ namespace Network {
     void remote_heard( uint64_t ts ) { last_heard = ts; }
 
     /* Starts shutdown sequence */
-    void start_shutdown( void ) { shutdown_in_progress = true; }
+    void start_shutdown( void ) { if ( !shutdown_in_progress ) { shutdown_start = timestamp(); shutdown_in_progress = true; } }
 
     /* Misc. getters and setters */
     /* Cannot modify current_state while shutdown in progress */

@@ -532,7 +532,8 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       const int timeout_if_no_client = 60000;
       int timeout = min( network.wait_time(), terminal.wait_time( now ) );
-      if ( !network.get_remote_state_num() ) {
+      if ( (!network.get_remote_state_num())
+	   || network.shutdown_in_progress() ) {
         timeout = min( timeout, timeout_if_no_client );
       }
 
@@ -542,7 +543,9 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       assert( fd_list.size() == 1 ); /* servers don't hop */
       int network_fd = fd_list.back();
       sel.add_fd( network_fd );
-      sel.add_fd( host_fd );
+      if ( !network.shutdown_in_progress() ) {
+	sel.add_fd( host_fd );
+      }
 
       int active_fds = sel.select( timeout );
       if ( active_fds < 0 ) {
@@ -618,7 +621,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
       
-      if ( sel.read( host_fd ) ) {
+      if ( (!network.shutdown_in_progress()) && sel.read( host_fd ) ) {
 	/* input from the host needs to be fed to the terminal */
 	const int buf_size = 16384;
 	char buf[ buf_size ];
@@ -630,23 +633,17 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
            EIO (see #264).  So we treat errors on read() like EOF. */
         if ( bytes_read <= 0 ) {
           bytes_read = 0;
-	  if ( !network.has_remote_addr() ) {
-	    spin(); /* let 60-second timer take care of this */
-	  } else if ( !network.shutdown_in_progress() ) {
-	    network.start_shutdown();
-	  }
-	}
+	  network.start_shutdown();
+	} else {
+	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
 	
-	string terminal_to_host = terminal.act( string( buf, bytes_read ) );
-	
-	/* update client with new state of terminal */
-	if ( !network.shutdown_in_progress() ) {
+	  /* update client with new state of terminal */
 	  network.set_current_state( terminal );
-	}
 
-	/* write any writeback octets back to the host */
-	if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	  break;
+	  /* write any writeback octets back to the host */
+	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
+	    break;
+	  }
 	}
       }
 
@@ -664,13 +661,9 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	break;
       }
 
-      if ( sel.error( host_fd ) ) {
+      if ( (!network.shutdown_in_progress()) && sel.error( host_fd ) ) {
 	/* host problem */
-	if ( network.has_remote_addr() ) {
-	  network.start_shutdown();
-	} else {
-	  spin(); /* let 60-second timer take care of this */
-	}
+	network.start_shutdown();
       }
 
       /* quit if our shutdown has been acknowledged */
