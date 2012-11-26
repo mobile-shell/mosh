@@ -147,6 +147,7 @@ namespace Overlay {
     wstring message;
     bool message_is_network_exception;
     uint64_t message_expiration;
+    bool show_quit_keystroke;
 
     bool server_late( uint64_t ts ) const { return (ts - last_word_from_server) > 6500; }
     bool reply_late( uint64_t ts ) const { return (ts - last_acked_state) > 10000; }
@@ -160,7 +161,7 @@ namespace Overlay {
     void server_acked( uint64_t s_last_acked ) { last_acked_state = s_last_acked; }
     int wait_time( void ) const;
 
-    void set_notification_string( const wstring &s_message, bool permanent = false )
+    void set_notification_string( const wstring &s_message, bool permanent = false, bool s_show_quit_keystroke = true )
     {
       message = s_message;
       if ( permanent ) {
@@ -169,6 +170,7 @@ namespace Overlay {
         message_expiration = timestamp() + 1000;
       }
       message_is_network_exception = false;
+      show_quit_keystroke = s_show_quit_keystroke;
     }
 
     void set_network_exception( const NetworkException &e )

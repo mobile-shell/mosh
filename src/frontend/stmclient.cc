@@ -255,6 +255,8 @@ bool STMClient::process_user_input( int fd )
 
       overlays.get_prediction_engine().new_user_byte( the_byte, *local_framebuffer );
 
+      const static wstring help_message( L"Commands: Ctrl-Z suspends, \".\" quits, \"^\" gives literal Ctrl-^" );
+
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
 	  if ( network->has_remote_addr() && (!network->shutdown_in_progress()) ) {
@@ -291,11 +293,17 @@ bool STMClient::process_user_input( int fd )
 	}
 
 	quit_sequence_started = false;
+
+	if ( overlays.get_notification_engine().get_notification_string() == help_message ) {
+	  overlays.get_notification_engine().set_notification_string( L"" );
+	}
+
 	continue;
       }
 
       quit_sequence_started = (the_byte == 0x1E);
       if ( quit_sequence_started ) {
+	overlays.get_notification_engine().set_notification_string( help_message, true, false );
 	continue;
       }
 

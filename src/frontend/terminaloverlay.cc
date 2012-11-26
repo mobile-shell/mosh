@@ -168,7 +168,8 @@ NotificationEngine::NotificationEngine()
     last_acked_state( timestamp() ),
     message(),
     message_is_network_exception( false ),
-    message_expiration( -1 )
+    message_expiration( -1 ),
+    show_quit_keystroke( true )
 {}
 
 static std::string human_readable_duration( int num_seconds, const std::string seconds_abbr ) {
@@ -232,16 +233,22 @@ void NotificationEngine::apply( Framebuffer &fb ) const
     explanation = reply_message;
   }
 
+  const static char quit_keystroke[] = " [To quit: Ctrl-^ .]";
+  const static char blank[] = "";
+
+  const char *keystroke_str = show_quit_keystroke ? quit_keystroke : blank;
+
   if ( message.empty() && (!time_expired) ) {
     return;
   } else if ( message.empty() && time_expired ) {
-    swprintf( tmp, 128, L"mosh: Last %s %s ago. [To quit: Ctrl-^ .]", explanation,
-	      human_readable_duration( time_elapsed, "seconds" ).c_str() );
+    swprintf( tmp, 128, L"mosh: Last %s %s ago.%s", explanation,
+	      human_readable_duration( time_elapsed, "seconds" ).c_str(),
+	      keystroke_str );
   } else if ( (!message.empty()) && (!time_expired) ) {
-    swprintf( tmp, 128, L"mosh: %ls [To quit: Ctrl-^ .]", message.c_str() );
+    swprintf( tmp, 128, L"mosh: %ls%s", message.c_str(), keystroke_str );
   } else {
-    swprintf( tmp, 128, L"mosh: %ls (%s without %s.) [To quit: Ctrl-^ .]", message.c_str(),
-	      human_readable_duration( time_elapsed, "s" ).c_str(), explanation );
+    swprintf( tmp, 128, L"mosh: %ls (%s without %s.)%s", message.c_str(),
+	      human_readable_duration( time_elapsed, "s" ).c_str(), explanation, keystroke_str );
   }
 
   wstring string_to_draw( tmp );
