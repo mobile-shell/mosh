@@ -264,6 +264,23 @@ bool STMClient::process_user_input( int fd )
 	  } else {
 	    return false;
 	  }
+	} else if ( the_byte == 0x1a ) { /* Suspend sequence is Ctrl-^ Ctrl-Z */
+	  /* Restore terminal and terminal-driver state */
+	  swrite( STDOUT_FILENO, Terminal::Emulator::close().c_str() );
+
+	  if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
+	    perror( "tcsetattr" );
+	    exit( 1 );
+	  }
+
+	  /* clear screen */
+	  printf( "\033[H\033[2J" );
+	  printf( "\033[37;44m[mosh is suspended.]\n\033[m" );
+
+	  fflush( NULL );
+
+	  /* actually suspend */
+	  raise( SIGTSTP );
 	} else if ( the_byte == '^' ) {
 	  /* Emulation sequence to type Ctrl-^ is Ctrl-^ ^ */
 	  network->get_current_state().push_back( Parser::UserByte( 0x1E ) );
