@@ -206,18 +206,39 @@ AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Def
 PKG_CHECK_MODULES([OPENSSL], [openssl])
 
 PKG_CHECK_MODULES([TINFO], [tinfo], ,
-  [PKG_CHECK_MODULES([TINFO], [ncurses], ,
-     [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
-        [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
-         AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -ltinfo"])],
-        [AX_CHECK_LIBRARY([NCURSES], [curses.h], [ncurses],
-           [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
-            AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -lncurses"])],
-           [AC_SUBST([CPPFLAGS], ["$CPPFLAGS -I/usr/include/ncurses"])
-	    AX_CHECK_LIBRARY([CYGWINNCURSES], [term.h], [ncurses],
-              [AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS -I/usr/include/ncurses"])
-               AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -lncurses"])],
-	      [AC_MSG_ERROR([Unable to find libtinfo or libncurses.])])])])])])
+  [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
+    [AC_DEFINE([HAVE_CURSES_H], [1], [Define to 1 if <curses.h> is present])
+	 AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
+     AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -ltinfo"])],)])
+
+AC_ARG_WITH(curses, AC_HELP_STRING([--with-curses=DIR], [Where curses is installed]),
+	[if test $withval != yes; then
+		cv_curses=$withval
+	fi
+	if test x$cv_curses != x/usr; then
+		CURSES_LDFLAGS="-L${cv_curses}/lib"
+		CURSES_CPPFLAGS="-I${cv_curses}/include"
+	fi])
+
+# save away old LDFLAGS/CPPFLAGS and check for curses with cv_curses
+old_LDFLAGS="$LDFLAGS"
+old_CPPFLAGS="$CPPFLAGS"
+LDFLAGS="$LDFLAGS $CURSES_LDFLAGS"
+CPPFLAGS="$LDFLAGS $CURSES_CPPFLAGS"
+
+AX_WITH_CURSES
+# restore old LDFLAGS/CPPFLAGS
+LDFLAGS="$old_LDFLAGS"
+CPPFLAGS="$old_CPPFLAGS"
+
+if test "x$ax_cv_have_TINFO" = xno ; then
+  if test "x$ax_cv_curses_which" = xno ; then
+      AC_MSG_ERROR([requires either tinfo, NcursesW or Ncurses library])
+  else
+      AC_SUBST([TINFO_LIBS], ["$CURSES_LDFLAGS $CURSES_LIB"])
+	  AC_SUBST([TINFO_CFLAGS], ["$CURSES_CPPFLAGS"])
+  fi
+fi
 
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
