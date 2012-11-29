@@ -47,6 +47,10 @@
 
 #include "timestamp.h"
 
+#ifndef MSG_DONTWAIT
+#define MSG_DONTWAIT MSG_NONBLOCK
+#endif
+
 using namespace std;
 using namespace Network;
 using namespace Crypto;
