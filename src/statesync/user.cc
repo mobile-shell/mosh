@@ -43,9 +43,15 @@ using namespace ClientBuffers;
 
 void UserStream::subtract( const UserStream *prefix )
 {
+  // if we are subtracting ourself from ourself, just clear the deque
+  if ( this == prefix ) {
+    actions.clear();
+    return;
+  }
   for ( deque<UserEvent>::const_iterator i = prefix->actions.begin();
 	i != prefix->actions.end();
 	i++ ) {
+    assert( this != prefix );
     assert( !actions.empty() );
     assert( *i == actions.front() );
     actions.pop_front();
