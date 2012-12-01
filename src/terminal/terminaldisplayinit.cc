@@ -33,11 +33,24 @@
 /* This is in its own file because otherwise the ncurses #defines
    alias our own variable names. */
 
+#include "config.h"
 #include "terminaldisplay.h"
 
 #include <string>
 
-#include <curses.h>
+#if defined HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#elif defined HAVE_NCURSESW_H
+#  include <ncursesw.h>
+#elif defined HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#elif defined HAVE_NCURSES_H
+#  include <ncurses.h>
+#elif defined HAVE_CURSES_H
+#  include <curses.h>
+#else
+#  error "SysV or X/Open-compatible Curses header file required"
+#endif
 #include <term.h>
 #include <stdlib.h>
 #include <string.h>
