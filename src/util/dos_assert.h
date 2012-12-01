@@ -49,6 +49,6 @@ static void dos_detected( const char *expression, const char *file, int line, co
 #define dos_assert(expr)						\
   ((expr)								\
    ? (void)0								\
-   : dos_detected (#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__ ))
+   : dos_detected (#expr, __FILE__, __LINE__, __func__ ))
 
 #endif

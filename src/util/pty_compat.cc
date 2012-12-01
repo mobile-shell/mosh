@@ -49,14 +49,20 @@ pid_t my_forkpty( int *amaster, char *name,
 		  const struct termios *termp,
 		  const struct winsize *winp )
 { 
-  /* For Solaris */
+  /* For Solaris and AIX */
   int master, slave; 
   char *slave_name; 
   pid_t pid; 
    
-  master = open( "/dev/ptmx", O_RDWR | O_NOCTTY );
+#ifdef _AIX
+#define PTY_DEVICE "/dev/ptc"
+#else
+#define PTY_DEVICE "/dev/ptmx"
+#endif
+
+  master = open( PTY_DEVICE, O_RDWR | O_NOCTTY );
   if ( master < 0 ) {
-    perror( "open(/dev/ptmx)" );
+    perror( "open("PTY_DEVICE")" );
     return -1;
   }
 
@@ -86,6 +92,7 @@ pid_t my_forkpty( int *amaster, char *name,
     return -1;
   }
 
+#ifndef _AIX
   if ( ioctl(slave, I_PUSH, "ptem") < 0 ||
        ioctl(slave, I_PUSH, "ldterm") < 0 ) {
     perror( "ioctl(I_PUSH)" );
@@ -93,6 +100,7 @@ pid_t my_forkpty( int *amaster, char *name,
     close( master );
     return -1;
   }
+#endif
 
   if ( amaster != NULL )
     *amaster = master;
@@ -132,10 +140,12 @@ pid_t my_forkpty( int *amaster, char *name,
   case 0: /* Child */
     if ( setsid() < 0 )
       perror( "setsid" );
+#ifndef _AIX
     if ( ioctl( slave, TIOCSCTTY, NULL ) < 0 ) {
       perror( "ioctl" );
       return -1;
     }
+#endif
     close( master );
     dup2( slave, STDIN_FILENO );
     dup2( slave, STDOUT_FILENO );

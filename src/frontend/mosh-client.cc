@@ -34,7 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
+#include <unistd.h>
 
 #include "stmclient.h"
 #include "crypto.h"
@@ -42,7 +42,24 @@
 #include "fatal_assert.h"
 
 /* these need to be included last because of conflicting defines */
-#include <curses.h>
+/*
+ * stmclient.h includes termios.h, and that will break termio/termios pull in on solaris
+ * solution is to include termio.h allso.
+ */
+#include <termio.h>
+#if defined HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#elif defined HAVE_NCURSESW_H
+#  include <ncursesw.h>
+#elif defined HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#elif defined HAVE_NCURSES_H
+#  include <ncurses.h>
+#elif defined HAVE_CURSES_H
+#  include <curses.h>
+#else
+#  error "SysV or X/Open-compatible Curses header file required"
+#endif
 #include <term.h>
 
 void usage( const char *argv0 ) {
