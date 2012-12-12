@@ -41,12 +41,16 @@
 #include "locale_utils.h"
 #include "fatal_assert.h"
 
-/* these need to be included last because of conflicting defines */
+/* These need to be included last because of conflicting defines. */
 /*
- * stmclient.h includes termios.h, and that will break termio/termios pull in on solaris
- * solution is to include termio.h allso.
+ * stmclient.h includes termios.h, and that will break termio/termios pull in on Solaris.
+ * The solution is to include termio.h also.
+ * But Mac OS X doesn't have termio.h, so this needs a guard.
  */
+#ifdef HAVE_TERMIO_H
 #include <termio.h>
+#endif
+
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/curses.h>
 #elif defined HAVE_NCURSESW_H
