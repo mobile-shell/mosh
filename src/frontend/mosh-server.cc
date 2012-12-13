@@ -413,6 +413,11 @@ int run_server( const char *desired_ip, const char *desired_port,
       perror( "dup2" );
       exit( 1 );
     }
+
+    if ( close( nullfd ) < 0 ) {
+      perror( "close" );
+      exit( 1 );
+    }
   }
 
   char utmp_entry[ 64 ] = { 0 };
