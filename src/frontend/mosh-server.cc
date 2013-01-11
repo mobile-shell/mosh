@@ -714,7 +714,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
         break;
       }
 
-      network.tick();
+      /* don't keep sending data to the client if we haven't heard back for more than 30 seconds */
+      if ( !time_since_remote_state > 30000 ) {
+        network.tick();
+      }
     } catch ( const Network::NetworkException& e ) {
       fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );
       spin();
