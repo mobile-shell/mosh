@@ -206,12 +206,15 @@ AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Def
 
 PKG_CHECK_MODULES([OPENSSL], [openssl])
 
+# Start by trying to find the needed tinfo parts by pkg-config
 PKG_CHECK_MODULES([TINFO], [tinfo], ,
-  [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
-    [AC_DEFINE([HAVE_CURSES_H], [1], [Define to 1 if <curses.h> is present])
-      AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
-      AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -ltinfo"])],)])
+  [PKG_CHECK_MODULES([TINFO], [ncurses], ,
+    [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
+      [AC_DEFINE([HAVE_CURSES_H], [1], [Define to 1 if <curses.h> is present])
+        AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
+        AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -ltinfo"])],)])])
 
+# Then try to find it in a specific install dir
 AC_ARG_WITH(curses, AC_HELP_STRING([--with-curses=DIR], [Where curses is installed]),
     [if test $withval != yes; then
         cv_curses=$withval
