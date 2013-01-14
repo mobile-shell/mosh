@@ -209,17 +209,17 @@ PKG_CHECK_MODULES([OPENSSL], [openssl])
 PKG_CHECK_MODULES([TINFO], [tinfo], ,
   [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
     [AC_DEFINE([HAVE_CURSES_H], [1], [Define to 1 if <curses.h> is present])
-	 AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
-     AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -ltinfo"])],)])
+      AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
+      AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -ltinfo"])],)])
 
 AC_ARG_WITH(curses, AC_HELP_STRING([--with-curses=DIR], [Where curses is installed]),
-	[if test $withval != yes; then
-		cv_curses=$withval
-	fi
-	if test x$cv_curses != x/usr; then
-		CURSES_LDFLAGS="-L${cv_curses}/lib"
-		CURSES_CPPFLAGS="-I${cv_curses}/include"
-	fi])
+    [if test $withval != yes; then
+        cv_curses=$withval
+    fi
+    if test x$cv_curses != x/usr; then
+        CURSES_LDFLAGS="-L${cv_curses}/lib"
+        CURSES_CPPFLAGS="-I${cv_curses}/include"
+    fi])
 
 # save away old LDFLAGS/CPPFLAGS and check for curses with cv_curses
 old_LDFLAGS="$LDFLAGS"
@@ -237,7 +237,7 @@ if test "x$ax_cv_have_TINFO" = xno ; then
       AC_MSG_ERROR([requires either tinfo, NcursesW or Ncurses library])
   else
       AC_SUBST([TINFO_LIBS], ["$CURSES_LDFLAGS $CURSES_LIB"])
-	  AC_SUBST([TINFO_CFLAGS], ["$CURSES_CPPFLAGS"])
+      AC_SUBST([TINFO_CFLAGS], ["$CURSES_CPPFLAGS"])
   fi
 fi
 
