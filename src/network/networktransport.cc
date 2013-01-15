@@ -45,6 +45,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
   : connection( desired_ip, desired_port ),
     sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
+    receiver_quench_timer( 0 ),
     last_receiver_state( initial_remote ),
     fragments(),
     verbose( false )
@@ -58,6 +59,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
   : connection( key_str, ip, port ),
     sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
+    receiver_quench_timer( 0 ),
     last_receiver_state( initial_remote ),
     fragments(),
     verbose( false )
@@ -116,11 +118,16 @@ void Transport<MyState, RemoteState>::recv( void )
     process_throwaway_until( inst.throwaway_num() );
 
     if ( received_states.size() > 1024 ) { /* limit on state queue */
-      if ( verbose ) {
-	fprintf( stderr, "[%u] Receiver queue full, discarding %d (malicious sender or long-unidirectional connectivity?)\n",
-		 (unsigned int)(timestamp() % 100000), (int)inst.new_num() );
+      uint64_t now = timestamp();
+      if ( now < receiver_quench_timer ) { /* deny letting state grow further */
+	if ( verbose ) {
+	  fprintf( stderr, "[%u] Receiver queue full, discarding %d (malicious sender or long-unidirectional connectivity?)\n",
+		   (unsigned int)(timestamp() % 100000), (int)inst.new_num() );
+	}
+	return;
+      } else {
+	receiver_quench_timer = now + 15000;
       }
-      return;
     }
 
     /* apply diff to reference state */
