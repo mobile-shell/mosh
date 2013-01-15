@@ -42,6 +42,7 @@
  #include <mach/mach_time.h>
 #elif HAVE_GETTIMEOFDAY
  #include <sys/time.h>
+ #include <stdio.h>
 #endif
 
 static uint64_t millis_cache = -1;
