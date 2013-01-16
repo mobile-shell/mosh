@@ -120,7 +120,7 @@ static void print_version( FILE *file )
 
 static void print_usage( FILE *stream, const char *argv0 )
 {
-  fprintf( stream, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
+  fprintf( stream, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-w] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
 }
 
 static bool print_motd( const char *filename );
@@ -211,7 +211,7 @@ int main( int argc, char *argv[] )
        && (strcmp( argv[ 1 ], "new" ) == 0) ) {
     /* new option syntax */
     int opt;
-    while ( (opt = getopt( argc - 1, argv + 1, "@:i:p:c:svl:" )) != -1 ) {
+    while ( (opt = getopt( argc - 1, argv + 1, "@:i:p:c:svl:w" )) != -1 ) {
       switch ( opt ) {
 	/*
 	 * This undocumented option does nothing but eat its argument.
@@ -251,6 +251,12 @@ int main( int argc, char *argv[] )
 	break;
       case 'l':
 	locale_vars.push_back( string( optarg ) );
+	break;
+      case 'w':
+	if ( setenv( "MOSH_CJKWIDTH", "on", 1 ) < 0 ) {
+	  perror( "setenv" );
+	  exit( 1 );
+	}
 	break;
       default:
 	/* don't die on unknown options */

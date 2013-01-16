@@ -37,6 +37,7 @@
 #include <limits.h>
 
 #include "terminaloverlay.h"
+#include "wcwidth.h"
 
 using namespace Overlay;
 using std::max;
@@ -264,7 +265,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
     }
 
     wchar_t ch = *i;
-    int chwidth = ch == L'\0' ? -1 : wcwidth( ch );
+    int chwidth = ch == L'\0' ? -1 : wcwidth_auto( ch );
     Cell *this_cell = 0;
 
     switch ( chwidth ) {
@@ -735,7 +736,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	    }
 	  }
 	}
-      } else if ( (ch < 0x20) || (wcwidth( ch ) != 1) ) {
+      } else if ( (ch < 0x20) || (wcwidth_auto( ch ) != 1) ) {
 	/* unknown print */
 	become_tentative();
 	//	fprintf( stderr, "Unknown print 0x%x\n", ch );
