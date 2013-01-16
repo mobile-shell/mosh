@@ -222,9 +222,9 @@ my $pid = fork;
 die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
   $pty->close_slave();
-  $pty->set_raw();
   open STDOUT, ">&", $pty or die;
   open STDERR, ">&", $pty or die;
+  open STDIN, "<&", $pty or die;
 
   my @server = ( 'new', '-s' );
 
