@@ -225,6 +225,7 @@ if ( $pid == 0 ) { # child
   open STDOUT, ">&", $pty or die;
   open STDERR, ">&", $pty or die;
   open STDIN, "<&", $pty or die;
+  close $pty;
 
   my @server = ( 'new', '-s' );
 
@@ -270,6 +271,7 @@ if ( $pid == 0 ) { # child
     }
   }
   waitpid $pid, 0;
+  close $pty_slave;
 
   if ( not defined $ip ) {
       die "$0: Did not find remote IP address (is SSH ProxyCommand disabled?).\n";
