@@ -403,7 +403,7 @@ int run_server( const char *desired_ip, const char *desired_port,
 
     nullfd = open( "/dev/null", O_RDWR );
     if ( nullfd == -1 ) {
-      perror( "dup2" );
+      perror( "open" );
       exit( 1 );
     }
 
