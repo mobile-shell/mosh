@@ -35,7 +35,6 @@ my $MOSH_VERSION = '1.2.3';
 use warnings;
 use strict;
 use Socket;
-use IO::Pty;
 use Getopt::Long;
 
 $|=1;

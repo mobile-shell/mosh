@@ -15,7 +15,6 @@ BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
 BuildRequires:	openssl-devel
 Requires:	openssh-clients
-Requires:	perl-IO-Tty
 Requires:	openssl
 
 %description
