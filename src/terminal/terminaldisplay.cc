@@ -56,7 +56,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   }
 
   /* has icon name or window title changed? */
-  if ( has_title &&
+  if ( has_title && f.is_title_initialized() &&
        ( (!initialized)
          || (f.get_icon_name() != frame.last_frame.get_icon_name())
          || (f.get_window_title() != frame.last_frame.get_window_title()) ) ) {
