@@ -207,8 +207,10 @@ AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Def
 PKG_CHECK_MODULES([OPENSSL], [openssl])
 
 # Start by trying to find the needed tinfo parts by pkg-config
-PKG_CHECK_MODULES([TINFO], [tinfo], ,
-  [PKG_CHECK_MODULES([TINFO], [ncurses], ,
+PKG_CHECK_MODULES([TINFO], [tinfo],
+  [AC_DEFINE([HAVE_CURSES_H], [1], [Define to 1 if <curses.h> is present])],
+  [PKG_CHECK_MODULES([TINFO], [ncurses],
+    [AC_DEFINE([HAVE_CURSES_H], [1], [Define to 1 if <curses.h> is present])],
     [AX_CHECK_LIBRARY([TINFO], [curses.h], [tinfo],
       [AC_DEFINE([HAVE_CURSES_H], [1], [Define to 1 if <curses.h> is present])
         AC_SUBST([TINFO_CFLAGS], ["$TINFO_CPPFLAGS"])
