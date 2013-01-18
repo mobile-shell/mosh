@@ -526,29 +526,27 @@ static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );
 /* xterm uses an Operating System Command to set the window title */
 void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
 {
-  if ( OSC_string.size() >= 2 ) {
-    if ( ( (OSC_string[ 0 ] == L'0')
-	   || (OSC_string[ 0 ] == L'1')
-	   || (OSC_string[ 0 ] == L'2') )
-	 && (OSC_string[ 1 ] == L';') ) {
-      std::deque<wchar_t> newtitle( OSC_string.begin(), OSC_string.end() );
-      newtitle.erase( newtitle.begin() );
-      newtitle.erase( newtitle.begin() );
-
-      switch ( OSC_string[ 0 ] ) {
-      case L'0':
-	fb->set_icon_name( newtitle );
-	fb->set_window_title( newtitle );
-	break;
-      case L'1':
-	fb->set_icon_name( newtitle );
-	break;
-      case L'2':
-	fb->set_window_title( newtitle );
-	break;
-      default:
-	break;
-      }
+  if ( OSC_string.size() >= 1 ) {
+    long cmd_num = -1;
+    int offset = 0;
+    if ( OSC_string[ 0 ] == L';' ) {
+      /* OSC of the form "\033];<title>\007" */
+      cmd_num = 0; /* treat it as as a zero */
+      offset = 1;
+    } else if ( (OSC_string.size() >= 2) && (OSC_string[ 1 ] == L';') ) {
+      /* OSC of the form "\033]X;<title>\007" where X can be:
+       * 0: set icon name and window title
+       * 1: set icon name
+       * 2: set window title */
+      cmd_num = OSC_string[ 0 ] - L'0';
+      offset = 2;
+    }
+    bool set_icon = (cmd_num == 0 || cmd_num == 1);
+    bool set_title = (cmd_num == 0 || cmd_num == 2);
+    if ( set_icon || set_title ) {
+      std::deque<wchar_t> newtitle( OSC_string.begin() + offset, OSC_string.end() );
+      if ( set_icon )  { fb->set_icon_name( newtitle ); }
+      if ( set_title ) { fb->set_window_title( newtitle ); }
 
       act->handled = true;
     }
