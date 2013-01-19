@@ -163,7 +163,10 @@ int main( int argc, char *argv[] )
   fatal_assert( argc > 0 );
 
   char *desired_ip = NULL;
-  char *desired_port = NULL;
+
+  /* Allow setting UDP port range from env; can still override with -p */
+  char *desired_port = getenv("MOSH_DEFAULT_PORT_RANGE");
+
   string command_path;
   char **command_argv = NULL;
   int colors = 0;

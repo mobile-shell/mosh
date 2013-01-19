@@ -39,7 +39,9 @@ establish a connection. It will exit if no client has contacted
 it within 60 seconds.
 
 By default, \fBmosh-server\fP binds to a port between 60000 and
-61000 and executes the user's login shell.
+61000 and executes the user's login shell. The default range
+can be overridden with the environment variable \fBMOSH_DEFAULT_PORT_RANGE\fP
+(same syntax as option -p), but -p is used over either default.
 
 On platforms with \fButempter\fP, \fBmosh-server\fP maintains an entry
 in the
