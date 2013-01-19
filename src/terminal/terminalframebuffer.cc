@@ -68,7 +68,7 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows( s_height, Row( s_width, 0 ) ), icon_name(), window_title(), bell_count( 0 ), ds( s_width, s_height )
+  : rows( s_height, Row( s_width, 0 ) ), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
