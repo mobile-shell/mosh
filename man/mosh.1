@@ -128,6 +128,14 @@ only port that is forwarded through a firewall to the
 server. Otherwise, \fBmosh\fP will choose a port between 60000 and
 61000.
 
+The default range can be set with the server side environment variable
+\fBMOSH_DEFAULT_PORT_RANGE\fP (same syntax as this option).
+
+The order in which the values are considered is:
+  1) user provided
+  2) MOSH_DEFAULT_PORT_RANGE environment variable
+  3) the default 60000 - 61000.
+
 .SH ESCAPE SEQUENCES
 
 The escape sequence to shut down the connection is \fBCtrl-^ .\fP
