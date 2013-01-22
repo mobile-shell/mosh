@@ -217,15 +217,10 @@ if ( (not defined $colors)
   $colors = 0;
 }
 
-my ($p_read, $p_write);
-pipe($p_read, $p_write);
-my $pid = fork;
+my $pid = open(my $pipe, "-|");
 die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
-  open STDOUT, ">&", $p_write or die;
-  open STDERR, ">&", $p_write or die;
-  close $p_write;
-  close $p_read;
+  open(STDERR, ">&STDOUT") or die;
 
   my @server = ( 'new', '-s' );
 
@@ -249,8 +244,7 @@ if ( $pid == 0 ) { # child
 } else { # parent
   my ( $ip, $port, $key );
   my $bad_udp_port_warning = 0;
-  close $p_write;
-  LINE: while ( <$p_read> ) {
+  LINE: while ( <$pipe> ) {
     chomp;
     if ( m{^MOSH IP } ) {
       if ( defined $ip ) {
@@ -271,7 +265,7 @@ if ( $pid == 0 ) { # child
     }
   }
   waitpid $pid, 0;
-  close $p_read;
+  close $pipe;
 
   if ( not defined $ip ) {
       die "$0: Did not find remote IP address (is SSH ProxyCommand disabled?).\n";
