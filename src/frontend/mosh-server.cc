@@ -245,6 +245,7 @@ int main( int argc, char *argv[] )
 
   /* Get shell */
   char *my_argv[ 2 ];
+  string shell_name;
   if ( !command_argv ) {
     /* get shell name */
     struct passwd *pw = getpwuid( geteuid() );
@@ -260,8 +261,6 @@ int main( int argc, char *argv[] )
 
     command_path = shell_path;
 
-    string shell_name;
-
     size_t shell_slash( shell_path.rfind('/') );
     if ( shell_slash == string::npos ) {
       shell_name = shell_path;
@@ -272,7 +271,7 @@ int main( int argc, char *argv[] )
     /* prepend '-' to make login shell */
     shell_name = '-' + shell_name;
 
-    my_argv[ 0 ] = strdup( shell_name.c_str() );
+    my_argv[ 0 ] = const_cast<char *>( shell_name.c_str() );
     my_argv[ 1 ] = NULL;
     command_argv = my_argv;
 
