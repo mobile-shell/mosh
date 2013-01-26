@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
+#include <sstream>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -132,13 +133,10 @@ string get_SSH_IP( void )
     fprintf( stderr, "Warning: SSH_CONNECTION not found; binding to any interface.\n" );
     return string( "0.0.0.0" );
   }
-  char *SSH_writable = strdup( SSH_CONNECTION );
-  fatal_assert( SSH_writable );
-
-  strtok( SSH_writable, " " );
-  strtok( NULL, " " );
-  const char *local_interface_IP = strtok( NULL, " " );
-  if ( !local_interface_IP ) {
+  istringstream ss( SSH_CONNECTION );
+  string dummy, local_interface_IP;
+  ss >> dummy >> dummy >> local_interface_IP;
+  if ( !ss ) {
     fprintf( stderr, "Warning: Could not parse SSH_CONNECTION; binding to any interface.\n" );
     return string( "0.0.0.0" );
   }
@@ -146,12 +144,12 @@ string get_SSH_IP( void )
   /* Strip IPv6 prefix. */
   const char IPv6_prefix[] = "::ffff:";
 
-  if ( ( strlen( local_interface_IP ) > strlen( IPv6_prefix ) )
-       && ( 0 == strncasecmp( local_interface_IP, IPv6_prefix, strlen( IPv6_prefix ) ) ) ) {
-    return string( local_interface_IP + strlen( IPv6_prefix ) );
+  if ( ( local_interface_IP.length() > strlen( IPv6_prefix ) )
+       && ( 0 == strncasecmp( local_interface_IP.c_str(), IPv6_prefix, strlen( IPv6_prefix ) ) ) ) {
+    return local_interface_IP.substr( strlen( IPv6_prefix ) );
   }
 
-  return string( local_interface_IP );
+  return local_interface_IP;
 }
 
 int main( int argc, char *argv[] )
