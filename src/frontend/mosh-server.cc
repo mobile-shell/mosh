@@ -633,7 +633,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
         /* If the pty slave is closed, reading from the master can fail with
            EIO (see #264).  So we treat errors on read() like EOF. */
         if ( bytes_read <= 0 ) {
-          bytes_read = 0;
 	  network.start_shutdown();
 	} else {
 	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
