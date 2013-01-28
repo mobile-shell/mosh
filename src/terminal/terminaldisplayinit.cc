@@ -61,6 +61,33 @@
 
 using namespace Terminal;
 
+bool Display::ti_flag( const char *capname ) const
+{
+  int val = tigetflag( const_cast<char *>( capname ) );
+  if ( val == -1 ) {
+    throw std::string( "Invalid terminfo boolean capability " ) + capname;
+  }
+  return val;
+}
+
+int Display::ti_num( const char *capname ) const
+{
+  int val = tigetnum( const_cast<char *>( capname ) );
+  if ( val == -2 ) {
+    throw std::string( "Invalid terminfo numeric capability " ) + capname;
+  }
+  return val;
+}
+
+const char *Display::ti_str( const char *capname ) const
+{
+  const char *val = tigetstr( const_cast<char *>( capname ) );
+  if ( val == (const char *)-1 ) {
+    throw std::string( "Invalid terminfo string capability " ) + capname;
+  }
+  return val;
+}
+
 Display::Display( bool use_environment )
   : has_ech( true ), has_bce( true ), has_title( true ), posterize_colors( false )
 {
@@ -86,22 +113,10 @@ Display::Display( bool use_environment )
     }
 
     /* check for ECH */
-    char ech_name[] = "ech";
-    char *val = tigetstr( ech_name );
-    if ( val == (char *)-1 ) {
-      throw std::string( "Invalid terminfo string capability " ) + ech_name;
-    } else if ( val == 0 ) {
-      has_ech = false;
-    }
+    has_ech = ti_str( "ech" );
 
     /* check for BCE */
-    char bce_name[] = "bce";
-    int bce_val = tigetflag( bce_name );
-    if ( bce_val == -1 ) {
-      throw std::string( "Invalid terminfo boolean capability " ) + bce_name;
-    } else if ( bce_val == 0 ) {
-      has_bce = false;
-    }
+    has_bce = ti_flag( "bce" );
 
     /* Check if we can set the window title and icon name.  terminfo does not
        have reliable information on this, so we hardcode a whitelist of
@@ -128,13 +143,7 @@ Display::Display( bool use_environment )
     /* posterization disabled because server now only advertises
        xterm-256color when client has colors = 256 */
     /*
-    char colors_name[] = "colors";
-    int color_val = tigetnum( colors_name );
-    if ( color_val == -2 ) {
-      throw std::string( "Invalid terminfo numeric capability " ) + colors_name;
-    } else if ( color_val < 256 ) {
-      posterize_colors = true;
-    }
+    posterize_colors = ti_num( "colors" ) < 256;
     */
   }
 }
