@@ -48,6 +48,8 @@ my $port_request = undef;
 
 my $ssh = 'ssh';
 
+my $term_init = 1;
+
 my $help = undef;
 my $version = undef;
 
@@ -71,6 +73,8 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
         --ssh=COMMAND        ssh command to run when setting up session
                                 (example: "ssh -p 2222")
                                 (default: "ssh")
+
+        --no-init            do not send terminal initialization string
 
         --help               this message
         --version            version and copyright information
@@ -104,6 +108,7 @@ GetOptions( 'client=s' => \$client,
 	    'n' => sub { $predict = 'never' },
 	    'p=s' => \$port_request,
 	    'ssh=s' => \$ssh,
+	    'init!' => \$term_init,
 	    'help' => \$help,
 	    'version' => \$version,
 	    'fake-proxy!' => \my $fake_proxy ) or die $usage;
@@ -281,6 +286,7 @@ if ( $pid == 0 ) { # child
   # Now start real mosh client
   $ENV{ 'MOSH_KEY' } = $key;
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
+  $ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
   exec {$client} ("$client @cmdline |", $ip, $port);
 }
 

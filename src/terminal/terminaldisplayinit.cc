@@ -146,7 +146,9 @@ Display::Display( bool use_environment )
     posterize_colors = ti_num( "colors" ) < 256;
     */
 
-    smcup = ti_str("smcup");
-    rmcup = ti_str("rmcup");
+    if ( !getenv( "MOSH_NO_TERM_INIT" ) ) {
+      smcup = ti_str("smcup");
+      rmcup = ti_str("rmcup");
+    }
   }
 }
