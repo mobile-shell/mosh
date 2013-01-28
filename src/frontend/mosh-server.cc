@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
+#include <sstream>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -132,13 +133,10 @@ string get_SSH_IP( void )
     fprintf( stderr, "Warning: SSH_CONNECTION not found; binding to any interface.\n" );
     return string( "0.0.0.0" );
   }
-  char *SSH_writable = strdup( SSH_CONNECTION );
-  fatal_assert( SSH_writable );
-
-  strtok( SSH_writable, " " );
-  strtok( NULL, " " );
-  const char *local_interface_IP = strtok( NULL, " " );
-  if ( !local_interface_IP ) {
+  istringstream ss( SSH_CONNECTION );
+  string dummy, local_interface_IP;
+  ss >> dummy >> dummy >> local_interface_IP;
+  if ( !ss ) {
     fprintf( stderr, "Warning: Could not parse SSH_CONNECTION; binding to any interface.\n" );
     return string( "0.0.0.0" );
   }
@@ -146,12 +144,12 @@ string get_SSH_IP( void )
   /* Strip IPv6 prefix. */
   const char IPv6_prefix[] = "::ffff:";
 
-  if ( ( strlen( local_interface_IP ) > strlen( IPv6_prefix ) )
-       && ( 0 == strncasecmp( local_interface_IP, IPv6_prefix, strlen( IPv6_prefix ) ) ) ) {
-    return string( local_interface_IP + strlen( IPv6_prefix ) );
+  if ( ( local_interface_IP.length() > strlen( IPv6_prefix ) )
+       && ( 0 == strncasecmp( local_interface_IP.c_str(), IPv6_prefix, strlen( IPv6_prefix ) ) ) ) {
+    return local_interface_IP.substr( strlen( IPv6_prefix ) );
   }
 
-  return string( local_interface_IP );
+  return local_interface_IP;
 }
 
 int main( int argc, char *argv[] )
@@ -162,8 +160,9 @@ int main( int argc, char *argv[] )
   /* Detect edge case */
   fatal_assert( argc > 0 );
 
-  char *desired_ip = NULL;
-  char *desired_port = NULL;
+  const char *desired_ip = NULL;
+  string desired_ip_str;
+  const char *desired_port = NULL;
   string command_path;
   char **command_argv = NULL;
   int colors = 0;
@@ -196,7 +195,8 @@ int main( int argc, char *argv[] )
 	desired_port = optarg;
 	break;
       case 's':
-	desired_ip = strdup( get_SSH_IP().c_str() );
+	desired_ip_str = get_SSH_IP();
+	desired_ip = desired_ip_str.c_str();
 	fatal_assert( desired_ip );
 	break;
       case 'c':
@@ -245,6 +245,7 @@ int main( int argc, char *argv[] )
 
   /* Get shell */
   char *my_argv[ 2 ];
+  string shell_name;
   if ( !command_argv ) {
     /* get shell name */
     struct passwd *pw = getpwuid( geteuid() );
@@ -260,8 +261,6 @@ int main( int argc, char *argv[] )
 
     command_path = shell_path;
 
-    string shell_name;
-
     size_t shell_slash( shell_path.rfind('/') );
     if ( shell_slash == string::npos ) {
       shell_name = shell_path;
@@ -272,7 +271,7 @@ int main( int argc, char *argv[] )
     /* prepend '-' to make login shell */
     shell_name = '-' + shell_name;
 
-    my_argv[ 0 ] = strdup( shell_name.c_str() );
+    my_argv[ 0 ] = const_cast<char *>( shell_name.c_str() );
     my_argv[ 1 ] = NULL;
     command_argv = my_argv;
 
@@ -636,7 +635,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
         /* If the pty slave is closed, reading from the master can fail with
            EIO (see #264).  So we treat errors on read() like EOF. */
         if ( bytes_read <= 0 ) {
-          bytes_read = 0;
 	  network.start_shutdown();
 	} else {
 	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
