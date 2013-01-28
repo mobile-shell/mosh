@@ -71,7 +71,7 @@ void STMClient::resume( void )
   }
 
   /* Put terminal in application-cursor-key mode */
-  swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
+  swrite( STDOUT_FILENO, display.open().c_str() );
 
   /* Flag that outer terminal state is unknown */
   repaint_requested = true;
@@ -114,7 +114,7 @@ void STMClient::init( void )
   }
 
   /* Put terminal in application-cursor-key mode */
-  swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
+  swrite( STDOUT_FILENO, display.open().c_str() );
 
   /* Add our name to window title */
   if ( !getenv( "MOSH_TITLE_NOPREFIX" ) ) {
@@ -135,7 +135,7 @@ void STMClient::shutdown( void )
   output_new_frame();
 
   /* Restore terminal and terminal-driver state */
-  swrite( STDOUT_FILENO, Terminal::Emulator::close().c_str() );
+  swrite( STDOUT_FILENO, display.close().c_str() );
   
   if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
     perror( "tcsetattr" );
@@ -268,7 +268,7 @@ bool STMClient::process_user_input( int fd )
 	  }
 	} else if ( the_byte == 0x1a ) { /* Suspend sequence is Ctrl-^ Ctrl-Z */
 	  /* Restore terminal and terminal-driver state */
-	  swrite( STDOUT_FILENO, Terminal::Emulator::close().c_str() );
+	  swrite( STDOUT_FILENO, display.close().c_str() );
 
 	  if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
 	    perror( "tcsetattr" );

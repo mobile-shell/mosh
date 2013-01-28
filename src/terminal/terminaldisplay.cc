@@ -44,6 +44,16 @@ static const Renditions & initial_rendition( void )
   return blank;
 }
 
+std::string Display::open() const
+{
+  return std::string( smcup ? smcup : "" ) + std::string( "\033[?1h" );
+}
+
+std::string Display::close() const
+{
+  return std::string( "\033[?1l\033[0m\033[?25h" ) + std::string( rmcup ? rmcup : "" );
+}
+
 std::string Display::new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f ) const
 {
   FrameState frame( last );

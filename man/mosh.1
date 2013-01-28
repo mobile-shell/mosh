@@ -128,6 +128,12 @@ only port that is forwarded through a firewall to the
 server. Otherwise, \fBmosh\fP will choose a port between 60000 and
 61000.
 
+.TP
+.B \-\-no\-init
+Do not send the \fBsmcup\fP initialization string and \fBrmcup\fP
+deinitialization string to the client's terminal. On many terminals
+this disables alternate screen mode.
+
 .SH ESCAPE SEQUENCES
 
 The escape sequence to shut down the connection is \fBCtrl-^ .\fP

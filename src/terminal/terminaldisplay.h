@@ -65,6 +65,10 @@ namespace Terminal {
 
   class Display {
   private:
+    bool ti_flag( const char *capname ) const;
+    int ti_num( const char *capname ) const;
+    const char *ti_str( const char *capname ) const;
+
     bool has_ech; /* erase character is part of vt200 but not supported by tmux
 		     (or by "screen" terminfo entry, which is what tmux advertises) */
 
@@ -74,10 +78,15 @@ namespace Terminal {
 
     int posterize_colors; /* downsample input colors >8 to [0..7] */
 
+    const char *smcup, *rmcup; /* enter and exit alternate screen mode */
+
     void put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const;
 
   public:
     void downgrade( Framebuffer &f ) const { if ( posterize_colors ) { f.posterize(); } }
+
+    std::string open() const;
+    std::string close() const;
 
     std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f ) const;
 
