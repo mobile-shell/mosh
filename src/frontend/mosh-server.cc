@@ -160,8 +160,9 @@ int main( int argc, char *argv[] )
   /* Detect edge case */
   fatal_assert( argc > 0 );
 
-  char *desired_ip = NULL;
-  char *desired_port = NULL;
+  const char *desired_ip = NULL;
+  string desired_ip_str;
+  const char *desired_port = NULL;
   string command_path;
   char **command_argv = NULL;
   int colors = 0;
@@ -194,7 +195,8 @@ int main( int argc, char *argv[] )
 	desired_port = optarg;
 	break;
       case 's':
-	desired_ip = strdup( get_SSH_IP().c_str() );
+	desired_ip_str = get_SSH_IP();
+	desired_ip = desired_ip_str.c_str();
 	fatal_assert( desired_ip );
 	break;
       case 'c':
