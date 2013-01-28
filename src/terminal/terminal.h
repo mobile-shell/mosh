@@ -78,9 +78,6 @@ namespace Terminal {
 
     std::string read_octets_to_host( void );
 
-    static std::string open( void ); /* put user cursor keys in application mode */
-    static std::string close( void ); /* restore user cursor keys */
-
     const Framebuffer & get_fb( void ) const { return fb; }
 
     bool operator==( Emulator const &x ) const;

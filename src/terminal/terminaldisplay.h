@@ -79,6 +79,9 @@ namespace Terminal {
   public:
     void downgrade( Framebuffer &f ) const { if ( posterize_colors ) { f.posterize(); } }
 
+    std::string open() const;
+    std::string close() const;
+
     std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f ) const;
 
     Display( bool use_environment );

@@ -163,17 +163,6 @@ void Emulator::Esc_dispatch( const Parser::Esc_Dispatch *act )
   }
 }
 
-std::string Emulator::open( void )
-{
-  char appmode[ 6 ] = { 0x1b, '[', '?', '1', 'h', 0 };
-  return std::string( appmode );
-}
-
-std::string Emulator::close( void )
-{
-  return std::string( "\033[?1l\033[0m\033[?25h" );
-}
-
 void Emulator::resize( size_t s_width, size_t s_height )
 {
   fb.resize( s_width, s_height );
