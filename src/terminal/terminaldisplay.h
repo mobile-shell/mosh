@@ -78,6 +78,8 @@ namespace Terminal {
 
     int posterize_colors; /* downsample input colors >8 to [0..7] */
 
+    const char *smcup, *rmcup; /* enter and exit alternate screen mode */
+
     void put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const;
 
   public:

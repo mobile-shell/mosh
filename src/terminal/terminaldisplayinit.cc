@@ -89,7 +89,7 @@ const char *Display::ti_str( const char *capname ) const
 }
 
 Display::Display( bool use_environment )
-  : has_ech( true ), has_bce( true ), has_title( true ), posterize_colors( false )
+  : has_ech( true ), has_bce( true ), has_title( true ), posterize_colors( false ), smcup( NULL ), rmcup( NULL )
 {
   if ( use_environment ) {
     int errret = -2;
@@ -145,5 +145,8 @@ Display::Display( bool use_environment )
     /*
     posterize_colors = ti_num( "colors" ) < 256;
     */
+
+    smcup = ti_str("smcup");
+    rmcup = ti_str("rmcup");
   }
 }
