@@ -34,10 +34,8 @@
 #define PRNG_HPP
 
 #include <string>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
 #include <stdint.h>
+#include <fstream>
 
 #include "crypto.h"
 
@@ -51,32 +49,22 @@ using namespace Crypto;
 
 class PRNG {
  private:
-  FILE *randfile;
+  std::ifstream randfile;
 
   /* unimplemented to satisfy -Weffc++ */
   PRNG( const PRNG & );
   PRNG & operator=( const PRNG & );
 
  public:
-  PRNG() : randfile( fopen( rdev, "rb" ) )
-  {
-    if ( randfile == NULL ) {
-      throw CryptoException( std::string( rdev ) + ": " + strerror( errno ) );
-    }
-  }
-
-  ~PRNG() {
-    if ( 0 != fclose( randfile ) ) {
-      throw CryptoException( std::string( rdev ) + ": " + strerror( errno ) );
-    }
-  }
+  PRNG() : randfile( rdev, std::ifstream::in | std::ifstream::binary ) {}
 
   void fill( void *dest, size_t size ) {
     if ( 0 == size ) {
       return;
     }
 
-    if ( 1 != fread( dest, size, 1, randfile ) ) {
+    randfile.read( static_cast<char *>( dest ), size );
+    if ( !randfile ) {
       throw CryptoException( "Could not read from " + std::string( rdev ) );
     }
   }
