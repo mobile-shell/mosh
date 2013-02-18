@@ -31,12 +31,8 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <assert.h>
-#include <string.h>
-#include <unistd.h>
 #include <iostream>
+#include <sstream>
 
 #include "crypto.h"
 
@@ -55,31 +51,12 @@ int main( int argc, char *argv[] )
     Session session( key );
 
     /* Read input */
-    char *input = NULL;
-    int total_size = 0;
-
-    while ( 1 ) {
-      unsigned char buf[ 16384 ];
-      ssize_t bytes_read = read( STDIN_FILENO, buf, 16384 );
-      if ( bytes_read == 0 ) { /* EOF */
-	break;
-      } else if ( bytes_read < 0 ) {
-	perror( "read" );
-	exit( 1 );
-      } else {
-	input = (char *)realloc( input, total_size + bytes_read );
-	assert( input );
-	memcpy( input + total_size, buf, bytes_read );
-	total_size += bytes_read;
-      }
-    }
-
-    string ciphertext( input, total_size );
-    free( input );
+    ostringstream input;
+    input << cin.rdbuf();
 
     /* Decrypt message */
 
-    Message message = session.decrypt( ciphertext );
+    Message message = session.decrypt( input.str() );
 
     fprintf( stderr, "Nonce = %ld\n",
 	     (long)message.nonce.val() );
