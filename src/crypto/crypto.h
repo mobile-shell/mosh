@@ -97,8 +97,8 @@ namespace Crypto {
     Nonce( uint64_t val );
     Nonce( char *s_bytes, size_t len );
     
-    string cc_str( void ) { return string( (char *)( bytes + 4 ), 8 ); }
-    char *data( void ) { return bytes; }
+    string cc_str( void ) const { return string( bytes + 4, 8 ); }
+    const char *data( void ) const { return bytes; }
     uint64_t val( void );
   };
   
