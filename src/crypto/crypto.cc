@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/resource.h>
+#include <fstream>
 
 #include "byteorder.h"
 #include "crypto.h"
@@ -121,17 +122,11 @@ Base64Key::Base64Key( string printable_key )
 
 Base64Key::Base64Key()
 {
-  FILE *devrandom = fopen( rdev, "r" );
-  if ( devrandom == NULL ) {
-    throw CryptoException( string( rdev ) + ": " + strerror( errno ) );
-  }
+  ifstream devrandom( rdev, ifstream::in | ifstream::binary );
 
-  if ( 1 != fread( key, 16, 1, devrandom ) ) {
+  devrandom.read( reinterpret_cast<char *>( key ), sizeof( key ) );
+  if ( !devrandom ) {
     throw CryptoException( "Could not read from " + string( rdev ) );
-  }
-
-  if ( 0 != fclose( devrandom ) ) {
-    throw CryptoException( string( rdev ) + ": " + strerror( errno ) );
   }
 }
 
