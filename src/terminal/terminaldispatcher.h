@@ -107,8 +107,8 @@ namespace Terminal {
     std::string str( void );
 
     void dispatch( Function_Type type, const Parser::Action *act, Framebuffer *fb );
-    std::string get_dispatch_chars( void ) { return dispatch_chars; }
-    std::vector<wchar_t> get_OSC_string( void ) { return OSC_string; }
+    std::string get_dispatch_chars( void ) const { return dispatch_chars; }
+    std::vector<wchar_t> get_OSC_string( void ) const { return OSC_string; }
 
     void OSC_put( const Parser::OSC_Put *act );
     void OSC_start( const Parser::OSC_Start *act );
