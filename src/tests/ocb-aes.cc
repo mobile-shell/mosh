@@ -53,7 +53,7 @@
 
 using Crypto::AlignedBuffer;
 
-bool verbose = true;
+bool verbose = false;
 
 bool equal( const AlignedBuffer &a, const AlignedBuffer &b ) {
   return ( a.len() == b.len() )
@@ -540,8 +540,8 @@ void test_iterative( void ) {
 
 int main( int argc, char *argv[] )
 {
-  if ( ( argc >= 2 ) && !strcmp( argv[ 1 ], "-q" ) ) {
-    verbose = false;
+  if ( argc >= 2 && strcmp( argv[ 1 ], "-v" ) == 0 ) {
+    verbose = true;
   }
 
   test_all_vectors();

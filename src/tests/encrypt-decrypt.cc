@@ -52,7 +52,7 @@ const size_t MESSAGE_SIZE_MAX     = (2048 - 16);
 const size_t MESSAGES_PER_SESSION = 256;
 const size_t NUM_SESSIONS         = 64;
 
-bool verbose = true;
+bool verbose = false;
 
 #define NONCE_FMT "%016"PRIx64
 
@@ -135,8 +135,8 @@ void test_one_session( void ) {
 }
 
 int main( int argc, char *argv[] ) {
-  if ( ( argc >= 2 ) && !strcmp( argv[ 1 ], "-q" ) ) {
-    verbose = false;
+  if ( argc >= 2 && strcmp( argv[ 1 ], "-v" ) == 0 ) {
+    verbose = true;
   }
 
   for ( size_t i=0; i<NUM_SESSIONS; i++ ) {
