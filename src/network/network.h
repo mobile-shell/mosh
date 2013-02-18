@@ -114,7 +114,7 @@ namespace Network {
       ~Socket();
 
       Socket( const Socket & other );
-      const Socket & operator=( const Socket & other );
+      Socket & operator=( const Socket & other );
     };
 
     std::deque< Socket > socks;
