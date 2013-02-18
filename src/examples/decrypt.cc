@@ -61,7 +61,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "Nonce = %ld\n",
 	     (long)message.nonce.val() );
     cout << message.text;
-  } catch ( CryptoException e ) {
+  } catch ( const CryptoException &e ) {
     cerr << e.text << endl;
     exit( 1 );
   }

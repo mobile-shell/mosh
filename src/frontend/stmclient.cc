@@ -485,7 +485,7 @@ void STMClient::main( void )
       } else {
         overlays.get_notification_engine().clear_network_exception();
       }
-    } catch ( Network::NetworkException e ) {
+    } catch ( const Network::NetworkException &e ) {
       if ( !network->shutdown_in_progress() ) {
         overlays.get_notification_engine().set_network_exception( e );
       }
@@ -495,7 +495,7 @@ void STMClient::main( void )
       req.tv_nsec = 200000000; /* 0.2 sec */
       nanosleep( &req, NULL );
       freeze_timestamp();
-    } catch ( Crypto::CryptoException e ) {
+    } catch ( const Crypto::CryptoException &e ) {
       if ( e.fatal ) {
         throw;
       } else {
