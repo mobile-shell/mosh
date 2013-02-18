@@ -172,7 +172,7 @@ NotificationEngine::NotificationEngine()
     show_quit_keystroke( true )
 {}
 
-static std::string human_readable_duration( int num_seconds, const std::string seconds_abbr ) {
+static std::string human_readable_duration( int num_seconds, const std::string &seconds_abbr ) {
   char tmp[ 128 ];
   if ( num_seconds < 60 ) {
     snprintf( tmp, 128, "%d %s", num_seconds, seconds_abbr.c_str() );

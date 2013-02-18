@@ -58,7 +58,7 @@ namespace Terminal {
     }
 
     void append( const char * s ) { str.append( s ); }
-    void appendstring( const std::string s ) { str.append( s ); }
+    void appendstring( const std::string &s ) { str.append( s ); }
 
     void append_silent_move( int y, int x );
   };
