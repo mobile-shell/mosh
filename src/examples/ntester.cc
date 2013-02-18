@@ -65,7 +65,7 @@ int main( int argc, char *argv[] )
     } else {
       n = new Transport<UserStream, UserStream>( me, remote, NULL, NULL );
     }
-  } catch ( CryptoException e ) {
+  } catch ( const CryptoException &e ) {
     fprintf( stderr, "Fatal error: %s\n", e.text.c_str() );
     exit( 1 );
   }
@@ -97,7 +97,7 @@ int main( int argc, char *argv[] )
 	    last_num = n->get_remote_state_num();
 	  }
 	}
-      } catch ( CryptoException e ) {
+      } catch ( const CryptoException &e ) {
 	fprintf( stderr, "Cryptographic error: %s\n", e.text.c_str() );
       }
     }
@@ -163,10 +163,10 @@ int main( int argc, char *argv[] )
 	if ( network_ready_to_read ) {
 	  n->recv();
 	}
-      } catch ( NetworkException e ) {
+      } catch ( const NetworkException &e ) {
 	fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
 	break;
-      } catch ( CryptoException e ) {
+      } catch ( const CryptoException &e ) {
 	fprintf( stderr, "Cryptographic error: %s\n", e.text.c_str() );
       }
     }

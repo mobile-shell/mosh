@@ -62,7 +62,7 @@ int main( int argc, char *argv[] )
     cerr << "Key: " << key.printable_key() << endl;
 
     cout << ciphertext;
-  } catch ( CryptoException e ) {
+  } catch ( const CryptoException &e ) {
     cerr << e.text << endl;
     exit( 1 );
   }
