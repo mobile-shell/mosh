@@ -397,7 +397,7 @@ string Connection::recv( void )
 	assert( !islast );
 	continue;
       } else {
-	throw e;
+	throw;
       }
     }
 
