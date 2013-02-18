@@ -586,7 +586,7 @@ Connection::Socket::Socket( const Socket & other )
   }
 }
 
-const Connection::Socket & Connection::Socket::operator=( const Socket & other )
+Connection::Socket & Connection::Socket::operator=( const Socket & other )
 {
   _fd = dup( other._fd );
   
