@@ -816,7 +816,9 @@ void warn_unattached( const string & ignore_entry )
 	 && (username == string( entry->ut_user )) ) {
       /* does line show unattached mosh session */
       string text( entry->ut_host );
-      if ( (text.substr( 0, 5 ) == "mosh ")
+      if ( (text.size() >= 5)
+	   && (text.substr( 0, 5 ) == "mosh ")
+	   && (text[ text.size() - 1 ] == ']')
 	   && (text != ignore_entry)
 	   && device_exists( entry->ut_line ) ) {
 	unattached_mosh_servers.push_back( text );
