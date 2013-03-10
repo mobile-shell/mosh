@@ -34,6 +34,9 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>

@@ -176,6 +176,7 @@ AC_CHECK_HEADERS([pty.h util.h libutil.h paths.h])
 AC_CHECK_HEADERS([endian.h sys/endian.h])
 AC_CHECK_HEADERS([utmpx.h])
 AC_CHECK_HEADERS([termio.h])
+AC_CHECK_HEADERS([sys/uio.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
