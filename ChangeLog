@@ -1,3 +1,31 @@
+2013-03-?? Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 1.2.4 released.
+
+	* New features:
+	        * Support port ranges with -p LOWPORT:HIGHPORT (Luke Mewburn)
+	        * Ctrl-^ Ctrl-Z suspends mosh client (Nikolai Zeldovich)
+	        * mm:ss display of lost-contact times (Kevin Ballard)
+	        * Show infobar with control chars when Ctrl-^ is typed
+	        * Put terminal in altscreen mode (Anders Kaseorg)
+	        * Tell automake/Debian pkg about our checks (Anders Kaseorg)
+
+	* Platform support:
+	        * OS X: Script to build a universal package (Peter Iannucci)
+	        * FreeBSD: Fix build problems (Jimmy Olgeni)
+	        * AIX: port by Anton Lundin
+	        * Solaris with system curses (Anton Lundin)
+	        * Cygwin and others: eliminate use of IO::Pty (Anton Lundin)
+
+	* Bug fixes:
+	        * Fix bug (introduced in 1.2.3) where server stays around
+	          if process quits while client is detached
+	        * Clean up spurious entries from detached sessions warning
+		* Fix freeze when connectivity is one-directional for hours
+	          (reported by Axel Beckert)
+	        * Don't wipe title until a new one is set (sqweek)
+	        * Eliminate memory leaks and cppcheck warnings (Anders Kaseorg)
+
 2012-10-19 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.2.3 released.
