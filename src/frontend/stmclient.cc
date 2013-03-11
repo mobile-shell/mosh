@@ -286,6 +286,7 @@ bool STMClient::process_user_input( int fd )
 	} else if ( the_byte == '^' ) {
 	  /* Emulation sequence to type Ctrl-^ is Ctrl-^ ^ */
 	  network->get_current_state().push_back( Parser::UserByte( 0x1E ) );
+	} else if ( the_byte == 0x1b ) { /* Ctrl-^ Esc cancels menu mode */
 	} else {
 	  /* Ctrl-^ followed by anything other than . and ^ gets sent literally */
 	  network->get_current_state().push_back( Parser::UserByte( 0x1E ) );
