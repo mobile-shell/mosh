@@ -275,14 +275,14 @@ bool STMClient::process_user_input( int fd )
 	    exit( 1 );
 	  }
 
-	  /* clear screen */
-	  printf( "\033[H\033[2J" );
-	  printf( "\033[37;44m[mosh is suspended.]\n\033[m" );
+	  printf( "\n\033[37;44m[mosh is suspended.]\033[m\n" );
 
 	  fflush( NULL );
 
 	  /* actually suspend */
 	  raise( SIGTSTP );
+
+	  resume();
 	} else if ( the_byte == '^' ) {
 	  /* Emulation sequence to type Ctrl-^ is Ctrl-^ ^ */
 	  network->get_current_state().push_back( Parser::UserByte( 0x1E ) );
