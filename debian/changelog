@@ -1,3 +1,10 @@
+mosh (1.2.4a-1) unstable; urgency=low
+
+  * Eliminate redundant ocb.cc test (fixes build warning on ARM/MIPS/s390)
+  * Add explicit cast to int (fixes build warning on older gcc)
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 27 Mar 2013 18:32:33 -0400
+
 mosh (1.2.4-1) unstable; urgency=low
 
   * Version 1.2.4 released.
