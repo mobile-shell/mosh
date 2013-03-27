@@ -242,13 +242,16 @@ void NotificationEngine::apply( Framebuffer &fb ) const
     return;
   } else if ( message.empty() && time_expired ) {
     swprintf( tmp, 128, L"mosh: Last %s %s ago.%s", explanation,
-	      human_readable_duration( time_elapsed, "seconds" ).c_str(),
+	      human_readable_duration( static_cast<int>( time_elapsed ),
+				       "seconds" ).c_str(),
 	      keystroke_str );
   } else if ( (!message.empty()) && (!time_expired) ) {
     swprintf( tmp, 128, L"mosh: %ls%s", message.c_str(), keystroke_str );
   } else {
     swprintf( tmp, 128, L"mosh: %ls (%s without %s.)%s", message.c_str(),
-	      human_readable_duration( time_elapsed, "s" ).c_str(), explanation, keystroke_str );
+	      human_readable_duration( static_cast<int>( time_elapsed ),
+				       "s" ).c_str(),
+	      explanation, keystroke_str );
   }
 
   wstring string_to_draw( tmp );
