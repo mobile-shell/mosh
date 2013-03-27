@@ -1,3 +1,9 @@
+mosh (1.2.4-1) unstable; urgency=low
+
+  * Version 1.2.4 released.
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 27 Mar 2013 00:17:39 -0400
+
 mosh (1.2.3.95rc1-1) unstable; urgency=low
 
   * Version 1.2.4 release candidate
