@@ -15,10 +15,3 @@ libmoshcrypto_a_SOURCES = \
 	crypto.cc \
 	crypto.h \
 	prng.h
-
-check_PROGRAMS = ocb-test
-TESTS = ocb-test
-
-ocb_test_SOURCES = $(OCB_SRCS)
-ocb_test_CPPFLAGS = -DOCB_TEST_PROGRAM
-ocb_test_LDADD = $(OPENSSL_LIBS)
