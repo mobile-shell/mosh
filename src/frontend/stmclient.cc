@@ -280,7 +280,7 @@ bool STMClient::process_user_input( int fd )
 	  fflush( NULL );
 
 	  /* actually suspend */
-	  raise( SIGTSTP );
+	  kill( 0, SIGSTOP );
 
 	  resume();
 	} else if ( the_byte == '^' ) {
