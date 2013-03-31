@@ -27,14 +27,16 @@ fi
 echo "Building for x86_64..."
 ./configure --prefix="$PREFIX_x86_64" ac_cv_poll_pty=no \
     CC="clang -arch x86_64" CPP="clang -arch x86_64 -E" CXX="clang++ -arch x86_64" \
-    TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a
+    TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a \
+    OPENSSL_CFLAGS="  " OPENSSL_LIBS="-lssl -lcrypto -lz"
 make clean
 make install -j8
 
 echo "Building for i386..."
 ./configure --prefix="$PREFIX_i386" ac_cv_poll_pty=no \
     CC="clang -arch i386" CPP="clang -arch i386 -E" CXX="clang++ -arch i386" \
-    TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a
+    TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a \
+    OPENSSL_CFLAGS="  " OPENSSL_LIBS="-lssl -lcrypto -lz"
 make clean
 make install -j8
 
