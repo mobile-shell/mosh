@@ -44,6 +44,8 @@ my $server = 'mosh-server';
 
 my $predict = undef;
 
+my $bind_ip = undef;
+
 my $port_request = undef;
 
 my $ssh = 'ssh';
@@ -69,6 +71,9 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 
 -p PORT[:PORT2]
         --port=PORT[:PORT2]  server-side UDP port or range
+        --bind-ip={ssh|IP}   bind the server to the ip of the ssh client or to IP
+                                (example: "0.0.0.0")
+                                (default: "ssh")
 
         --ssh=COMMAND        ssh command to run when setting up session
                                 (example: "ssh -p 2222")
@@ -111,7 +116,8 @@ GetOptions( 'client=s' => \$client,
 	    'init!' => \$term_init,
 	    'help' => \$help,
 	    'version' => \$version,
-	    'fake-proxy!' => \my $fake_proxy ) or die $usage;
+	    'fake-proxy!' => \my $fake_proxy,
+        'bind-ip=s' => \$bind_ip) or die $usage;
 
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
@@ -227,9 +233,15 @@ if ( $pid == 0 ) { # child
   close $p_write;
   close $p_read;
 
-  my @server = ( 'new', '-s' );
+  my @server = ( 'new' );
 
   push @server, ( '-c', $colors );
+
+  if ( not defined $bind_ip or $bind_ip =~ 'ssh' ) {
+      push @server , '-s';
+  } else {
+      push @server, ('-i', "$bind_ip");
+  }
 
   if ( defined $port_request ) {
     push @server, ( '-p', $port_request );

@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH MOSH 1 "October 2012"
+.TH MOSH 1 "Apil 2013"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -127,6 +127,14 @@ for example, if this is the
 only port that is forwarded through a firewall to the
 server. Otherwise, \fBmosh\fP will choose a port between 60000 and
 61000.
+
+.TP
+.B \-\-bind\-ip={ssh|\fIIP\fP}
+Bind the server to the ip of the ssh client or to IP by passing either the -s
+switch (default) or -i IP to \fBmosh-server\fP. This is useful when the login
+happens from an address different from the one used by the \fBmosh-client\fP.
+For example, if ssh is served through \fBsslh\fP, \fBSSH_CONNECTION\fP might be
+set to 127.0.0.1, but \fBmosh-server\fP can still be bound to 0.0.0.0.
 
 .TP
 .B \-\-no\-init
