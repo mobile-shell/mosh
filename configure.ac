@@ -285,19 +285,21 @@ AC_CHECK_DECL([mach_absolute_time],
      [Define if mach_absolute_time is available.])],
   , [[#include <mach/mach_time.h>]])
 
-AC_CHECK_DECL([htobe64],
-  [AC_DEFINE([HAVE_HTOBE64], [1],
-  [Define if htobe64 and friends exist.])],
+AC_CHECK_DECLS([be64toh, betoh64], [], [],
+  [[#if defined(HAVE_ENDIAN_H)
+#include <endian.h>
+#elif defined(HAVE_SYS_ENDIAN_H)
+#include <sys/types.h>
+#include <sys/endian.h>
+#endif]])
+
+AS_IF([test x"$ac_cv_have_decl_be64toh" != xyes &&
+       test x"$ac_cv_have_decl_betoh64" != xyes],
   [AC_CHECK_DECL([OSSwapHostToBigInt64],
      [AC_DEFINE([HAVE_OSX_SWAP], [1],
         [Define if OSSwapHostToBigInt64 and friends exist.])],
      [AC_MSG_WARN([Unable to find byte swapping functions; using built-in routines.])],
-     [[#include <libkern/OSByteOrder.h>]])],
-  [[#if defined(HAVE_ENDIAN_H)
-#include <endian.h>
-#elif defined(HAVE_SYS_ENDIAN_H)
-#include <sys/endian.h>
-#endif]])
+     [[#include <libkern/OSByteOrder.h>]])])
 
 AC_CHECK_DECL([IP_MTU_DISCOVER],
   [AC_DEFINE([HAVE_IP_MTU_DISCOVER], [1],

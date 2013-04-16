@@ -35,12 +35,19 @@
 
 #include "config.h"
 
-#ifdef HAVE_HTOBE64
+#if HAVE_DECL_BE64TOH || HAVE_DECL_BETOH64
+
 # if defined(HAVE_ENDIAN_H)
 #  include <endian.h>
 # elif defined(HAVE_SYS_ENDIAN_H)
+#  include <sys/types.h>
 #  include <sys/endian.h>
 # endif
+
+#if !HAVE_DECL_BE64TOH && HAVE_DECL_BETOH64
+#define be64toh betoh64
+#define be16toh betoh16
+#endif
 
 #elif HAVE_OSX_SWAP
 # include <libkern/OSByteOrder.h>
