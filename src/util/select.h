@@ -118,6 +118,7 @@ public:
     fatal_assert( 0 == sigaction( signum, &sa, NULL ) );
   }
 
+  /* timeout unit: milliseconds; negative timeout means wait forever */
   int select( int timeout )
   {
     memcpy( &read_fds,  &all_fds, sizeof( read_fds  ) );
@@ -125,18 +126,34 @@ public:
     clear_got_signal();
     got_any_signal = 0;
 
+#ifdef HAVE_PSELECT
     struct timespec ts;
     struct timespec *tsp = NULL;
 
     if ( timeout >= 0 ) {
-      // timeout in milliseconds
       ts.tv_sec  = timeout / 1000;
       ts.tv_nsec = 1000000 * (long( timeout ) % 1000);
       tsp = &ts;
     }
-    // negative timeout means wait forever
 
     int ret = ::pselect( max_fd + 1, &read_fds, NULL, &error_fds, tsp, &empty_sigset );
+#else
+    struct timeval tv;
+    struct timeval *tvp = NULL;
+    sigset_t old_sigset;
+
+    if ( timeout >= 0 ) {
+      tv.tv_sec  = timeout / 1000;
+      tv.tv_usec = 1000 * (long( timeout ) % 1000);
+      tvp = &tv;
+    }
+
+    int ret = sigprocmask( SIG_SETMASK, &empty_sigset, &old_sigset );
+    if ( ret != -1 ) {
+      ret = ::select( max_fd + 1, &read_fds, NULL, &error_fds, tvp );
+      sigprocmask( SIG_SETMASK, &old_sigset, NULL );
+    }
+#endif
 
     if ( ( ret == -1 ) && ( errno == EINTR ) ) {
       /* The user should process events as usual. */
