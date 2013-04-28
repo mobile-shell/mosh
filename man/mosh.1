@@ -129,12 +129,21 @@ server. Otherwise, \fBmosh\fP will choose a port between 60000 and
 61000.
 
 .TP
-.B \-\-bind\-ip={ssh|\fIIP\fP}
-Bind the server to the ip of the ssh client or to IP by passing either the -s
-switch (default) or -i IP to \fBmosh-server\fP. This is useful when the login
-happens from an address different from the one used by the \fBmosh-client\fP.
-For example, if ssh is served through \fBsslh\fP, \fBSSH_CONNECTION\fP might be
-set to 127.0.0.1, but \fBmosh-server\fP can still be bound to 0.0.0.0.
+.B \-\-bind\-server={ssh|any|\fIIP\fP}
+Control the IP address that the \fBmosh-server\fP binds to.
+
+The default is `ssh', in which case the server will reply from the IP
+address that the SSH connection came from (as found in the
+\fBSSH_CONNECTION\fP environment variable). This is useful for
+multihomed servers.
+
+With \-\-bind\-server=any, the server will reply on the default interface
+and will not bind to a particular IP address. This can be useful if
+the connection is made through \fBsslh\fP or another tool that makes
+the SSH connection appear to come from localhost.
+
+With \-\-bind\-server=\fIIP\fP, the server will attempt to bind to the
+specified IP address.
 
 .TP
 .B \-\-no\-init

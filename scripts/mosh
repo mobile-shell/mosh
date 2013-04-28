@@ -71,9 +71,8 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 
 -p PORT[:PORT2]
         --port=PORT[:PORT2]  server-side UDP port or range
-        --bind-ip={ssh|IP}   bind the server to the ssh client's ip or to IP
-                                (example: "0.0.0.0")
-                                (default: "ssh")
+        --bind-server={ssh|any|IP}  ask the server to reply from an IP address
+                                       (default: "ssh")
 
         --ssh=COMMAND        ssh command to run when setting up session
                                 (example: "ssh -p 2222")
@@ -117,7 +116,7 @@ GetOptions( 'client=s' => \$client,
 	    'help' => \$help,
 	    'version' => \$version,
 	    'fake-proxy!' => \my $fake_proxy,
-	    'bind-ip=s' => \$bind_ip) or die $usage;
+	    'bind-server=s' => \$bind_ip) or die $usage;
 
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
@@ -153,6 +152,19 @@ if ( defined $port_request ) {
 }
 
 delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
+
+my @bind_arguments;
+if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
+  push @bind_arguments, '-s';
+} elsif ( $bind_ip =~ m{^any$}i ) {
+  # do nothing
+} elsif ( $bind_ip =~ m{^[0-9\.]+$} ) {
+  push @bind_arguments, ('-i', "$bind_ip");
+} else {
+  print STDERR qq{$0: Unknown server binding option: $bind_ip\n};
+
+  die $usage;
+}
 
 if ( defined $fake_proxy ) {
   use Errno qw(EINTR);
@@ -232,11 +244,7 @@ if ( $pid == 0 ) { # child
 
   push @server, ( '-c', $colors );
 
-  if ( not defined $bind_ip or $bind_ip =~ 'ssh' ) {
-      push @server , '-s';
-  } else {
-      push @server, ('-i', "$bind_ip");
-  }
+  push @server, @bind_arguments;
 
   if ( defined $port_request ) {
     push @server, ( '-p', $port_request );
