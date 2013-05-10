@@ -249,6 +249,8 @@ namespace Terminal {
     std::deque<wchar_t> window_title;
     unsigned int bell_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
+    rows_type saved_rows;
+    DrawState saved_ds;
 
     Row newrow( void ) { return Row( ds.get_width(), ds.get_background_rendition() ); }
 
@@ -330,6 +332,9 @@ namespace Terminal {
 
     void ring_bell( void ) { bell_count++; }
     unsigned int get_bell_count( void ) const { return bell_count; }
+
+    void save_screen( void );
+    void restore_screen( void );
 
     bool operator==( const Framebuffer &x ) const
     {

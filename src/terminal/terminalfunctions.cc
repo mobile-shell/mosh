@@ -246,7 +246,7 @@ void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
 /* TBC preserves wrap state */
 static Function func_CSI_TBC( CSI, "g", CSI_TBC, false );
 
-static bool *get_DEC_mode( int param, Framebuffer *fb ) {
+static bool *get_DEC_mode( int param, Framebuffer *fb, bool flag ) {
   switch ( param ) {
   case 1: /* cursor key mode */
     return &(fb->ds.application_mode_cursor_keys);
@@ -268,6 +268,11 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
     return &(fb->ds.auto_wrap_mode);
   case 25:
     return &(fb->ds.cursor_visible);
+  case 47:
+  case 1047:
+  case 1049:
+    flag ? fb->save_screen() : fb->restore_screen();
+    return NULL;
   }
   return NULL;
 }
@@ -276,7 +281,7 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
 void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
-    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb );
+    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb, true );
     if ( mode ) {
       *mode = true;
     }
@@ -287,7 +292,7 @@ void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
 void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
-    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb );
+    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb, false );
     if ( mode ) {
       *mode = false;
     }
