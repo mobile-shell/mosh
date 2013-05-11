@@ -80,6 +80,7 @@
 #include "locale_utils.h"
 #include "pty_compat.h"
 #include "select.h"
+#include "agent.h"
 #include "timestamp.h"
 #include "fatal_assert.h"
 
@@ -93,11 +94,13 @@ typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConn
 
 void serve( int host_fd,
 	    Terminal::Complete &terminal,
-	    ServerConnection &network );
+	    ServerConnection &network,
+	    Agent::ProxyAgent &agent );
 
 int run_server( const char *desired_ip, const char *desired_port,
 		const string &command_path, char *command_argv[],
-		const int colors, bool verbose, bool with_motd );
+		const int colors, bool verbose, bool with_motd,
+		bool with_agent_fwd );
 
 using namespace std;
 
@@ -166,6 +169,7 @@ int main( int argc, char *argv[] )
   string command_path;
   char **command_argv = NULL;
   int colors = 0;
+  bool with_agent_fwd = false;
   bool verbose = false; /* don't close stdin/stdout/stderr */
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
   list<string> locale_vars;
@@ -186,8 +190,11 @@ int main( int argc, char *argv[] )
        && (strcmp( argv[ 1 ], "new" ) == 0) ) {
     /* new option syntax */
     int opt;
-    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:svl:" )) != -1 ) {
+    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:svl:A" )) != -1 ) {
       switch ( opt ) {
+      case 'A':
+	with_agent_fwd = true;
+        break;
       case 'i':
 	desired_ip = optarg;
 	break;
@@ -316,7 +323,7 @@ int main( int argc, char *argv[] )
   }
 
   try {
-    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd );
+    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd, with_agent_fwd );
   } catch ( const Network::NetworkException& e ) {
     fprintf( stderr, "Network exception: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -330,7 +337,8 @@ int main( int argc, char *argv[] )
 
 int run_server( const char *desired_ip, const char *desired_port,
 		const string &command_path, char *command_argv[],
-		const int colors, bool verbose, bool with_motd ) {
+		const int colors, bool verbose, bool with_motd,
+		bool with_agent_fwd ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -382,6 +390,13 @@ int run_server( const char *desired_ip, const char *desired_port,
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
 
   fprintf( stderr, "[mosh-server detached, pid = %d]\n", (int)getpid() );
+
+  /* initialize agent listener if requested */
+  Agent::ProxyAgent agent( true, ! with_agent_fwd );
+  if ( with_agent_fwd && (! agent.active()) ) {
+    fprintf( stderr, "Warning: Agent listener initialization failed. Disabling agent forwarding.\n" );
+    with_agent_fwd = false;
+  }
 
   int master;
 
@@ -453,6 +468,14 @@ int run_server( const char *desired_ip, const char *desired_port,
       exit( 1 );
     }
 
+    /* set SSH_AUTH_SOCK */
+    if ( agent.active() ) {
+      if ( setenv( "SSH_AUTH_SOCK", agent.listener_path().c_str(), true ) < 0 ) {
+	perror( "setenv" );
+	exit( 1 );
+      }
+    }
+
     /* ask ncurses to send UTF-8 instead of ISO 2022 for line-drawing chars */
     if ( setenv( "NCURSES_NO_UTF8_ACS", "1", true ) < 0 ) {
       perror( "setenv" );
@@ -487,7 +510,7 @@ int run_server( const char *desired_ip, const char *desired_port,
 #endif
 
     try {
-      serve( master, terminal, *network );
+      serve( master, terminal, *network, agent );
     } catch ( const Network::NetworkException& e ) {
       fprintf( stderr, "Network exception: %s: %s\n",
 	       e.function.c_str(), strerror( e.the_errno ) );
@@ -513,7 +536,7 @@ int run_server( const char *desired_ip, const char *desired_port,
   return 0;
 }
 
-void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
+void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network, Agent::ProxyAgent &agent )
 {
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
@@ -528,6 +551,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   struct in_addr saved_addr;
   saved_addr.s_addr = 0;
   #endif
+
+  if ( agent.active() ) {
+    agent.attach_oob( network.oob() );
+  }
 
   while ( 1 ) {
     try {
@@ -548,6 +575,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       sel.add_fd( network_fd );
       if ( !network.shutdown_in_progress() ) {
 	sel.add_fd( host_fd );
+      }
+
+      if ( agent.active() ) {
+	agent.pre_poll();
       }
 
       int active_fds = sel.select( timeout );
@@ -635,6 +666,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
         /* If the pty slave is closed, reading from the master can fail with
            EIO (see #264).  So we treat errors on read() like EOF. */
         if ( bytes_read <= 0 ) {
+	  agent.shutdown_server();
 	  network.start_shutdown();
 	} else {
 	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
@@ -652,6 +684,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       if ( sel.any_signal() ) {
 	/* shutdown signal */
 	if ( network.has_remote_addr() && (!network.shutdown_in_progress()) ) {
+	  agent.shutdown_server();
 	  network.start_shutdown();
 	} else {
 	  break;
@@ -665,6 +698,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       if ( (!network.shutdown_in_progress()) && sel.error( host_fd ) ) {
 	/* host problem */
+	agent.shutdown_server();
 	network.start_shutdown();
       }
 
@@ -709,15 +743,29 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
            && time_since_remote_state >= uint64_t( timeout_if_no_client ) ) {
         fprintf( stderr, "No connection within %d seconds.\n",
                  timeout_if_no_client / 1000 );
+	agent.shutdown_server();
         break;
       }
 
+      if ( agent.active() ) {
+	if ( time_since_remote_state > (AGENT_IDLE_TIMEOUT * 1000) || time_since_remote_state > 30000 ) {
+	  agent.close_sessions();
+	}
+	agent.post_poll();
+      }
+
       network.tick();
+
+      if ( agent.active() ) {
+	agent.post_tick();
+      }
+
     } catch ( const Network::NetworkException& e ) {
       fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );
       spin();
     } catch ( const Crypto::CryptoException& e ) {
       if ( e.fatal ) {
+	agent.shutdown_server();
         throw;
       } else {
         fprintf( stderr, "Crypto exception: %s\n", e.text.c_str() );

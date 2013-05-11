@@ -96,14 +96,18 @@ void TransportSender<MyState>::calculate_timers( void )
     next_ack_time = now + ACK_DELAY;
   }
 
-  if ( !(current_state == sent_states.back().state) ) {
+  if ( oob()->has_unsent_output() ) {
+    next_send_time = sent_states.back().timestamp + send_interval();
+    if ( mindelay_clock != uint64_t( -1 ) ) {
+      next_send_time = max( next_send_time, mindelay_clock + SEND_MINDELAY );
+    }
+  } else if ( !(current_state == sent_states.back().state) ) {
     if ( mindelay_clock == uint64_t( -1 ) ) {
       mindelay_clock = now;
     }
-
     next_send_time = max( mindelay_clock + SEND_MINDELAY,
 			  sent_states.back().timestamp + send_interval() );
-  } else if ( !(current_state == assumed_receiver_state->state)
+  } else if ( ((!(current_state == assumed_receiver_state->state)) || (oob()->has_output()))
 	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
     next_send_time = sent_states.back().timestamp + send_interval();
     if ( mindelay_clock != uint64_t( -1 ) ) {
@@ -181,11 +185,12 @@ void TransportSender<MyState>::tick( void )
   if ( diff.empty() && (now >= next_ack_time) ) {
     send_empty_ack();
     mindelay_clock = uint64_t( -1 );
-  } else if ( !diff.empty() && ( (now >= next_send_time)
-			  || (now >= next_ack_time) ) ) {
+  } else if ( !diff.empty() && ((now >= next_send_time) || (now >= next_ack_time)) ) {
     /* Send diffs or ack */
     send_to_receiver( diff );
     mindelay_clock = uint64_t( -1 );
+  } else if ( oob()->has_output() && ((now >= next_send_time) || (now >= next_ack_time)) ) {
+    send_empty_ack();
   }
 }
 
@@ -194,7 +199,7 @@ void TransportSender<MyState>::send_empty_ack( void )
 {
   uint64_t now = timestamp();
 
-  assert( now >= next_ack_time );
+  assert( now >= next_ack_time || oob()->has_output() );
 
   uint64_t new_num = sent_states.back().num + 1;
 
@@ -315,6 +320,10 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
   inst.set_throwaway_num( sent_states.front().num );
   inst.set_diff( diff );
   inst.set_chaff( make_chaff() );
+
+  if (oob()->has_output()) {
+    inst.set_oob(oob()->output());
+  }
 
   if ( new_num == uint64_t(-1) ) {
     shutdown_tries++;
