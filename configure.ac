@@ -209,6 +209,13 @@ AS_IF([test x"$enable_syslog" != xno],
       [AC_MSG_WARN([Unable to find syslog.h.])],
       [AC_MSG_ERROR([--enable-syslog was given but syslog.h was not found.])])])])
 
+AC_ARG_ENABLE([agent-forwarding],
+  [AS_HELP_STRING([--enable-agent-forwarding], [Build support for SSH agent forwarding @<:@no@:>@])],
+  [enable_agent_forwarding="$enableval"],
+  [enable_agent_forwarding="no"])
+AS_IF([test x"$enable_agent_forwarding" != xno],
+  [AC_DEFINE([SUPPORT_AGENT_FORWARDING], [1], [Define to build support for SSH agent forwarding.])])
+
 # Checks for libraries.
 AC_ARG_ENABLE([static-libraries],
   [AS_HELP_STRING([--enable-static-libraries], [Enable all static linking options below @<:@no@:>@])])
@@ -260,6 +267,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 
 # Checks for header files.
 AC_CHECK_HEADERS(m4_normalize([
+  errno.h
   fcntl.h
   langinfo.h
   limits.h
@@ -287,6 +295,8 @@ AC_CHECK_HEADERS([endian.h sys/endian.h])
 AC_CHECK_HEADERS([utmpx.h])
 AC_CHECK_HEADERS([termio.h])
 AC_CHECK_HEADERS([sys/uio.h])
+AC_CHECK_HEADERS([sys/un.h])
+AC_CHECK_HEADERS([sys/types.h])
 AC_CHECK_HEADERS([memory tr1/memory])
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -588,6 +598,7 @@ AC_CONFIG_FILES([
   src/protobufs/Makefile
   src/statesync/Makefile
   src/terminal/Makefile
+  src/agent/Makefile
   src/util/Makefile
   scripts/Makefile
   src/examples/Makefile
