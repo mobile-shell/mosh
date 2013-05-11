@@ -47,6 +47,7 @@ private:
   std::string ip;
   int port;
   std::string key;
+  bool forward_agent;
 
   struct termios saved_termios, raw_termios;
 
@@ -77,8 +78,8 @@ private:
   void resume( void ); /* restore state after SIGCONT */
 
 public:
-  STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode )
-    : ip( s_ip ), port( s_port ), key( s_key ),
+   STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode, bool s_forward_agent )
+     : ip( s_ip ), port( s_port ), key( s_key ), forward_agent( s_forward_agent ),
       saved_termios(), raw_termios(),
       window_size(),
       local_framebuffer( NULL ),

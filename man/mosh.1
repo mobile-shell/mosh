@@ -99,6 +99,11 @@ OpenSSH command to remotely execute mosh-server on remote machine (default: "ssh
 An alternate ssh port can be specified with, \fIe.g.\fP, \-\-ssh="ssh \-p 2222".
 
 .TP
+.B \-\-forward-agent
+Enable ssh authentication agent forwarding. If you use this, please be
+aware of the security implications.
+
+.TP
 .B \-\-predict=\fIWHEN\fP
 Controls use of speculative local echo. WHEN defaults to `adaptive'
 (show predictions on slower links and to smooth out network glitches)
@@ -111,6 +116,10 @@ Even on `always', \fBmosh\fP will only show predictions when it is
 confident. This generally means a previous prediction on the same row
 of the terminal has been confirmed by the server, without any
 intervening control character keystrokes.
+
+.TP
+.B \-A
+Synonym for \-\-forward-agent
 
 .TP
 .B \-a
