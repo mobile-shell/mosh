@@ -59,6 +59,7 @@
 #include "pty_compat.h"
 #include "select.h"
 #include "timestamp.h"
+#include "agent.h"
 
 #include "networktransport.cc"
 
@@ -346,6 +347,11 @@ void STMClient::main( void )
   /* initialize signal handling and structures */
   main_init();
 
+  Agent::ProxyAgent agent( false, ! forward_agent );
+  if ( agent.active() ) {
+    agent.attach_oob( network->oob() );
+  }
+
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
 
@@ -371,6 +377,10 @@ void STMClient::main( void )
       }
       sel.add_fd( STDIN_FILENO );
 
+      if ( agent.active() ) {
+	agent.pre_poll();
+      }
+
       int active_fds = sel.select( wait_time );
       if ( active_fds < 0 ) {
 	perror( "select" );
@@ -390,6 +400,7 @@ void STMClient::main( void )
 
 	if ( sel.error( *it ) ) {
 	  /* network problem */
+	  agent.shutdown_server();
 	  break;
 	}
       }
@@ -403,9 +414,12 @@ void STMClient::main( void )
 	if ( !process_user_input( STDIN_FILENO ) ) {
 	  if ( !network->has_remote_addr() ) {
 	    break;
-	  } else if ( !network->shutdown_in_progress() ) {
-	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ), true );
-	    network->start_shutdown();
+	  } else {
+	    agent.shutdown_server();
+	    if ( !network->shutdown_in_progress() ) {
+	      overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ), true );
+	      network->start_shutdown();
+	    }
 	  }
 	}
       }
@@ -428,6 +442,7 @@ void STMClient::main( void )
           break;
         } else if ( !network->shutdown_in_progress() ) {
           overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ), true );
+	  agent.shutdown_server();
           network->start_shutdown();
         }
       }
@@ -438,6 +453,7 @@ void STMClient::main( void )
 	  break;
 	} else if ( !network->shutdown_in_progress() ) {
 	  overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ), true );
+	  agent.shutdown_server();
 	  network->start_shutdown();
 	}
       }
@@ -466,6 +482,7 @@ void STMClient::main( void )
 	if ( timestamp() - network->get_latest_remote_state().timestamp > 15000 ) {
 	  if ( !network->shutdown_in_progress() ) {
 	    overlays.get_notification_engine().set_notification_string( wstring( L"Timed out waiting for server..." ), true );
+	    agent.shutdown_server();
 	    network->start_shutdown();
 	  }
 	} else {
@@ -477,7 +494,15 @@ void STMClient::main( void )
 	overlays.get_notification_engine().set_notification_string( L"" );
       }
 
+      if ( agent.active() ) {
+	agent.post_poll();
+      }
+
       network->tick();
+
+      if ( agent.active() ) {
+	agent.post_tick();
+      }
 
       const Network::NetworkException *exn = network->get_send_exception();
       if ( exn ) {
