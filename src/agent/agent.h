@@ -72,7 +72,7 @@ namespace Agent {
     ProxyAgent *agent_ptr;
 
   public:
-    friend ProxyAgent;
+    friend class ProxyAgent;
   };
 
   class ProxyAgent {
@@ -102,7 +102,7 @@ namespace Agent {
     void close_sessions( void );
     void shutdown_server( void );
 
-    friend AgentConnection;
+    friend class AgentConnection;
   };
 
 }
