@@ -54,6 +54,8 @@ namespace Network {
   enum OutOfBandMode { OOB_MODE_STREAM = 1, OOB_MODE_DATAGRAM = 2, OOB_MODE_RELIABLE_DATAGRAM = 3 };
 
   class OutOfBand;
+  class OutOfBandPlugin;
+  class OutOfBandCommunicator;
 
   class OutOfBandCommunicator
   {
@@ -62,9 +64,12 @@ namespace Network {
     string name;
     string stream_buf;
     queue < string > datagram_queue;
+    OutOfBandPlugin *plugin_ptr;
     OutOfBand *oob_ctl_ptr;
     OutOfBand *oob(void) { return oob_ctl_ptr; }
-    OutOfBandCommunicator(OutOfBandMode oob_mode, string oob_name, OutOfBand *oob_ctl);
+    OutOfBandCommunicator(OutOfBandMode oob_mode, string oob_name, OutOfBand *oob_ctl, OutOfBandPlugin *plugin);
+    OutOfBandCommunicator(const OutOfBandCommunicator&);
+    OutOfBandCommunicator operator=(const OutOfBandCommunicator&);
 
   public:
     void send(string data);
@@ -90,7 +95,14 @@ namespace Network {
   public:
     OutOfBand();
     ~OutOfBand() { uninit(); }
-    OutOfBandCommunicator *init(string name, OutOfBandMode mode);
+
+    void pre_poll( void );
+    void post_poll( void );
+    void post_tick( void );
+    void close_sessions( void );
+    void shutdown( void );
+
+    OutOfBandCommunicator *init(string name, OutOfBandMode mode, OutOfBandPlugin *plugin);
     void uninit(string name);
     void uninit(OutOfBandCommunicator *comm);
     void uninit(void);
@@ -102,6 +114,21 @@ namespace Network {
 
     friend class OutOfBandCommunicator;
   };
+
+  class OutOfBandPlugin
+  {
+  public:
+    virtual bool active( void ) = 0;
+    virtual void pre_poll( void ) = 0;
+    virtual void post_poll( void ) = 0;
+    virtual void post_tick( void ) = 0;
+    virtual void close_sessions( void ) = 0;
+    virtual void shutdown( void ) = 0;
+    virtual void attach_oob(Network::OutOfBand *oob_ctl) = 0;
+
+    friend class OutOfBand;
+  };
+
 }
 
 #endif

@@ -62,14 +62,60 @@ OutOfBand::OutOfBand()
   ack_num_out = 0;
 }
 
-OutOfBandCommunicator *OutOfBand::init(string name, OutOfBandMode mode) {
+OutOfBandCommunicator *OutOfBand::init(string name, OutOfBandMode mode, OutOfBandPlugin *plugin) {
   map < string, OutOfBandCommunicator * >::iterator i = comms.find(name);
   if (i != comms.end()) {
     return NULL;
   }
-  OutOfBandCommunicator *comm = new OutOfBandCommunicator(mode, name, this);
+  OutOfBandCommunicator *comm = new OutOfBandCommunicator(mode, name, this, plugin);
   comms[name] = comm;
   return comm;
+}
+
+void OutOfBand::pre_poll( void ) {
+  map < string, OutOfBandCommunicator * >::iterator i = comms.begin();
+  while (i != comms.end()) {
+    OutOfBandCommunicator *comm = (i++)->second;
+    if (comm->plugin_ptr->active()) {
+      comm->plugin_ptr->pre_poll();
+    }
+  }
+}
+
+void OutOfBand::post_poll( void ) {
+  map < string, OutOfBandCommunicator * >::iterator i = comms.begin();
+  while (i != comms.end()) {
+    OutOfBandCommunicator *comm = (i++)->second;
+    if (comm->plugin_ptr->active()) {
+      comm->plugin_ptr->post_poll();
+    }
+  }
+}
+
+void OutOfBand::post_tick( void ) {
+  map < string, OutOfBandCommunicator * >::iterator i = comms.begin();
+  while (i != comms.end()) {
+    OutOfBandCommunicator *comm = (i++)->second;
+    if (comm->plugin_ptr->active()) {
+      comm->plugin_ptr->post_tick();
+    }
+  }
+}
+
+void OutOfBand::close_sessions( void ) {
+  map < string, OutOfBandCommunicator * >::iterator i = comms.begin();
+  while (i != comms.end()) {
+    OutOfBandCommunicator *comm = (i++)->second;
+    comm->plugin_ptr->close_sessions();
+  }
+}
+
+void OutOfBand::shutdown( void ) {
+  map < string, OutOfBandCommunicator * >::iterator i = comms.begin();
+  while (i != comms.end()) {
+    OutOfBandCommunicator *comm = (i++)->second;
+    comm->plugin_ptr->shutdown();
+  }
 }
 
 void OutOfBand::uninit(string name) {
@@ -199,11 +245,16 @@ string OutOfBand::output(void) {
   return "";
 }
 
-OutOfBandCommunicator::OutOfBandCommunicator(OutOfBandMode oob_mode, string oob_name, OutOfBand *oob_ctl) {
-  mode = oob_mode;
-  name = oob_name;
-  oob_ctl_ptr = oob_ctl;
-  stream_buf = "";
+OutOfBandCommunicator::OutOfBandCommunicator( OutOfBandMode oob_mode, string oob_name,
+                                              OutOfBand *oob_ctl, OutOfBandPlugin *plugin)
+  : mode( oob_mode ),
+    name( oob_name ),
+    stream_buf( "" ),
+    datagram_queue(),
+    plugin_ptr( plugin ),
+    oob_ctl_ptr( oob_ctl )
+{
+  /* */
 }
 
 void OutOfBandCommunicator::send(string data) {

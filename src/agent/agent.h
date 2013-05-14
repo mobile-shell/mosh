@@ -79,7 +79,8 @@ namespace Agent {
     friend class ProxyAgent;
   };
 
-  class ProxyAgent {
+  class ProxyAgent : public Network::OutOfBandPlugin
+  {
   private:
     Network::OutOfBandCommunicator *comm;
     Network::OutOfBand *oob_ctl_ptr;
@@ -100,16 +101,19 @@ namespace Agent {
     ProxyAgent operator=(const ProxyAgent&);  // unimplemented
 
   public:
-    ProxyAgent( bool is_server, bool dummy = false );
-    ~ProxyAgent( void );
-    void attach_oob(Network::OutOfBand *oob_ctl);
-    bool active() { return ok && ((! server) || (l_sock >= 0)); }
-    std::string listener_path( void ) { if ( ok && server && l_sock >= 0 ) return l_path; return ""; }
+    // Required by parent class
+    bool active( void ) { return ok && ((! server) || (l_sock >= 0)); }
     void pre_poll( void );
     void post_poll( void );
     void post_tick( void );
     void close_sessions( void );
-    void shutdown_server( void );
+    void shutdown( void );
+    void attach_oob(Network::OutOfBand *oob_ctl);
+
+    // Class specific stuff
+    ProxyAgent( bool is_server, bool dummy = false );
+    ~ProxyAgent( void );
+    std::string listener_path( void ) { if ( ok && server && l_sock >= 0 ) return l_path; return ""; }
 
     friend class AgentConnection;
   };

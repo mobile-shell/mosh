@@ -138,7 +138,7 @@ ProxyAgent::ProxyAgent( bool is_server, bool dummy )
 
 ProxyAgent::~ProxyAgent( void ) {
 #ifdef SUPPORT_AGENT_FORWARDING
-  shutdown_server();
+  shutdown();
 #endif
 }
 
@@ -154,7 +154,7 @@ void ProxyAgent::close_sessions( void ) {
 #endif
 }
 
-void ProxyAgent::shutdown_server( void ) {
+void ProxyAgent::shutdown( void ) {
 #ifdef SUPPORT_AGENT_FORWARDING
   detach_oob();
   if (ok) {
@@ -176,7 +176,7 @@ void ProxyAgent::attach_oob(OutOfBand *oob_ctl) {
   detach_oob();
   fatal_assert(oob_ctl != NULL);
   oob_ctl_ptr = oob_ctl;
-  comm = oob_ctl_ptr->init(AGENT_FORWARD_OOB_NAME, Network::OOB_MODE_RELIABLE_DATAGRAM);
+  comm = oob_ctl_ptr->init(AGENT_FORWARD_OOB_NAME, Network::OOB_MODE_RELIABLE_DATAGRAM, this);
   fatal_assert(comm != NULL);
 }
 
