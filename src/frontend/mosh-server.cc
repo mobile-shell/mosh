@@ -552,9 +552,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   saved_addr.s_addr = 0;
   #endif
 
-  if ( agent.active() ) {
-    agent.attach_oob( network.oob() );
-  }
+  agent.attach_oob(network.oob());
 
   while ( 1 ) {
     try {
@@ -577,9 +575,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	sel.add_fd( host_fd );
       }
 
-      if ( agent.active() ) {
-	agent.pre_poll();
-      }
+      network.oob()->pre_poll();
 
       int active_fds = sel.select( timeout );
       if ( active_fds < 0 ) {
@@ -666,7 +662,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
         /* If the pty slave is closed, reading from the master can fail with
            EIO (see #264).  So we treat errors on read() like EOF. */
         if ( bytes_read <= 0 ) {
-	  agent.shutdown_server();
+	  network.oob()->shutdown();
 	  network.start_shutdown();
 	} else {
 	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
@@ -684,7 +680,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       if ( sel.any_signal() ) {
 	/* shutdown signal */
 	if ( network.has_remote_addr() && (!network.shutdown_in_progress()) ) {
-	  agent.shutdown_server();
+	  network.oob()->shutdown();
 	  network.start_shutdown();
 	} else {
 	  break;
@@ -698,7 +694,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       if ( (!network.shutdown_in_progress()) && sel.error( host_fd ) ) {
 	/* host problem */
-	agent.shutdown_server();
+	network.oob()->shutdown();
 	network.start_shutdown();
       }
 
@@ -743,29 +739,25 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
            && time_since_remote_state >= uint64_t( timeout_if_no_client ) ) {
         fprintf( stderr, "No connection within %d seconds.\n",
                  timeout_if_no_client / 1000 );
-	agent.shutdown_server();
+	network.oob()->shutdown();
         break;
       }
 
-      if ( agent.active() ) {
-	if ( time_since_remote_state > (AGENT_IDLE_TIMEOUT * 1000) || time_since_remote_state > 30000 ) {
-	  agent.close_sessions();
-	}
-	agent.post_poll();
+      if ( time_since_remote_state > (AGENT_IDLE_TIMEOUT * 1000) || time_since_remote_state > 30000 ) {
+	network.oob()->close_sessions();
       }
+      network.oob()->post_poll();
 
       network.tick();
 
-      if ( agent.active() ) {
-	agent.post_tick();
-      }
+      network.oob()->post_tick();
 
     } catch ( const Network::NetworkException& e ) {
       fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );
       spin();
     } catch ( const Crypto::CryptoException& e ) {
       if ( e.fatal ) {
-	agent.shutdown_server();
+	network.oob()->shutdown();
         throw;
       } else {
         fprintf( stderr, "Crypto exception: %s\n", e.text.c_str() );

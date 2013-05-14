@@ -75,11 +75,13 @@ namespace Agent {
     friend class ProxyAgent;
   };
 
-  class ProxyAgent {
+  class ProxyAgent : public Network::OutOfBandPlugin
+  {
   private:
+    void detach_oob(void);
+    Network::OutOfBandCommunicator *comm;
     Network::OutOfBand *oob_ctl_ptr;
     Network::OutOfBand *oob( void ) { return oob_ctl_ptr; }
-    void detach_oob(void);
     void notify_eof(uint64_t agent_id);
     AgentConnection *get_session();
     bool server;
@@ -89,18 +91,21 @@ namespace Agent {
     string l_path;
     uint64_t cnt;
     std::map< uint64_t, AgentConnection * > agent_sessions;
-    Network::OutOfBandCommunicator *comm;
+
   public:
-    ProxyAgent( bool is_server, bool dummy = false );
-    ~ProxyAgent( void );
-    void attach_oob(Network::OutOfBand *oob_ctl);
-    bool active() { return ok && ((! server) || (l_sock >= 0)); }
-    std::string listener_path( void ) { if ( ok && server && l_sock >= 0 ) return l_path; return ""; }
+    // Required by parent class
+    bool active( void ) { return ok && ((! server) || (l_sock >= 0)); }
     void pre_poll( void );
     void post_poll( void );
     void post_tick( void );
     void close_sessions( void );
-    void shutdown_server( void );
+    void shutdown( void );
+    void attach_oob(Network::OutOfBand *oob_ctl);
+
+    // Class specific stuff
+    ProxyAgent( bool is_server, bool dummy = false );
+    ~ProxyAgent( void );
+    std::string listener_path( void ) { if ( ok && server && l_sock >= 0 ) return l_path; return ""; }
 
     friend class AgentConnection;
   };
