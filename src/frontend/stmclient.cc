@@ -121,6 +121,47 @@ void STMClient::init( void )
     overlays.set_title_prefix( wstring( L"[mosh] " ) );
   }
 
+  /* Set terminal escape key. */
+  const char *escape_key_env;
+  if ( (escape_key_env = getenv( "MOSH_ESCAPE_KEY" )) != NULL ) {
+    if ( ( strlen( escape_key_env ) == 1 ) && ( escape_key_env[0] > 0 ) && ( escape_key_env[0] < 128 ) ) {
+      escape_key = (int)(escape_key_env[0]);
+      if ( escape_key < 32 ) {
+	/* If escape is ctrl-something, pass it with repeating the key without ctrl. */
+	escape_pass_key = escape_key + (int)'@';
+      } else {
+	/* If escape is something else, pass it with repeating the key itself. */
+	escape_pass_key = escape_key;
+      }
+      if ( escape_pass_key >= 'A' && escape_pass_key <= 'Z' ) {
+	/* If escape pass is an upper case character, define optional version
+	   as lower case of the same. */
+	escape_pass_key2 = escape_pass_key + (int)'a' - (int)'A';
+      } else {
+	escape_pass_key2 = escape_pass_key;
+      }
+    } else {
+      escape_key = -1;
+    }
+  }
+
+  /* Adjust escape help differently if escape is a control character. */
+  if ( escape_key > 0 ) {
+    char tp[16];
+    char te[16];
+    sprintf(tp, "\"%c\"", escape_pass_key);
+    if (escape_key < 32) {
+      sprintf(te, "Ctrl-%c", escape_pass_key);
+    } else {
+      sprintf(te, "\"%c\"", escape_key);
+    }
+    string tmp;
+    tmp = string( tp );
+    wstring sp = std::wstring(tmp.begin(), tmp.end());
+    tmp = string( te );
+    wstring se = std::wstring(tmp.begin(), tmp.end());
+    escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, " + sp + L" gives literal " + se;
+  }
   wchar_t tmp[ 128 ];
   swprintf( tmp, 128, L"Nothing received from server on UDP port %d.", port );
   connecting_notification = wstring( tmp );
@@ -255,8 +296,6 @@ bool STMClient::process_user_input( int fd )
 
       overlays.get_prediction_engine().new_user_byte( the_byte, *local_framebuffer );
 
-      const static wstring help_message( L"Commands: Ctrl-Z suspends, \".\" quits, \"^\" gives literal Ctrl-^" );
-
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
 	  if ( network->has_remote_addr() && (!network->shutdown_in_progress()) ) {
@@ -266,7 +305,7 @@ bool STMClient::process_user_input( int fd )
 	  } else {
 	    return false;
 	  }
-	} else if ( the_byte == 0x1a ) { /* Suspend sequence is Ctrl-^ Ctrl-Z */
+	} else if ( the_byte == 0x1a ) { /* Suspend sequence is escape_key Ctrl-Z */
 	  /* Restore terminal and terminal-driver state */
 	  swrite( STDOUT_FILENO, display.close().c_str() );
 
@@ -283,27 +322,28 @@ bool STMClient::process_user_input( int fd )
 	  kill( 0, SIGSTOP );
 
 	  resume();
-	} else if ( the_byte == '^' ) {
-	  /* Emulation sequence to type Ctrl-^ is Ctrl-^ ^ */
-	  network->get_current_state().push_back( Parser::UserByte( 0x1E ) );
+	} else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
+	  /* Emulation sequence to type escape_key is escape_key +
+	     escape_pass_key (that is escape key without Ctrl) */
+	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
 	} else {
-	  /* Ctrl-^ followed by anything other than . and ^ gets sent literally */
-	  network->get_current_state().push_back( Parser::UserByte( 0x1E ) );
+	  /* Escape key followed by anything other than . and ^ gets sent literally */
+	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
 	  network->get_current_state().push_back( Parser::UserByte( the_byte ) );	  
 	}
 
 	quit_sequence_started = false;
 
-	if ( overlays.get_notification_engine().get_notification_string() == help_message ) {
+	if ( overlays.get_notification_engine().get_notification_string() == escape_key_help ) {
 	  overlays.get_notification_engine().set_notification_string( L"" );
 	}
 
 	continue;
       }
 
-      quit_sequence_started = (the_byte == 0x1E);
+      quit_sequence_started = (escape_key > 0) && (the_byte == escape_key);
       if ( quit_sequence_started ) {
-	overlays.get_notification_engine().set_notification_string( help_message, true, false );
+	overlays.get_notification_engine().set_notification_string( escape_key_help, true, false );
 	continue;
       }
 

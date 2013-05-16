@@ -48,6 +48,11 @@ private:
   int port;
   std::string key;
 
+  int escape_key;
+  int escape_pass_key;
+  int escape_pass_key2;
+  std::wstring escape_key_help;
+
   struct termios saved_termios, raw_termios;
 
   struct winsize window_size;
@@ -79,6 +84,7 @@ private:
 public:
   STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode )
     : ip( s_ip ), port( s_port ), key( s_key ),
+    escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(),
       window_size(),
       local_framebuffer( NULL ),
