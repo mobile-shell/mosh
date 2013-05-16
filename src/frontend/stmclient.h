@@ -48,6 +48,12 @@ private:
   int port;
   std::string key;
 
+  int escape_key;
+  int escape_pass_key;
+  int escape_pass_key2;
+  bool escape_requires_lf;
+  std::wstring escape_key_help;
+
   struct termios saved_termios, raw_termios;
 
   struct winsize window_size;
@@ -58,7 +64,7 @@ private:
   Terminal::Display display;
 
   std::wstring connecting_notification;
-  bool repaint_requested, quit_sequence_started;
+  bool repaint_requested, lf_entered, quit_sequence_started;
   bool clean_shutdown;
 
   void main_init( void );
@@ -79,6 +85,8 @@ private:
 public:
   STMClient( const char *s_ip, int s_port, const char *s_key, const char *predict_mode )
     : ip( s_ip ), port( s_port ), key( s_key ),
+    escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
+    escape_requires_lf( false ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(),
       window_size(),
       local_framebuffer( NULL ),
@@ -88,6 +96,7 @@ public:
       display( true ), /* use TERM environment var to initialize display */
       connecting_notification(),
       repaint_requested( false ),
+      lf_entered( false ),
       quit_sequence_started( false ),
       clean_shutdown( false )
   {
