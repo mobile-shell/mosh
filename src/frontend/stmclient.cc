@@ -143,17 +143,20 @@ void STMClient::init( void )
 	}
       } else {
 	escape_key = 0x1E;
-	escape_pass_key = 0x1E;
+	escape_pass_key = '^';
+	escape_pass_key2 = '^';
       }
     } else if ( strlen( escape_key_env ) == 0 ) {
       escape_key = -1;
     } else {
       escape_key = 0x1E;
-      escape_pass_key = 0x1E;
+      escape_pass_key = '^';
+      escape_pass_key2 = '^';
     }
   } else {
     escape_key = 0x1E;
-    escape_pass_key = 0x1E;
+    escape_pass_key = '^';
+    escape_pass_key2 = '^';
   }
 
   /* There are so many better ways to shoot oneself into leg than
@@ -161,7 +164,8 @@ void STMClient::init( void )
      that we just won't allow that. */
   if ( escape_key == 0x03 || escape_key == 0x04 || escape_key == 0x0A || escape_key == 0x0C || escape_key == 0x0D ) {
     escape_key = 0x1E;
-    escape_pass_key = 0x1E;
+    escape_pass_key = '^';
+    escape_pass_key2 = '^';
   }
 
   /* Adjust escape help differently if escape is a control character. */
