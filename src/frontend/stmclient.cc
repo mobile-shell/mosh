@@ -147,20 +147,20 @@ void STMClient::init( void )
 
   /* Adjust escape help differently if escape is a control character. */
   if ( escape_key > 0 ) {
-    char tp[16];
-    char te[16];
-    sprintf(tp, "\"%c\"", escape_pass_key);
+    char escape_pass_name_buf[16];
+    char escape_key_name_buf[16];
+    sprintf(escape_pass_name_buf, "\"%c\"", escape_pass_key);
     if (escape_key < 32) {
-      sprintf(te, "Ctrl-%c", escape_pass_key);
+      sprintf(escape_key_name_buf, "Ctrl-%c", escape_pass_key);
     } else {
-      sprintf(te, "\"%c\"", escape_key);
+      sprintf(escape_key_name_buf, "\"%c\"", escape_key);
     }
     string tmp;
-    tmp = string( tp );
-    wstring sp = std::wstring(tmp.begin(), tmp.end());
-    tmp = string( te );
-    wstring se = std::wstring(tmp.begin(), tmp.end());
-    escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, " + sp + L" gives literal " + se;
+    tmp = string( escape_pass_name_buf );
+    wstring escape_pass_name = std::wstring(tmp.begin(), tmp.end());
+    tmp = string( escape_key_name_buf );
+    wstring escape_key_name = std::wstring(tmp.begin(), tmp.end());
+    escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, " + escape_pass_name + L" gives literal " + escape_key_name;
   }
   wchar_t tmp[ 128 ];
   swprintf( tmp, 128, L"Nothing received from server on UDP port %d.", port );
