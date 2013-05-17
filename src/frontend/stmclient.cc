@@ -124,7 +124,7 @@ void STMClient::init( void )
   /* Set terminal escape key. */
   const char *escape_key_env;
   if ( (escape_key_env = getenv( "MOSH_ESCAPE_KEY" )) != NULL ) {
-    if ( ( strlen( escape_key_env ) == 1 ) && ( escape_key_env[0] > 0 ) && ( escape_key_env[0] < 128 ) ) {
+    if ( ( strlen( escape_key_env ) == 1 ) && ( ((int)escape_key_env[0]) > 0 ) && ( ((int)escape_key_env[0]) < 128 ) ) {
       escape_key = (int)(escape_key_env[0]);
       if ( escape_key < 32 ) {
 	/* If escape is ctrl-something, pass it with repeating the key without ctrl. */
