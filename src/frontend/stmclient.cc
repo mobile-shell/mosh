@@ -142,18 +142,26 @@ void STMClient::init( void )
 	  escape_pass_key2 = escape_pass_key;
 	}
       } else {
-	escape_key = -1;
+	escape_key = 0x1E;
+	escape_pass_key = 0x1E;
       }
-    } else {
+    } else if ( strlen( escape_key_env ) == 0 ) {
       escape_key = -1;
+    } else {
+      escape_key = 0x1E;
+      escape_pass_key = 0x1E;
     }
+  } else {
+    escape_key = 0x1E;
+    escape_pass_key = 0x1E;
   }
 
   /* There are so many better ways to shoot oneself into leg than
      setting escape key to Ctrl-C, Ctrl-D, NewLine, Ctrl-L or CarriageReturn
      that we just won't allow that. */
   if ( escape_key == 0x03 || escape_key == 0x04 || escape_key == 0x0A || escape_key == 0x0C || escape_key == 0x0D ) {
-    escape_key = -1;
+    escape_key = 0x1E;
+    escape_pass_key = 0x1E;
   }
 
   /* Adjust escape help differently if escape is a control character. */
