@@ -124,21 +124,25 @@ void STMClient::init( void )
   /* Set terminal escape key. */
   const char *escape_key_env;
   if ( (escape_key_env = getenv( "MOSH_ESCAPE_KEY" )) != NULL ) {
-    if ( ( strlen( escape_key_env ) == 1 ) && ( ((int)escape_key_env[0]) > 0 ) ) {
-      escape_key = (int)(escape_key_env[0]);
-      if ( escape_key < 32 ) {
-	/* If escape is ctrl-something, pass it with repeating the key without ctrl. */
-	escape_pass_key = escape_key + (int)'@';
+    if ( strlen( escape_key_env ) == 1 ) {
+      escape_key = (int)escape_key_env[0];
+      if ( (escape_key > 0) || (escape_key < 128) ) {
+	if ( escape_key < 32 ) {
+	  /* If escape is ctrl-something, pass it with repeating the key without ctrl. */
+	  escape_pass_key = escape_key + (int)'@';
+	} else {
+	  /* If escape is something else, pass it with repeating the key itself. */
+	  escape_pass_key = escape_key;
+	}
+	if ( escape_pass_key >= 'A' && escape_pass_key <= 'Z' ) {
+	  /* If escape pass is an upper case character, define optional version
+	     as lower case of the same. */
+	  escape_pass_key2 = escape_pass_key + (int)'a' - (int)'A';
+	} else {
+	  escape_pass_key2 = escape_pass_key;
+	}
       } else {
-	/* If escape is something else, pass it with repeating the key itself. */
-	escape_pass_key = escape_key;
-      }
-      if ( escape_pass_key >= 'A' && escape_pass_key <= 'Z' ) {
-	/* If escape pass is an upper case character, define optional version
-	   as lower case of the same. */
-	escape_pass_key2 = escape_pass_key + (int)'a' - (int)'A';
-      } else {
-	escape_pass_key2 = escape_pass_key;
+	escape_key = -1;
       }
     } else {
       escape_key = -1;
@@ -146,7 +150,7 @@ void STMClient::init( void )
   }
 
   /* There are so many better ways to shoot oneself into leg than
-     setting escape key to Ctrl-C, Ctrl-D, NewLine, or CarriageReturn
+     setting escape key to Ctrl-C, Ctrl-D, NewLine, Ctrl-L or CarriageReturn
      that we just won't allow that. */
   if ( escape_key == 0x03 || escape_key == 0x04 || escape_key == 0x0A || escape_key == 0x0C || escape_key == 0x0D ) {
     escape_key = -1;
