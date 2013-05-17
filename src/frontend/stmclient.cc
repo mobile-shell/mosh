@@ -145,6 +145,13 @@ void STMClient::init( void )
     }
   }
 
+  /* There are so many better ways to shoot oneself into leg than
+     setting escape key to Ctrl-C, Ctrl-D, NewLine, or CarriageReturn
+     that we just won't allow that. */
+  if ( escape_key == 0x03 || escape_key == 0x04 || escape_key == 0x0A || escape_key == 0x0C || escape_key == 0x0D ) {
+    escape_key = -1;
+  }
+
   /* Adjust escape help differently if escape is a control character. */
   if ( escape_key > 0 ) {
     char escape_pass_name_buf[16];
@@ -152,8 +159,10 @@ void STMClient::init( void )
     sprintf(escape_pass_name_buf, "\"%c\"", escape_pass_key);
     if (escape_key < 32) {
       sprintf(escape_key_name_buf, "Ctrl-%c", escape_pass_key);
+      escape_requires_lf = false;
     } else {
       sprintf(escape_key_name_buf, "\"%c\"", escape_key);
+      escape_requires_lf = true;
     }
     string tmp;
     tmp = string( escape_pass_name_buf );
@@ -341,11 +350,14 @@ bool STMClient::process_user_input( int fd )
 	continue;
       }
 
-      quit_sequence_started = (escape_key > 0) && (the_byte == escape_key);
+      quit_sequence_started = (escape_key > 0) && (the_byte == escape_key) && (lf_entered || (! escape_requires_lf));
       if ( quit_sequence_started ) {
+	lf_entered = false;
 	overlays.get_notification_engine().set_notification_string( escape_key_help, true, false );
 	continue;
       }
+
+      lf_entered = ( (the_byte == 0x0A) || (the_byte == 0x0D) ); /* LineFeed, Ctrl-J, '\n' or CarriageReturn, Ctrl-M, '\r' */
 
       if ( the_byte == 0x0C ) { /* Ctrl-L */
 	repaint_requested = true;
