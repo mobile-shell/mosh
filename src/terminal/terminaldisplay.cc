@@ -286,6 +286,12 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     frame.current_rendition = f.ds.get_renditions();
   }
 
+  /* has bracketed paste mode changed? */
+  if ( (!initialized)
+       || (f.ds.bracketed_paste != frame.last_frame.ds.bracketed_paste) ) {
+    frame.append( f.ds.bracketed_paste ? "\033[?2004h" : "\033[?2004l" );
+  }
+
   return frame.str;
 }
 
