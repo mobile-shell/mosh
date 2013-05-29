@@ -189,6 +189,7 @@ namespace Terminal {
     bool insert_mode;
     bool cursor_visible;
     bool reverse_video;
+    bool bracketed_paste;
 
     bool application_mode_cursor_keys;
 
@@ -237,7 +238,8 @@ namespace Terminal {
       /* only compare fields that affect display */
       return ( width == x.width ) && ( height == x.height ) && ( cursor_col == x.cursor_col )
 	&& ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible ) &&
-	( reverse_video == x.reverse_video ) && ( renditions == x.renditions );
+	( reverse_video == x.reverse_video ) && ( renditions == x.renditions ) &&
+  ( bracketed_paste == x.bracketed_paste );
     }
   };
 
