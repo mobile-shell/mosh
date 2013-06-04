@@ -59,7 +59,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     shutdown_start( -1 ),
     ack_num( 0 ),
     pending_data_ack( false ),
-    SEND_MINDELAY( 8 ),
+    SEND_MINDELAY( 500 ),
     last_heard( 0 ),
     prng(),
     mindelay_clock( -1 )
@@ -297,6 +297,8 @@ const string TransportSender<MyState>::make_chaff( void )
 {
   const size_t CHAFF_MAX = 16;
   const size_t chaff_len = prng.uint8() % (CHAFF_MAX + 1);
+
+  return string(); /* disable chaff */
 
   char chaff[ CHAFF_MAX ];
   prng.fill( chaff, chaff_len );

@@ -249,7 +249,7 @@ void STMClient::main_init( void )
   network = new Network::Transport< Network::UserStream, Terminal::Complete >( blank, local_terminal,
 									       key.c_str(), ip.c_str(), port );
 
-  network->set_send_delay( 1 ); /* minimal delay on outgoing keystrokes */
+  network->set_send_delay( 400 ); /* minimal delay on outgoing keystrokes */
 
   /* tell server the size of the terminal */
   network->get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );

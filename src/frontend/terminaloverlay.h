@@ -294,7 +294,7 @@ namespace Overlay {
 			       last_quick_confirmation( 0 ),
 			       send_interval( 250 ),
 			       last_height( 0 ), last_width( 0 ),
-			       display_preference( Adaptive )
+			       display_preference( Experimental )
     {
     }
   };
