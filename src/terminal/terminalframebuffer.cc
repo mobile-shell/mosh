@@ -388,7 +388,7 @@ void DrawState::resize( int s_width, int s_height )
 }
 
 Renditions::Renditions( int s_background )
-  : bold( false ), underlined( false ), blink( false ),
+  : bold( false ), italic( false ), underlined( false ), blink( false ),
     inverse( false ), invisible( false ), foreground_color( 0 ),
     background_color( s_background )
 {}
@@ -397,7 +397,7 @@ Renditions::Renditions( int s_background )
 void Renditions::set_rendition( int num )
 {
   if ( num == 0 ) {
-    bold = underlined = blink = inverse = invisible = false;
+    bold = italic = underlined = blink = inverse = invisible = false;
     foreground_color = background_color = 0;
     return;
   }
@@ -426,6 +426,7 @@ void Renditions::set_rendition( int num )
 
   switch ( num ) {
   case 1: case 22: bold = (num == 1); break;
+  case 3: case 23: italic = (num == 3); break;
   case 4: case 24: underlined = (num == 4); break;
   case 5: case 25: blink = (num == 5); break;
   case 7: case 27: inverse = (num == 7); break;
@@ -453,6 +454,7 @@ std::string Renditions::sgr( void ) const
 
   ret.append( "\033[0" );
   if ( bold ) ret.append( ";1" );
+  if ( italic ) ret.append( ";3" );
   if ( underlined ) ret.append( ";4" );
   if ( blink ) ret.append( ";5" );
   if ( inverse ) ret.append( ";7" );
