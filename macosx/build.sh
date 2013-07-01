@@ -10,6 +10,8 @@ PREFIX_x86_64=`pwd`/prefix_x86_64
 #PREFIX_ppc=`pwd`/prefix_ppc
 #PREFIX_ppc64=`pwd`/prefix_ppc64
 
+export MACOSX_DEPLOYMENT_TARGET=10.6
+
 mkdir -p "$PREFIX"
 mkdir -p "$PREFIX_i386"
 mkdir -p "$PREFIX_x86_64"
