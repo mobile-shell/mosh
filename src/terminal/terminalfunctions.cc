@@ -268,6 +268,8 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
     return &(fb->ds.auto_wrap_mode);
   case 25:
     return &(fb->ds.cursor_visible);
+  case 2004: /* bracketed paste */
+    return &(fb->ds.bracketed_paste);
   }
   return NULL;
 }
