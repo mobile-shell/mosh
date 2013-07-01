@@ -44,7 +44,7 @@
 namespace Terminal {
   class Renditions {
   public:
-    bool bold, underlined, blink, inverse, invisible;
+    bool bold, italic, underlined, blink, inverse, invisible;
     int foreground_color;
     int background_color;
 
@@ -58,7 +58,7 @@ namespace Terminal {
 
     bool operator==( const Renditions &x ) const
     {
-      return (bold == x.bold) && (underlined == x.underlined)
+      return (bold == x.bold) && (italic == x.italic) && (underlined == x.underlined)
 	&& (blink == x.blink) && (inverse == x.inverse)
 	&& (invisible == x.invisible) && (foreground_color == x.foreground_color)
 	&& (background_color == x.background_color);
