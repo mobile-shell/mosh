@@ -27,7 +27,7 @@ then
 fi
 
 echo "Building for x86_64..."
-./configure --prefix="$PREFIX_x86_64" ac_cv_poll_pty=no \
+./configure --prefix="$PREFIX_x86_64" \
     CC="clang -arch x86_64" CPP="clang -arch x86_64 -E" CXX="clang++ -arch x86_64" \
     TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a \
     OPENSSL_CFLAGS="  " OPENSSL_LIBS="-lssl -lcrypto -lz"
@@ -35,7 +35,7 @@ make clean
 make install -j8
 
 echo "Building for i386..."
-./configure --prefix="$PREFIX_i386" ac_cv_poll_pty=no \
+./configure --prefix="$PREFIX_i386" \
     CC="clang -arch i386" CPP="clang -arch i386 -E" CXX="clang++ -arch i386" \
     TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a \
     OPENSSL_CFLAGS="  " OPENSSL_LIBS="-lssl -lcrypto -lz"
@@ -43,7 +43,7 @@ make clean
 make install -j8
 
 #echo "Building for ppc..."
-#./configure --prefix="$PREFIX_ppc" ac_cv_poll_pty=no \
+#./configure --prefix="$PREFIX_ppc" \
 #    --target=ppc-apple-darwin --build=i686-apple-darwin --host=ppc-apple-darwin \
 #    CC="clang -arch ppc -mmacosx-version-min=10.5" CPP="clang -arch ppc -mmacosx-version-min=10.5 -E" CXX="clang++ -arch ppc -mmacosx-version-min=10.5" \
 #    TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a
@@ -51,7 +51,7 @@ make install -j8
 #make install -j8
 #
 #echo "Building for ppc64..."
-#./configure --prefix="$PREFIX_ppc64" ac_cv_poll_pty=no \
+#./configure --prefix="$PREFIX_ppc64" \
 #    --target=ppc-apple-darwin --build=i686-apple-darwin --host=ppc-apple-darwin \
 #    CC="clang -arch ppc64 -mmacosx-version-min=10.5" CPP="clang -arch ppc64 -mmacosx-version-min=10.5 -E" CXX="clang++ -arch ppc64 -mmacosx-version-min=10.5" \
 #    TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a
