@@ -33,7 +33,6 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "stmclient.h"
@@ -172,11 +171,11 @@ int main( int argc, char *argv[] )
 
     client.shutdown();
   } catch ( const Network::NetworkException& e ) {
-    fprintf( stderr, "Network exception: %s: %s\r\n",
-	     e.function.c_str(), strerror( e.the_errno ) );
+    fprintf( stderr, "Network exception: %s\r\n",
+	     e.what() );
   } catch ( const Crypto::CryptoException& e ) {
     fprintf( stderr, "Crypto exception: %s\r\n",
-	     e.text.c_str() );
+	     e.what() );
   } catch ( const std::string& s ) {
     fprintf( stderr, "Error: %s\r\n", s.c_str() );
   }

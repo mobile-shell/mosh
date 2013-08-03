@@ -260,9 +260,9 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     try {
       if ( try_bind( desired_ip, desired_port_low, desired_port_high ) ) { return; }
     } catch ( const NetworkException& e ) {
-      fprintf( stderr, "Error binding to IP %s: %s: %s\n",
+      fprintf( stderr, "Error binding to IP %s: %s\n",
 	       desired_ip,
-	       e.function.c_str(), strerror( e.the_errno ) );
+	       e.what() );
     }
   }
 
@@ -270,8 +270,8 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   try {
     if ( try_bind( NULL, desired_port_low, desired_port_high ) ) { return; }
   } catch ( const NetworkException& e ) {
-    fprintf( stderr, "Error binding to any interface: %s: %s\n",
-	     e.function.c_str(), strerror( e.the_errno ) );
+    fprintf( stderr, "Error binding to any interface: %s\n",
+	     e.what() );
     throw; /* this time it's fatal */
   }
 

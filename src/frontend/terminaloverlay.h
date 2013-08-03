@@ -40,6 +40,7 @@
 
 #include <vector>
 #include <limits.h>
+#include <exception>
 
 namespace Overlay {
   using namespace Terminal;
@@ -173,10 +174,10 @@ namespace Overlay {
       show_quit_keystroke = s_show_quit_keystroke;
     }
 
-    void set_network_exception( const NetworkException &e )
+    void set_network_exception( const std::exception &e )
     {
       wchar_t tmp[ 128 ];
-      swprintf( tmp, 128, L"%s: %s", e.function.c_str(), strerror( e.the_errno ) );
+      swprintf( tmp, 128, L"%s", e.what() );
 
       message = tmp;
       message_is_network_exception = true;
