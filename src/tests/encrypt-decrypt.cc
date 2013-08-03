@@ -144,7 +144,7 @@ int main( int argc, char *argv[] ) {
       test_one_session();
     } catch ( const CryptoException& e ) {
       fprintf( stderr, "Crypto exception: %s\r\n",
-               e.text.c_str() );
+               e.what() );
       fatal_assert( false );
     }
   }

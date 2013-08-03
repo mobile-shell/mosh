@@ -38,18 +38,21 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <exception>
 
 using std::string;
 
 long int myatoi( const char *str );
 
 namespace Crypto {
-  class CryptoException {
+  class CryptoException : public std::exception {
   public:
     string text;
     bool fatal;
     CryptoException( string s_text, bool s_fatal = false )
       : text( s_text ), fatal( s_fatal ) {};
+    const char *what() const throw () { return text.c_str(); }
+    ~CryptoException() throw () {}
   };
 
   /* 16-byte-aligned buffer, with length. */

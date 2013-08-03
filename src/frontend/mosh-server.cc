@@ -311,12 +311,12 @@ int main( int argc, char *argv[] )
   try {
     return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd );
   } catch ( const Network::NetworkException& e ) {
-    fprintf( stderr, "Network exception: %s: %s\n",
-	     e.function.c_str(), strerror( e.the_errno ) );
+    fprintf( stderr, "Network exception: %s\n",
+	     e.what() );
     return 1;
   } catch ( const Crypto::CryptoException& e ) {
     fprintf( stderr, "Crypto exception: %s\n",
-	     e.text.c_str() );
+	     e.what() );
     return 1;
   }
 }
@@ -491,11 +491,11 @@ int run_server( const char *desired_ip, const char *desired_port,
     try {
       serve( master, terminal, *network );
     } catch ( const Network::NetworkException& e ) {
-      fprintf( stderr, "Network exception: %s: %s\n",
-	       e.function.c_str(), strerror( e.the_errno ) );
+      fprintf( stderr, "Network exception: %s\n",
+	       e.what() );
     } catch ( const Crypto::CryptoException& e ) {
       fprintf( stderr, "Crypto exception: %s\n",
-	       e.text.c_str() );
+	       e.what() );
     }
 
     #ifdef HAVE_UTEMPTER
@@ -727,13 +727,13 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
       network.tick();
     } catch ( const Network::NetworkException& e ) {
-      fprintf( stderr, "%s: %s\n", e.function.c_str(), strerror( e.the_errno ) );
+      fprintf( stderr, "%s\n", e.what() );
       spin();
     } catch ( const Crypto::CryptoException& e ) {
       if ( e.fatal ) {
         throw;
       } else {
-        fprintf( stderr, "Crypto exception: %s\n", e.text.c_str() );
+        fprintf( stderr, "Crypto exception: %s\n", e.what() );
       }
     }
   }

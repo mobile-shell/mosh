@@ -62,7 +62,7 @@ int main( int argc, char *argv[] )
 	     (long)message.nonce.val() );
     cout << message.text;
   } catch ( const CryptoException &e ) {
-    cerr << e.text << endl;
+    cerr << e.what() << endl;
     exit( 1 );
   }
 

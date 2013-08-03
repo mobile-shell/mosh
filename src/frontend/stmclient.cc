@@ -568,7 +568,7 @@ void STMClient::main( void )
         throw;
       } else {
         wchar_t tmp[ 128 ];
-        swprintf( tmp, 128, L"Crypto exception: %s", e.text.c_str() );
+        swprintf( tmp, 128, L"Crypto exception: %s", e.what() );
         overlays.get_notification_engine().set_notification_string( wstring( tmp ) );
       }
     }

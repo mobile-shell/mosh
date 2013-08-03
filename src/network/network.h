@@ -41,6 +41,8 @@
 #include <math.h>
 #include <vector>
 #include <assert.h>
+#include <exception>
+#include <string.h>
 
 #include "crypto.h"
 
@@ -53,12 +55,18 @@ namespace Network {
   uint16_t timestamp16( void );
   uint16_t timestamp_diff( uint16_t tsnew, uint16_t tsold );
 
-  class NetworkException {
+  class NetworkException : public std::exception {
   public:
     string function;
     int the_errno;
-    NetworkException( string s_function, int s_errno ) : function( s_function ), the_errno( s_errno ) {}
-    NetworkException() : function( "<none>" ), the_errno( 0 ) {}
+  private:
+    string my_what;
+  public:
+    NetworkException( string s_function="<none>", int s_errno=0)
+      : function( s_function ), the_errno( s_errno ),
+        my_what(function + ": " + strerror(the_errno)) {}
+    const char *what() const throw () { return my_what.c_str(); }
+    ~NetworkException() throw () {}
   };
 
   enum Direction {

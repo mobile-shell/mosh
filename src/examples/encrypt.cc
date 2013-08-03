@@ -63,7 +63,7 @@ int main( int argc, char *argv[] )
 
     cout << ciphertext;
   } catch ( const CryptoException &e ) {
-    cerr << e.text << endl;
+    cerr << e.what() << endl;
     exit( 1 );
   }
 
