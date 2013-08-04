@@ -41,7 +41,7 @@
 const Parser::StateFamily Parser::family;
 
 static void append_or_delete( Parser::Action *act,
-			      std::list<Parser::Action *>&vec )
+			      std::list<Parser::Action *> &vec )
 {
   assert( act );
 
