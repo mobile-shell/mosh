@@ -111,7 +111,7 @@ namespace Terminal {
 						|| (contents.front() == 0xA0) ) ) );
     }
 
-    bool contents_match ( const Cell& other ) const
+    bool contents_match ( const Cell &other ) const
     {
       return ( is_blank() && other.is_blank() )
              || ( contents == other.contents );

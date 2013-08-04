@@ -72,7 +72,7 @@ void test_bad_decrypt( Session &decryption_session ) {
   bool got_exn = false;
   try {
     decryption_session.decrypt( bad_ct );
-  } catch ( const CryptoException& e ) {
+  } catch ( const CryptoException &e ) {
     got_exn = true;
 
     /* The "bad decrypt" exception needs to be non-fatal, otherwise we are
@@ -142,7 +142,7 @@ int main( int argc, char *argv[] ) {
   for ( size_t i=0; i<NUM_SESSIONS; i++ ) {
     try {
       test_one_session();
-    } catch ( const CryptoException& e ) {
+    } catch ( const CryptoException &e ) {
       fprintf( stderr, "Crypto exception: %s\r\n",
                e.what() );
       fatal_assert( false );

@@ -74,8 +74,8 @@ namespace Crypto {
 
   private:
     /* Not implemented */
-    AlignedBuffer( const AlignedBuffer& );
-    AlignedBuffer& operator=( const AlignedBuffer& );
+    AlignedBuffer( const AlignedBuffer & );
+    AlignedBuffer & operator=( const AlignedBuffer & );
   };
 
   class Base64Key {
