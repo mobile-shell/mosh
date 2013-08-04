@@ -176,8 +176,8 @@ int main( int argc, char *argv[] )
   } catch ( const Crypto::CryptoException &e ) {
     fprintf( stderr, "Crypto exception: %s\r\n",
 	     e.what() );
-  } catch ( const std::string &s ) {
-    fprintf( stderr, "Error: %s\r\n", s.c_str() );
+  } catch ( const std::exception &e ) {
+    fprintf( stderr, "Error: %s\r\n", e.what() );
   }
 
   printf( "\n[mosh is exiting.]\n" );

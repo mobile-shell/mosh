@@ -37,6 +37,7 @@
 #include "terminaldisplay.h"
 
 #include <string>
+#include <stdexcept>
 
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/curses.h>
@@ -65,7 +66,7 @@ bool Display::ti_flag( const char *capname ) const
 {
   int val = tigetflag( const_cast<char *>( capname ) );
   if ( val == -1 ) {
-    throw std::string( "Invalid terminfo boolean capability " ) + capname;
+    throw std::invalid_argument( std::string( "Invalid terminfo boolean capability " ) + capname );
   }
   return val;
 }
@@ -74,7 +75,7 @@ int Display::ti_num( const char *capname ) const
 {
   int val = tigetnum( const_cast<char *>( capname ) );
   if ( val == -2 ) {
-    throw std::string( "Invalid terminfo numeric capability " ) + capname;
+    throw std::invalid_argument( std::string( "Invalid terminfo numeric capability " ) + capname );
   }
   return val;
 }
@@ -83,7 +84,7 @@ const char *Display::ti_str( const char *capname ) const
 {
   const char *val = tigetstr( const_cast<char *>( capname ) );
   if ( val == (const char *)-1 ) {
-    throw std::string( "Invalid terminfo string capability " ) + capname;
+    throw std::invalid_argument( std::string( "Invalid terminfo string capability " ) + capname );
   }
   return val;
 }
@@ -98,16 +99,16 @@ Display::Display( bool use_environment )
     if ( ret != OK ) {
       switch ( errret ) {
       case 1:
-	throw std::string( "Terminal is hardcopy and cannot be used by curses applications." );
+	throw std::runtime_error( "Terminal is hardcopy and cannot be used by curses applications." );
 	break;
       case 0:
-	throw std::string( "Unknown terminal type." );
+	throw std::runtime_error( "Unknown terminal type." );
 	break;
       case -1:
-	throw std::string( "Terminfo database could not be found." );
+	throw std::runtime_error( "Terminfo database could not be found." );
 	break;
       default:
-	throw std::string( "Unknown terminfo error." );
+	throw std::runtime_error( "Unknown terminfo error." );
 	break;
       } 
     }
