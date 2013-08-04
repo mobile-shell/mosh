@@ -284,7 +284,7 @@ void STMClient::output_new_frame( void )
   local_framebuffer = tmp;
 }
 
-bool STMClient::process_network_input( void )
+void STMClient::process_network_input( void )
 {
   network->recv();
   
@@ -295,8 +295,6 @@ bool STMClient::process_network_input( void )
   overlays.get_prediction_engine().set_local_frame_acked( network->get_sent_state_acked() );
   overlays.get_prediction_engine().set_send_interval( network->send_interval() );
   overlays.get_prediction_engine().set_local_frame_late_acked( network->get_latest_remote_state().state.get_echo_ack() );
-
-  return true;
 }
 
 bool STMClient::process_user_input( int fd )
@@ -463,7 +461,7 @@ void STMClient::main( void )
       }
 
       if ( network_ready_to_read ) {
-	if ( !process_network_input() ) { return; }
+	process_network_input();
       }
     
       if ( sel.read( STDIN_FILENO ) ) {
