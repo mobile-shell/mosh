@@ -129,13 +129,11 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
       /* can't parse incomplete multibyte character */
       total_bytes_parsed += buf_len;
       continue;
-    } else if ( bytes_parsed > 0 ) {
+    } else {
       /* parsed into pwc, accept */
       assert( bytes_parsed <= buf_len );
       memmove( buf, buf + bytes_parsed, buf_len - bytes_parsed );
       buf_len = buf_len - bytes_parsed;
-    } else {
-      throw std::string( "Unknown return value from mbrtowc" );
     }
 
     /* Cast to unsigned for checks, because some
