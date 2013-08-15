@@ -34,8 +34,8 @@ my $MOSH_VERSION = '1.2.4a';
 
 use warnings;
 use strict;
-use Socket;
 use Getopt::Long;
+use IO::Socket;
 
 $|=1;
 
@@ -168,25 +168,21 @@ if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
 
 if ( defined $fake_proxy ) {
   use Errno qw(EINTR);
-  use IO::Socket::INET;
   use POSIX qw(_exit);
 
   my ( $host, $port ) = @ARGV;
 
-  # Resolve hostname
-  my $packed_ip = gethostbyname $host;
-  if ( not defined $packed_ip ) {
-    die "$0: Could not resolve hostname $host\n";
-  }
-  my $ip = inet_ntoa $packed_ip;
+  # Resolve hostname and connect
+  my $sock = IO::Socket->new( Domain => AF_INET,
+			      Family => AF_INET,
+			      PeerHost => $host,
+			      PeerPort => $port,
+			      Proto => "tcp" )
+    or die "$0: Could not connect to $host: $@\n";
 
-  print STDERR "MOSH IP $ip\n";
+  print STDERR "MOSH IP ", $sock->peerhost, "\n";
 
   # Act like netcat
-  my $sock = IO::Socket::INET->new( PeerAddr => $ip,
-				    PeerPort => $port,
-				    Proto => "tcp" )
-    or die "$0: connect to host $ip port $port: $!\n";
   binmode($sock);
   binmode(STDIN);
   binmode(STDOUT);
