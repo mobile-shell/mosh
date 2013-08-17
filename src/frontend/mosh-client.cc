@@ -127,13 +127,6 @@ int main( int argc, char *argv[] )
   desired_port = argv[ optind + 1 ];
 
   /* Sanity-check arguments */
-  if ( ip
-       && ( strspn( ip, "0123456789." ) != strlen( ip ) ) ) {
-    fprintf( stderr, "%s: Bad IP address (%s)\n\n", argv[ 0 ], ip );
-    usage( argv[ 0 ] );
-    exit( 1 );
-  }
-
   if ( desired_port
        && ( strspn( desired_port, "0123456789" ) != strlen( desired_port ) ) ) {
     fprintf( stderr, "%s: Bad UDP port (%s)\n\n", argv[ 0 ], desired_port );

@@ -84,6 +84,13 @@ namespace Network {
     string tostring( Session *session );
   };
 
+  union Addr {
+    struct sockaddr sa;
+    struct sockaddr_in sin;
+    struct sockaddr_in6 sin6;
+    struct sockaddr_storage ss;
+  };
+
   class Connection {
   private:
     static const int DEFAULT_SEND_MTU = 1300;
@@ -101,7 +108,7 @@ namespace Network {
 
     static const int CONGESTION_TIMESTAMP_PENALTY = 500; /* ms */
 
-    bool try_bind( uint32_t addr, int port_low, int port_high );
+    bool try_bind( const char *addr, int port_low, int port_high );
 
     class Socket
     {
@@ -110,7 +117,7 @@ namespace Network {
 
     public:
       int fd( void ) const { return _fd; }
-      Socket();
+      Socket( int family );
       ~Socket();
 
       Socket( const Socket & other );
@@ -119,7 +126,8 @@ namespace Network {
 
     std::deque< Socket > socks;
     bool has_remote_addr;
-    struct sockaddr_in remote_addr;
+    Addr remote_addr;
+    socklen_t remote_addr_len;
 
     bool server;
 
@@ -175,7 +183,8 @@ namespace Network {
     uint64_t timeout( void ) const;
     double get_SRTT( void ) const { return SRTT; }
 
-    const struct in_addr & get_remote_ip( void ) const { return remote_addr.sin_addr; }
+    const Addr &get_remote_addr( void ) const { return remote_addr; }
+    socklen_t get_remote_addr_len( void ) const { return remote_addr_len; }
 
     const NetworkException *get_send_exception( void ) const
     {
