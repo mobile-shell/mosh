@@ -161,14 +161,14 @@ namespace Network {
 
   public:
     Connection( const char *desired_ip, const char *desired_port ); /* server */
-    Connection( const char *key_str, const char *ip, int port ); /* client */
+    Connection( const char *key_str, const char *ip, const char *port ); /* client */
 
     void send( string s );
     string recv( void );
     const std::vector< int > fds( void ) const;
     int get_MTU( void ) const { return MTU; }
 
-    int port( void ) const;
+    std::string port( void ) const;
     string get_key( void ) const { return key.printable_key(); }
     bool get_has_remote_addr( void ) const { return has_remote_addr; }
 

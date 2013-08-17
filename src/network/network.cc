@@ -306,7 +306,7 @@ bool Connection::try_bind( int socket, uint32_t addr, int port_low, int port_hig
   return false;
 }
 
-Connection::Connection( const char *key_str, const char *ip, int port ) /* client */
+Connection::Connection( const char *key_str, const char *ip, const char *port ) /* client */
   : socks(),
     has_remote_addr( false ),
     remote_addr(),
@@ -332,7 +332,7 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
 
   /* associate socket with remote host and port */
   remote_addr.sin_family = AF_INET;
-  remote_addr.sin_port = htons( port );
+  remote_addr.sin_port = htons( myatoi( port ) );
   if ( !inet_aton( ip, &remote_addr.sin_addr ) ) {
     int saved_errno = errno;
     char buffer[ 2048 ];
@@ -524,7 +524,7 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
   return p.payload; /* we do return out-of-order or duplicated packets to caller */
 }
 
-int Connection::port( void ) const
+std::string Connection::port( void ) const
 {
   struct sockaddr_in local_addr;
   socklen_t addrlen = sizeof( local_addr );
@@ -533,7 +533,9 @@ int Connection::port( void ) const
     throw NetworkException( "getsockname", errno );
   }
 
-  return ntohs( local_addr.sin_port );
+  char buf[ 32 ];
+  snprintf( buf, sizeof( buf ), "%d", ntohs( local_addr.sin_port ) );
+  return std::string( buf );
 }
 
 uint64_t Network::timestamp( void )

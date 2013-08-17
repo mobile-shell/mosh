@@ -117,7 +117,6 @@ int main( int argc, char *argv[] )
   }
 
   char *ip, *desired_port;
-  int port;
 
   if ( argc - optind != 2 ) {
     usage( argv[ 0 ] );
@@ -141,8 +140,6 @@ int main( int argc, char *argv[] )
     usage( argv[ 0 ] );
     exit( 1 );
   }
-
-  port = myatoi( desired_port );
 
   /* Read key from environment */
   char *env_key = getenv( "MOSH_KEY" );
@@ -170,7 +167,7 @@ int main( int argc, char *argv[] )
   set_native_locale();
 
   try {
-    STMClient client( ip, port, key, predict_mode );
+    STMClient client( ip, desired_port, key, predict_mode );
     client.init();
 
     try {

@@ -354,7 +354,7 @@ int run_server( const char *desired_ip, const char *desired_port,
     network->set_verbose();
   }
 
-  printf( "\nMOSH CONNECT %d %s\n", network->port(), network->get_key().c_str() );
+  printf( "\nMOSH CONNECT %s %s\n", network->port().c_str(), network->get_key().c_str() );
   fflush( stdout );
 
   /* don't let signals kill us */
