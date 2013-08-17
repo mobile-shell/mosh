@@ -119,6 +119,7 @@ void Connection::hop_port( void )
   assert( !server );
 
   setup();
+  socks.push_back( Socket() );
 
   prune_sockets();
 }
@@ -180,9 +181,6 @@ Connection::Socket::Socket()
 
 void Connection::setup( void )
 {
-  /* create socket */
-  socks.push_back( Socket() );
-
   last_port_choice = timestamp();
 }
 
@@ -251,7 +249,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   /* try to bind to desired IP first */
   if ( desired_ip_addr != INADDR_ANY ) {
     try {
-      if ( try_bind( sock(), desired_ip_addr, desired_port_low, desired_port_high ) ) { return; }
+      if ( try_bind( desired_ip_addr, desired_port_low, desired_port_high ) ) { return; }
     } catch ( const NetworkException& e ) {
       struct in_addr sin_addr;
       sin_addr.s_addr = desired_ip_addr;
@@ -263,7 +261,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
 
   /* now try any local interface */
   try {
-    if ( try_bind( sock(), INADDR_ANY, desired_port_low, desired_port_high ) ) { return; }
+    if ( try_bind( INADDR_ANY, desired_port_low, desired_port_high ) ) { return; }
   } catch ( const NetworkException& e ) {
     fprintf( stderr, "Error binding to any interface: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -274,7 +272,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   throw NetworkException( "Could not bind", errno );
 }
 
-bool Connection::try_bind( int socket, uint32_t addr, int port_low, int port_high )
+bool Connection::try_bind( uint32_t addr, int port_low, int port_high )
 {
   struct sockaddr_in local_addr;
   local_addr.sin_family = AF_INET;
@@ -289,15 +287,17 @@ bool Connection::try_bind( int socket, uint32_t addr, int port_low, int port_hig
     search_high = port_high;
   }
 
+  socks.push_back( Socket() );
   for ( int i = search_low; i <= search_high; i++ ) {
     local_addr.sin_port = htons( i );
 
-    if ( bind( socket, (sockaddr *)&local_addr, sizeof( local_addr ) ) == 0 ) {
+    if ( bind( sock(), (sockaddr *)&local_addr, sizeof( local_addr ) ) == 0 ) {
       return true;
     } else if ( i == search_high ) { /* last port to search */
       fprintf( stderr, "Failed binding to %s:%d\n",
 	       inet_ntoa( local_addr.sin_addr ),
 	       ntohs( local_addr.sin_port ) );
+      socks.pop_back();
       throw NetworkException( "bind", errno );
     }
   }
@@ -341,6 +341,8 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
   }
 
   has_remote_addr = true;
+
+  socks.push_back( Socket() );
 }
 
 void Connection::send( string s )

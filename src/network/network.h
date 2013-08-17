@@ -101,7 +101,7 @@ namespace Network {
 
     static const int CONGESTION_TIMESTAMP_PENALTY = 500; /* ms */
 
-    static bool try_bind( int socket, uint32_t addr, int port_low, int port_high );
+    bool try_bind( uint32_t addr, int port_low, int port_high );
 
     class Socket
     {
