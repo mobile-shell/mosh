@@ -69,7 +69,7 @@ namespace Network {
     Transport( MyState &initial_state, RemoteState &initial_remote,
 	       const char *desired_ip, const char *desired_port );
     Transport( MyState &initial_state, RemoteState &initial_remote,
-	       const char *key_str, const char *ip, int port );
+	       const char *key_str, const char *ip, const char *port );
 
     /* Send data or an ack if necessary. */
     void tick( void ) { sender.tick(); }
@@ -94,7 +94,7 @@ namespace Network {
     /* Other side has requested shutdown and we have sent one ACK */
     bool counterparty_shutdown_ack_sent( void ) const { return sender.get_counterparty_shutdown_acknowledged(); }
 
-    int port( void ) const { return connection.port(); }
+    std::string port( void ) const { return connection.port(); }
     string get_key( void ) const { return connection.get_key(); }
 
     MyState &get_current_state( void ) { return sender.get_current_state(); }
@@ -116,7 +116,8 @@ namespace Network {
 
     unsigned int send_interval( void ) const { return sender.send_interval(); }
 
-    const struct in_addr & get_remote_ip( void ) const { return connection.get_remote_ip(); }
+    const Addr &get_remote_addr( void ) const { return connection.get_remote_addr(); }
+    socklen_t get_remote_addr_len( void ) const { return connection.get_remote_addr_len(); }
 
     const NetworkException *get_send_exception( void ) const { return connection.get_send_exception(); }
   };

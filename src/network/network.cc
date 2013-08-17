@@ -37,13 +37,14 @@
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
+#include <netdb.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
 
 #include "dos_assert.h"
+#include "fatal_assert.h"
 #include "byteorder.h"
 #include "network.h"
 #include "crypto.h"
@@ -119,6 +120,8 @@ void Connection::hop_port( void )
   assert( !server );
 
   setup();
+  assert( remote_addr_len != 0 );
+  socks.push_back( Socket( remote_addr.sa.sa_family ) );
 
   prune_sockets();
 }
@@ -146,8 +149,8 @@ void Connection::prune_sockets( void )
   }
 }
 
-Connection::Socket::Socket()
-  : _fd( socket( AF_INET, SOCK_DGRAM, 0 ) )
+Connection::Socket::Socket( int family )
+  : _fd( socket( family, SOCK_DGRAM, 0 ) )
 {
   if ( _fd < 0 ) {
     throw NetworkException( "socket", errno );
@@ -180,9 +183,6 @@ Connection::Socket::Socket()
 
 void Connection::setup( void )
 {
-  /* create socket */
-  socks.push_back( Socket() );
-
   last_port_choice = timestamp();
 }
 
@@ -199,10 +199,28 @@ const std::vector< int > Connection::fds( void ) const
   return ret;
 }
 
+class AddrInfo {
+public:
+  struct addrinfo *res;
+  AddrInfo( const char *node, const char *service,
+	    const struct addrinfo *hints ) :
+    res( NULL ) {
+    int errcode = getaddrinfo( node, service, hints, &res );
+    if ( errcode != 0 ) {
+      throw NetworkException( std::string( "Bad IP address (" ) + node + "): " + gai_strerror( errcode ), 0 );
+    }
+  }
+  ~AddrInfo() { freeaddrinfo(res); }
+private:
+  AddrInfo(const AddrInfo &);
+  AddrInfo &operator=(const AddrInfo &);
+};
+
 Connection::Connection( const char *desired_ip, const char *desired_port ) /* server */
   : socks(),
     has_remote_addr( false ),
     remote_addr(),
+    remote_addr_len( 0 ),
     server( true ),
     MTU( DEFAULT_SEND_MTU ),
     key(),
@@ -237,33 +255,20 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     throw NetworkException("Invalid port range", 0);
   }
 
-  /* convert desired IP */
-  uint32_t desired_ip_addr = INADDR_ANY;
-
-  if ( desired_ip ) {
-    struct in_addr sin_addr;
-    if ( inet_aton( desired_ip, &sin_addr ) == 0 ) {
-      throw NetworkException( "Invalid IP address", errno );
-    }
-    desired_ip_addr = sin_addr.s_addr;
-  }
-
   /* try to bind to desired IP first */
-  if ( desired_ip_addr != INADDR_ANY ) {
+  if ( desired_ip ) {
     try {
-      if ( try_bind( sock(), desired_ip_addr, desired_port_low, desired_port_high ) ) { return; }
+      if ( try_bind( desired_ip, desired_port_low, desired_port_high ) ) { return; }
     } catch ( const NetworkException& e ) {
-      struct in_addr sin_addr;
-      sin_addr.s_addr = desired_ip_addr;
       fprintf( stderr, "Error binding to IP %s: %s: %s\n",
-	       inet_ntoa( sin_addr ),
+	       desired_ip,
 	       e.function.c_str(), strerror( e.the_errno ) );
     }
   }
 
   /* now try any local interface */
   try {
-    if ( try_bind( sock(), INADDR_ANY, desired_port_low, desired_port_high ) ) { return; }
+    if ( try_bind( NULL, desired_port_low, desired_port_high ) ) { return; }
   } catch ( const NetworkException& e ) {
     fprintf( stderr, "Error binding to any interface: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -274,11 +279,18 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   throw NetworkException( "Could not bind", errno );
 }
 
-bool Connection::try_bind( int socket, uint32_t addr, int port_low, int port_high )
+bool Connection::try_bind( const char *addr, int port_low, int port_high )
 {
-  struct sockaddr_in local_addr;
-  local_addr.sin_family = AF_INET;
-  local_addr.sin_addr.s_addr = addr;
+  struct addrinfo hints;
+  memset( &hints, 0, sizeof( hints ) );
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_DGRAM;
+  hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST | AI_NUMERICSERV;
+  AddrInfo ai( addr, 0, &hints );
+
+  Addr local_addr;
+  socklen_t local_addr_len = ai.res->ai_addrlen;
+  memcpy( &local_addr.sa, ai.res->ai_addr, local_addr_len );
 
   int search_low = PORT_RANGE_LOW, search_high = PORT_RANGE_HIGH;
 
@@ -289,16 +301,34 @@ bool Connection::try_bind( int socket, uint32_t addr, int port_low, int port_hig
     search_high = port_high;
   }
 
+  socks.push_back( Socket( local_addr.sa.sa_family ) );
   for ( int i = search_low; i <= search_high; i++ ) {
-    local_addr.sin_port = htons( i );
+    switch (local_addr.sa.sa_family) {
+    case AF_INET:
+      local_addr.sin.sin_port = htons( i );
+      break;
+    case AF_INET6:
+      local_addr.sin6.sin6_port = htons( i );
+      break;
+    default:
+      throw NetworkException( "Unknown address family", 0 );
+    }
 
-    if ( bind( socket, (sockaddr *)&local_addr, sizeof( local_addr ) ) == 0 ) {
+    if ( bind( sock(), &local_addr.sa, local_addr_len ) == 0 ) {
       return true;
     } else if ( i == search_high ) { /* last port to search */
-      fprintf( stderr, "Failed binding to %s:%d\n",
-	       inet_ntoa( local_addr.sin_addr ),
-	       ntohs( local_addr.sin_port ) );
-      throw NetworkException( "bind", errno );
+      int saved_errno = errno;
+      socks.pop_back();
+      char host[ NI_MAXHOST ], serv[ NI_MAXSERV ];
+      int errcode = getnameinfo( &local_addr.sa, local_addr_len,
+				 host, sizeof( host ), serv, sizeof( serv ),
+				 NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
+      if ( errcode != 0 ) {
+	throw NetworkException( std::string( "bind: getnameinfo: " ) + gai_strerror( errcode ), 0 );
+      }
+      fprintf( stderr, "Failed binding to %s:%s\n",
+	       host, serv );
+      throw NetworkException( "bind", saved_errno );
     }
   }
 
@@ -306,10 +336,11 @@ bool Connection::try_bind( int socket, uint32_t addr, int port_low, int port_hig
   return false;
 }
 
-Connection::Connection( const char *key_str, const char *ip, int port ) /* client */
+Connection::Connection( const char *key_str, const char *ip, const char *port ) /* client */
   : socks(),
     has_remote_addr( false ),
     remote_addr(),
+    remote_addr_len( 0 ),
     server( false ),
     MTU( DEFAULT_SEND_MTU ),
     key( key_str ),
@@ -331,16 +362,19 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
   setup();
 
   /* associate socket with remote host and port */
-  remote_addr.sin_family = AF_INET;
-  remote_addr.sin_port = htons( port );
-  if ( !inet_aton( ip, &remote_addr.sin_addr ) ) {
-    int saved_errno = errno;
-    char buffer[ 2048 ];
-    snprintf( buffer, 2048, "Bad IP address (%s)", ip );
-    throw NetworkException( buffer, saved_errno );
-  }
+  struct addrinfo hints;
+  memset( &hints, 0, sizeof( hints ) );
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_DGRAM;
+  hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
+  AddrInfo ai( ip, port, &hints );
+  fatal_assert( ai.res->ai_addrlen <= sizeof( remote_addr ) );
+  remote_addr_len = ai.res->ai_addrlen;
+  memcpy( &remote_addr.sa, ai.res->ai_addr, remote_addr_len );
 
   has_remote_addr = true;
+
+  socks.push_back( Socket( remote_addr.sa.sa_family ) );
 }
 
 void Connection::send( string s )
@@ -354,7 +388,7 @@ void Connection::send( string s )
   string p = px.tostring( &session );
 
   ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
-			       (sockaddr *)&remote_addr, sizeof( remote_addr ) );
+			       &remote_addr.sa, remote_addr_len );
 
   if ( bytes_sent == static_cast<ssize_t>( p.size() ) ) {
     have_send_exception = false;
@@ -415,7 +449,7 @@ string Connection::recv( void )
 string Connection::recv_one( int sock_to_recv, bool nonblocking )
 {
   /* receive source address, ECN, and payload in msghdr structure */
-  struct sockaddr_in packet_remote_addr;
+  Addr packet_remote_addr;
   struct msghdr header;
   struct iovec msg_iovec;
 
@@ -423,7 +457,7 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
   char msg_control[ Session::RECEIVE_MTU ];
 
   /* receive source address */
-  header.msg_name = &packet_remote_addr;
+  header.msg_name = &packet_remote_addr.sa;
   header.msg_namelen = sizeof( packet_remote_addr );
 
   /* receive payload */
@@ -511,12 +545,19 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
     last_heard = timestamp();
 
     if ( server ) { /* only client can roam */
-      if ( (remote_addr.sin_addr.s_addr != packet_remote_addr.sin_addr.s_addr)
-	   || (remote_addr.sin_port != packet_remote_addr.sin_port) ) {
+      if ( remote_addr_len != header.msg_namelen ||
+	   memcmp( &remote_addr, &packet_remote_addr, remote_addr_len ) != 0 ) {
 	remote_addr = packet_remote_addr;
-	fprintf( stderr, "Server now attached to client at %s:%d\n",
-		 inet_ntoa( remote_addr.sin_addr ),
-		 ntohs( remote_addr.sin_port ) );
+	remote_addr_len = header.msg_namelen;
+	char host[ NI_MAXHOST ], serv[ NI_MAXSERV ];
+	int errcode = getnameinfo( &remote_addr.sa, remote_addr_len,
+				   host, sizeof( host ), serv, sizeof( serv ),
+				   NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
+	if ( errcode != 0 ) {
+	  throw NetworkException( std::string( "recv_one: getnameinfo: " ) + gai_strerror( errcode ), 0 );
+	}
+	fprintf( stderr, "Server now attached to client at %s:%s\n",
+		 host, serv );
       }
     }
   }
@@ -524,16 +565,24 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
   return p.payload; /* we do return out-of-order or duplicated packets to caller */
 }
 
-int Connection::port( void ) const
+std::string Connection::port( void ) const
 {
-  struct sockaddr_in local_addr;
+  Addr local_addr;
   socklen_t addrlen = sizeof( local_addr );
 
-  if ( getsockname( sock(), (sockaddr *)&local_addr, &addrlen ) < 0 ) {
+  if ( getsockname( sock(), &local_addr.sa, &addrlen ) < 0 ) {
     throw NetworkException( "getsockname", errno );
   }
 
-  return ntohs( local_addr.sin_port );
+  char serv[ NI_MAXSERV ];
+  int errcode = getnameinfo( &local_addr.sa, addrlen,
+			     NULL, 0, serv, sizeof( serv ),
+			     NI_DGRAM | NI_NUMERICSERV );
+  if ( errcode != 0 ) {
+    throw NetworkException( std::string( "port: getnameinfo: " ) + gai_strerror( errcode ), 0 );
+  }
+
+  return std::string( serv );
 }
 
 uint64_t Network::timestamp( void )

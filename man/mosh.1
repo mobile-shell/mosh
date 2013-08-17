@@ -121,6 +121,19 @@ Synonym for \-\-predict=always
 Synonym for \-\-predict=never
 
 .TP
+.B --family=\fIFAMILY\fP
+Force the use of a particular address family, which defaults to `inet'
+(IPv4), and can also be `inet6' (IPv6; requires IO::Socket::IP).
+
+.TP
+.B -4
+Synonym for \-\-family=inet
+
+.TP
+.B -6
+Synonym for \-\-family=inet6
+
+.TP
 .B \-p \fIPORT\fP[:\fIPORT2\fP], \-\-port=\fIPORT\fP[:\fIPORT2\fP]
 Use a particular server-side UDP port or port range,
 for example, if this is the

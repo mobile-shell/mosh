@@ -117,7 +117,6 @@ int main( int argc, char *argv[] )
   }
 
   char *ip, *desired_port;
-  int port;
 
   if ( argc - optind != 2 ) {
     usage( argv[ 0 ] );
@@ -128,21 +127,12 @@ int main( int argc, char *argv[] )
   desired_port = argv[ optind + 1 ];
 
   /* Sanity-check arguments */
-  if ( ip
-       && ( strspn( ip, "0123456789." ) != strlen( ip ) ) ) {
-    fprintf( stderr, "%s: Bad IP address (%s)\n\n", argv[ 0 ], ip );
-    usage( argv[ 0 ] );
-    exit( 1 );
-  }
-
   if ( desired_port
        && ( strspn( desired_port, "0123456789" ) != strlen( desired_port ) ) ) {
     fprintf( stderr, "%s: Bad UDP port (%s)\n\n", argv[ 0 ], desired_port );
     usage( argv[ 0 ] );
     exit( 1 );
   }
-
-  port = myatoi( desired_port );
 
   /* Read key from environment */
   char *env_key = getenv( "MOSH_KEY" );
@@ -170,17 +160,17 @@ int main( int argc, char *argv[] )
   set_native_locale();
 
   try {
-    STMClient client( ip, port, key, predict_mode );
+    STMClient client( ip, desired_port, key, predict_mode );
     client.init();
 
     try {
       client.main();
     } catch ( const Network::NetworkException &e ) {
-      fprintf( stderr, "Network exception: %s: %s\r\n",
-	       e.function.c_str(), strerror( e.the_errno ) );
+      client.shutdown();
+      throw e;
     } catch ( const Crypto::CryptoException &e ) {
-      fprintf( stderr, "Crypto exception: %s\r\n",
-	       e.text.c_str() );
+      client.shutdown();
+      throw e;
     }
 
     client.shutdown();

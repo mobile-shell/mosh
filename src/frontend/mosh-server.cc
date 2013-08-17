@@ -50,8 +50,7 @@
 #include <utempter.h>
 #endif
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <netdb.h>
 #include <time.h>
 #include <sys/stat.h>
 
@@ -227,13 +226,6 @@ int main( int argc, char *argv[] )
   }
 
   /* Sanity-check arguments */
-  if ( desired_ip
-       && ( strspn( desired_ip, "0123456789." ) != strlen( desired_ip ) ) ) {
-    fprintf( stderr, "%s: Bad IP address (%s)\n", argv[ 0 ], desired_ip );
-    print_usage( argv[ 0 ] );
-    exit( 1 );
-  }
-
   int dpl, dph;
   if ( desired_port && ! Connection::parse_portrange( desired_port, dpl, dph ) ) {
     fprintf( stderr, "%s: Bad UDP port range (%s)\n", argv[ 0 ], desired_port );
@@ -354,7 +346,7 @@ int run_server( const char *desired_ip, const char *desired_port,
     network->set_verbose();
   }
 
-  printf( "\nMOSH CONNECT %d %s\n", network->port(), network->get_key().c_str() );
+  printf( "\nMOSH CONNECT %s %s\n", network->port().c_str(), network->get_key().c_str() );
   fflush( stdout );
 
   /* don't let signals kill us */
@@ -532,8 +524,8 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   #ifdef HAVE_UTEMPTER
   bool connected_utmp = false;
 
-  struct in_addr saved_addr;
-  saved_addr.s_addr = 0;
+  Addr saved_addr;
+  socklen_t saved_addr_len = 0;
   #endif
 
   while ( 1 ) {
@@ -616,13 +608,24 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  #ifdef HAVE_UTEMPTER
 	  /* update utmp entry if we have become "connected" */
 	  if ( (!connected_utmp)
-	       || ( saved_addr.s_addr != network.get_remote_ip().s_addr ) ) {
+	       || saved_addr_len != network.get_remote_addr_len()
+	       || memcmp( &saved_addr, &network.get_remote_addr(),
+			  saved_addr_len ) != 0 ) {
 	    utempter_remove_record( host_fd );
 
-	    saved_addr = network.get_remote_ip();
+	    saved_addr = network.get_remote_addr();
+	    saved_addr_len = network.get_remote_addr_len();
+
+	    char host[ NI_MAXHOST ];
+	    int errcode = getnameinfo( &saved_addr.sa, saved_addr_len,
+				       host, sizeof( host ), NULL, 0,
+				       NI_NUMERICHOST );
+	    if ( errcode != 0 ) {
+	      throw NetworkException( std::string( "serve: getnameinfo: " ) + gai_strerror( errcode ), 0 );
+	    }
 
 	    char tmp[ 64 ];
-	    snprintf( tmp, 64, "%s via mosh [%d]", inet_ntoa( saved_addr ), getpid() );
+	    snprintf( tmp, 64, "%s via mosh [%d]", host, getpid() );
 	    utempter_add_record( host_fd, tmp );
 
 	    connected_utmp = true;
