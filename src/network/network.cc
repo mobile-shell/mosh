@@ -34,6 +34,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
@@ -42,6 +43,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "dos_assert.h"
 #include "byteorder.h"
@@ -118,6 +120,7 @@ void Connection::hop_port( void )
 {
   assert( !server );
 
+  remote_addr_resolver.try_start_stop_async( remote_addr.sin_port, remote_addr );
   setup();
 
   prune_sockets();
@@ -186,6 +189,78 @@ void Connection::setup( void )
   last_port_choice = timestamp();
 }
 
+Connection::DNSResolver::DNSResolver( std::string hostname )
+  : thread(),
+    resolving( false ),
+    result_waiting( false ),
+    hostname( hostname )
+{
+}
+
+void Connection::DNSResolver::resolve_blocking( uint16_t port, struct sockaddr_in &addr )
+{
+  struct addrinfo *result = resolve();
+  if( result == NULL ) {
+    int saved_errno = errno;
+    std::string msg( "Bad host name (" );
+    msg += hostname;
+    msg += ")";
+    throw NetworkException( msg, saved_errno );
+  }
+
+  addr = *(struct sockaddr_in*)result->ai_addr;
+  addr.sin_port = port;
+  freeaddrinfo( result );
+}
+
+Connection::DNSResolver::Status Connection::DNSResolver::try_start_stop_async( uint16_t port, struct sockaddr_in& addr )
+{
+  if( !resolving ) {
+    resolving = true;
+    int ok = pthread_create( &thread, NULL, thread_start_routine, this );
+    return ok == 0 ? STARTED : ERROR;
+  } else if( result_waiting ) {
+    result_waiting = false;
+    resolving = false;
+
+    void *res;
+    int ok = pthread_join( thread, &res );
+    struct addrinfo *result = (struct addrinfo*)res;
+    if( ok == 0 && result != NULL ) {
+      addr = *(struct sockaddr_in*)result->ai_addr;
+      addr.sin_port = port;
+      freeaddrinfo( result );
+      return RESULT_RETURNED;
+    }
+    return ERROR;
+  }
+  return STILL_RUNNING;
+}
+
+struct addrinfo *Connection::DNSResolver::resolve()
+{
+  struct addrinfo hints = {0};
+  hints.ai_flags = AI_ADDRCONFIG;
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_DGRAM;
+
+  struct addrinfo *result;
+  if( getaddrinfo( hostname.c_str(), NULL, &hints, &result ) != 0 ) {
+    return NULL;
+  }
+  return result;
+}
+
+void *Connection::DNSResolver::thread_start_routine( void *param )
+{
+  DNSResolver *resolver = (DNSResolver*)param;
+  struct addrinfo *result = resolver->resolve();
+  resolver->result_waiting = true;
+  return (void*)result;
+}
+
+
+
 const std::vector< int > Connection::fds( void ) const
 {
   std::vector< int > ret;
@@ -203,6 +278,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   : socks(),
     has_remote_addr( false ),
     remote_addr(),
+    remote_addr_resolver( "" ),
     server( true ),
     MTU( DEFAULT_SEND_MTU ),
     key(),
@@ -306,10 +382,11 @@ bool Connection::try_bind( int socket, uint32_t addr, int port_low, int port_hig
   return false;
 }
 
-Connection::Connection( const char *key_str, const char *ip, int port ) /* client */
+Connection::Connection( const char *key_str, const char *hostname, int port ) /* client */
   : socks(),
     has_remote_addr( false ),
     remote_addr(),
+    remote_addr_resolver( hostname ),
     server( false ),
     MTU( DEFAULT_SEND_MTU ),
     key( key_str ),
@@ -330,16 +407,8 @@ Connection::Connection( const char *key_str, const char *ip, int port ) /* clien
 {
   setup();
 
-  /* associate socket with remote host and port */
-  remote_addr.sin_family = AF_INET;
-  remote_addr.sin_port = htons( port );
-  if ( !inet_aton( ip, &remote_addr.sin_addr ) ) {
-    int saved_errno = errno;
-    char buffer[ 2048 ];
-    snprintf( buffer, 2048, "Bad IP address (%s)", ip );
-    throw NetworkException( buffer, saved_errno );
-  }
-
+  /* resolve remote host for socket */
+  remote_addr_resolver.resolve_blocking( htons( port ), remote_addr );
   has_remote_addr = true;
 }
 

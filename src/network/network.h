@@ -117,9 +117,36 @@ namespace Network {
       Socket & operator=( const Socket & other );
     };
 
+    class DNSResolver
+    {
+    private:
+      pthread_t thread;
+      bool resolving; /* thread started, still running */
+      volatile bool result_waiting; /* thread finished, not yet joined */
+      std::string hostname;
+
+      struct addrinfo* resolve();
+      static void *thread_start_routine( void * );
+
+
+    public:
+      enum Status {
+        STARTED,
+        STILL_RUNNING,
+        RESULT_RETURNED,
+        ERROR
+      };
+
+      DNSResolver( std::string );
+      void resolve_blocking( uint16_t, struct sockaddr_in& );
+      Status try_start_stop_async( uint16_t, struct sockaddr_in& );
+
+    };
+
     std::deque< Socket > socks;
     bool has_remote_addr;
     struct sockaddr_in remote_addr;
+    DNSResolver remote_addr_resolver;
 
     bool server;
 

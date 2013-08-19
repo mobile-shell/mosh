@@ -69,7 +69,7 @@ namespace Network {
     Transport( MyState &initial_state, RemoteState &initial_remote,
 	       const char *desired_ip, const char *desired_port );
     Transport( MyState &initial_state, RemoteState &initial_remote,
-	       const char *key_str, const char *ip, int port );
+	       const char *key_str, const char *hostname, int port );
 
     /* Send data or an ack if necessary. */
     void tick( void ) { sender.tick(); }
