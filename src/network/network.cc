@@ -211,8 +211,16 @@ Connection::DNSResolverAsync::Status Connection::DNSResolverAsync::try_start_sto
     int ok = pthread_join( thread, &res );
     struct addrinfo *result = (struct addrinfo*)res;
     if( ok == 0 && result != NULL ) {
-      addr = *(struct sockaddr_in*)result->ai_addr;
-      addr.sin_port = port;
+      bool found = false;
+      for( struct addrinfo *rp = result; rp != NULL && !found; rp = rp->ai_next ) {
+        struct sockaddr_in *rpaddr = (struct sockaddr_in*)result->ai_addr;
+        found = rpaddr->sin_addr.s_addr == addr.sin_addr.s_addr;
+      }
+
+      if (!found) { // only change to a new IP if the old one wasn't returned
+        addr = *(struct sockaddr_in*)result->ai_addr;
+        addr.sin_port = port;
+      }
       freeaddrinfo( result );
       return RESULT_RETURNED;
     }
