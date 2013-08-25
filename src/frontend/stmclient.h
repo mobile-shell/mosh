@@ -44,6 +44,7 @@
 
 class STMClient {
 private:
+  std::string ip;
   std::string hostname;
   int port;
   std::string key;
@@ -83,8 +84,8 @@ private:
   void resume( void ); /* restore state after SIGCONT */
 
 public:
-  STMClient( const char *s_hostname, int s_port, const char *s_key, const char *predict_mode )
-    : hostname( s_hostname ), port( s_port ), key( s_key ),
+  STMClient( const char *s_ip, const char *s_hostname, int s_port, const char *s_key, const char *predict_mode )
+    : ip ( s_ip ), hostname( s_hostname ), port( s_port ), key( s_key ),
     escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
     escape_requires_lf( false ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(),

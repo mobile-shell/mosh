@@ -76,6 +76,7 @@ void usage( const char *argv0 ) {
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
 
   fprintf( stderr, "Usage: %s HOSTNAME PORT\n       %s -c\n", argv0, argv0 );
+  fprintf( stderr, "Usage: %s IP HOSTNAME PORT\n       %s -c\n", argv0, argv0 );
 }
 
 void print_colorcount( void )
@@ -116,20 +117,23 @@ int main( int argc, char *argv[] )
     }
   }
 
-  char *hostname, *desired_port;
+  char *ip, *hostname, *desired_port;
   int port;
 
-  if ( argc - optind != 2 ) {
+  if ( argc - optind != 3 ) {
     usage( argv[ 0 ] );
     exit( 1 );
   }
 
-  hostname = argv[ optind ];
-  desired_port = argv[ optind + 1 ];
+  ip = argv[ optind ];
+  hostname = argv[ optind + 1 ];
+  desired_port = argv[ optind + 2 ];
 
   /* Sanity-check arguments */
-  if ( hostname && !strlen( hostname ) ) {
-    fprintf( stderr, "%s: Bad host name (%s)\n\n", argv[ 0 ], hostname );
+  if ( !ip
+       || ( strspn( ip, "0123456789." ) != strlen( ip ) )
+       || !hostname || !strlen( hostname ) ) {
+    fprintf( stderr, "%s: Bad IP address (%s) or host name (%s)\n\n", argv[ 0 ], ip, hostname );
     usage( argv[ 0 ] );
     exit( 1 );
   }
@@ -169,7 +173,7 @@ int main( int argc, char *argv[] )
   set_native_locale();
 
   try {
-    STMClient client( hostname, port, key, predict_mode );
+    STMClient client( ip, hostname, port, key, predict_mode );
     client.init();
 
     try {

@@ -209,7 +209,7 @@ void STMClient::shutdown( void )
   }
 
   if ( still_connecting() ) {
-    fprintf( stderr, "\nmosh did not make a successful connection to %s:%d.\n", hostname.c_str(), port );
+    fprintf( stderr, "\nmosh did not make a successful connection to %s:%d.\n", ip.c_str(), port );
     fprintf( stderr, "Please verify that UDP port %d is not firewalled and can reach the server.\n\n", port );
     fprintf( stderr, "(By default, mosh uses a UDP port between 60000 and 61000. The -p option\nselects a specific UDP port number.)\n" );
   } else if ( network ) {
@@ -247,7 +247,7 @@ void STMClient::main_init( void )
   Network::UserStream blank;
   Terminal::Complete local_terminal( window_size.ws_col, window_size.ws_row );
   network = new Network::Transport< Network::UserStream, Terminal::Complete >( blank, local_terminal,
-									       key.c_str(), hostname.c_str(), port );
+									       key.c_str(), ip.c_str(), hostname.c_str(), port );
 
   network->set_send_delay( 1 ); /* minimal delay on outgoing keystrokes */
 

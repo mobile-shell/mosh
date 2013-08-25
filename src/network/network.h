@@ -117,16 +117,15 @@ namespace Network {
       Socket & operator=( const Socket & other );
     };
 
-    class DNSResolver
+    class DNSResolverAsync
     {
     private:
       pthread_t thread;
       bool resolving; /* thread started, still running */
       volatile bool result_waiting; /* thread finished, not yet joined */
-      std::string hostname;
+      const std::string hostname;
 
-      struct addrinfo* resolve();
-      static void *thread_start_routine( void * );
+      static void *resolve_thread( void * );
 
 
     public:
@@ -137,16 +136,15 @@ namespace Network {
         ERROR
       };
 
-      DNSResolver( std::string );
-      void resolve_blocking( uint16_t, struct sockaddr_in& );
-      Status try_start_stop_async( uint16_t, struct sockaddr_in& );
+      DNSResolverAsync( const std::string & );
+      Status try_start_stop( uint16_t, struct sockaddr_in & );
 
     };
 
     std::deque< Socket > socks;
     bool has_remote_addr;
     struct sockaddr_in remote_addr;
-    DNSResolver remote_addr_resolver;
+    DNSResolverAsync remote_addr_resolver;
 
     bool server;
 
@@ -188,7 +186,7 @@ namespace Network {
 
   public:
     Connection( const char *desired_ip, const char *desired_port ); /* server */
-    Connection( const char *key_str, const char *ip, int port ); /* client */
+    Connection( const char *key_str, const char *ip, const char *hostname, int port ); /* client */
 
     void send( string s );
     string recv( void );
