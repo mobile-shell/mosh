@@ -120,7 +120,20 @@ void Connection::hop_port( void )
 {
   assert( !server );
 
-  remote_addr_resolver.try_start_stop( remote_addr.sin_port, remote_addr );
+  switch ( remote_addr_resolver.try_start_stop( remote_addr.sin_port, remote_addr ) ) {
+    case DNSResolverAsync::STARTED:
+    case DNSResolverAsync::ERROR: {
+      // because of round-robin DNS servers that only return one record, we also want to retry the last working IP sometimes
+      uint16_t port = remote_addr.sin_port;
+      remote_addr = remote_addr_last_working;
+      remote_addr.sin_port = port;
+      break;
+    }
+    case DNSResolverAsync::RESULT_RETURNED:
+    case DNSResolverAsync::STILL_RUNNING:
+      // do nothing
+      break;
+  }
   setup();
 
   prune_sockets();
@@ -209,10 +222,10 @@ Connection::DNSResolverAsync::Status Connection::DNSResolverAsync::try_start_sto
 
     void *res;
     int ok = pthread_join( thread, &res );
-    struct addrinfo *result = (struct addrinfo*)res;
+    struct addrinfo *result = (struct addrinfo*)res, *rp;
     if( ok == 0 && result != NULL ) {
       bool found = false;
-      for( struct addrinfo *rp = result; rp != NULL && !found; rp = rp->ai_next ) {
+      for( rp = result; rp != NULL && !found; rp = rp->ai_next ) {
         struct sockaddr_in *rpaddr = (struct sockaddr_in*)result->ai_addr;
         found = rpaddr->sin_addr.s_addr == addr.sin_addr.s_addr;
       }
@@ -265,6 +278,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   : socks(),
     has_remote_addr( false ),
     remote_addr(),
+    remote_addr_last_working(),
     remote_addr_resolver( "" ),
     server( true ),
     MTU( DEFAULT_SEND_MTU ),
@@ -373,6 +387,7 @@ Connection::Connection( const char *key_str, const char *ip, const char *hostnam
   : socks(),
     has_remote_addr( false ),
     remote_addr(),
+    remote_addr_last_working(),
     remote_addr_resolver( hostname ),
     server( false ),
     MTU( DEFAULT_SEND_MTU ),
@@ -403,6 +418,7 @@ Connection::Connection( const char *key_str, const char *ip, const char *hostnam
     snprintf( buffer, 2048, "Bad IP address (%s)", ip );
     throw NetworkException( buffer, saved_errno );
   }
+  remote_addr_last_working = remote_addr;
 
   has_remote_addr = true;
 }
@@ -582,6 +598,8 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
 		 inet_ntoa( remote_addr.sin_addr ),
 		 ntohs( remote_addr.sin_port ) );
       }
+    } else {
+      remote_addr_last_working = packet_remote_addr;
     }
   }
 

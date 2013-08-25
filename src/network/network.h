@@ -144,6 +144,7 @@ namespace Network {
     std::deque< Socket > socks;
     bool has_remote_addr;
     struct sockaddr_in remote_addr;
+    struct sockaddr_in remote_addr_last_working;
     DNSResolverAsync remote_addr_resolver;
 
     bool server;
