@@ -292,6 +292,12 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     frame.append( f.ds.bracketed_paste ? "\033[?2004h" : "\033[?2004l" );
   }
 
+  /* has xterm mouse mode changed (SET_ANY_EVENT_MOUSE)? */
+  if ( (!initialized)
+       || (f.ds.xterm_mouse != frame.last_frame.ds.xterm_mouse) ) {
+    frame.append( f.ds.xterm_mouse ? "\033[?1002h" : "\033[?1002l" );
+  }
+
   return frame.str;
 }
 
