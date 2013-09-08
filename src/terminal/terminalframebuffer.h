@@ -190,6 +190,7 @@ namespace Terminal {
     bool cursor_visible;
     bool reverse_video;
     bool bracketed_paste;
+    bool xterm_mouse;
 
     bool application_mode_cursor_keys;
 
@@ -239,7 +240,7 @@ namespace Terminal {
       return ( width == x.width ) && ( height == x.height ) && ( cursor_col == x.cursor_col )
 	&& ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible ) &&
 	( reverse_video == x.reverse_video ) && ( renditions == x.renditions ) &&
-  ( bracketed_paste == x.bracketed_paste );
+  ( bracketed_paste == x.bracketed_paste ) && ( xterm_mouse == x.xterm_mouse );
     }
   };
 
