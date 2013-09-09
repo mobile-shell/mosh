@@ -190,6 +190,7 @@ namespace Terminal {
     bool cursor_visible;
     bool reverse_video;
     bool bracketed_paste;
+    bool vt100_mouse;
     bool xterm_mouse;
     bool xterm_extended_mouse;
 
@@ -241,8 +242,8 @@ namespace Terminal {
       return ( width == x.width ) && ( height == x.height ) && ( cursor_col == x.cursor_col )
 	&& ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible ) &&
 	( reverse_video == x.reverse_video ) && ( renditions == x.renditions ) &&
-  ( bracketed_paste == x.bracketed_paste ) && ( xterm_mouse == x.xterm_mouse ) &&
-  ( xterm_extended_mouse == x.xterm_extended_mouse );
+  ( bracketed_paste == x.bracketed_paste ) && ( vt100_mouse == x.vt100_mouse ) &&
+  ( xterm_mouse == x.xterm_mouse ) && ( xterm_extended_mouse == x.xterm_extended_mouse );
     }
   };
 
