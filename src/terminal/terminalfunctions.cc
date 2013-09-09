@@ -271,6 +271,8 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
   case 1000:           /* xterm mouse 1 (normal) */
   case 1002:           /* xterm mouse 2 (inc. button drags) */
     return &(fb->ds.xterm_mouse);
+  case 1006:           /* xterm extended mouse */
+    return &(fb->ds.xterm_extended_mouse);
   case 2004: /* bracketed paste */
     return &(fb->ds.bracketed_paste);
   }
