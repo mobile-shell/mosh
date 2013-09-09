@@ -62,7 +62,7 @@ DrawState::DrawState( int s_width, int s_height )
     renditions( 0 ), save(),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true ),
     insert_mode( false ), cursor_visible( true ), reverse_video( false ),
-    bracketed_paste( false ), xterm_mouse( false ), 
+    bracketed_paste( false ), xterm_mouse( false ), xterm_extended_mouse( false ), 
     application_mode_cursor_keys( false )
 {
   reinitialize_tabs( 0 );
