@@ -292,7 +292,13 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     frame.append( f.ds.bracketed_paste ? "\033[?2004h" : "\033[?2004l" );
   }
 
-  /* has xterm mouse mode changed (SET_ANY_EVENT_MOUSE)? */
+  /* has xterm VT100 mouse mode changed? */
+  if ( (!initialized)
+       || (f.ds.vt100_mouse != frame.last_frame.ds.vt100_mouse) ) {
+    frame.append( f.ds.vt100_mouse ? "\033[?1000h" : "\033[?1000l" );
+  }
+
+  /* has xterm mouse mode changed? */
   if ( (!initialized)
        || (f.ds.xterm_mouse != frame.last_frame.ds.xterm_mouse) ) {
     frame.append( f.ds.xterm_mouse ? "\033[?1002h" : "\033[?1002l" );
