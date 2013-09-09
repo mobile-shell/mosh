@@ -268,6 +268,12 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
     return &(fb->ds.auto_wrap_mode);
   case 25:
     return &(fb->ds.cursor_visible);
+  case 1000:           /* xterm mouse 1 (normal) */
+    return &(fb->ds.vt100_mouse);
+  case 1002:           /* xterm mouse 2 (inc. button drags) */
+    return &(fb->ds.xterm_mouse);
+  case 1006:           /* xterm extended mouse */
+    return &(fb->ds.xterm_extended_mouse);
   case 2004: /* bracketed paste */
     return &(fb->ds.bracketed_paste);
   }
