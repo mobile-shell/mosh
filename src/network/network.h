@@ -106,7 +106,9 @@ namespace Network {
     class Socket
     {
     private:
-      int _fd;
+      // To implement move, not copy semantics for _fd in the copy constructor
+      // and assignment the field must be writable even for const instances.
+      mutable int _fd;
 
     public:
       int fd( void ) const { return _fd; }
