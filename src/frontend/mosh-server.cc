@@ -325,7 +325,9 @@ int run_server( const char *desired_ip, const char *desired_port,
 		const int colors, bool verbose, bool with_motd ) {
   /* get initial window size */
   struct winsize window_size;
-  if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
+  if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ||
+       window_size.ws_col == 0 ||
+       window_size.ws_row == 0 ) {
     fprintf( stderr, "Server started without pseudo-terminal. Opening 80x24 terminal.\n" );
 
     /* Fill in sensible defaults. */
