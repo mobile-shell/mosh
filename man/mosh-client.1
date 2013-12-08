@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH MOSH 1 "February 2012"
+.TH MOSH 1 "April 2014"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -18,9 +18,10 @@
 .SH NAME
 mosh-client \- client-side helper for mosh
 .SH SYNOPSIS
-MOSH_KEY=KEY
+[MOSH_KEY=KEY]
 .B mosh-client 
-IP PORT
+IP PORT [KEY-FD]
+
 .br
 .B mosh-client 
 \-c
@@ -38,9 +39,13 @@ and collects the server's port number and session key.
 address, port, and session key. \fBmosh-client\fP runs for
 the lifetime of the connection.
 
-The 22-byte base64 session key given by \fBmosh-server\fP is supplied
-in the MOSH_KEY environment variable. This represents a 128-bit AES
-key that protects the integrity and confidentiality of the session.
+The 22-byte base64 session key given by \fBmosh-server\fP is usually
+supplied in the MOSH_KEY environment variable. This represents a
+128-bit AES key that protects the integrity and confidentiality of the
+session.  If a number is given as the \fBKEY-FD\fP argument, mosh-client will
+retrieve the key from that file descriptor rather than the MOSH_KEY
+environment variable.
+
 
 For constructing new setup wrappers for remote execution facilities
 other than SSH, it may be necessary to invoke \fBmosh-client\fP
