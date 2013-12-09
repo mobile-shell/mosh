@@ -76,7 +76,7 @@ void usage( const char *argv0 ) {
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
 
-  fprintf( stderr, "Usage: %s IP PORT [KEY-FD]\n       %s -c\n", argv0, argv0 );
+  fprintf( stderr, "Usage: %s IP PORT [PIPE-FD]\n       %s -c\n", argv0, argv0 );
 }
 
 void print_colorcount( void )
@@ -143,7 +143,8 @@ int main( int argc, char *argv[] )
 
   char *key = NULL;
   if ( key_fd ) {
-    /* Read key from file descriptor */
+    /* Read variables from a file descriptor, for forward compatibility.  But
+       only extract MOSH_KEY for now. */
     char *endptr;
     int key_fd_int = strtol( key_fd, &endptr, 0 );
     if ( *endptr != '\0' ) {
@@ -156,16 +157,22 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
     char buf[80];
-    if ( NULL == fgets( buf, sizeof buf, key_file ) ) {
+    while ( NULL != fgets( buf, sizeof buf, key_file ) ) {
+      /* Look for MOSH_KEY */
+      char *bp = buf;
+      strsep( &bp, "=" );
+      if ( NULL == bp or strcmp( "MOSH_KEY", buf ) != 0 ) continue;
+      size_t key_len = strcspn( bp, " \t\r\n" );
+      key = strndup( bp, key_len );
+      if ( !key ) {
+	perror( "strndup" );
+	exit( 1 );
+      }
+    }
+    if ( !key ) {
       fprintf( stderr, "No key read from key file descriptor\n" );
       exit( 1 );
     }
-
-    /* chop off trailing garbage */
-    char *bp = buf;
-    strsep( &bp, " \t\r\n" );
-
-    key = strdup( buf );
     fclose( key_file );
   } else {
     /* Read key from environment */

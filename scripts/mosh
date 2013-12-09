@@ -303,28 +303,32 @@ if ( $pid == 0 ) { # child
     die "$0: Did not find mosh server startup message.\n";
   }
 
-  # Now start real mosh client
+  # Write key via pipe to mosh-client.  Do this by forking a child to avoid
+  # potential deadlock (unlikely, but standards do not prohibit it).
   pipe READER, WRITER;
-
   my $key_file_no = fileno READER;
-
-  # Fork and write key to pipe from child.
   defined( my $pid = fork ) or die "$0: fork: $!\n";
   if ( $pid == 0 ) {
-    ( print WRITER $key . "\n" and close WRITER ) or die "$0: write from child\n";
+    # Double fork to avoid zombies.
+    $SIG{CHLD} = "IGNORE";
+    defined( my $pid = fork ) or die "$0: fork 2: $!\n";
+    _exit 0 if ( $pid );
+    ( print WRITER "MOSH_KEY=" . $key . "\n" and close WRITER ) or die "$0: write from child: $!\n";
     _exit 0;
   }
+  (waitpid($pid, 0) == $pid) or die "$0: waitpid: $!\n";
   close WRITER;
 
-  # clear close-on-exec flag
+  # Clear close-on-exec flag
   use Fcntl qw( F_GETFD F_SETFD FD_CLOEXEC );
   my $flags = fcntl( READER, F_GETFD, 0 ) or die "Can't get flags: $!\n";
   fcntl( READER, F_SETFD, $flags & ~FD_CLOEXEC ) or die "Can't set flags: $!\n";
 
+  # Now start real mosh client
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
   $ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
   exec {$client} ("$client @cmdline |", $ip, $port, $key_file_no);
-  die "$0: couldn't exec $client\n";
+  exit 1;
 }
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }
