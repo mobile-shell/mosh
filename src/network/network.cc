@@ -246,7 +246,7 @@ void *Connection::DNSResolverAsync::resolve_thread(void *param)
 {
   DNSResolverAsync *resolver = (DNSResolverAsync*)param;
 
-  struct addrinfo hints = { 0 };
+  struct addrinfo hints = addrinfo();
   hints.ai_flags = AI_ADDRCONFIG;
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_DGRAM;
