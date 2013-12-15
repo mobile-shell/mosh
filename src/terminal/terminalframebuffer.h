@@ -89,7 +89,6 @@ namespace Terminal {
     Renditions renditions;
     uint8_t width;
     bool fallback; /* first character is combining character */
-    bool wrap; /* if last cell, wrap to next line */
 
     Cell( color_type background_color );
     Cell(); /* default constructor required by C++11 STL */
@@ -101,8 +100,7 @@ namespace Terminal {
       return ( (contents == x.contents)
 	       && (fallback == x.fallback)
 	       && (width == x.width)
-	       && (renditions == x.renditions)
-	       && (wrap == x.wrap) );
+	       && (renditions == x.renditions) );
     }
 
     bool operator!=( const Cell &x ) const { return !operator==( x ); }
@@ -149,6 +147,11 @@ namespace Terminal {
   public:
     typedef std::vector<Cell> cells_type;
     cells_type cells;
+    bool wrap; /* if last cell, wrap to next line */
+    // gen is a generation counter.  It can be used to quickly rule
+    // out the possibility of two rows being identical; this is useful
+    // in scrolling.
+    uint64_t gen;
 
     Row( size_t s_width, color_type background_color );
     Row(); /* default constructor required by C++11 STL */
@@ -160,11 +163,13 @@ namespace Terminal {
 
     bool operator==( const Row &x ) const
     {
-      return ( cells == x.cells );
+      return ( gen == x.gen && cells == x.cells && wrap == x.wrap );
     }
 
-    bool get_wrap( void ) const { return cells.back().wrap; }
-    void set_wrap( bool w ) { cells.back().wrap = w; }
+    bool get_wrap( void ) const { return wrap; }
+    void set_wrap( bool w ) { wrap = w; }
+
+    uint64_t get_gen() const;
   };
 
   class SavedCursor {
@@ -285,6 +290,7 @@ namespace Terminal {
   class Framebuffer {
   public:
     typedef std::vector<wchar_t> title_type;
+    typedef std::vector<const Row *> rows_p_type;
 
   private:
     typedef std::vector<Row> rows_type;
@@ -303,11 +309,20 @@ namespace Terminal {
     void scroll( int N );
     void move_rows_autoscroll( int rows );
 
+    rows_p_type get_p_rows() const
+    {
+      rows_p_type retval;
+      for ( size_t i = 0; i < rows.size(); i++ ) {
+	retval.push_back( &rows.at(i) );
+      }
+      return retval;
+    }
+
     const Row *get_row( int row ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
 
-      return &rows[ row ];
+      return &rows.at( row );
     }
 
     inline const Cell *get_cell( int row = -1, int col = -1 ) const
@@ -315,7 +330,7 @@ namespace Terminal {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
 
-      return &rows[ row ].cells[ col ];
+      return &rows.at( row ).cells.at( col );
     }
 
     Row *get_mutable_row( int row )

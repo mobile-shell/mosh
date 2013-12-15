@@ -42,20 +42,16 @@ Cell::Cell( color_type background_color )
   : contents(),
     renditions( background_color ),
     width( 1 ),
-    fallback( false ),
-    wrap( false )
+    fallback( false )
 {}
-#if 0
 Cell::Cell() /* default constructor required by C++11 STL */
   : contents(),
     renditions( 0 ),
     width( 1 ),
-    fallback( false ),
-    wrap( false )
+    fallback( false )
 {
   assert( false );
 }
-#endif
 
 void Cell::reset( color_type background_color )
 {
@@ -63,7 +59,6 @@ void Cell::reset( color_type background_color )
   renditions = Renditions( background_color );
   width = 1;
   fallback = false;
-  wrap = false;
 }
 
 void DrawState::reinitialize_tabs( unsigned int start )
@@ -184,7 +179,7 @@ Cell *Framebuffer::get_combining_cell( void )
     return NULL;
   } /* can happen if a resize came in between */
 
-  return &rows[ ds.get_combining_char_row() ].cells[ ds.get_combining_char_col() ];
+  return get_mutable_cell( ds.get_combining_char_row(), ds.get_combining_char_col() );
 }
 
 void DrawState::set_tab( void )
@@ -324,23 +319,27 @@ void Framebuffer::delete_line( int row, int count )
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
   rows.insert( start, count, Row( 0, 0 ) );
   // then replace with real new rows
-  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count; 
+  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
   for (rows_type::iterator i = start; i < start + count; i++) {
     *i = newrow();
   }
 }
 
 Row::Row( size_t s_width, color_type background_color )
-  : cells( s_width, Cell( background_color ) )
+  : cells( s_width, Cell( background_color ) ), wrap( false ), gen( get_gen() )
 {}
 
-#if 0
 Row::Row() /* default constructor required by C++11 STL */
-  : cells( 1, Cell() )
+  : cells( 1, Cell() ), wrap( false ), gen( get_gen() )
 {
   assert( false );
 }
-#endif
+
+uint64_t Row::get_gen() const
+{
+  static uint64_t gen_counter = 0;
+  return gen_counter++;
+}
 
 void Row::insert_cell( int col, color_type background_color )
 {
@@ -356,12 +355,12 @@ void Row::delete_cell( int col, color_type background_color )
 
 void Framebuffer::insert_cell( int row, int col )
 {
-  rows[ row ].insert_cell( col, ds.get_background_rendition() );
+  rows.at( row ).insert_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::delete_cell( int row, int col )
 {
-  rows[ row ].delete_cell( col, ds.get_background_rendition() );
+  rows.at( row ).delete_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::reset( void )
@@ -402,6 +401,8 @@ void Framebuffer::resize( int s_width, int s_height )
   assert( s_width > 0 );
   assert( s_height > 0 );
 
+  ds.resize( s_width, s_height );
+
   rows.resize( s_height, newrow() );
 
   for ( rows_type::iterator i = rows.begin();
@@ -410,8 +411,6 @@ void Framebuffer::resize( int s_width, int s_height )
     i->set_wrap( false );
     i->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
   }
-
-  ds.resize( s_width, s_height );
 }
 
 void DrawState::resize( int s_width, int s_height )
@@ -604,6 +603,7 @@ void Renditions::posterize( void )
 
 void Row::reset( color_type background_color )
 {
+  gen = get_gen();
   for ( cells_type::iterator i = cells.begin();
 	i != cells.end();
 	i++ ) {
@@ -658,12 +658,6 @@ bool Cell::compare( const Cell &other ) const
   if ( !(renditions == other.renditions) ) {
     ret = true;
     fprintf( stderr, "renditions differ\n" );
-  }
-
-  if ( wrap != other.wrap ) {
-    ret = true;
-    fprintf( stderr, "wrap: %d vs. %d\n",
-	     wrap, other.wrap );
   }
 
   return ret;

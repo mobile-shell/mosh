@@ -39,24 +39,27 @@ namespace Terminal {
   /* variables used within a new_frame */
   class FrameState {
   public:
-    int x, y;
-    bool force_next_put;
     std::string str;
 
     int cursor_x, cursor_y;
     Renditions current_rendition;
+    bool cursor_visible;
 
-    Framebuffer last_frame;
+    const Framebuffer &last_frame;
 
     FrameState( const Framebuffer &s_last );
 
     void append( const char c ) { str.append( 1, c ); }
+    void append( const size_t s, const char c ) { str.append( s, c ); }
     void append( const wchar_t wc ) { Cell::append_to_str( str, wc ); }
     void append( const char * s ) { str.append( s ); }
     void append( const Cell::content_type &contents ) { str.append( contents.begin(), contents.end() ); }
     void append_string( const std::string &append ) { str.append(append); }
 
+    void append_cell(const Cell & cell);
     void append_silent_move( int y, int x );
+    void append_move( int y, int x );
+    void update_rendition( const Renditions &r, bool force = false );
   };
 
   class Display {
@@ -76,7 +79,7 @@ namespace Terminal {
 
     const char *smcup, *rmcup; /* enter and exit alternate screen mode */
 
-    void put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const;
+    bool put_row( bool initialized, FrameState &frame, const Framebuffer &f, int frame_y, const Row &old_row, bool wrap ) const;
 
   public:
     void downgrade( Framebuffer &f ) const { if ( posterize_colors ) { f.posterize(); } }
