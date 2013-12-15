@@ -392,12 +392,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
     frame.append( "\xC2\xA0" );
   }
 
-  for ( std::vector<wchar_t>::const_iterator i = cell->contents.begin();
-	i != cell->contents.end();
-	i++ ) {
-    snprintf( tmp, 64, "%lc", *i );
-    frame.append( tmp );
-  }
+  frame.appendstring( cell->contents.c_str() );
 
   frame.x += cell->width;
   frame.cursor_x += cell->width;
@@ -419,4 +414,13 @@ void FrameState::append_silent_move( int y, int x )
   append( tmp );
   cursor_x = x;
   cursor_y = y;
+}
+
+FrameState::FrameState( const Framebuffer &s_last )
+      : x(0), y(0),
+	force_next_put( false ),
+        str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
+	last_frame( s_last )
+{
+  str.reserve( 1024 );
 }

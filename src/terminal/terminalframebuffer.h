@@ -67,29 +67,14 @@ namespace Terminal {
 
   class Cell {
   public:
-    std::vector<wchar_t> contents;
+    std::string contents;
     char fallback; /* first character is combining character */
     int width;
     Renditions renditions;
     bool wrap; /* if last cell, wrap to next line */
 
-    Cell( int background_color )
-      : contents(),
-	fallback( false ),
-	width( 1 ),
-	renditions( background_color ),
-	wrap( false )
-    {}
-
-    Cell() /* default constructor required by C++11 STL */
-      : contents(),
-	fallback( false ),
-	width( 1 ),
-	renditions( 0 ),
-	wrap( false )
-    {
-      assert( false );
-    }
+    Cell( int background_color );
+    Cell(); /* default constructor required by C++11 STL */
 
     void reset( int background_color );
 
@@ -107,8 +92,8 @@ namespace Terminal {
     bool is_blank( void ) const
     {
       return ( contents.empty()
-	       || ( (contents.size() == 1) && ( (contents.front() == 0x20)
-						|| (contents.front() == 0xA0) ) ) );
+	       || ( (contents.size() == 1) && ( (contents[0] == 0x20)
+						|| (contents[0] == 0xA0) ) ) );
     }
 
     bool contents_match ( const Cell& other ) const
@@ -125,15 +110,8 @@ namespace Terminal {
     typedef std::vector<Cell> cells_type;
     cells_type cells;
 
-    Row( size_t s_width, int background_color )
-      : cells( s_width, Cell( background_color ) )
-    {}
-
-    Row() /* default constructor required by C++11 STL */
-      : cells( 1, Cell() )
-    {
-      assert( false );
-    }
+    Row( size_t s_width, int background_color );
+    Row(); /* default constructor required by C++11 STL */
 
     void insert_cell( int col, int background_color );
     void delete_cell( int col, int background_color );
@@ -249,7 +227,7 @@ namespace Terminal {
 
   class Framebuffer {
   private:
-    typedef std::deque<Row> rows_type;
+    typedef std::vector<Row> rows_type;
     rows_type rows;
     std::deque<wchar_t> icon_name;
     std::deque<wchar_t> window_title;

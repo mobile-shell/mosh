@@ -97,7 +97,13 @@ void Emulator::print( const Parser::Print *act )
     this_cell = fb.get_mutable_cell();
 
     fb.reset_cell( this_cell );
-    this_cell->contents.push_back( act->ch );
+    {
+      char tmp[MB_CUR_MAX+1];
+      (void)wctomb(NULL, 0);
+      size_t len = wctomb(tmp, act->ch);
+      tmp[len] = '\0';
+      this_cell->contents.append( tmp );
+    }
     this_cell->width = chwidth;
     fb.apply_renditions_to_current_cell();
 
@@ -125,9 +131,13 @@ void Emulator::print( const Parser::Print *act )
       fb.ds.move_col( 1, true, true );
     }
 
-    if ( combining_cell->contents.size() < 16 ) {
+    if ( combining_cell->contents.size() < 64 ) {
       /* seems like a reasonable limit on combining characters */
-      combining_cell->contents.push_back( act->ch );
+      char tmp[MB_CUR_MAX+1];
+      (void)wctomb(NULL, 0);
+      size_t len = wctomb(tmp, act->ch);
+      tmp[len] = '\0';
+      combining_cell->contents.append( tmp );
     }
     act->handled = true;
     break;

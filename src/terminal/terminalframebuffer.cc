@@ -32,14 +32,34 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "terminalframebuffer.h"
 
 using namespace Terminal;
 
+Cell::Cell( int background_color )
+  : contents(),
+    fallback( false ),
+    width( 1 ),
+    renditions( background_color ),
+    wrap( false )
+{}
+#if 0
+Cell::Cell() /* default constructor required by C++11 STL */
+  : contents(),
+    fallback( false ),
+    width( 1 ),
+    renditions( 0 ),
+    wrap( false )
+{
+  assert( false );
+}
+#endif
+
 void Cell::reset( int background_color )
 {
-  contents.clear();
+  contents.erase();
   fallback = false;
   width = 1;
   renditions = Renditions( background_color );
@@ -286,6 +306,18 @@ void Framebuffer::delete_line( int row )
   rows.erase( rows.begin() + row );
 }
 
+Row::Row( size_t s_width, int background_color )
+  : cells( s_width, Cell( background_color ) )
+{}
+
+#if 0
+Row::Row() /* default constructor required by C++11 STL */
+  : cells( 1, Cell() )
+{
+  assert( false );
+}
+#endif
+
 void Row::insert_cell( int col, int background_color )
 {
   cells.insert( cells.begin() + col, Cell( background_color ) );
@@ -312,7 +344,7 @@ void Framebuffer::reset( void )
 {
   int width = ds.get_width(), height = ds.get_height();
   ds = DrawState( width, height );
-  rows = std::deque<Row>( height, newrow() );
+  rows = rows_type( height, newrow() );
   window_title.clear();
   /* do not reset bell_count */
 }
@@ -578,7 +610,10 @@ wchar_t Cell::debug_contents( void ) const
   if ( contents.empty() ) {
     return '_';
   } else {
-    return contents.front();
+    /* very, very cheesy */
+    wchar_t ch[2];
+    mbstowcs(ch, contents.c_str(), 1);
+    return ch[0];
   }
 }
 
