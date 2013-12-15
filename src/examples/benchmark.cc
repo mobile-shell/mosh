@@ -62,21 +62,28 @@ const int ITERATIONS = 100000;
 
 using namespace Terminal;
 
-int main( void )
+int main( int argc, char **argv )
 {
   int fbmod = 0;
-  Framebuffer local_framebuffers[ 2 ] = { Framebuffer(80,24), Framebuffer(80,24) };
+  int height = 80, width = 24;
+  int iterations = ITERATIONS;
+  if (argc > 1) iterations = atoi(argv[1]);
+  if (argc > 3) {
+    height = atoi(argv[2]);
+    width = atoi(argv[3]);
+  }
+  Framebuffer local_framebuffers[ 2 ] = { Framebuffer(height,width), Framebuffer(height,width) };
   Framebuffer *local_framebuffer = &(local_framebuffers[ fbmod ]);
   Framebuffer *new_state = &(local_framebuffers[ !fbmod ]);
   Overlay::OverlayManager overlays;
   Display display( true );
-  Complete local_terminal( 80, 24 );
+  Complete local_terminal( height, width );
 
   /* Adopt native locale */
   set_native_locale();
   fatal_assert( is_utf8_locale() );
 
-  for ( int i = 0; i < ITERATIONS; i++ ) {
+  for ( int i = 0; i < iterations; i++ ) {
     /* type a character */
     overlays.get_prediction_engine().new_user_byte( i + 'x', *local_framebuffer );
 
