@@ -145,6 +145,10 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
       if ( *(f.get_row( 0 )) == *(frame.last_frame.get_row( row )) ) {
+	/* if row 0, we're looking at ourselves and probably didn't scroll */
+	if ( row == 0 ) {
+	  break;
+	}
 	/* found a scroll */
 	lines_scrolled = row;
 	scroll_height = 1;
