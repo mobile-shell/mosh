@@ -43,7 +43,10 @@ using namespace Terminal;
 
 Emulator::Emulator( size_t s_width, size_t s_height )
   : fb( s_width, s_height ), dispatch(), user()
-{}
+{
+  /* explode early */
+  assert(MB_CUR_MAX < mb_cur_max);
+}
 
 std::string Emulator::read_octets_to_host( void )
 {
@@ -98,9 +101,10 @@ void Emulator::print( const Parser::Print *act )
 
     fb.reset_cell( this_cell );
     {
-      char tmp[MB_CUR_MAX+1];
-      (void)wctomb(NULL, 0);
-      size_t len = wctomb(tmp, act->ch);
+      mbstate_t ps;
+      char tmp[mb_cur_max];
+      memset(&ps, sizeof ps, 0);
+      size_t len = wcrtomb(tmp, act->ch, &ps);
       tmp[len] = '\0';
       this_cell->contents.append( tmp );
     }
@@ -133,9 +137,10 @@ void Emulator::print( const Parser::Print *act )
 
     if ( combining_cell->contents.size() < 64 ) {
       /* seems like a reasonable limit on combining characters */
-      char tmp[MB_CUR_MAX+1];
-      (void)wctomb(NULL, 0);
-      size_t len = wctomb(tmp, act->ch);
+      mbstate_t ps;
+      char tmp[mb_cur_max];
+      memset(&ps, sizeof ps, 0);
+      size_t len = wcrtomb(tmp, act->ch, &ps);
       tmp[len] = '\0';
       combining_cell->contents.append( tmp );
     }

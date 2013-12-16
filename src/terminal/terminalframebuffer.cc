@@ -466,14 +466,14 @@ void Renditions::set_rendition( color_type num )
   }
 }
 
-void Renditions::set_foreground_color( color_type num )
+void Renditions::set_foreground_color( int num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     foreground_color = 30 + num;
   }
 }
 
-void Renditions::set_background_color( color_type num )
+void Renditions::set_background_color( int num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     background_color = 40 + num;
