@@ -33,50 +33,65 @@
 #ifndef TERMINALFB_HPP
 #define TERMINALFB_HPP
 
+#include <assert.h>
+#include <stdint.h>
+
 #include <vector>
 #include <deque>
 #include <string>
 #include <list>
-#include <assert.h>
 
 /* Terminal framebuffer */
 
 namespace Terminal {
+  typedef uint8_t color_type;
+
   class Renditions {
   public:
-    bool bold, italic, underlined, blink, inverse, invisible;
-    int foreground_color;
-    int background_color;
+    typedef enum { bold, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
 
-    Renditions( int s_background );
-    void set_foreground_color( int num );
-    void set_background_color( int num );
-    void set_rendition( int num );
+    color_type foreground_color;
+    color_type background_color;
+  private:
+    uint8_t attributes;
+
+  public:
+    Renditions( color_type s_background );
+    void set_foreground_color( color_type num );
+    void set_background_color( color_type num );
+    void set_rendition( color_type num );
     std::string sgr( void ) const;
 
     void posterize( void );
 
     bool operator==( const Renditions &x ) const
     {
-      return (bold == x.bold) && (italic == x.italic) && (underlined == x.underlined)
-	&& (blink == x.blink) && (inverse == x.inverse)
-	&& (invisible == x.invisible) && (foreground_color == x.foreground_color)
+      return attributes == x.attributes
+        && (foreground_color == x.foreground_color)
 	&& (background_color == x.background_color);
     }
+    void set_attribute(attribute_type attr, bool val)
+    {
+      attributes = val ? 
+	attributes | (1 << attr) :
+	attributes & ~(1 << attr);
+    }
+    bool get_attribute(attribute_type attr) const { return attributes & (1 << attr); }
+    void clear_attributes() { attributes = 0; }
   };
 
   class Cell {
   public:
     std::string contents;
-    char fallback; /* first character is combining character */
-    int width;
     Renditions renditions;
+    uint8_t width;
+    bool fallback; /* first character is combining character */
     bool wrap; /* if last cell, wrap to next line */
 
-    Cell( int background_color );
+    Cell( color_type background_color );
     Cell(); /* default constructor required by C++11 STL */
 
-    void reset( int background_color );
+    void reset( color_type background_color );
 
     bool operator==( const Cell &x ) const
     {
@@ -86,6 +101,8 @@ namespace Terminal {
 	       && (renditions == x.renditions)
 	       && (wrap == x.wrap) );
     }
+
+    bool operator!=( const Cell &x ) const { return !operator==( x ); }
 
     wchar_t debug_contents( void ) const;
 
@@ -110,13 +127,13 @@ namespace Terminal {
     typedef std::vector<Cell> cells_type;
     cells_type cells;
 
-    Row( size_t s_width, int background_color );
+    Row( size_t s_width, color_type background_color );
     Row(); /* default constructor required by C++11 STL */
 
-    void insert_cell( int col, int background_color );
-    void delete_cell( int col, int background_color );
+    void insert_cell( int col, color_type background_color );
+    void delete_cell( int col, color_type background_color );
 
-    void reset( int background_color );
+    void reset( color_type background_color );
 
     bool operator==( const Row &x ) const
     {
@@ -200,9 +217,9 @@ namespace Terminal {
     int limit_top( void );
     int limit_bottom( void );
 
-    void set_foreground_color( int x ) { renditions.set_foreground_color( x ); }
-    void set_background_color( int x ) { renditions.set_background_color( x ); }
-    void add_rendition( int x ) { renditions.set_rendition( x ); }
+    void set_foreground_color( color_type x ) { renditions.set_foreground_color( x ); }
+    void set_background_color( color_type x ) { renditions.set_background_color( x ); }
+    void add_rendition( color_type x ) { renditions.set_rendition( x ); }
     Renditions get_renditions( void ) const { return renditions; }
     int get_background_rendition( void ) const { return renditions.background_color; }
 
@@ -250,12 +267,7 @@ namespace Terminal {
       return &rows[ row ];
     }
 
-    inline const Cell *get_cell( void ) const
-    {
-      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
-    }
-
-    inline const Cell *get_cell( int row, int col ) const
+    inline const Cell *get_cell( int row = -1, int col = -1 ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
@@ -265,22 +277,12 @@ namespace Terminal {
 
     Row *get_mutable_row( int row )
     {
-      if ( row == -1 ) row = ds.get_cursor_row();
-
-      return &rows[ row ];
+      return const_cast<Row *>(get_row( row ));
     }
 
-    inline Cell *get_mutable_cell( void )
+    inline Cell *get_mutable_cell( int row = -1, int col = -1 )
     {
-      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
-    }
-
-    inline Cell *get_mutable_cell( int row, int col )
-    {
-      if ( row == -1 ) row = ds.get_cursor_row();
-      if ( col == -1 ) col = ds.get_cursor_col();
-
-      return &rows[ row ].cells[ col ];
+      return const_cast<Cell *>(get_cell( row, col ));
     }
 
     Cell *get_combining_cell( void );

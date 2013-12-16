@@ -38,31 +38,31 @@
 
 using namespace Terminal;
 
-Cell::Cell( int background_color )
+Cell::Cell( color_type background_color )
   : contents(),
-    fallback( false ),
-    width( 1 ),
     renditions( background_color ),
+    width( 1 ),
+    fallback( false ),
     wrap( false )
 {}
 #if 0
 Cell::Cell() /* default constructor required by C++11 STL */
   : contents(),
-    fallback( false ),
-    width( 1 ),
     renditions( 0 ),
+    width( 1 ),
+    fallback( false ),
     wrap( false )
 {
   assert( false );
 }
 #endif
 
-void Cell::reset( int background_color )
+void Cell::reset( color_type background_color )
 {
   contents.erase();
-  fallback = false;
-  width = 1;
   renditions = Renditions( background_color );
+  width = 1;
+  fallback = false;
   wrap = false;
 }
 
@@ -306,7 +306,7 @@ void Framebuffer::delete_line( int row )
   rows.erase( rows.begin() + row );
 }
 
-Row::Row( size_t s_width, int background_color )
+Row::Row( size_t s_width, color_type background_color )
   : cells( s_width, Cell( background_color ) )
 {}
 
@@ -318,13 +318,13 @@ Row::Row() /* default constructor required by C++11 STL */
 }
 #endif
 
-void Row::insert_cell( int col, int background_color )
+void Row::insert_cell( int col, color_type background_color )
 {
   cells.insert( cells.begin() + col, Cell( background_color ) );
   cells.pop_back();
 }
 
-void Row::delete_cell( int col, int background_color )
+void Row::delete_cell( int col, color_type background_color )
 {
   cells.push_back( Cell( background_color ) );
   cells.erase( cells.begin() + col );
@@ -420,17 +420,16 @@ void DrawState::resize( int s_width, int s_height )
   }
 }
 
-Renditions::Renditions( int s_background )
-  : bold( false ), italic( false ), underlined( false ), blink( false ),
-    inverse( false ), invisible( false ), foreground_color( 0 ),
-    background_color( s_background )
+Renditions::Renditions( color_type s_background )
+  : foreground_color( 0 ), background_color( s_background ),
+    attributes( 0 )
 {}
 
 /* This routine cannot be used to set a color beyond the 16-color set. */
-void Renditions::set_rendition( int num )
+void Renditions::set_rendition( color_type num )
 {
   if ( num == 0 ) {
-    bold = italic = underlined = blink = inverse = invisible = false;
+    clear_attributes();
     foreground_color = background_color = 0;
     return;
   }
@@ -458,23 +457,23 @@ void Renditions::set_rendition( int num )
   }
 
   switch ( num ) {
-  case 1: case 22: bold = (num == 1); break;
-  case 3: case 23: italic = (num == 3); break;
-  case 4: case 24: underlined = (num == 4); break;
-  case 5: case 25: blink = (num == 5); break;
-  case 7: case 27: inverse = (num == 7); break;
-  case 8: case 28: invisible = (num == 8); break;
+  case 1: case 22: set_attribute(bold, (num == 1)); break;
+  case 3: case 23: set_attribute(italic, (num == 3)); break;
+  case 4: case 24: set_attribute(underlined, (num == 4)); break;
+  case 5: case 25: set_attribute(blink, (num == 5)); break;
+  case 7: case 27: set_attribute(inverse, (num == 7)); break;
+  case 8: case 28: set_attribute(invisible, (num == 8)); break;
   }
 }
 
-void Renditions::set_foreground_color( int num )
+void Renditions::set_foreground_color( color_type num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     foreground_color = 30 + num;
   }
 }
 
-void Renditions::set_background_color( int num )
+void Renditions::set_background_color( color_type num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     background_color = 40 + num;
@@ -486,12 +485,12 @@ std::string Renditions::sgr( void ) const
   std::string ret;
 
   ret.append( "\033[0" );
-  if ( bold ) ret.append( ";1" );
-  if ( italic ) ret.append( ";3" );
-  if ( underlined ) ret.append( ";4" );
-  if ( blink ) ret.append( ";5" );
-  if ( inverse ) ret.append( ";7" );
-  if ( invisible ) ret.append( ";8" );
+  if( get_attribute(bold) ) ret.append( ";1" );
+  if( get_attribute(italic) ) ret.append( ";3" );
+  if( get_attribute(underlined) ) ret.append( ";4" );
+  if( get_attribute(blink) ) ret.append( ";5" );
+  if( get_attribute(inverse) ) ret.append( ";7" );
+  if( get_attribute(invisible) ) ret.append( ";8" );
 
   if ( foreground_color
        && (foreground_color <= 37) ) {
@@ -578,7 +577,7 @@ void Renditions::posterize( void )
   }
 }
 
-void Row::reset( int background_color )
+void Row::reset( color_type background_color )
 {
   for ( cells_type::iterator i = cells.begin();
 	i != cells.end();
