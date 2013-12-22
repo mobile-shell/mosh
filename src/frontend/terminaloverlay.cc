@@ -66,10 +66,11 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
     return;
   }
 
-  if ( !(*(fb.get_cell( row, col )) == replacement) ) {
-    *(fb.get_mutable_cell( row, col )) = replacement;
+  Terminal::Cell &oldcell = *fb.get_mutable_cell( row, col );
+  if ( oldcell != replacement ) {
+    oldcell = replacement;
     if ( flag ) {
-      fb.get_mutable_cell( row, col )->renditions.set_attribute(Renditions::underlined, true);
+      oldcell.renditions.set_attribute(Renditions::underlined, true);
     }
   }
 }
