@@ -62,7 +62,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
   /* has bell been rung? */
   if ( f.get_bell_count() != frame.last_frame.get_bell_count() ) {
-    frame.append( "\x07" );
+    frame.append( '\007' );
   }
 
   /* has icon name or window title changed? */
@@ -78,10 +78,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
             i != window_title.end();
             i++ ) {
-	snprintf( tmp, 64, "%lc", *i );
-	frame.append( tmp );
+	frame.append( *i );
       }
-      frame.append( "\007" );
+      frame.append( '\007' );
       /* ST is more correct, but BEL more widely supported */
     } else {
       /* write Icon Name */
@@ -90,20 +89,18 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       for ( std::deque<wchar_t>::const_iterator i = icon_name.begin();
 	    i != icon_name.end();
 	    i++ ) {
-	snprintf( tmp, 64, "%lc", *i );
-	frame.append( tmp );
+	frame.append( *i );
       }
-      frame.append( "\007" );
+      frame.append( '\007' );
 
       frame.append( "\033]2;" );
       const std::deque<wchar_t> &window_title( f.get_window_title() );
       for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
 	    i != window_title.end();
 	    i++ ) {
-	snprintf( tmp, 64, "%lc", *i );
-	frame.append( tmp );
+	frame.append( *i );
       }
-      frame.append( "\007" );
+      frame.append( '\007' );
     }
 
   }
@@ -193,7 +190,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
 	/* scroll */
 	for ( int i = 0; i < lines_scrolled; i++ ) {
-	  frame.append( "\n" );
+	  frame.append( '\n' );
 	}
 
 	/* do the move in memory */
@@ -286,7 +283,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   /* have renditions changed? */
   if ( (!initialized)
        || !(f.ds.get_renditions() == frame.current_rendition) ) {
-    frame.appendstring( f.ds.get_renditions().sgr() );
+    frame.append( f.ds.get_renditions().sgr() );
     frame.current_rendition = f.ds.get_renditions();
   }
 
@@ -337,7 +334,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
   if ( !(frame.current_rendition == cell->renditions) ) {
     /* print renditions */
-    frame.appendstring( cell->renditions.sgr() );
+    frame.append( cell->renditions.sgr() );
     frame.current_rendition = cell->renditions;
   }
 
@@ -359,7 +356,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
     bool can_use_erase = has_bce || (cell->renditions == initial_rendition());
 
     if ( frame.force_next_put ) {
-      frame.append( " " );
+      frame.append( ' ' );
       frame.cursor_x++;
       frame.x++;
       frame.force_next_put = false;
@@ -382,7 +379,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 	frame.x += clear_count;
       } else { /* no ECH, so just print a space */
 	/* unlike erases, this will use background color irrespective of BCE */
-	frame.append( " " );
+	frame.append( ' ' );
 	frame.cursor_x++;
 	frame.x++;
       }
@@ -396,7 +393,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
     frame.append( "\xC2\xA0" );
   }
 
-  frame.appendstring( cell->contents.c_str() );
+  frame.append( cell->contents );
 
   frame.x += cell->width;
   frame.cursor_x += cell->width;
@@ -426,5 +423,6 @@ FrameState::FrameState( const Framebuffer &s_last )
         str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
 	last_frame( s_last )
 {
-  str.reserve( 1024 );
+  /* just a guess-- doesn't matter for correctness */
+  str.reserve( last_frame.ds.get_width() * last_frame.ds.get_height() * 4 );
 }

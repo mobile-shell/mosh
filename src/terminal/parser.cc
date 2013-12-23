@@ -87,8 +87,7 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
   /* This function will only work in a UTF-8 locale. */
 
   wchar_t pwc;
-  mbstate_t ps;
-  memset( &ps, 0, sizeof( ps ) );
+  mbstate_t ps = mbstate_t();
 
   size_t total_bytes_parsed = 0;
   size_t orig_buf_len = buf_len;

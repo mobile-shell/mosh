@@ -34,6 +34,7 @@
 #define TERMINALFB_HPP
 
 #include <assert.h>
+#include <limits.h>
 #include <stdint.h>
 
 #include <vector>
@@ -120,6 +121,20 @@ namespace Terminal {
     }
 
     bool compare( const Cell &other ) const;
+
+    static void append_to_str( std::string &dest, const wchar_t c )
+    {
+      static mbstate_t ps = mbstate_t();
+      char tmp[MB_LEN_MAX];
+      (void)wcrtomb(NULL, 0, &ps);
+      size_t len = wcrtomb(tmp, c, &ps);
+      dest.append( tmp, len );
+    }
+
+    void append( const wchar_t c )
+    {
+      append_to_str( contents, c );
+    }
   };
 
   class Row {

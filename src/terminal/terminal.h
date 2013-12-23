@@ -61,8 +61,6 @@ namespace Terminal {
     friend void Parser::Resize::act_on_terminal( Emulator * ) const;
 
   private:
-    static const size_t mb_cur_max = 64;
-
     Framebuffer fb;
     Dispatcher dispatch;
     UserInput user;

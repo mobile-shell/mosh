@@ -42,11 +42,7 @@
 using namespace Terminal;
 
 Emulator::Emulator( size_t s_width, size_t s_height )
-  : fb( s_width, s_height ), dispatch(), user()
-{
-  /* explode early */
-  assert((size_t)MB_CUR_MAX < mb_cur_max);
-}
+  : fb( s_width, s_height ), dispatch(), user() {}
 
 std::string Emulator::read_octets_to_host( void )
 {
@@ -100,14 +96,7 @@ void Emulator::print( const Parser::Print *act )
     this_cell = fb.get_mutable_cell();
 
     fb.reset_cell( this_cell );
-    {
-      mbstate_t ps;
-      char tmp[mb_cur_max];
-      memset(&ps, sizeof ps, 0);
-      size_t len = wcrtomb(tmp, act->ch, &ps);
-      tmp[len] = '\0';
-      this_cell->contents.append( tmp );
-    }
+    this_cell->append( act->ch );
     this_cell->width = chwidth;
     fb.apply_renditions_to_current_cell();
 
@@ -134,16 +123,7 @@ void Emulator::print( const Parser::Print *act )
       combining_cell->fallback = true;
       fb.ds.move_col( 1, true, true );
     }
-
-    if ( combining_cell->contents.size() < 64 ) {
-      /* seems like a reasonable limit on combining characters */
-      mbstate_t ps;
-      char tmp[mb_cur_max];
-      memset(&ps, sizeof ps, 0);
-      size_t len = wcrtomb(tmp, act->ch, &ps);
-      tmp[len] = '\0';
-      combining_cell->contents.append( tmp );
-    }
+    combining_cell->append( act->ch );
     act->handled = true;
     break;
   case -1: /* unprintable character */
