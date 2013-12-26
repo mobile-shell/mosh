@@ -318,12 +318,12 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 {
   char tmp[ 64 ];
 
-  const Cell *cell = f.get_cell( frame.y, frame.x );
+  const Cell &cell = *f.get_cell( frame.y, frame.x );
 
   if ( !frame.force_next_put ) {
     if ( initialized
-	 && ( *cell == *(frame.last_frame.get_cell( frame.y, frame.x )) ) ) {
-      frame.x += cell->width;
+	 && ( cell == *(frame.last_frame.get_cell( frame.y, frame.x )) ) ) {
+      frame.x += cell.width;
       return;
     }
   }
@@ -332,19 +332,19 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
     frame.append_silent_move( frame.y, frame.x );
   }
 
-  if ( !(frame.current_rendition == cell->renditions) ) {
+  if ( !(frame.current_rendition == cell.renditions) ) {
     /* print renditions */
-    frame.append( cell->renditions.sgr() );
-    frame.current_rendition = cell->renditions;
+    frame.append( cell.renditions.sgr() );
+    frame.current_rendition = cell.renditions;
   }
 
-  if ( cell->contents.empty() ) {
+  if ( cell.contents.empty() ) {
     /* see how far we can stretch a clear */
     int clear_count = 0;
     for ( int col = frame.x; col < f.ds.get_width(); col++ ) {
-      const Cell *other_cell = f.get_cell( frame.y, col );
-      if ( (cell->renditions == other_cell->renditions)
-	   && (other_cell->contents.empty()) ) {
+      const Cell &other_cell = *f.get_cell( frame.y, col );
+      if ( (cell.renditions == other_cell.renditions)
+	   && (other_cell.contents.empty()) ) {
 	clear_count++;
       } else {
 	break;
@@ -353,7 +353,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
     assert( frame.x + clear_count <= f.ds.get_width() );
 
-    bool can_use_erase = has_bce || (cell->renditions == initial_rendition());
+    bool can_use_erase = has_bce || (cell.renditions == initial_rendition());
 
     if ( frame.force_next_put ) {
       frame.append( ' ' );
@@ -389,14 +389,14 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
   }
 
   /* cells that begin with combining character get combiner attached to no-break space */
-  if ( cell->fallback ) {
+  if ( cell.fallback ) {
     frame.append( "\xC2\xA0" );
   }
 
-  frame.append( cell->contents );
+  frame.append( cell.contents );
 
-  frame.x += cell->width;
-  frame.cursor_x += cell->width;
+  frame.x += cell.width;
+  frame.cursor_x += cell.width;
 
   frame.force_next_put = false;
 }
