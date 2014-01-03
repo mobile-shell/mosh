@@ -296,9 +296,14 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   int clear_count = 0;
   bool wrote_last_cell = false;
 
+  const Row &row = *f.get_row( frame_y );
+  const Row &old_row = *frame.last_frame.get_row( frame_y );
+  const Row::cells_type &cells = row.cells;
+  const Row::cells_type &old_cells = old_row.cells;
+  
   /* If we're forced to write the first column because of wrap, go ahead and do so. */
   if ( wrap ) {
-    const Cell &cell = *f.get_cell( frame_y, frame_x );
+    const Cell &cell = cells[ frame_x ];
     append_cell( frame, cell );
     frame_x += cell.width;
     frame.cursor_x += cell.width;
@@ -307,12 +312,12 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   /* iterate for every cell */
   while ( frame_x < f.ds.get_width() ) {
 
-    const Cell &cell = *f.get_cell( frame_y, frame_x );
+    const Cell &cell = cells[ frame_x ];
 
     /* Does cell need to be drawn?  Skip all this. */
     if ( initialized
 	 && !clear_count
-	 && ( cell == *(frame.last_frame.get_cell( frame_y, frame_x )) ) ) {
+	 && ( cell == old_cells[ frame_x ] ) ) {
       frame_x += cell.width;
       continue;
     }
@@ -392,7 +397,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
      actually wrap around in cases where it wrapped around for us. */
   if ( wrote_last_cell
        && (frame_y < f.ds.get_height() - 1)
-       && f.get_row( frame_y )->get_wrap() ) {
+       && row.get_wrap() ) {
 
     /* Update our cursor, and ask for wrap on the next row. */
     frame.cursor_x = 0;
@@ -403,8 +408,8 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   /* Turn off wrap */
   if ( wrote_last_cell
        && (frame_y < f.ds.get_height() - 1)
-       && (!f.get_row( frame_y )->get_wrap())
-       && (!initialized || frame.last_frame.get_row( frame_y )->get_wrap()) ) {
+       && !row.get_wrap()
+       && (!initialized || old_row.get_wrap()) ) {
     /* Resort to well-trod ASCII and update our cursor. */
     frame.append( "\r\n" );
     frame.cursor_x = 0;
