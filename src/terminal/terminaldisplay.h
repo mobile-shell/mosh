@@ -43,8 +43,9 @@ namespace Terminal {
 
     int cursor_x, cursor_y;
     Renditions current_rendition;
+    bool cursor_visible; // XXX this may belong someplace else
 
-    Framebuffer last_frame;
+    const Framebuffer &last_frame;
 
     FrameState( const Framebuffer &s_last );
 

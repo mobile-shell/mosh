@@ -147,9 +147,10 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     frame.current_rendition = frame.last_frame.ds.get_renditions();
   }
 
-  /* shortcut -- has display moved up by a certain number of lines? */
   int frame_y = 0;
 
+#ifdef notyet
+  /* shortcut -- has display moved up by a certain number of lines? */
   if ( initialized ) {
     int lines_scrolled = 0;
     int scroll_height = 0;
@@ -226,6 +227,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       }
     }
   }
+#endif
 
   /* Now update the display, row by row */
   bool wrap = false;
@@ -247,7 +249,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
   /* has cursor visibility changed? */
   if ( (!initialized)
-       || (f.ds.cursor_visible != frame.last_frame.ds.cursor_visible) ) {
+       || (f.ds.cursor_visible != frame.cursor_visible) ) {
     if ( f.ds.cursor_visible ) {
       frame.append( "\033[?25h" );
     } else {
@@ -423,9 +425,9 @@ void FrameState::append_silent_move( int y, int x )
   char tmp[ 64 ];
 
   /* turn off cursor if necessary before moving cursor */
-  if ( last_frame.ds.cursor_visible ) {
+  if ( cursor_visible ) {
     append( "\033[?25l" );
-    last_frame.ds.cursor_visible = false;
+    cursor_visible = false;
   }
 
   snprintf( tmp, 64, "\033[%d;%dH", y + 1, x + 1 );
@@ -436,6 +438,7 @@ void FrameState::append_silent_move( int y, int x )
 
 FrameState::FrameState( const Framebuffer &s_last )
       : str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
+	cursor_visible( s_last.ds.cursor_visible ),
 	last_frame( s_last )
 {
   /* just a guess-- doesn't matter for correctness */
