@@ -39,8 +39,6 @@ namespace Terminal {
   /* variables used within a new_frame */
   class FrameState {
   public:
-    int x, y;
-    bool force_next_put;
     std::string str;
 
     int cursor_x, cursor_y;
@@ -75,7 +73,7 @@ namespace Terminal {
 
     const char *smcup, *rmcup; /* enter and exit alternate screen mode */
 
-    void put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const;
+    bool put_row( bool initialized, FrameState &frame, const Framebuffer &f, int frame_y, bool wrap ) const;
 
   public:
     void downgrade( Framebuffer &f ) const { if ( posterize_colors ) { f.posterize(); } }

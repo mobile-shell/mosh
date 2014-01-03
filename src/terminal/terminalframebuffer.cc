@@ -45,7 +45,6 @@ Cell::Cell( color_type background_color )
     fallback( false ),
     wrap( false )
 {}
-#if 0
 Cell::Cell() /* default constructor required by C++11 STL */
   : contents(),
     renditions( 0 ),
@@ -55,7 +54,6 @@ Cell::Cell() /* default constructor required by C++11 STL */
 {
   assert( false );
 }
-#endif
 
 void Cell::reset( color_type background_color )
 {
@@ -310,13 +308,11 @@ Row::Row( size_t s_width, color_type background_color )
   : cells( s_width, Cell( background_color ) )
 {}
 
-#if 0
 Row::Row() /* default constructor required by C++11 STL */
   : cells( 1, Cell() )
 {
   assert( false );
 }
-#endif
 
 void Row::insert_cell( int col, color_type background_color )
 {

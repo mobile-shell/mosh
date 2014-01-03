@@ -44,6 +44,20 @@ static const Renditions & initial_rendition( void )
   return blank;
 }
 
+static const void append_cell(FrameState & frame, const Cell & cell)
+{
+  if ( cell.contents.empty() ) {
+    frame.append( ' ' );
+  }
+  /* Write a character cell */
+  /* cells that begin with combining character get combiner attached to no-break space */
+  if ( cell.fallback ) {
+    frame.append( "\xC2\xA0" );
+  }
+  frame.append( cell.contents );
+}
+
+
 std::string Display::open() const
 {
   return std::string( smcup ? smcup : "" ) + std::string( "\033[?1h" );
@@ -134,7 +148,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   }
 
   /* shortcut -- has display moved up by a certain number of lines? */
-  frame.y = 0;
+  int frame_y = 0;
 
   if ( initialized ) {
     int lines_scrolled = 0;
@@ -167,7 +181,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     }
 
     if ( scroll_height ) {
-      frame.y = scroll_height;
+      frame_y = scroll_height;
 
       if ( lines_scrolled ) {
 	if ( !(frame.current_rendition == initial_rendition()) ) {
@@ -213,54 +227,15 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     }
   }
 
-  /* iterate for every cell */
-  for ( ; frame.y < f.ds.get_height(); frame.y++ ) {
-    int last_x = 0;
-    for ( frame.x = 0;
-	  frame.x < f.ds.get_width(); /* let put_cell() handle advance */ ) {
-      last_x = frame.x;
-      put_cell( initialized, frame, f );
-    }
-
-    /* To hint that a word-select should group the end of one line
-       with the beginning of the next, we let the real cursor
-       actually wrap around in cases where it wrapped around for us. */
-
-    if ( (frame.y < f.ds.get_height() - 1)
-	 && f.get_row( frame.y )->get_wrap() ) {
-      frame.x = last_x;
-
-      while ( frame.x < f.ds.get_width() ) {
-	frame.force_next_put = true;
-	put_cell( initialized, frame, f );
-      }
-
-      /* next write will wrap */
-      frame.cursor_x = 0;
-      frame.cursor_y++;
-      frame.force_next_put = true;
-    }
-
-    /* Turn off wrap */
-    if ( (frame.y < f.ds.get_height() - 1)
-	 && (!f.get_row( frame.y )->get_wrap())
-	 && (!initialized || frame.last_frame.get_row( frame.y )->get_wrap()) ) {
-      frame.x = last_x;
-      if ( initialized ) {
-	frame.last_frame.reset_cell( frame.last_frame.get_mutable_cell( frame.y, frame.x ) );
-      }
-
-      snprintf( tmp, 64, "\033[%d;%dH\033[K", frame.y + 1, frame.x + 1 );
-      frame.append( tmp );
-      frame.cursor_x = frame.x;
-
-      frame.force_next_put = true;
-      put_cell( initialized, frame, f );
-    }
+  /* Now update the display, row by row */
+  bool wrap = false;
+  for ( ; frame_y < f.ds.get_height(); frame_y++ ) {
+    wrap = put_row( initialized, frame, f, frame_y, wrap );
   }
 
   /* has cursor location changed? */
   if ( (!initialized)
+       || wrap
        || (f.ds.get_cursor_row() != frame.cursor_y)
        || (f.ds.get_cursor_col() != frame.cursor_x) ) {
     snprintf( tmp, 64, "\033[%d;%dH", f.ds.get_cursor_row() + 1,
@@ -314,91 +289,128 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   return frame.str;
 }
 
-void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &f ) const
+bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f, int frame_y, bool wrap ) const
 {
   char tmp[ 64 ];
+  int frame_x = 0;
+  int clear_count = 0;
+  bool wrote_last_cell = false;
 
-  const Cell &cell = *f.get_cell( frame.y, frame.x );
+  /* If we're forced to write the first column because of wrap, go ahead and do so. */
+  if ( wrap ) {
+    const Cell &cell = *f.get_cell( frame_y, frame_x );
+    append_cell( frame, cell );
+    frame_x += cell.width;
+    frame.cursor_x += cell.width;
+  }
 
-  if ( !frame.force_next_put ) {
+  /* iterate for every cell */
+  while ( frame_x < f.ds.get_width() ) {
+
+    const Cell &cell = *f.get_cell( frame_y, frame_x );
+
+    /* Does cell need to be drawn?  Skip all this. */
     if ( initialized
-	 && ( cell == *(frame.last_frame.get_cell( frame.y, frame.x )) ) ) {
-      frame.x += cell.width;
-      return;
+	 && !clear_count
+	 && ( cell == *(frame.last_frame.get_cell( frame_y, frame_x )) ) ) {
+      frame_x += cell.width;
+      continue;
     }
-  }
 
-  if ( (frame.x != frame.cursor_x) || (frame.y != frame.cursor_y) ) {
-    frame.append_silent_move( frame.y, frame.x );
-  }
+    /* Slurp up all the blank cells */
+    if ( (cell.contents.empty() 
+	     || ( cell.is_blank()
+		  && cell.renditions == frame.current_rendition ) ) ) {
+      /* Remember cleared cells */
+      clear_count++;
+      frame_x++;
+      continue;
+    }
 
-  if ( !(frame.current_rendition == cell.renditions) ) {
-    /* print renditions */
-    frame.append( cell.renditions.sgr() );
-    frame.current_rendition = cell.renditions;
-  }
+    /* Move to the right position. */
+    if ( ((frame_x - clear_count) != frame.cursor_x) || (frame_y != frame.cursor_y) ) {
+      frame.append_silent_move( frame_y, frame_x - clear_count );
+    }
 
-  if ( cell.contents.empty() ) {
-    /* see how far we can stretch a clear */
-    int clear_count = 0;
-    for ( int col = frame.x; col < f.ds.get_width(); col++ ) {
-      const Cell &other_cell = *f.get_cell( frame.y, col );
-      if ( (cell.renditions == other_cell.renditions)
-	   && (other_cell.contents.empty()) ) {
-	clear_count++;
+    if ( !(frame.current_rendition == cell.renditions) ) {
+      /* print renditions */
+      frame.append( cell.renditions.sgr() );
+      frame.current_rendition = cell.renditions;
+    }
+
+    /* Clear or write cells. */
+    if ( clear_count ) {
+      if ( clear_count > 10 && (frame_x == f.ds.get_width())
+	   && has_bce ) {
+	frame.append( "\033[K" );
+      } else if ( has_ech && clear_count > 10 ) {
+	snprintf( tmp, 64, "\033[%dX", clear_count );
+	frame.append( tmp );
       } else {
-	break;
+	frame.append( std::string( clear_count, ' ' ));
+	frame.cursor_x = frame_x;
+	wrote_last_cell = true;
       }
+      clear_count = 0;
     }
 
-    assert( frame.x + clear_count <= f.ds.get_width() );
-
-    bool can_use_erase = has_bce || (cell.renditions == initial_rendition());
-
-    if ( frame.force_next_put ) {
-      frame.append( ' ' );
-      frame.cursor_x++;
-      frame.x++;
-      frame.force_next_put = false;
-      return;
+    /* Move to the right position. */
+    if ( (frame_x != frame.cursor_x) || (frame_y != frame.cursor_y) ) {
+      frame.append_silent_move( frame_y, frame_x );
     }
+    append_cell( frame, cell );
+    frame_x += cell.width;
+    frame.cursor_x += cell.width;
+    if ( frame_x >= f.ds.get_width() ) {
+      wrote_last_cell = true;
+    }
+  }
 
-    /* can we go to the end of the line? */
-    if ( (frame.x + clear_count == f.ds.get_width())
-	 && can_use_erase ) {
+  /* End of line. */
+
+  /* Clear or write cells. */
+  if ( clear_count ) {
+    /* Move to the right position. */
+    if ( ((frame_x - clear_count) != frame.cursor_x) || (frame_y != frame.cursor_y) ) {
+      frame.append_silent_move( frame_y, frame_x - clear_count );
+    }
+    if ( clear_count > 10 && (frame_x == f.ds.get_width())
+	 && has_bce ) {
       frame.append( "\033[K" );
-      frame.x += clear_count;
+    } else if ( has_ech && clear_count > 10 ) {
+      snprintf( tmp, 64, "\033[%dX", clear_count );
+      frame.append( tmp );
     } else {
-      if ( has_ech && can_use_erase ) {
-	if ( clear_count == 1 ) {
-	  frame.append( "\033[X" );
-	} else {
-	  snprintf( tmp, 64, "\033[%dX", clear_count );
-	  frame.append( tmp );
-	}
-	frame.x += clear_count;
-      } else { /* no ECH, so just print a space */
-	/* unlike erases, this will use background color irrespective of BCE */
-	frame.append( ' ' );
-	frame.cursor_x++;
-	frame.x++;
-      }
+      frame.append( std::string( clear_count, ' ' ));
+      frame.cursor_x = frame_x;
+      wrote_last_cell = true;
     }
-
-    return;
   }
 
-  /* cells that begin with combining character get combiner attached to no-break space */
-  if ( cell.fallback ) {
-    frame.append( "\xC2\xA0" );
+  /* To hint that a word-select should group the end of one line
+     with the beginning of the next, we let the real cursor
+     actually wrap around in cases where it wrapped around for us. */
+  if ( wrote_last_cell
+       && (frame_y < f.ds.get_height() - 1)
+       && f.get_row( frame_y )->get_wrap() ) {
+
+    /* Update our cursor, and ask for wrap on the next row. */
+    frame.cursor_x = 0;
+    frame.cursor_y++;
+    return true;
   }
 
-  frame.append( cell.contents );
-
-  frame.x += cell.width;
-  frame.cursor_x += cell.width;
-
-  frame.force_next_put = false;
+  /* Turn off wrap */
+  if ( wrote_last_cell
+       && (frame_y < f.ds.get_height() - 1)
+       && (!f.get_row( frame_y )->get_wrap())
+       && (!initialized || frame.last_frame.get_row( frame_y )->get_wrap()) ) {
+    /* Resort to well-trod ASCII and update our cursor. */
+    frame.append( "\r\n" );
+    frame.cursor_x = 0;
+    frame.cursor_y++;
+  }
+  return false;
 }
 
 void FrameState::append_silent_move( int y, int x )
@@ -418,9 +430,7 @@ void FrameState::append_silent_move( int y, int x )
 }
 
 FrameState::FrameState( const Framebuffer &s_last )
-      : x(0), y(0),
-	force_next_put( false ),
-        str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
+      : str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
 	last_frame( s_last )
 {
   /* just a guess-- doesn't matter for correctness */
