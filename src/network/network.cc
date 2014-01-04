@@ -625,26 +625,25 @@ uint64_t Connection::timeout( void ) const
 
 Connection::Socket::~Socket()
 {
-  if ( close( _fd ) < 0 ) {
-    throw NetworkException( "close", errno );
+  if ( _fd != -1 && close( _fd ) < 0 ) {
+    // Avoid throw from a destructor
+    perror( "close ( fd )" );
   }
 }
 
 Connection::Socket::Socket( const Socket & other )
-  : _fd( dup( other._fd ) )
+  : _fd( other._fd )
 {
-  if ( _fd < 0 ) {
-    throw NetworkException( "socket", errno );
-  }
+  other._fd = -1;
 }
 
 Connection::Socket & Connection::Socket::operator=( const Socket & other )
 {
-  _fd = dup( other._fd );
-  
-  if ( _fd < 0 ) {
-    throw NetworkException( "socket", errno );
+  if ( _fd != -1 && close( _fd ) < 0 ) {
+    throw NetworkException( "close", errno );
   }
+  _fd = other._fd;
+  other._fd = -1;
 
   return *this;
 }
