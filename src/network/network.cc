@@ -205,10 +205,9 @@ public:
   AddrInfo( const char *node, const char *service,
 	    const struct addrinfo *hints ) :
     res( NULL ) {
-    int errcode = getaddrinfo( node ? node : "0",
-			       service ? service : "0", hints, &res );
+    int errcode = getaddrinfo( node, service, hints, &res );
     if ( errcode != 0 ) {
-      throw NetworkException( std::string( "Bad IP address (" ) + node + "): " + gai_strerror( errcode ), 0 );
+      throw NetworkException( std::string( "Bad IP address (" ) + (node != NULL ? node : "(null)") + "): " + gai_strerror( errcode ), 0 );
     }
   }
   ~AddrInfo() { freeaddrinfo(res); }
@@ -287,7 +286,7 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST | AI_NUMERICSERV;
-  AddrInfo ai( addr, 0, &hints );
+  AddrInfo ai( addr, "0", &hints );
 
   Addr local_addr;
   socklen_t local_addr_len = ai.res->ai_addrlen;
