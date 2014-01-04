@@ -286,7 +286,7 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST | AI_NUMERICSERV;
-  AddrInfo ai( addr, 0, &hints );
+  AddrInfo ai( addr, "0", &hints );
 
   Addr local_addr;
   socklen_t local_addr_len = ai.res->ai_addrlen;
