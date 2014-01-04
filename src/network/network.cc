@@ -640,9 +640,7 @@ Connection::Socket::Socket( const Socket & other )
 
 Connection::Socket & Connection::Socket::operator=( const Socket & other )
 {
-  _fd = dup( other._fd );
-  
-  if ( _fd < 0 ) {
+  if ( dup2( other._fd, _fd ) < 0 ) {
     throw NetworkException( "socket", errno );
   }
 
