@@ -207,7 +207,7 @@ public:
     res( NULL ) {
     int errcode = getaddrinfo( node, service, hints, &res );
     if ( errcode != 0 ) {
-      throw NetworkException( std::string( "Bad IP address (" ) + node + "): " + gai_strerror( errcode ), 0 );
+      throw NetworkException( std::string( "Bad IP address (" ) + (node != NULL ? node : "(null)") + "): " + gai_strerror( errcode ), 0 );
     }
   }
   ~AddrInfo() { freeaddrinfo(res); }
