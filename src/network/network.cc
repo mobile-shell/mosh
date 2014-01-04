@@ -205,7 +205,8 @@ public:
   AddrInfo( const char *node, const char *service,
 	    const struct addrinfo *hints ) :
     res( NULL ) {
-    int errcode = getaddrinfo( node, service, hints, &res );
+    int errcode = getaddrinfo( node ? node : "0",
+			       service ? service : "0", hints, &res );
     if ( errcode != 0 ) {
       throw NetworkException( std::string( "Bad IP address (" ) + node + "): " + gai_strerror( errcode ), 0 );
     }
