@@ -55,6 +55,7 @@ namespace Terminal {
     color_type background_color;
   private:
     uint8_t attributes;
+    uint8_t padding; // workaround for OS X llvm-gcc bug with 3-byte structs
 
   public:
     Renditions( color_type s_background );

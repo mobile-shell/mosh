@@ -418,7 +418,7 @@ void DrawState::resize( int s_width, int s_height )
 
 Renditions::Renditions( color_type s_background )
   : foreground_color( 0 ), background_color( s_background ),
-    attributes( 0 )
+    attributes( 0 ), padding( 0 )
 {}
 
 /* This routine cannot be used to set a color beyond the 16-color set. */
