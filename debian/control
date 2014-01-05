@@ -11,6 +11,7 @@ Vcs-Browser: https://github.com/keithw/mosh
 Package: mosh
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, openssh-client
+Recommends: libio-socket-ip-perl
 Description: Mobile shell that supports roaming and intelligent local echo
  Mosh is a remote terminal application that supports:
    - intermittent network connectivity,

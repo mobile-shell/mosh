@@ -46,7 +46,7 @@ int main( int argc, char *argv[] )
   bool server = true;
   char *key;
   char *ip;
-  int port;
+  char *port;
 
   UserStream me, remote;
 
@@ -59,7 +59,7 @@ int main( int argc, char *argv[] )
       
       key = argv[ 1 ];
       ip = argv[ 2 ];
-      port = atoi( argv[ 3 ] );
+      port = argv[ 3 ];
       
       n = new Transport<UserStream, UserStream>( me, remote, key, ip, port );
     } else {
@@ -70,7 +70,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  fprintf( stderr, "Port bound is %d, key is %s\n", n->port(), n->get_key().c_str() );
+  fprintf( stderr, "Port bound is %s, key is %s\n", n->port().c_str(), n->get_key().c_str() );
 
   if ( server ) {
     Select &sel = Select::get_instance();

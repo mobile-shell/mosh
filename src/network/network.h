@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <deque>
 #include <sys/socket.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <string>
 #include <math.h>
@@ -84,6 +85,19 @@ namespace Network {
     string tostring( Session *session );
   };
 
+  struct AddrLen {
+    union Addr {
+        struct sockaddr sa;
+        struct sockaddr_in sin;
+        struct sockaddr_in6 sin6;
+        struct sockaddr_storage ss;
+
+        uint16_t & port();
+        bool same_addr( const struct addrinfo* other );
+    } addr;
+    socklen_t len;
+  };
+
   class Connection {
   private:
     static const int DEFAULT_SEND_MTU = 1300;
@@ -101,7 +115,7 @@ namespace Network {
 
     static const int CONGESTION_TIMESTAMP_PENALTY = 500; /* ms */
 
-    static bool try_bind( int socket, uint32_t addr, int port_low, int port_high );
+    bool try_bind( const char *addr, int port_low, int port_high );
 
     class Socket
     {
@@ -110,7 +124,7 @@ namespace Network {
 
     public:
       int fd( void ) const { return _fd; }
-      Socket();
+      Socket( int family );
       ~Socket();
 
       Socket( const Socket & other );
@@ -137,14 +151,14 @@ namespace Network {
       };
 
       DNSResolverAsync( const std::string & );
-      Status try_start_stop( uint16_t, struct sockaddr_in & );
+      Status try_start_stop( AddrLen & );
 
     };
 
     std::deque< Socket > socks;
     bool has_remote_addr;
-    struct sockaddr_in remote_addr;
-    struct sockaddr_in remote_addr_last_working;
+    AddrLen remote_addr;
+    AddrLen remote_addr_last_working;
     DNSResolverAsync remote_addr_resolver;
 
     bool server;
@@ -187,21 +201,21 @@ namespace Network {
 
   public:
     Connection( const char *desired_ip, const char *desired_port ); /* server */
-    Connection( const char *key_str, const char *ip, const char *hostname, int port ); /* client */
+    Connection( const char *key_str, const char *ip, const char *hostname, const char *port ); /* client */
 
     void send( string s );
     string recv( void );
     const std::vector< int > fds( void ) const;
     int get_MTU( void ) const { return MTU; }
 
-    int port( void ) const;
+    std::string port( void ) const;
     string get_key( void ) const { return key.printable_key(); }
     bool get_has_remote_addr( void ) const { return has_remote_addr; }
 
     uint64_t timeout( void ) const;
     double get_SRTT( void ) const { return SRTT; }
 
-    const struct in_addr & get_remote_ip( void ) const { return remote_addr.sin_addr; }
+    const AddrLen &get_remote_addr( void ) const { return remote_addr; }
 
     const NetworkException *get_send_exception( void ) const
     {

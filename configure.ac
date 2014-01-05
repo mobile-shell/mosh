@@ -170,7 +170,30 @@ AC_SEARCH_LIBS([socket], [socket])
 AC_SEARCH_LIBS([inet_addr], [nsl])
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h langinfo.h limits.h locale.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h pthread.h netdb.h], [], [AC_MSG_ERROR([Missing required header file.])])
+AC_CHECK_HEADERS([m4_normalize([
+  fcntl.h
+  langinfo.h
+  limits.h
+  locale.h
+  netdb.h
+  netinet/in.h
+  stddef.h
+  stdint.h
+  inttypes.h
+  stdlib.h
+  string.h
+  sys/ioctl.h
+  sys/resource.h
+  sys/socket.h
+  sys/stat.h
+  sys/time.h
+  termios.h
+  unistd.h
+  wchar.h
+  wctype.h
+  pthread.h
+  netdb.h
+  ])], [], [AC_MSG_ERROR([Missing required header file.])])
 
 AC_CHECK_HEADERS([pty.h util.h libutil.h paths.h])
 AC_CHECK_HEADERS([endian.h sys/endian.h])
@@ -195,7 +218,30 @@ AC_TYPE_UINTPTR_T
 # Checks for library functions.
 AC_FUNC_FORK
 AC_FUNC_MBRTOWC
-AC_CHECK_FUNCS([gettimeofday setrlimit inet_ntoa iswprint memchr memset nl_langinfo posix_memalign setenv setlocale sigaction socket strchr strdup strncasecmp strtok strerror strtol wcwidth cfmakeraw pselect getaddrinfo], [], [AC_MSG_ERROR([Missing required library function.])])
+AC_CHECK_FUNCS([m4_normalize([
+  gettimeofday
+  setrlimit
+  iswprint
+  memchr
+  memset
+  nl_langinfo
+  posix_memalign
+  setenv
+  setlocale
+  sigaction
+  socket
+  strchr
+  strdup
+  strncasecmp
+  strtok
+  strerror
+  strtol
+  wcwidth
+  cfmakeraw
+  pselect
+  getaddrinfo
+  getnameinfo
+  ])])
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
