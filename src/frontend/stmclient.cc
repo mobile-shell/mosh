@@ -126,7 +126,7 @@ void STMClient::init( void )
   if ( (escape_key_env = getenv( "MOSH_ESCAPE_KEY" )) != NULL ) {
     if ( strlen( escape_key_env ) == 1 ) {
       escape_key = (int)escape_key_env[0];
-      if ( (escape_key > 0) || (escape_key < 128) ) {
+      if ( escape_key > 0 && escape_key < 128 ) {
 	if ( escape_key < 32 ) {
 	  /* If escape is ctrl-something, pass it with repeating the key without ctrl. */
 	  escape_pass_key = escape_key + (int)'@';
