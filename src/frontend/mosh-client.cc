@@ -165,12 +165,9 @@ int main( int argc, char *argv[] )
 
     try {
       client.main();
-    } catch ( const Network::NetworkException &e ) {
+    } catch ( ... ) {
       client.shutdown();
-      throw e;
-    } catch ( const Crypto::CryptoException &e ) {
-      client.shutdown();
-      throw e;
+      throw;
     }
 
     client.shutdown();
