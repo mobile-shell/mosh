@@ -93,7 +93,11 @@ void print_colorcount( void )
   printf( "%d\n", color_val );
 }
 
+#ifdef NACL
+int mosh_main( int argc, char *argv[] )
+#else
 int main( int argc, char *argv[] )
+#endif
 {
   /* For security, make sure we don't dump core */
   Crypto::disable_dumping_core();
