@@ -268,7 +268,7 @@ Connection::DNSResolverAsync::Status Connection::DNSResolverAsync::try_start_sto
       if( !old_record_found ) {
         uint16_t old_port = addr.addr.port();
 
-        fatal_assert( result->ai_addrlen <= sizeof( remote_addr.addr ) );
+        fatal_assert( result->ai_addrlen <= sizeof( addr.addr ) );
         addr.len = result->ai_addrlen;
         memcpy( &addr.addr.sa, result->ai_addr, addr.len );
         addr.addr.port() = old_port;
