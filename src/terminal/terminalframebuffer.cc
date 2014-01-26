@@ -452,13 +452,14 @@ void Renditions::set_rendition( color_type num )
     return;
   }
 
+  bool value = num < 9;
   switch ( num ) {
-  case 1: case 22: set_attribute(bold, (num == 1)); break;
-  case 3: case 23: set_attribute(italic, (num == 3)); break;
-  case 4: case 24: set_attribute(underlined, (num == 4)); break;
-  case 5: case 25: set_attribute(blink, (num == 5)); break;
-  case 7: case 27: set_attribute(inverse, (num == 7)); break;
-  case 8: case 28: set_attribute(invisible, (num == 8)); break;
+  case 1: case 22: set_attribute(bold, value); break;
+  case 3: case 23: set_attribute(italic, value); break;
+  case 4: case 24: set_attribute(underlined, value); break;
+  case 5: case 25: set_attribute(blink, value); break;
+  case 7: case 27: set_attribute(inverse, value); break;
+  case 8: case 28: set_attribute(invisible, value); break;
   }
 }
 
