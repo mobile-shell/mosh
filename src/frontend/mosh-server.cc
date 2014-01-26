@@ -516,6 +516,15 @@ int run_server( const char *desired_ip, const char *desired_port,
 
 void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
 {
+  /* Get a duplicate fd for input, set it non-blocking */
+  int read_fd = ::dup(host_fd);
+  fatal_assert(read_fd != -1);
+  int read_flags = ::fcntl(read_fd, F_GETFL);
+  fatal_assert(read_flags != -1);
+  read_flags |= O_NONBLOCK;
+  int retval = ::fcntl(read_fd, F_SETFL, read_flags);
+  fatal_assert(retval != -1);
+
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
   sel.add_signal( SIGTERM );
@@ -529,6 +538,9 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   Addr saved_addr;
   socklen_t saved_addr_len = 0;
   #endif
+
+  FILE *logfp = fopen("/tmp/mosh.server.log", "a");
+  setlinebuf(logfp);
 
   while ( 1 ) {
     try {
@@ -549,6 +561,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       sel.add_fd( network_fd );
       if ( !network.shutdown_in_progress() ) {
 	sel.add_fd( host_fd );
+	sel.add_fd( read_fd );
       }
 
       int active_fds = sel.select( timeout );
@@ -636,20 +649,28 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	}
       }
       
-      if ( (!network.shutdown_in_progress()) && sel.read( host_fd ) ) {
+      if ( (!network.shutdown_in_progress()) && sel.read( read_fd ) ) {
 	/* input from the host needs to be fed to the terminal */
-	const int buf_size = 16384;
+	size_t bytes_received = 0;
+	const size_t buf_size = 65536;
 	char buf[ buf_size ];
 	
-	/* fill buffer if possible */
-	ssize_t bytes_read = read( host_fd, buf, buf_size );
+	fprintf(logfp, "new read\n");
 
-        /* If the pty slave is closed, reading from the master can fail with
-           EIO (see #264).  So we treat errors on read() like EOF. */
-        if ( bytes_read <= 0 ) {
-	  network.start_shutdown();
-	} else {
-	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
+	/* Ptys can have rather tiny brains.  Loop until they're done talking. */
+	ssize_t bytes_read;
+	int read_errno;
+	while ((bytes_read = read( read_fd, buf + bytes_received, buf_size - bytes_received)) > 0) {
+	  fprintf(logfp, "got %ld bytes on pty\n", bytes_read);
+	  bytes_received += bytes_read;
+	  if (bytes_received == buf_size) {
+	    fprintf(logfp, "filled read buffer from pty\n");
+	    break;
+	  }
+	}
+	read_errno = errno;
+	if ( bytes_received ) {
+	  string terminal_to_host = terminal.act( string( buf, bytes_received ) );
 	
 	  /* update client with new state of terminal */
 	  network.set_current_state( terminal );
@@ -658,6 +679,10 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
 	    break;
 	  }
+	}
+	if (bytes_read == 0 || (bytes_read < 0 && read_errno != EAGAIN)) {
+	  fprintf(logfp, "end of input: bytes_read %ld, errno %d (%s)\n", bytes_read, read_errno, strerror(read_errno));
+	  network.start_shutdown();
 	}
       }
 
