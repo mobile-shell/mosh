@@ -776,17 +776,21 @@ static void print_motd( void )
 
 static void chdir_homedir( void )
 {
-  struct passwd *pw = getpwuid( geteuid() );
-  if ( pw == NULL ) {
-    perror( "getpwuid" );
-    return; /* non-fatal */
+  const char *home = getenv( "HOME" );
+  if ( home == NULL ) {
+    struct passwd *pw = getpwuid( geteuid() );
+    if ( pw == NULL ) {
+      perror( "getpwuid" );
+      return; /* non-fatal */
+    }
+    home = pw->pw_dir;
   }
 
-  if ( chdir( pw->pw_dir ) < 0 ) {
+  if ( chdir( home ) < 0 ) {
     perror( "chdir" );
   }
 
-  if ( setenv( "PWD", pw->pw_dir, 1 ) < 0 ) {
+  if ( setenv( "PWD", home, 1 ) < 0 ) {
     perror( "setenv" );
   }
 }
