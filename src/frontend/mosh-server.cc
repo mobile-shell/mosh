@@ -240,13 +240,17 @@ int main( int argc, char *argv[] )
   string shell_name;
   if ( !command_argv ) {
     /* get shell name */
-    struct passwd *pw = getpwuid( geteuid() );
-    if ( pw == NULL ) {
-      perror( "getpwuid" );
-      exit( 1 );
+    const char *shell = getenv( "SHELL" );
+    if ( shell == NULL ) {
+      struct passwd *pw = getpwuid( geteuid() );
+      if ( pw == NULL ) {
+	perror( "getpwuid" );
+	exit( 1 );
+      }
+      shell = pw->pw_shell;
     }
 
-    string shell_path( pw->pw_shell );
+    string shell_path( shell );
     if ( shell_path.empty() ) { /* empty shell means Bourne shell */
       shell_path = _PATH_BSHELL;
     }
