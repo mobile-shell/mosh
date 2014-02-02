@@ -42,7 +42,8 @@
 using namespace Terminal;
 
 Emulator::Emulator( size_t s_width, size_t s_height )
-  : fb( s_width, s_height ), dispatch(), user() {}
+  : fb( s_width, s_height ), dispatch(), user()
+{}
 
 std::string Emulator::read_octets_to_host( void )
 {
