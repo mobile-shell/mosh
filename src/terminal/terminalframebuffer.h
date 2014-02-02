@@ -51,11 +51,11 @@ namespace Terminal {
   public:
     typedef enum { bold, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
 
-    color_type foreground_color;
-    color_type background_color;
+    // all together, a 32 bit word now...
+    unsigned int foreground_color : 12;
+    unsigned int background_color : 12;
   private:
-    uint8_t attributes;
-    uint8_t padding; // workaround for OS X llvm-gcc bug with 3-byte structs
+    unsigned int attributes : 8;
 
   public:
     Renditions( color_type s_background );
@@ -68,17 +68,17 @@ namespace Terminal {
 
     bool operator==( const Renditions &x ) const
     {
-      return attributes == x.attributes
-        && (foreground_color == x.foreground_color)
-	&& (background_color == x.background_color);
+      return ( attributes == x.attributes )
+        && ( foreground_color == x.foreground_color )
+        && ( background_color == x.background_color );
     }
-    void set_attribute(attribute_type attr, bool val)
+    void set_attribute( attribute_type attr, bool val )
     {
-      attributes = val ? 
-	attributes | (1 << attr) :
-	attributes & ~(1 << attr);
+      attributes = val ?
+	( attributes | (1 << attr) ) :
+	( attributes & ~(1 << attr) );
     }
-    bool get_attribute(attribute_type attr) const { return attributes & (1 << attr); }
+    bool get_attribute( attribute_type attr ) const { return attributes & ( 1 << attr ); }
     void clear_attributes() { attributes = 0; }
   };
 

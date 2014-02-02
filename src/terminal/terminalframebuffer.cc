@@ -45,6 +45,7 @@ Cell::Cell( color_type background_color )
     fallback( false ),
     wrap( false )
 {}
+
 Cell::Cell() /* default constructor required by C++11 STL */
   : contents(),
     renditions( 0 ),
@@ -418,7 +419,7 @@ void DrawState::resize( int s_width, int s_height )
 
 Renditions::Renditions( color_type s_background )
   : foreground_color( 0 ), background_color( s_background ),
-    attributes( 0 ), padding( 0 )
+    attributes( 0 )
 {}
 
 /* This routine cannot be used to set a color beyond the 16-color set. */
@@ -482,12 +483,12 @@ std::string Renditions::sgr( void ) const
   std::string ret;
 
   ret.append( "\033[0" );
-  if( get_attribute(bold) ) ret.append( ";1" );
-  if( get_attribute(italic) ) ret.append( ";3" );
-  if( get_attribute(underlined) ) ret.append( ";4" );
-  if( get_attribute(blink) ) ret.append( ";5" );
-  if( get_attribute(inverse) ) ret.append( ";7" );
-  if( get_attribute(invisible) ) ret.append( ";8" );
+  if ( get_attribute( bold ) ) ret.append( ";1" );
+  if ( get_attribute( italic ) ) ret.append( ";3" );
+  if ( get_attribute( underlined ) ) ret.append( ";4" );
+  if ( get_attribute( blink ) ) ret.append( ";5" );
+  if ( get_attribute( inverse ) ) ret.append( ";7" );
+  if ( get_attribute( invisible ) ) ret.append( ";8" );
 
   if ( foreground_color
        && (foreground_color <= 37) ) {
