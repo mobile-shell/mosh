@@ -44,20 +44,6 @@ static const Renditions & initial_rendition( void )
   return blank;
 }
 
-static const void append_cell(FrameState & frame, const Cell & cell)
-{
-  if ( cell.contents.empty() ) {
-    frame.append( ' ' );
-  }
-  /* Write a character cell */
-  /* cells that begin with combining character get combiner attached to no-break space */
-  if ( cell.fallback ) {
-    frame.append( "\xC2\xA0" );
-  }
-  frame.append( cell.contents );
-}
-
-
 std::string Display::open() const
 {
   return std::string( smcup ? smcup : "" ) + std::string( "\033[?1h" );
@@ -147,9 +133,15 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     frame.current_rendition = frame.last_frame.ds.get_renditions();
   }
 
+  /* is cursor visibility initialized? */
+  if ( !initialized ) {
+    frame.cursor_visible = false;
+    frame.append( "\033[?25l" );
+  }
+
   int frame_y = 0;
 
-#ifdef notyet
+#ifdef undef
   /* shortcut -- has display moved up by a certain number of lines? */
   if ( initialized ) {
     int lines_scrolled = 0;
@@ -157,10 +149,12 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
       if ( *(f.get_row( 0 )) == *(frame.last_frame.get_row( row )) ) {
+#ifdef undef
 	/* if row 0, we're looking at ourselves and probably didn't scroll */
 	if ( row == 0 ) {
 	  break;
 	}
+#endif
 	/* found a scroll */
 	lines_scrolled = row;
 	scroll_height = 1;
@@ -185,10 +179,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       frame_y = scroll_height;
 
       if ( lines_scrolled ) {
-	if ( !(frame.current_rendition == initial_rendition()) ) {
-	  frame.append( "\033[0m" );
-	  frame.current_rendition = initial_rendition();
-	}
+	frame.update_rendition( initial_rendition(), true );
 
 	int top_margin = 0;
 	int bottom_margin = top_margin + lines_scrolled + scroll_height - 1;
@@ -204,9 +195,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	frame.append_silent_move( bottom_margin, 0 );
 
 	/* scroll */
-	for ( int i = 0; i < lines_scrolled; i++ ) {
-	  frame.append( '\n' );
-	}
+	frame.append( lines_scrolled, '\n' );
 
 	/* do the move in memory */
 	for ( int i = top_margin; i <= bottom_margin; i++ ) {
@@ -237,14 +226,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
   /* has cursor location changed? */
   if ( (!initialized)
-       || wrap
        || (f.ds.get_cursor_row() != frame.cursor_y)
        || (f.ds.get_cursor_col() != frame.cursor_x) ) {
-    snprintf( tmp, 64, "\033[%d;%dH", f.ds.get_cursor_row() + 1,
-	      f.ds.get_cursor_col() + 1 );
-    frame.append( tmp );
-    frame.cursor_x = f.ds.get_cursor_col();
-    frame.cursor_y = f.ds.get_cursor_row();
+    frame.append_move( f.ds.get_cursor_row(), f.ds.get_cursor_col() );
   }
 
   /* has cursor visibility changed? */
@@ -258,11 +242,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   }
 
   /* have renditions changed? */
-  if ( (!initialized)
-       || !(f.ds.get_renditions() == frame.current_rendition) ) {
-    frame.append( f.ds.get_renditions().sgr() );
-    frame.current_rendition = f.ds.get_renditions();
-  }
+  frame.update_rendition( f.ds.get_renditions(), !initialized );
 
   /* has bracketed paste mode changed? */
   if ( (!initialized)
@@ -297,16 +277,17 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   int frame_x = 0;
   int clear_count = 0;
   bool wrote_last_cell = false;
+  Renditions blank_renditions = initial_rendition();
 
   const Row &row = *f.get_row( frame_y );
   const Row &old_row = *frame.last_frame.get_row( frame_y );
   const Row::cells_type &cells = row.cells;
   const Row::cells_type &old_cells = old_row.cells;
-  
+
   /* If we're forced to write the first column because of wrap, go ahead and do so. */
   if ( wrap ) {
     const Cell &cell = cells[ frame_x ];
-    append_cell( frame, cell );
+    frame.append_cell( cell );
     frame_x += cell.width;
     frame.cursor_x += cell.width;
   }
@@ -324,48 +305,49 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
       continue;
     }
 
-    /* Slurp up all the blank cells */
-    if ( (cell.contents.empty() 
-	     || ( cell.is_blank()
-		  && cell.renditions == frame.current_rendition ) ) ) {
-      /* Remember cleared cells */
-      clear_count++;
-      frame_x++;
-      continue;
+    /* Slurp up all the empty cells */
+    if ( cell.contents.empty() ) {
+      if ( !clear_count ) {
+	blank_renditions = cell.renditions;
+      }
+      if ( cell.renditions == blank_renditions ) {
+	/* Remember run of blank cells */
+	clear_count++;
+	frame_x++;
+	continue;
+      }
     }
 
-    /* Move to the right position. */
-    if ( ((frame_x - clear_count) != frame.cursor_x) || (frame_y != frame.cursor_y) ) {
-      frame.append_silent_move( frame_y, frame_x - clear_count );
-    }
-
-    if ( !(frame.current_rendition == cell.renditions) ) {
-      /* print renditions */
-      frame.append( cell.renditions.sgr() );
-      frame.current_rendition = cell.renditions;
-    }
-
-    /* Clear or write cells. */
+    /* Clear or write cells within the row (not to end). */
     if ( clear_count ) {
-      if ( clear_count > 10 && (frame_x == f.ds.get_width())
-	   && has_bce ) {
-	frame.append( "\033[K" );
-      } else if ( has_ech && clear_count > 10 ) {
+      /* Move to the right position. */
+      frame.append_silent_move( frame_y, frame_x - clear_count );
+      frame.update_rendition( blank_renditions );
+      bool can_use_erase = has_bce || ( frame.current_rendition == initial_rendition() );
+      if ( can_use_erase && has_ech ) {
 	snprintf( tmp, 64, "\033[%dX", clear_count );
 	frame.append( tmp );
       } else {
-	frame.append( std::string( clear_count, ' ' ));
+	frame.append( clear_count, ' ' );
 	frame.cursor_x = frame_x;
-	wrote_last_cell = true;
       }
       clear_count = 0;
+      // If the current character is *another* empty cell in a different rendition,
+      // we restart counting and continue here
+      if ( cell.contents.empty() ) {
+	blank_renditions = cell.renditions;
+	clear_count = 1;
+	frame_x++;
+	continue;
+      }
     }
 
+
+    /* Now draw a character cell. */
     /* Move to the right position. */
-    if ( (frame_x != frame.cursor_x) || (frame_y != frame.cursor_y) ) {
-      frame.append_silent_move( frame_y, frame_x );
-    }
-    append_cell( frame, cell );
+    frame.append_silent_move( frame_y, frame_x );
+    frame.update_rendition( cell.renditions );
+    frame.append_cell( cell );
     frame_x += cell.width;
     frame.cursor_x += cell.width;
     if ( frame_x >= f.ds.get_width() ) {
@@ -375,65 +357,90 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
 
   /* End of line. */
 
-  /* Clear or write cells. */
+  /* Clear or write empty cells at EOL. */
   if ( clear_count ) {
     /* Move to the right position. */
-    if ( ((frame_x - clear_count) != frame.cursor_x) || (frame_y != frame.cursor_y) ) {
-      frame.append_silent_move( frame_y, frame_x - clear_count );
-    }
-    if ( clear_count > 10 && (frame_x == f.ds.get_width())
-	 && has_bce ) {
+    frame.append_silent_move( frame_y, frame_x - clear_count );
+    frame.update_rendition( blank_renditions );
+
+    bool can_use_erase = !row.get_wrap() && ( has_bce || ( frame.current_rendition == initial_rendition() ) );
+    if ( can_use_erase ) {
       frame.append( "\033[K" );
-    } else if ( has_ech && clear_count > 10 ) {
-      snprintf( tmp, 64, "\033[%dX", clear_count );
-      frame.append( tmp );
     } else {
-      frame.append( std::string( clear_count, ' ' ));
+      frame.append( clear_count, ' ' );
       frame.cursor_x = frame_x;
       wrote_last_cell = true;
     }
   }
 
-  /* To hint that a word-select should group the end of one line
-     with the beginning of the next, we let the real cursor
-     actually wrap around in cases where it wrapped around for us. */
   if ( wrote_last_cell
-       && (frame_y < f.ds.get_height() - 1)
-       && row.get_wrap() ) {
-
-    /* Update our cursor, and ask for wrap on the next row. */
-    frame.cursor_x = 0;
-    frame.cursor_y++;
-    return true;
-  }
-
-  /* Turn off wrap */
-  if ( wrote_last_cell
-       && (frame_y < f.ds.get_height() - 1)
-       && !row.get_wrap()
-       && (!initialized || old_row.get_wrap()) ) {
-    /* Resort to well-trod ASCII and update our cursor. */
-    frame.append( "\r\n" );
-    frame.cursor_x = 0;
-    frame.cursor_y++;
+       && (frame_y < f.ds.get_height() - 1) ) {
+    /* To hint that a word-select should group the end of one line
+       with the beginning of the next, we let the real cursor
+       actually wrap around in cases where it wrapped around for us. */
+    if ( row.get_wrap() ) {
+      /* Update our cursor, and ask for wrap on the next row. */
+      frame.cursor_x = 0;
+      frame.cursor_y++;
+      return true;
+    } else {
+      /* Resort to CR/LF and update our cursor. */
+      frame.append( "\r\n" );
+      frame.cursor_x = 0;
+      frame.cursor_y++;
+    }
   }
   return false;
 }
 
-void FrameState::append_silent_move( int y, int x )
+/* Write a character cell */
+void FrameState::append_cell(const Cell & cell)
 {
-  char tmp[ 64 ];
+  if ( cell.contents.empty() ) {
+    append( ' ' );
+    return;
+  }
+  /* cells that begin with combining character get combiner attached to no-break space */
+  if ( cell.fallback ) {
+    append( "\xC2\xA0" );
+  }
+  append( cell.contents );
+}
 
+
+void FrameState::append_silent_move( int y, int x, bool force )
+{
+  if ( !force && (cursor_x == x && cursor_y == y ) ) return;
   /* turn off cursor if necessary before moving cursor */
   if ( cursor_visible ) {
     append( "\033[?25l" );
     cursor_visible = false;
   }
-
-  snprintf( tmp, 64, "\033[%d;%dH", y + 1, x + 1 );
-  append( tmp );
+  append_move( y, x );
+}
+ 
+ void FrameState::append_move( int y, int x )
+{
+  // Can we use CR and/or LF?  They're cheap and easier to trace.
+  if ( x == 0 && y - cursor_y >= 0 && y - cursor_y < 5 ) {
+    if ( cursor_x != 0 ) append( '\r' );
+    append( y - cursor_y, '\n' );
+  // More optimizations are possible.
+  } else {
+    char tmp[ 64 ];
+    snprintf( tmp, 64, "\033[%d;%dH", y + 1, x + 1 );
+    append( tmp );
+  }
   cursor_x = x;
   cursor_y = y;
+}
+
+void FrameState::update_rendition(const Renditions &r, bool force) {
+  if ( force || !(current_rendition == r) ) {
+    /* print renditions */
+    append( r.sgr() );
+    current_rendition = r;
+  }
 }
 
 FrameState::FrameState( const Framebuffer &s_last )
@@ -441,6 +448,6 @@ FrameState::FrameState( const Framebuffer &s_last )
 	cursor_visible( s_last.ds.cursor_visible ),
 	last_frame( s_last )
 {
-  /* just a guess-- doesn't matter for correctness */
+  /* just a guess for better performance-- doesn't matter for correctness */
   str.reserve( last_frame.ds.get_width() * last_frame.ds.get_height() * 4 );
 }

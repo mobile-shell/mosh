@@ -43,18 +43,22 @@ namespace Terminal {
 
     int cursor_x, cursor_y;
     Renditions current_rendition;
-    bool cursor_visible; // XXX this may belong someplace else
+    bool cursor_visible;
 
     const Framebuffer &last_frame;
 
     FrameState( const Framebuffer &s_last );
 
     void append( const char c ) { str.append( 1, c ); }
+    void append( const size_t s, const char c ) { str.append( s, c ); }
     void append( const wchar_t wc ) { Cell::append_to_str( str, wc ); }
     void append( const char * s ) { str.append( s ); }
     void append( const std::string &s ) { str.append( s ); }
 
-    void append_silent_move( int y, int x );
+    void append_cell(const Cell & cell);
+    void append_silent_move( int y, int x, bool force = false );
+    void append_move( int y, int x );
+    void update_rendition( const Renditions &r, bool force = false );
   };
 
   class Display {
