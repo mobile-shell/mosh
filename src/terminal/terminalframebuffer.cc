@@ -306,13 +306,19 @@ void Framebuffer::delete_line( int row )
 }
 
 Row::Row( size_t s_width, color_type background_color )
-  : cells( s_width, Cell( background_color ) )
+  : cells( s_width, Cell( background_color ) ), gen( get_gen() )
 {}
 
 Row::Row() /* default constructor required by C++11 STL */
-  : cells( 1, Cell() )
+  : cells( 1, Cell() ), gen( get_gen() )
 {
   assert( false );
+}
+
+uint64_t Row::get_gen() const
+{
+  static uint64_t gen_counter = 0;
+  return gen_counter++;
 }
 
 void Row::insert_cell( int col, color_type background_color )
@@ -577,6 +583,7 @@ void Renditions::posterize( void )
 
 void Row::reset( color_type background_color )
 {
+  gen = get_gen();
   for ( cells_type::iterator i = cells.begin();
 	i != cells.end();
 	i++ ) {

@@ -150,7 +150,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     int scroll_height = 0;
 
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
-      if ( *(rows[ 0 ]) == *(frame.last_frame.get_row( row )) ) {
+      if ( *rows[ 0 ] == *frame.last_frame.get_row( row ) ) {
 #if 0
 	/* if row 0, we're looking at ourselves and probably didn't scroll */
 	if ( row == 0 ) {
@@ -165,8 +165,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	for ( int region_height = 1;
 	      lines_scrolled + region_height < f.ds.get_height();
 	      region_height++ ) {
-	  if ( *(rows[ region_height ])
-	       == *(frame.last_frame.get_row( lines_scrolled + region_height )) ) {
+	  if ( *rows[ region_height ]
+	       == *frame.last_frame.get_row( lines_scrolled + region_height ) ) {
 	    scroll_height = region_height + 1;
 	  } else {
 	    break;

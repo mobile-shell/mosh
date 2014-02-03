@@ -142,6 +142,7 @@ namespace Terminal {
   public:
     typedef std::vector<Cell> cells_type;
     cells_type cells;
+    uint64_t gen;
 
     Row( size_t s_width, color_type background_color );
     Row(); /* default constructor required by C++11 STL */
@@ -153,11 +154,13 @@ namespace Terminal {
 
     bool operator==( const Row &x ) const
     {
-      return ( cells == x.cells );
+      return ( gen == x.gen && cells == x.cells );
     }
 
     bool get_wrap( void ) const { return cells.back().wrap; }
     void set_wrap( bool w ) { cells.back().wrap = w; }
+
+    uint64_t get_gen() const;
   };
 
   class SavedCursor {
