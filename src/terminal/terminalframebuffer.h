@@ -259,6 +259,9 @@ namespace Terminal {
   };
 
   class Framebuffer {
+  public:
+    typedef std::vector<const Row *> rows_p_type;
+
   private:
     typedef std::vector<Row> rows_type;
     rows_type rows;
@@ -275,6 +278,15 @@ namespace Terminal {
 
     void scroll( int N );
     void move_rows_autoscroll( int rows );
+
+    rows_p_type get_p_rows() const
+    {
+      rows_p_type retval;
+      for ( rows_type::const_iterator i = rows.begin(); i != rows.end(); i++ ) {
+	retval.push_back( &(*i) );
+      }
+      return retval;
+    }
 
     const Row *get_row( int row ) const
     {

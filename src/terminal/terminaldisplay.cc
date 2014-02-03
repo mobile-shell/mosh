@@ -141,15 +141,17 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
   int frame_y = 0;
 
-#ifdef undef
   /* shortcut -- has display moved up by a certain number of lines? */
+  Framebuffer::rows_p_type rows(f.get_p_rows());
+  /* Create a vestigial blank row in scope */
+  Row blankrow( 0, 0 );
   if ( initialized ) {
     int lines_scrolled = 0;
     int scroll_height = 0;
 
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
-      if ( *(f.get_row( 0 )) == *(frame.last_frame.get_row( row )) ) {
-#ifdef undef
+      if ( *(rows[ 0 ]) == *(frame.last_frame.get_row( row )) ) {
+#if 0
 	/* if row 0, we're looking at ourselves and probably didn't scroll */
 	if ( row == 0 ) {
 	  break;
@@ -163,7 +165,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	for ( int region_height = 1;
 	      lines_scrolled + region_height < f.ds.get_height();
 	      region_height++ ) {
-	  if ( *(f.get_row( region_height ))
+	  if ( *(rows[ region_height ])
 	       == *(frame.last_frame.get_row( lines_scrolled + region_height )) ) {
 	    scroll_height = region_height + 1;
 	  } else {
@@ -197,12 +199,15 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	/* scroll */
 	frame.append( lines_scrolled, '\n' );
 
-	/* do the move in memory */
+	/* Create a full-width blank row to represent newly-scrolled area */
+	blankrow = Row( f.ds.get_width(), 0 );
+
+	/* do the move in our local index */
 	for ( int i = top_margin; i <= bottom_margin; i++ ) {
 	  if ( i + lines_scrolled <= bottom_margin ) {
-	    *(frame.last_frame.get_mutable_row( i )) = *(frame.last_frame.get_row( i + lines_scrolled ));
+	    rows[ i ] = rows[ i + lines_scrolled ];
 	  } else {
-	    frame.last_frame.get_mutable_row( i )->reset( 0 );
+	    rows[ i ] = &blankrow;
 	  }
 	}
 
@@ -216,12 +221,11 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       }
     }
   }
-#endif
 
   /* Now update the display, row by row */
   bool wrap = false;
   for ( ; frame_y < f.ds.get_height(); frame_y++ ) {
-    wrap = put_row( initialized, frame, f, frame_y, wrap );
+    wrap = put_row( initialized, frame, f, frame_y, *rows[ frame_y ], wrap );
   }
 
   /* has cursor location changed? */
@@ -271,7 +275,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   return frame.str;
 }
 
-bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f, int frame_y, bool wrap ) const
+bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f, int frame_y, const Row &row, bool wrap ) const
 {
   char tmp[ 64 ];
   int frame_x = 0;
@@ -279,7 +283,6 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   bool wrote_last_cell = false;
   Renditions blank_renditions = initial_rendition();
 
-  const Row &row = *f.get_row( frame_y );
   const Row &old_row = *frame.last_frame.get_row( frame_y );
   const Row::cells_type &cells = row.cells;
   const Row::cells_type &old_cells = old_row.cells;
@@ -287,6 +290,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   /* If we're forced to write the first column because of wrap, go ahead and do so. */
   if ( wrap ) {
     const Cell &cell = cells[ frame_x ];
+    frame.update_rendition( cell.renditions );
     frame.append_cell( cell );
     frame_x += cell.width;
     frame.cursor_x += cell.width;
