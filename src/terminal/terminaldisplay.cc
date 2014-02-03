@@ -142,7 +142,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   int frame_y = 0;
 
   /* shortcut -- has display moved up by a certain number of lines? */
-  Framebuffer::rows_p_type rows(f.get_p_rows());
+  Framebuffer::rows_p_type rows(frame.last_frame.get_p_rows());
   /* Create a vestigial blank row in scope */
   Row blankrow( 0, 0 );
   if ( initialized ) {
@@ -150,7 +150,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     int scroll_height = 0;
 
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
-      if ( *rows[ 0 ] == *frame.last_frame.get_row( row ) ) {
+      if ( *f.get_row( row ) == *rows[ 0 ] ) {
 #if 0
 	/* if row 0, we're looking at ourselves and probably didn't scroll */
 	if ( row == 0 ) {
@@ -165,8 +165,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	for ( int region_height = 1;
 	      lines_scrolled + region_height < f.ds.get_height();
 	      region_height++ ) {
-	  if ( *rows[ region_height ]
-	       == *frame.last_frame.get_row( lines_scrolled + region_height ) ) {
+	  if ( *f.get_row( region_height )
+	       == *rows[ lines_scrolled + region_height ] ) {
 	    scroll_height = region_height + 1;
 	  } else {
 	    break;
@@ -275,7 +275,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   return frame.str;
 }
 
-bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f, int frame_y, const Row &row, bool wrap ) const
+bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f, int frame_y, const Row &old_row, bool wrap ) const
 {
   char tmp[ 64 ];
   int frame_x = 0;
@@ -283,7 +283,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   bool wrote_last_cell = false;
   Renditions blank_renditions = initial_rendition();
 
-  const Row &old_row = *frame.last_frame.get_row( frame_y );
+  const Row &row = *f.get_row( frame_y );
   const Row::cells_type &cells = row.cells;
   const Row::cells_type &old_cells = old_row.cells;
 
