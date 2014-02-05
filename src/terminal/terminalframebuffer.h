@@ -320,8 +320,8 @@ namespace Terminal {
 
     void apply_renditions_to_current_cell( void );
 
-    void insert_line( int before_row );
-    void delete_line( int row );
+    void insert_line( int before_row, int count );
+    void delete_line( int row, int count );
 
     void insert_cell( int row, int col );
     void delete_cell( int row, int col );

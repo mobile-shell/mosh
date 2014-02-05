@@ -97,18 +97,12 @@ Framebuffer::Framebuffer( int s_width, int s_height )
 void Framebuffer::scroll( int N )
 {
   if ( N >= 0 ) {
-    for ( int i = 0; i < N; i++ ) {
-      delete_line( ds.get_scrolling_region_top_row() );
-      ds.move_row( -1, true );
-    }
+    delete_line( ds.get_scrolling_region_top_row(), N );
+    ds.move_row( -N, true );
   } else {
     N = -N;
-
-    for ( int i = 0; i < N; i++ ) {
-      rows.insert( rows.begin() + ds.get_scrolling_region_top_row(), newrow() );
-      rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
-      ds.move_row( 1, true );
-    }
+    insert_line( ds.get_scrolling_region_top_row(), N );
+    ds.move_row( N, true );
   }
 }
 
@@ -277,32 +271,44 @@ void DrawState::restore_cursor( void )
   new_grapheme();
 }
 
-void Framebuffer::insert_line( int before_row )
+void Framebuffer::insert_line( int before_row, int count )
 {
-  if ( (before_row < ds.get_scrolling_region_top_row())
+  if ( count == 0
+       || (before_row < ds.get_scrolling_region_top_row())
        || (before_row > ds.get_scrolling_region_bottom_row() + 1) ) {
     return;
   }
 
-  rows.insert( rows.begin() + before_row, newrow() );
-  rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
+  // delete old rows
+  rows_type::iterator start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
+  rows.erase( start, start + count );
+  // insert a block of dummy rows
+  start = rows.begin() + before_row;
+  rows.insert( start, count, Row( 0, 0 ) );
+  // then replace with real new rows
+  for (rows_type::iterator i = start; i < start + count; i++) {
+    *i = newrow();
+  }
 }
 
-void Framebuffer::delete_line( int row )
+void Framebuffer::delete_line( int row, int count )
 {
-  if ( (row < ds.get_scrolling_region_top_row())
+  if ( count == 0
+       || (row < ds.get_scrolling_region_top_row())
        || (row > ds.get_scrolling_region_bottom_row()) ) {
     return;
   }
 
-  int insertbefore = ds.get_scrolling_region_bottom_row() + 1;
-  if ( insertbefore == ds.get_height() ) {
-    rows.push_back( newrow() );
-  } else {
-    rows.insert( rows.begin() + insertbefore, newrow() );
+  // delete old rows
+  rows_type::iterator start = rows.begin() + row;
+  rows.erase( start, start + count );
+  // insert a block of dummy rows
+  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
+  rows.insert( start, count, Row( 0, 0 ) );
+  // then replace with real new rows
+  for (rows_type::iterator i = start; i < start + count; i++) {
+    *i = newrow();
   }
-
-  rows.erase( rows.begin() + row );
 }
 
 Row::Row( size_t s_width, color_type background_color )

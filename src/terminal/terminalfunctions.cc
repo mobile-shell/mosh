@@ -431,9 +431,7 @@ void CSI_IL( Framebuffer *fb, Dispatcher *dispatch )
 {
   int lines = dispatch->getparam( 0, 1 );
 
-  for ( int i = 0; i < lines; i++ ) {
-    fb->insert_line( fb->ds.get_cursor_row() );
-  }
+  fb->insert_line( fb->ds.get_cursor_row(), lines );
 
   /* vt220 manual and Ecma-48 say to move to first column */
   /* but xterm and gnome-terminal don't */
@@ -447,9 +445,7 @@ void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
 {
   int lines = dispatch->getparam( 0, 1 );
 
-  for ( int i = 0; i < lines; i++ ) {
-    fb->delete_line( fb->ds.get_cursor_row() );
-  }
+  fb->delete_line( fb->ds.get_cursor_row(), lines );
 
   /* same story -- xterm and gnome-terminal don't
      move to first column */
