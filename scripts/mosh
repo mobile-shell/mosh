@@ -509,6 +509,50 @@ if ( defined $unittest ) {
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
 
+if ( defined $fake_proxy ) {
+  use Errno qw(EINTR);
+  BEGIN { eval { require IO::Socket::IP; IO::Socket::IP->import('-register'); }; }
+  use POSIX qw(_exit);
+
+  my ( $host, $port ) = @ARGV;
+
+  # Resolve hostname and connect
+  my $afstr = 'AF_' . uc( $family );
+  my $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
+  my $sock = IO::Socket->new( Domain => $af,
+			      Family => $af,
+			      PeerHost => $host,
+			      PeerPort => $port,
+			      Proto => "tcp" )
+    or die "$0: Could not connect to $host: $@\n";
+
+  print STDERR "MOSH IP ", $sock->peerhost, "\n";
+
+  # Act like netcat
+  binmode($sock);
+  binmode(STDIN);
+  binmode(STDOUT);
+
+  sub cat {
+    my ( $from, $to ) = @_;
+    while ( my $n = $from->sysread( my $buf, 4096 ) ) {
+      next if ( $n == -1 && $! == EINTR );
+      $n >= 0 or last;
+      $to->write( $buf ) or last;
+    }
+  }
+
+  defined( my $pid = fork ) or die "$0: fork: $!\n";
+  if ( $pid == 0 ) {
+    cat $sock, \*STDOUT; $sock->shutdown( 0 );
+    _exit 0;
+  }
+  $SIG{ 'HUP' } = 'IGNORE';
+  cat \*STDIN, $sock; $sock->shutdown( 1 );
+  waitpid $pid, 0;
+  exit;
+}
+
 if ( defined $predict ) {
   predict_check( $predict, 0 );
 } elsif ( defined $ENV{ 'MOSH_PREDICTION_DISPLAY' } ) {
@@ -552,50 +596,6 @@ if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
   print STDERR qq{$0: Unknown server binding option: $bind_ip\n};
 
   die $usage;
-}
-
-if ( defined $fake_proxy ) {
-  use Errno qw(EINTR);
-  BEGIN { eval { require IO::Socket::IP; IO::Socket::IP->import('-register'); }; }
-  use POSIX qw(_exit);
-
-  my ( $host, $port ) = @ARGV;
-
-  # Resolve hostname and connect
-  my $afstr = 'AF_' . uc( $family );
-  my $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
-  my $sock = IO::Socket->new( Domain => $af,
-			      Family => $af,
-			      PeerHost => $host,
-			      PeerPort => $port,
-			      Proto => "tcp" )
-    or die "$0: Could not connect to $host: $@\n";
-
-  print STDERR "MOSH IP ", $sock->peerhost, "\n";
-
-  # Act like netcat
-  binmode($sock);
-  binmode(STDIN);
-  binmode(STDOUT);
-
-  sub cat {
-    my ( $from, $to ) = @_;
-    while ( my $n = $from->sysread( my $buf, 4096 ) ) {
-      next if ( $n == -1 && $! == EINTR );
-      $n >= 0 or last;
-      $to->write( $buf ) or last;
-    }
-  }
-
-  defined( my $pid = fork ) or die "$0: fork: $!\n";
-  if ( $pid == 0 ) {
-    cat $sock, \*STDOUT; $sock->shutdown( 0 );
-    _exit 0;
-  }
-  $SIG{ 'HUP' } = 'IGNORE';
-  cat \*STDIN, $sock; $sock->shutdown( 1 );
-  waitpid $pid, 0;
-  exit;
 }
 
 if ( scalar @ARGV < 1 ) {
