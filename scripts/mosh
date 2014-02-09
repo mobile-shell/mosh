@@ -413,19 +413,19 @@ $|=1;
 
 my $configFile = ConfigFile->new([ '~', '.mosh', 'config' ]);
 
-my $client = 'mosh-client';
-my $server = 'mosh-server';
+my $client = undef;
+my $server = undef;
 
 my $predict = undef;
 
 my $bind_ip = undef;
 
-my $family = 'inet';
+my $family = undef;
 my $port_request = undef;
 
-my $ssh = 'ssh';
+my $ssh = undef;
 
-my $term_init = 1;
+my $term_init = undef;
 
 my $help = undef;
 my $version = undef;
@@ -559,6 +559,12 @@ if ( scalar @ARGV < 1 ) {
 
 my $userhost = shift;
 my @command = @ARGV;
+
+$client = 'mosh-client' unless defined($client);
+$server = 'mosh-server' unless defined($server);
+$ssh = 'ssh' unless defined($ssh);
+$term_init = 1 unless defined($term_init);
+$family = 'inet' unless defined($family);
 
 if ( defined $predict ) {
   predict_check( $predict, 0 );
