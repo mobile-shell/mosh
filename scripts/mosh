@@ -553,6 +553,13 @@ if ( defined $fake_proxy ) {
   exit;
 }
 
+if ( scalar @ARGV < 1 ) {
+  die $usage;
+}
+
+my $userhost = shift;
+my @command = @ARGV;
+
 if ( defined $predict ) {
   predict_check( $predict, 0 );
 } elsif ( defined $ENV{ 'MOSH_PREDICTION_DISPLAY' } ) {
@@ -597,13 +604,6 @@ if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
 
   die $usage;
 }
-
-if ( scalar @ARGV < 1 ) {
-  die $usage;
-}
-
-my $userhost = shift;
-my @command = @ARGV;
 
 # Count colors
 open COLORCOUNT, '-|', $client, ('-c') or die "Can't count colors: $!\n";
