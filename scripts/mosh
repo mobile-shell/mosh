@@ -429,6 +429,7 @@ my $term_init = 1;
 
 my $help = undef;
 my $version = undef;
+my $unittest = undef;
 
 my @cmdline = @ARGV;
 
@@ -495,8 +496,15 @@ GetOptions( 'client=s' => \$client,
 	    'init!' => \$term_init,
 	    'help' => \$help,
 	    'version' => \$version,
+            'test' => \$unittest,
 	    'fake-proxy!' => \my $fake_proxy,
 	    'bind-server=s' => \$bind_ip) or die $usage;
+
+if ( defined $unittest ) {
+  $configFile->testSplitLine();
+  $configFile->testConfigFile();
+  exit(0);
+}
 
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
