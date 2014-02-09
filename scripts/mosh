@@ -36,8 +36,382 @@ use warnings;
 use strict;
 use Getopt::Long;
 use IO::Socket;
+use File::Spec;
+use Text::Glob;
 
 $|=1;
+
+{
+    package ConfigFile;
+
+    my $_Ok                 = undef;
+    my $_UnrecognisedEscape = "Unrecognised escape sequence";
+    my $_UnterminatedQuote  = "Unterminated quoted string";
+    my $_BadlyFormatted     = "Badly formatted string";
+
+    sub _splitLine($)
+    {
+        my $line  = shift;
+        my $err   = undef;
+        my @words = ( );
+
+        while (length($line)) {
+
+            if (substr($line, 0, 1) ne '"')
+            {
+                if ($line !~ m/^(.*?)(\s+)(.*)$/)
+                {
+                    push @words, $line;
+                    last;
+                }
+                push @words, $1;
+                $line = $3;
+            }
+            else
+            {
+                my $rhSentinel = '-"';
+                my $lhSentinel = '-';
+
+                substr($line, 0, length($lhSentinel)) = $lhSentinel;
+                $line .= $rhSentinel;
+
+                return ( $_BadlyFormatted )
+                    unless ($line =~ m/^((\\[\\"]|.)*?)"\s*(.*)$/);
+
+                my $word = substr($1, length($lhSentinel));
+
+                return ( $_UnterminatedQuote )
+                    if (length($3) < length($rhSentinel));
+
+                $line = substr($3, length($lhSentinel), -length($rhSentinel));
+
+                my $syntax = $word;
+                $syntax =~ s/\\([\\"])//g;
+
+                return ( $_UnrecognisedEscape )
+                    if index($syntax, "\\") >= 0;
+
+                $word =~ s/\\([\\"])/$1/g;
+
+                push @words, $word;
+            }
+        }
+
+        shift   @words if ($#words >= 0 && length($words[0]) == 0);
+        unshift @words, $err;
+
+        return @words;
+    }
+
+    sub _areValuesEqual($$)
+    {
+        my $lhs = shift;
+        my $rhs = shift;
+
+        return undef if (defined($lhs) != defined($rhs));
+        return undef if (defined($lhs) && $lhs ne $rhs);
+
+        return 1;
+    }
+
+    sub _areListsEqual($$)
+    {
+        my $lhs = shift;
+        my $rhs = shift;
+
+        return undef if (defined($lhs) != defined($rhs));
+        return undef if ($#{$lhs} != $#{$rhs});
+
+        for (my $ix = 0; $ix <= $#{$lhs}; ++$ix)
+        { return undef if (${$lhs}[$ix] ne ${$rhs}[$ix]) }
+
+        return 1;
+    }
+
+    sub _printValue($)
+    {
+        my $value = shift;
+
+        print defined($value) ?  "'$value'" : "undefined";
+    }
+
+    sub _printList($)
+    {
+        my $list = shift;
+
+        print defined($list) ? "[ @{$list} ]" : "undefined";
+    }
+
+    sub testSplitLine()
+    {
+        my @tests = (
+            [ '',      $_Ok,                 [ ] ],
+            [ '"\x"',  $_UnrecognisedEscape, [ ] ],
+            [ '"',     $_UnterminatedQuote,  [ ] ],
+            [ '" a',   $_UnterminatedQuote,  [ ] ],
+            [ '\\',    $_Ok,                 [ '\\' ] ],
+            [ '"\\"',  $_UnterminatedQuote,  [ ] ],
+            [ '"\\',   $_UnterminatedQuote,  [ ] ],
+            [ 'a b',   $_Ok,                 [ 'a', 'b' ] ],
+            [ '"a b"', $_Ok,                 [ 'a b' ] ],
+        );
+
+        foreach my $test (@tests)
+        {
+            my $line     = ${$test}[0];
+            my $retval   = ${$test}[1];
+            my $retwords = ${$test}[2];
+
+            print "Checking '$line'\n";
+
+            my @words = _splitLine($line);
+            my $val   = shift @words;
+
+            unless (_areValuesEqual($val, $retval))
+            {
+                print "Expected: "; _printValue($val);    print "\n";
+                print "Obtained: "; _printValue($retval); print "\n";
+
+                die "Invalid return values from: $line";
+            }
+
+            unless (_areListsEqual(\@words, $retwords))
+            {
+                print "Expected: "; _printList(\@words);   print "\n";
+                print "Obtained: "; _printList($retwords); print "\n";
+
+                die "Extracted from: $line";
+            }
+        }
+    }
+
+    sub testConfigFile($)
+    {
+        my $self = shift;
+
+        $self->_resetConfig();
+
+        my @configuration = (
+            'GlobalKey globalkey',
+
+            'Host this this.com',
+            'User thisuser',
+
+            'Host *.com',
+            'User anyuser',
+            '# DefaultKey unusedkey',
+            ' # DefaultKey unusedkey',
+            'List item1 item2',
+
+            'Host *',
+            'User defaultuser',
+            'DefaultKey defaultkey',
+        );
+
+        foreach my $line (@configuration)
+        {
+            my $err = $self->_parseLine($line);
+            die "Error parsing configuration: $line" if ($err);
+        }
+
+        my @tests = (
+            [ 'any.org',              'GlobalKey',    [ 'globalkey' ] ],
+            [ 'any.com',              'GlobalKey',    [ 'globalkey' ] ],
+            [ 'this.com',             'GlobalKey',    [ 'globalkey' ] ],
+
+            [ 'any.org',              'User',         [ 'defaultuser' ] ],
+            [ 'any.com',              'User',         [ 'anyuser' ] ],
+            [ 'this.com',             'User',         [ 'thisuser' ] ],
+            [ 'this',                 'User',         [ 'thisuser' ] ],
+
+            [ 'any.org',              'DefaultKey',   [ 'defaultkey' ] ],
+            [ 'any.com',              'DefaultKey',   [ 'defaultkey' ] ],
+            [ 'this.com',             'DefaultKey',   [ 'defaultkey' ] ],
+
+            [ 'any.com',              'List',         [ 'item1', 'item2' ] ],
+            [ 'any.com',              'Absent',       [ ] ],
+        );
+
+        foreach my $test (@tests)
+        {
+            my $host  = ${$test}[0];
+            my $key   = ${$test}[1];
+            my $value = ${$test}[2];
+
+            print "Checking $key in $host\n";
+
+            $self->lookupHost($host);
+
+            my @hostValue = $self->lookupOption($key);
+
+            unless (_areListsEqual($value, \@hostValue))
+            {
+                print "Expected: "; _printList($value);      print "\n";
+                print "Obtained: "; _printList(\@hostValue); print "\n";
+
+                die "Mismatched for $key in $host";
+            }
+        }
+    }
+
+    sub new($$)
+    {
+        my $class    = shift;
+        my $fileName = shift;
+        my $self     = bless { }, $class;
+
+        $self->_resetConfig();
+        $self->_readConfigFile($fileName);
+
+        return $self;
+    }
+
+    sub lookupHost($$)
+    {
+        my $self = shift;
+        my $host = shift;
+
+        my @hostList = ( 0 );
+
+        foreach my $hostEntry (@{$self->{hostNames}})
+        {
+            my $hostIndex    = ${$hostEntry}[0];
+            my @hostPatterns = @{${$hostEntry}[1]};
+
+            for my $hostPattern (@hostPatterns)
+            {
+                push @hostList, $hostIndex
+                    if (Text::Glob::match_glob($hostPattern, $host));
+            }
+        }
+
+        my %hostConfig = ( );
+
+        foreach my $hostIndex (@hostList)
+        {
+            my $hostRecord = ${$self->{hostConfigs}}{$hostIndex};
+
+            %hostConfig = ( %{$hostRecord}, %hostConfig );
+        }
+
+        $self->{hostEntry} = \%hostConfig;
+    }
+
+    sub lookupOption($$)
+    {
+        my $self      = shift;
+        my $option    = shift;
+        my $hostEntry = $self->{hostEntry};
+
+        return wantarray ? ( ) : undef unless (defined($hostEntry));
+
+        my $resultref = ${$hostEntry}{$option};
+
+        return wantarray ? ( ) : undef unless (defined($resultref));
+
+        my @resultlist = defined($resultref) ? @{$resultref} : ( );
+
+        return wantarray ? @resultlist : "@resultlist";
+    }
+
+    sub _resetConfig($)
+    {
+        my $self = shift;
+
+        $self->{hostIndex}   = 0;
+        $self->{hostNames}   = [ ];
+        $self->{hostConfigs} = { };
+        $self->{hostEntry}   = undef;
+
+        my $hostIndex = $self->{hostIndex};
+
+        ${$self->{hostConfigs}}{$hostIndex} = { };
+    }
+
+    sub _readConfigFile($$)
+    {
+        my $self      = shift;
+        my $fileName  = shift;
+
+        if (defined($fileName) && $#{$fileName} >= 0) {
+            my $hostName  = '';
+            my $lineNum   = 0;
+
+            if (${$fileName}[0] eq '~')
+            {
+                defined(${$fileName}[0] = $ENV{"HOME"}) ||
+                    die "Cannot resolve HOME directory";
+            }
+
+            my $configFileName = File::Spec->catfile(@{$fileName});
+            my $configFile;
+
+            if ( ! open($configFile, "<", $configFileName))
+            {
+                $!{ENOENT} || die "Unable to read $configFileName";
+            }
+            else
+            {
+                while (<$configFile>) {
+                    chomp;
+
+                    ++$lineNum;
+
+                    my $err = $self->_parseLine($_);
+
+                    die "$err at line $lineNum: '$_'" if (defined($err));
+                }
+
+                close($configFile);
+            }
+        }
+    }
+
+    sub _parseLine($$)
+    {
+        my $self  = shift;
+        my $line  = shift;
+        my @words = _splitLine($line);
+        my $err   = shift @words;
+
+        return $err if defined($err);
+
+        unless (defined($err) || $#words < 0)
+        {
+            my $key = shift @words;
+            my @val = @words;
+
+            if (substr($key, 0, 1) ne '#')
+            {
+                return "Malformed configuration" unless (@val);
+
+                my $hostIndex = $self->{hostIndex};
+
+                if ($key ne "Host")
+                {
+                    my $hostRecord = ${$self->{hostConfigs}}{$hostIndex};
+
+                    ${$hostRecord}{$key} = [ ]
+                        unless (defined(${$hostRecord}{$key}));
+
+                    push @{${$hostRecord}{$key}}, @val;
+                }
+                else
+                {
+                    ++$hostIndex;
+                    push @{$self->{hostNames}}, [ $hostIndex, \@val ];
+                    ${$self->{hostConfigs}}{$hostIndex} = { };
+                }
+
+                $self->{hostIndex} = $hostIndex;
+            }
+        }
+
+        return $err;
+    }
+}
+
+my $configFile = ConfigFile->new([ '~', '.mosh', 'config' ]);
 
 my $client = 'mosh-client';
 my $server = 'mosh-server';
