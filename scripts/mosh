@@ -558,7 +558,44 @@ if ( scalar @ARGV < 1 ) {
 }
 
 my $userhost = shift;
+my $host = (split(/@/, $userhost))[-1];
 my @command = @ARGV;
+my %hostconfig = %{$configFile->lookupHost($host)};
+
+my %configFileOptions = (
+    'Client'     => \$client,
+    'Server'     => \$server,
+    'Predict'    => \$predict,
+    'Port'       => \$port_request,
+    'Family'     => \$family,
+    'Ssh'        => \$ssh,
+    'TermInit=?' => \$term_init );
+
+foreach my $key (keys %configFileOptions) {
+  my @words = split(/=/, $key);
+  my $name  = $words[0];
+  my $kind  = $words[1];
+  my $var   = $configFileOptions{$key};
+
+  $kind = '' unless (defined($kind));
+
+  unless (defined ${$var}) {
+
+    ${$var} = $configFile->lookupOption($name);
+
+    if (defined ${$var}) {
+      if ($kind eq '?') {
+        my $yes = uc(${$var}) eq 'YES';
+        my $no  = uc(${$var}) eq 'NO';
+
+        die "Configuration $name must have value yes or no\n"
+            unless ($yes or $no);
+
+        ${$var} = $yes;
+      }
+    }
+  }
+}
 
 $client = 'mosh-client' unless defined($client);
 $server = 'mosh-server' unless defined($server);
