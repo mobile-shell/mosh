@@ -70,7 +70,7 @@ const size_t buf_size = 16384;
 
 void emulate_terminal( int fd );
 
-int main( void )
+int main( int argc, char *argv[] )
 {
   int master;
   struct termios saved_termios, raw_termios, child_termios;
@@ -114,19 +114,26 @@ int main( void )
       exit( 1 );
     }
 
-    /* get shell name */
-    struct passwd *pw = getpwuid( geteuid() );
-    if ( pw == NULL ) {
-      perror( "getpwuid" );
-      exit( 1 );
-    }
-
     char *my_argv[ 2 ];
-    my_argv[ 0 ] = strdup( pw->pw_shell );
-    assert( my_argv[ 0 ] );
-    my_argv[ 1 ] = NULL;
 
-    if ( execv( pw->pw_shell, my_argv ) < 0 ) {
+    if ( argc > 1 ) {
+      argv++;
+    } else {
+      /* get shell name */
+      my_argv[ 0 ] = getenv( "SHELL" );
+      if ( my_argv[ 0 ] == NULL ) {
+	struct passwd *pw = getpwuid( geteuid() );
+	if ( pw == NULL ) {
+	  perror( "getpwuid" );
+	  exit( 1 );
+	}
+	my_argv[ 0 ] = strdup( pw->pw_shell );
+      }
+      assert( my_argv[ 0 ] );
+      my_argv[ 1 ] = NULL;
+      argv = my_argv;
+    }
+    if ( execvp( argv[ 0 ], argv ) < 0 ) {
       perror( "execve" );
       exit( 1 );
     }
