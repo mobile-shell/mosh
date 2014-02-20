@@ -53,7 +53,8 @@ namespace Terminal {
     void append( const size_t s, const char c ) { str.append( s, c ); }
     void append( const wchar_t wc ) { Cell::append_to_str( str, wc ); }
     void append( const char * s ) { str.append( s ); }
-    void append( const std::string &s ) { str.append( s ); }
+    void append( const Cell::content_type &contents ) { str.append( contents.begin(), contents.end() ); }
+    void append_string( const std::string &append ) { str.append(append); }
 
     void append_cell(const Cell & cell);
     void append_silent_move( int y, int x, bool force = false );

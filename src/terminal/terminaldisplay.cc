@@ -442,7 +442,7 @@ void FrameState::append_silent_move( int y, int x, bool force )
 void FrameState::update_rendition(const Renditions &r, bool force) {
   if ( force || !(current_rendition == r) ) {
     /* print renditions */
-    append( r.sgr() );
+    append_string( r.sgr() );
     current_rendition = r;
   }
 }

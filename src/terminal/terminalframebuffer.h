@@ -84,7 +84,8 @@ namespace Terminal {
 
   class Cell {
   public:
-    std::string contents;
+    typedef std::vector<uint8_t> content_type;
+    content_type contents;
     Renditions renditions;
     uint8_t width;
     bool fallback; /* first character is combining character */
@@ -134,7 +135,11 @@ namespace Terminal {
 
     void append( const wchar_t c )
     {
-      append_to_str( contents, c );
+      static mbstate_t ps = mbstate_t();
+      char tmp[MB_LEN_MAX];
+      (void)wcrtomb(NULL, 0, &ps);
+      size_t len = wcrtomb(tmp, c, &ps);
+      contents.insert( contents.end(), tmp, tmp+len );
     }
   };
 

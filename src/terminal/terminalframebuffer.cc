@@ -58,7 +58,7 @@ Cell::Cell() /* default constructor required by C++11 STL */
 
 void Cell::reset( color_type background_color )
 {
-  contents.erase();
+  contents.clear();
   renditions = Renditions( background_color );
   width = 1;
   fallback = false;
@@ -622,7 +622,8 @@ wchar_t Cell::debug_contents( void ) const
   } else {
     /* very, very cheesy */
     wchar_t ch[2];
-    mbstowcs(ch, contents.c_str(), 1);
+    const std::string chars( contents.begin(), contents.end() );
+    mbstowcs(ch, chars.c_str(), 1);
     return ch[0];
   }
 }
