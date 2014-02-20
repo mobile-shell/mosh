@@ -286,6 +286,7 @@ void Framebuffer::insert_line( int before_row, int count )
   start = rows.begin() + before_row;
   rows.insert( start, count, Row( 0, 0 ) );
   // then replace with real new rows
+  start = rows.begin() + before_row;
   for (rows_type::iterator i = start; i < start + count; i++) {
     *i = newrow();
   }
@@ -306,6 +307,7 @@ void Framebuffer::delete_line( int row, int count )
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
   rows.insert( start, count, Row( 0, 0 ) );
   // then replace with real new rows
+  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count; 
   for (rows_type::iterator i = start; i < start + count; i++) {
     *i = newrow();
   }
