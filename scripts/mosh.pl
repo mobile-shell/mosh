@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+# vim: syntax=perl ts=2 expandtab sw=2:
 
 #   Mosh: the mobile shell
 #   Copyright 2012 Keith Winstein
@@ -97,7 +98,7 @@ sub predict_check {
   my ( $predict, $env_set ) = @_;
 
   if ( not exists { adaptive => 0, always => 0,
-		    never => 0, experimental => 0 }->{ $predict } ) {
+       never => 0, experimental => 0 }->{ $predict } ) {
     my $explanation = $env_set ? " (MOSH_PREDICTION_DISPLAY in environment)" : "";
     print STDERR qq{$0: Unknown mode \"$predict\"$explanation.\n\n};
 
@@ -106,21 +107,23 @@ sub predict_check {
 }
 
 GetOptions( 'client=s' => \$client,
-	    'server=s' => \$server,
-	    'predict=s' => \$predict,
-	    'port=s' => \$port_request,
-	    'a' => sub { $predict = 'always' },
-	    'n' => sub { $predict = 'never' },
-	    'family=s' => \$family,
-	    '4' => sub { $family = 'inet' },
-	    '6' => sub { $family = 'inet6' },
-	    'p=s' => \$port_request,
-	    'ssh=s' => \$ssh,
-	    'init!' => \$term_init,
-	    'help' => \$help,
-	    'version' => \$version,
-	    'fake-proxy!' => \my $fake_proxy,
-	    'bind-server=s' => \$bind_ip) or die $usage;
+            'server=s' => \$server,
+            'predict=s' => \$predict,
+            'port=s' => \$port_request,
+            'a' => sub { $predict = 'always' },
+            'n' => sub { $predict = 'never' },
+            'family=s' => \$family,
+            '4' => sub { $family = 'inet' },
+            '6' => sub { $family = 'inet6' },
+            'p=s' => \$port_request,
+            'ssh=s' => \$ssh,
+            'init!' => \$term_init,
+            'config' => \$config_name,
+            'c' => \$config_name,
+            'help' => \$help,
+            'version' => \$version,
+            'fake-proxy!' => \my $fake_proxy,
+            'bind-server=s' => \$bind_ip) or die $usage;
 
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
@@ -144,10 +147,10 @@ if ( defined $port_request ) {
     }
     if ( defined $high ) {
       if ( $high <= 0 or $high > 65535 ) {
-	die "$0: Server-side high port ($high) must be within valid range [1..65535].\n";
+        die "$0: Server-side high port ($high) must be within valid range [1..65535].\n";
       }
       if ( $low > $high ) {
-	die "$0: Server-side port range ($port_request): low port greater than high port.\n";
+        die "$0: Server-side port range ($port_request): low port greater than high port.\n";
       }
     }
   } else {
@@ -195,10 +198,10 @@ if ( defined $fake_proxy ) {
   my $afstr = 'AF_' . uc( $family );
   my $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
   my $sock = IO::Socket->new( Domain => $af,
-			      Family => $af,
-			      PeerHost => $host,
-			      PeerPort => $port,
-			      Proto => "tcp" )
+                              Family => $af,
+                              PeerHost => $host,
+                              PeerPort => $port,
+                              Proto => "tcp" )
     or die "$0: Could not connect to $host: $@\n";
 
   print STDERR "MOSH IP ", $sock->peerhost, "\n";
@@ -288,18 +291,18 @@ if ( $pid == 0 ) { # child
     chomp;
     if ( m{^MOSH IP } ) {
       if ( defined $ip ) {
-	die "$0 error: detected attempt to redefine MOSH IP.\n";
+        die "$0 error: detected attempt to redefine MOSH IP.\n";
       }
       ( $ip ) = m{^MOSH IP (\S+)\s*$} or die "Bad MOSH IP string: $_\n";
     } elsif ( m{^MOSH CONNECT } ) {
       if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) ([A-Za-z0-9/+]{22})\s*$} ) {
-	last LINE;
+        last LINE;
       } else {
-	die "Bad MOSH CONNECT string: $_\n";
+        die "Bad MOSH CONNECT string: $_\n";
       }
     } else {
       if ( defined $port_request and $port_request =~ m{:} and m{Bad UDP port} ) {
-	$bad_udp_port_warning = 1;
+        $bad_udp_port_warning = 1;
       }
       print "$_\n";
     }
