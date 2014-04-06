@@ -126,6 +126,11 @@ my $options = {
               'fake-proxy!' => \my $fake_proxy,
               'bind-server=s' => \$bind_ip };
 
+if (caller()) {
+  # So that the module can be loaded, when used like that
+  return 1;
+}
+
 GetOptions(%$options) or die $usage;
 
 die $usage if ( defined $help );
@@ -236,7 +241,6 @@ if ( defined $fake_proxy ) {
   waitpid $pid, 0;
   exit;
 }
-
 if ( scalar @ARGV < 1 ) {
   die $usage;
 }
