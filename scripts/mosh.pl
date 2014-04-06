@@ -38,11 +38,23 @@ use IO::Socket;
 
 $|=1;
 
+# for tracking default configuration values
+my $def_values = {};
+
 my $client = 'mosh-client';
+$def_values->{"client"} = $client;
+
 my $server = 'mosh-server';
+$def_values->{"server"} = $server;
+
 my $family = 'inet';
+$def_values->{"family"} = $family;
+
 my $ssh = 'ssh';
+$def_values->{"ssh"} = $ssh;
+
 my $term_init = 1;
+$def_values->{"init"} = $term_init;
 
 my $predict = undef;
 
@@ -53,6 +65,9 @@ my $port_request = undef;
 
 my $help = undef;
 my $version = undef;
+
+my $config_name = $ENV{"HOME"}."/.moshrc";
+my $DEF_CONFIG_NAME = $config_name;
 
 my @cmdline = @ARGV;
 
@@ -81,6 +96,8 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 
         --no-init            do not send terminal initialization string
 
+-c      --config             path to the config file (default ~/.moshrc)
+
         --help               this message
         --version            version and copyright information
 
@@ -105,6 +122,56 @@ sub predict_check {
   }
 }
 
+sub getdefaultconfigfile() {
+  return $DEF_CONFIG_NAME;
+}
+
+sub parseconfigfile($) {
+  my $cfg_name = shift @_;
+  my $conf_settings = {};
+  my $cfh;
+  my $hst;
+  # Open config file, if open fail then finish
+  if (! open($cfh, "<", $cfg_name)) {
+    if ($cfg_name ne  $DEF_CONFIG_NAME) {
+      print "Unable to open config file $cfg_name\n";
+    }
+    return {};
+  }
+  my $in_section = 0;
+  while (<$cfh>) {
+    chomp;
+    # comments or empty line
+    if (m/^(?:(\s+$)|#)/) {
+      $in_section = 0 if ($1);
+      next;
+    }
+
+    if (m/^\s+([^\s=]+)\s*=\s*([^\s].*)/) {
+      if (!$in_section) {
+        print "Statement $1 out of an host section, ignoring it\n";
+        next;
+      }
+      my $key = lc($1);
+      my $val = $2;
+      if (defined $conf_settings->{$hst}->{$key}) {
+        print "Key $key already defined for host $hst, overridding the value\n";
+      }
+      $conf_settings->{$hst}->{$key} = $val;
+    }
+
+    if (m/^[hH]ost\s+((?:[\w-]+)|\*)/i) {
+      $hst = lc($1);
+      $in_section = 1;
+      if (! defined $conf_settings->{$hst}) {
+        $conf_settings->{$hst} = {};
+      }
+    }
+
+  }
+  return $conf_settings;
+}
+
 my $options = {
               'client=s' => \$client,
               'server=s' => \$server,
@@ -125,12 +192,82 @@ my $options = {
               'fake-proxy!' => \my $fake_proxy,
               'bind-server=s' => \$bind_ip };
 
+# For updating the value from the configuration file, a simple association
+# pure key / value is needed
+sub get_options_askeyvalue($) {
+  my $opts = shift;
+  my $key_values = {};
+
+  foreach my $c (keys(%$opts)) {
+    # Ignore the short version of the options
+    my $key;
+    if ($c =~ m/([^=!]+)/) {
+      $key = $1
+    }
+    next if (length($key) == 1);
+
+    next if ($key eq "version");
+    next if ($key eq "help");
+    next if ($key eq "fake-proxy");
+    $key_values->{$key} = $opts->{$c};
+  }
+  return $key_values;
+}
+
+sub get_conf_settings_for_host($$) {
+  my $conf = shift;
+  my $host = lc(shift);
+
+  my $settings = {};
+  if (defined $conf->{"*"}) {
+    $settings = {%{$conf->{"*"}}};
+  }
+
+  if (defined $conf->{$host}) {
+    foreach my $k (keys(%{$conf->{$host}})) {
+      $settings->{$k} = $conf->{$host}->{$k};
+    }
+  }
+  return $settings;
+}
+
+sub apply_cfg_settings($$$) {
+  my $settings = shift;
+  my $opts = shift;
+  my $def_values = shift;
+
+  my $keyvalues = get_options_askeyvalue($opts);
+  my @opt_name = keys(%$keyvalues);
+  my $unknown = 0;
+  my $ignored = 0;
+
+  foreach my $s (keys %$settings) {
+    if (!grep /^$s$/, @opt_name) {
+      print "Configuration setting $s is unknown\n";
+      $unknown++;
+      next;
+    }
+    if (defined $def_values->{$s} and ($def_values->{$s} ne ${$keyvalues->{$s}})) {
+        print "$s is ignored\n";
+        $ignored++;
+        next;
+    }
+    ${$keyvalues->{$s}} = $settings->{$s};
+  }
+
+  return ($unknown, $ignored);
+}
+
 if (caller()) {
   # So that the module can be loaded, when used like that
   return 1;
 }
 
 GetOptions(%$options) or die $usage;
+my $cfg = parseconfigfile($config_name);
+my $settings_from_cfg = get_conf_settings_for_host($cfg, $ARGV[0]);
+
+apply_cfg_settings($settings_from_cfg, $options, $def_values);
 
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
