@@ -40,17 +40,16 @@ $|=1;
 
 my $client = 'mosh-client';
 my $server = 'mosh-server';
+my $family = 'inet';
+my $ssh = 'ssh';
+my $term_init = 1;
 
 my $predict = undef;
 
 my $bind_ip = undef;
 
-my $family = 'inet';
 my $port_request = undef;
 
-my $ssh = 'ssh';
-
-my $term_init = 1;
 
 my $help = undef;
 my $version = undef;
