@@ -106,24 +106,27 @@ sub predict_check {
   }
 }
 
-GetOptions( 'client=s' => \$client,
-            'server=s' => \$server,
-            'predict=s' => \$predict,
-            'port=s' => \$port_request,
-            'a' => sub { $predict = 'always' },
-            'n' => sub { $predict = 'never' },
-            'family=s' => \$family,
-            '4' => sub { $family = 'inet' },
-            '6' => sub { $family = 'inet6' },
-            'p=s' => \$port_request,
-            'ssh=s' => \$ssh,
-            'init!' => \$term_init,
-            'config' => \$config_name,
-            'c' => \$config_name,
-            'help' => \$help,
-            'version' => \$version,
-            'fake-proxy!' => \my $fake_proxy,
-            'bind-server=s' => \$bind_ip) or die $usage;
+my $options = {
+              'client=s' => \$client,
+              'server=s' => \$server,
+              'predict=s' => \$predict,
+              'port=s' => \$port_request,
+              'a' => sub { $predict = 'always' },
+              'n' => sub { $predict = 'never' },
+              'family=s' => \$family,
+              '4' => sub { $family = 'inet' },
+              '6' => sub { $family = 'inet6' },
+              'p=s' => \$port_request,
+              'ssh=s' => \$ssh,
+              'init!' => \$term_init,
+              'config' => \$config_name,
+              'c' => \$config_name,
+              'help' => \$help,
+              'version' => \$version,
+              'fake-proxy!' => \my $fake_proxy,
+              'bind-server=s' => \$bind_ip };
+
+GetOptions(%$options) or die $usage;
 
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
