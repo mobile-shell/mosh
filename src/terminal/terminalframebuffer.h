@@ -271,7 +271,7 @@ namespace Terminal {
     typedef std::vector<const Row *> rows_p_type;
 
   private:
-    typedef std::vector<Row> rows_type;
+    typedef std::deque<Row> rows_type;
     rows_type rows;
     std::deque<wchar_t> icon_name;
     std::deque<wchar_t> window_title;
