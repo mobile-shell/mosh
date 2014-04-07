@@ -41,6 +41,8 @@
 #include <deque>
 #include <string>
 #include <list>
+#include <memory>
+#include <tr1/memory>
 
 /* Terminal framebuffer */
 
@@ -147,6 +149,9 @@ namespace Terminal {
   public:
     typedef std::vector<Cell> cells_type;
     cells_type cells;
+    // gen is a generation counter.  It can be used to quickly rule
+    // out the possibility of two rows being identical; this is useful
+    // in scrolling.
     uint64_t gen;
 
     Row( size_t s_width, color_type background_color );
@@ -271,7 +276,25 @@ namespace Terminal {
     typedef std::vector<const Row *> rows_p_type;
 
   private:
-    typedef std::deque<Row> rows_type;
+    // To minimize copying of rows and cells, we use shared_ptr to
+    // share unchanged rows between multiple Framebuffers.  If we
+    // write to a row in a Framebuffer, we copy it first.  We maintain
+    // a dirty bit with each row indicating that this has happened.
+    // The shared_ptr naturally manages the usage of the actual rows
+    // themselves.
+    //
+    // We gain a couple of free extras by doing this:
+    //
+    // * A quick check for equality between rows in different
+    // Framebuffers is to simply compare the pointer values.  If they
+    // are equal, then the rows are obviously identical.
+    // * If any row has a dirty bit set, the frame has been modified.
+
+    typedef std::tr1::shared_ptr<Row> row_pointer;
+    // In this pair, .first is the row data, .second is a dirty bit
+    // indicating write and copy-on-write has already occurred
+    typedef std::pair<row_pointer, bool> mutable_row_type;
+    typedef std::vector<mutable_row_type> rows_type;
     rows_type rows;
     std::deque<wchar_t> icon_name;
     std::deque<wchar_t> window_title;
@@ -282,6 +305,8 @@ namespace Terminal {
 
   public:
     Framebuffer( int s_width, int s_height );
+    Framebuffer( const Framebuffer &other );
+    Framebuffer &operator=( const Framebuffer &other );
     DrawState ds;
 
     void scroll( int N );
@@ -291,16 +316,16 @@ namespace Terminal {
     {
       rows_p_type retval;
       for ( size_t i = 0; i < rows.size(); i++ ) {
-	retval.push_back( &rows.at(i) );
+	retval.push_back( rows.at(i).first.get() );
       }
       return retval;
     }
 
-    const Row *get_row( int row ) const
+    inline const Row *get_row( int row ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
 
-      return &rows.at( row );
+      return rows.at( row ).first.get();
     }
 
     inline const Cell *get_cell( int row = -1, int col = -1 ) const
@@ -308,17 +333,27 @@ namespace Terminal {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
 
-      return &rows.at( row ).cells.at( col );
+      return &rows.at( row ).first->cells.at( col );
     }
 
     Row *get_mutable_row( int row )
     {
-      return const_cast<Row *>(get_row( row ));
+      if ( row == -1 ) row = ds.get_cursor_row();
+      mutable_row_type &mutable_row = rows.at( row );
+      // If the row hasn't already been copied, do so.
+      if (!mutable_row.second) {
+	rows.at( row ).first = std::tr1::make_shared<Row>(*rows.at( row ).first );
+	rows.at( row ).second = true;
+      }
+      return rows.at( row ).first.get();
     }
 
-    inline Cell *get_mutable_cell( int row = -1, int col = -1 )
+    Cell *get_mutable_cell( int row = -1, int col = -1 )
     {
-      return const_cast<Cell *>(get_cell( row, col ));
+      if ( row == -1 ) row = ds.get_cursor_row();
+      if ( col == -1 ) col = ds.get_cursor_col();
+
+      return &get_mutable_row( row )->cells.at( col );
     }
 
     Cell *get_combining_cell( void );

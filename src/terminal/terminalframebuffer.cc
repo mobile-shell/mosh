@@ -88,10 +88,36 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows( s_height, Row( s_width, 0 ) ), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
+  : rows( s_height, std::make_pair( row_pointer(), true )), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
+  for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
+    i->first = std::tr1::make_shared<Row>( Row( s_width, 0 ));
+  }
+}
+
+Framebuffer::Framebuffer( const Framebuffer &other )
+  : rows( other.rows ), icon_name( other.icon_name ), window_title( other.window_title ),
+    bell_count( other.bell_count ), title_initialized( other.title_initialized ), ds( other.ds )
+{
+  for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
+    i->second = false;
+  }
+}
+
+Framebuffer & Framebuffer::operator=( const Framebuffer &other )
+{
+  rows = other.rows;
+  icon_name =  other.icon_name;
+  window_title = other.window_title;
+  bell_count = other.bell_count;
+  title_initialized = other.title_initialized;
+  ds = other.ds;
+  for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
+    i->second = false;
+  }
+  return *this;
 }
 
 void Framebuffer::scroll( int N )
@@ -284,11 +310,12 @@ void Framebuffer::insert_line( int before_row, int count )
   rows.erase( start, start + count );
   // insert a block of dummy rows
   start = rows.begin() + before_row;
-  rows.insert( start, count, Row( 0, 0 ) );
+  rows.insert( start, count, std::make_pair( row_pointer(), true ));
   // then replace with real new rows
   start = rows.begin() + before_row;
   for (rows_type::iterator i = start; i < start + count; i++) {
-    *i = newrow();
+    i->first = std::tr1::make_shared<Row>( newrow() );
+    i->second = true;
   }
 }
 
@@ -305,11 +332,11 @@ void Framebuffer::delete_line( int row, int count )
   rows.erase( start, start + count );
   // insert a block of dummy rows
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  rows.insert( start, count, Row( 0, 0 ) );
+  rows.insert( start, count, std::make_pair( row_pointer(), true ));
   // then replace with real new rows
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
   for (rows_type::iterator i = start; i < start + count; i++) {
-    *i = newrow();
+    i->first = std::tr1::make_shared<Row>( newrow() );
   }
 }
 
@@ -343,19 +370,22 @@ void Row::delete_cell( int col, color_type background_color )
 
 void Framebuffer::insert_cell( int row, int col )
 {
-  rows.at( row ).insert_cell( col, ds.get_background_rendition() );
+  get_mutable_row( row )->insert_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::delete_cell( int row, int col )
 {
-  rows.at( row ).delete_cell( col, ds.get_background_rendition() );
+  get_mutable_row( row )->delete_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::reset( void )
 {
   int width = ds.get_width(), height = ds.get_height();
   ds = DrawState( width, height );
-  rows = rows_type( height, newrow() );
+  rows = rows_type( height, std::make_pair( row_pointer(), true ));
+  for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
+    i->first = std::tr1::make_shared<Row>( newrow());
+  }
   window_title.clear();
   /* do not reset bell_count */
 }
@@ -376,8 +406,8 @@ void Framebuffer::posterize( void )
   for ( rows_type::iterator i = rows.begin();
         i != rows.end();
         i++ ) {
-    for ( Row::cells_type::iterator j = i->cells.begin();
-          j != i->cells.end();
+    for ( Row::cells_type::iterator j = i->first->cells.begin();
+          j != i->first->cells.end();
           j++ ) {
       j->renditions.posterize();
     }
@@ -389,13 +419,17 @@ void Framebuffer::resize( int s_width, int s_height )
   assert( s_width > 0 );
   assert( s_height > 0 );
 
-  rows.resize( s_height, newrow() );
+  rows.resize( s_height, std::make_pair( row_pointer(), true ));
 
   for ( rows_type::iterator i = rows.begin();
 	i != rows.end();
 	i++ ) {
-    i->set_wrap( false );
-    i->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
+    if (i->first) {
+      i->first->set_wrap( false );
+      i->first->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
+    } else {
+      i->first = std::tr1::make_shared<Row>( newrow() );
+    }
   }
 
   ds.resize( s_width, s_height );
