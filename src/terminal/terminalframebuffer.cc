@@ -93,7 +93,7 @@ Framebuffer::Framebuffer( int s_width, int s_height )
   assert( s_height > 0 );
   assert( s_width > 0 );
   for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
-    i->first = make_shared<Row>( Row( s_width, 0 ));
+    i->first = row_pointer( new Row( s_width, 0 ));
   }
 }
 
@@ -323,7 +323,7 @@ void Framebuffer::insert_line( int before_row, int count )
   // then replace with real new rows
   start = rows.begin() + before_row;
   for (rows_type::iterator i = start; i < start + count; i++) {
-    i->first = make_shared<Row>( newrow() );
+    i->first = newrow();
   }
 }
 
@@ -344,7 +344,7 @@ void Framebuffer::delete_line( int row, int count )
   // then replace with real new rows
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
   for (rows_type::iterator i = start; i < start + count; i++) {
-    i->first = make_shared<Row>( newrow() );
+    i->first = newrow();
   }
 }
 
@@ -392,7 +392,7 @@ void Framebuffer::reset( void )
   ds = DrawState( width, height );
   rows = rows_type( height, std::make_pair( row_pointer(), false ));
   for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
-    i->first = make_shared<Row>( newrow() );
+    i->first = newrow();
   }
   window_title.clear();
   /* do not reset bell_count */
@@ -438,7 +438,7 @@ void Framebuffer::resize( int s_width, int s_height )
       i->first->set_wrap( false );
       i->first->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
     } else {
-      i->first = make_shared<Row>( newrow() );
+      i->first = row_pointer( newrow() );
     }
   }
 }

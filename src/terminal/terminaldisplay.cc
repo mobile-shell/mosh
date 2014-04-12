@@ -118,9 +118,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
        || (f.ds.get_width() != frame.last_frame.ds.get_width())
        || (f.ds.get_height() != frame.last_frame.ds.get_height()) ) {
     /* reset scrolling region */
-    snprintf( tmp, 64, "\033[%d;%dr",
-	      1, f.ds.get_height() );
-    frame.append( tmp );
+    frame.append( "\033[r" );
 
     /* clear screen */
     frame.append( "\033[0m\033[H\033[2J" );
@@ -140,7 +138,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   }
 
   int frame_y = 0;
-
+  /* Create a blank row in proper scope-- but do */
+  /* it cheaply, because we likely won't use it */
+  Row blank_row(0, 0);
   /* shortcut -- has display moved up by a certain number of lines? */
   Framebuffer::rows_p_type rows(frame.last_frame.get_p_rows());
 #if 1
@@ -151,7 +151,6 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
       const Row *new_row = f.get_row( 0 );
       const Row *old_row = rows.at( row );
-      
       if ( new_row == old_row || *new_row == *old_row ) {
 	/* if row 0, we're looking at ourselves and probably didn't scroll */
 	if ( row == 0 ) {
@@ -181,6 +180,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       frame_y = scroll_height;
 
       if ( lines_scrolled ) {
+	/* Now we need a proper blank row. */
+	blank_row = Row( f.ds.get_width(), 0 );
 	frame.update_rendition( initial_rendition(), true );
 
 	int top_margin = 0;
@@ -188,34 +189,39 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
 	assert( bottom_margin < f.ds.get_height() );
 
-	/* set scrolling region */
-	snprintf( tmp, 64, "\033[%d;%dr",
-		  top_margin + 1, bottom_margin + 1);
-	frame.append( tmp );
+	/* Common case:  if we're already on the bottom line and we're scrolling the whole
+	 * screen, just do a CR and LFs.
+	 */
+	if ( (scroll_height + lines_scrolled == f.ds.get_height() ) && frame.cursor_y + 1 == f.ds.get_height() ) {
+	  frame.append( '\r' );
+	  frame.append( lines_scrolled, '\n' );
+	  frame.cursor_x = 0;
+	} else {
+	  /* set scrolling region */
+	  snprintf( tmp, 64, "\033[%d;%dr",
+		    top_margin + 1, bottom_margin + 1);
+	  frame.append( tmp );
 
-	/* go to bottom of scrolling region */
-	frame.cursor_x = frame.cursor_y = -1;
-	frame.append_silent_move( bottom_margin, 1 );
+	  /* go to bottom of scrolling region */
+	  frame.cursor_x = frame.cursor_y = -1;
+	  frame.append_silent_move( bottom_margin, 0 );
 
-	/* scroll */
-	frame.append( lines_scrolled, '\n' );
+	  /* scroll */
+	  frame.append( lines_scrolled, '\n' );
 
+	  /* reset scrolling region */
+	  frame.append( "\033[r" );
+	  /* invalidate cursor position after unsetting scrolling region */
+	  frame.cursor_x = frame.cursor_y = -1;
+	}
 	/* do the move in our local index */
 	for ( int i = top_margin; i <= bottom_margin; i++ ) {
 	  if ( i + lines_scrolled <= bottom_margin ) {
 	    rows.at( i ) = rows.at( i + lines_scrolled );
 	  } else {
-	    rows.at( i ) = make_shared<Row>(Row( f.ds.get_width(), 0 ));
+	    rows.at( i ) = &blank_row;
 	  }
 	}
-
-	/* reset scrolling region */
-	snprintf( tmp, 64, "\033[%d;%dr",
-		  1, f.ds.get_height() );
-	frame.append( tmp );
-
-	/* invalidate cursor position after unsetting scrolling region */
-	frame.cursor_x = frame.cursor_y = -1;
       }
     }
   }
@@ -421,11 +427,11 @@ void FrameState::append_silent_move( int y, int x )
   }
   append_move( y, x );
 }
- 
+
 void FrameState::append_move( int y, int x )
 {
   // Can we use CR and/or LF?  They're cheap and easier to trace.
-  if ( ( cursor_x == -1 || cursor_y == -1) && 
+  if ( cursor_x != -1 && cursor_y != -1 &&
        x == 0 && y - cursor_y >= 0 && y - cursor_y < 5 ) {
     if ( cursor_x != 0 ) append( '\r' );
     append( y - cursor_y, '\n' );

@@ -42,12 +42,12 @@
 #include <string>
 #include <list>
 #include <memory>
+#include <tr1/memory>
 
 /* Terminal framebuffer */
 
 namespace Terminal {
-  using ::std::shared_ptr;
-  using ::std::make_shared;
+  using ::std::tr1::shared_ptr;
 
   typedef uint16_t color_type;
 
@@ -302,7 +302,7 @@ namespace Terminal {
     unsigned int bell_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
 
-    Row newrow( void ) { return Row( ds.get_width(), ds.get_background_rendition() ); }
+    row_pointer newrow( void ) { return row_pointer( new Row( ds.get_width(), ds.get_background_rendition())); }
 
   public:
     Framebuffer( int s_width, int s_height );
@@ -345,7 +345,7 @@ namespace Terminal {
       // If the row hasn't already been copied, do so.
       if (!mutable_row.second) {
 	mutable_row_type new_row;
-	new_row.first = make_shared<Row>(*mutable_row.first );
+	new_row.first = row_pointer( new Row( *mutable_row.first ));
 	new_row.second = true;
 	mutable_row = new_row;
       }
