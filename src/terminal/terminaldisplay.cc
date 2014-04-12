@@ -301,6 +301,11 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
     frame.cursor_x += cell.width;
   }
 
+  /* If rows are the same object, we don't need to do anything at all. */
+  if ( &row == &old_row ) {
+    return false;
+  }
+
   /* iterate for every cell */
   while ( frame_x < f.ds.get_width() ) {
 
