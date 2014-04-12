@@ -143,20 +143,20 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
   /* shortcut -- has display moved up by a certain number of lines? */
   Framebuffer::rows_p_type rows(frame.last_frame.get_p_rows());
-  /* Create a vestigial blank row in scope */
-  Row blankrow( 0, 0 );
+#if 1
   if ( initialized ) {
     int lines_scrolled = 0;
     int scroll_height = 0;
 
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
-      if ( *f.get_row( 0 ) == *rows.at( row ) ) {
-#if 0
+      const Row *new_row = f.get_row( 0 );
+      const Row *old_row = rows.at( row );
+      
+      if ( new_row == old_row || *new_row == *old_row ) {
 	/* if row 0, we're looking at ourselves and probably didn't scroll */
 	if ( row == 0 ) {
 	  break;
 	}
-#endif
 	/* found a scroll */
 	lines_scrolled = row;
 	scroll_height = 1;
@@ -194,20 +194,18 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	frame.append( tmp );
 
 	/* go to bottom of scrolling region */
-	frame.append_silent_move( bottom_margin, 0 );
+	frame.cursor_x = frame.cursor_y = -1;
+	frame.append_silent_move( bottom_margin, 1 );
 
 	/* scroll */
 	frame.append( lines_scrolled, '\n' );
-
-	/* Create a full-width blank row to represent newly-scrolled area */
-	blankrow = Row( f.ds.get_width(), 0 );
 
 	/* do the move in our local index */
 	for ( int i = top_margin; i <= bottom_margin; i++ ) {
 	  if ( i + lines_scrolled <= bottom_margin ) {
 	    rows.at( i ) = rows.at( i + lines_scrolled );
 	  } else {
-	    rows.at( i ) = &blankrow;
+	    rows.at( i ) = make_shared<Row>(Row( f.ds.get_width(), 0 ));
 	  }
 	}
 
@@ -221,6 +219,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       }
     }
   }
+#endif
 
   /* Now update the display, row by row */
   bool wrap = false;
@@ -412,9 +411,9 @@ void FrameState::append_cell(const Cell & cell)
 }
 
 
-void FrameState::append_silent_move( int y, int x, bool force )
+void FrameState::append_silent_move( int y, int x )
 {
-  if ( !force && (cursor_x == x && cursor_y == y ) ) return;
+  if ( cursor_x == x && cursor_y == y ) return;
   /* turn off cursor if necessary before moving cursor */
   if ( cursor_visible ) {
     append( "\033[?25l" );
@@ -423,10 +422,11 @@ void FrameState::append_silent_move( int y, int x, bool force )
   append_move( y, x );
 }
  
- void FrameState::append_move( int y, int x )
+void FrameState::append_move( int y, int x )
 {
   // Can we use CR and/or LF?  They're cheap and easier to trace.
-  if ( x == 0 && y - cursor_y >= 0 && y - cursor_y < 5 ) {
+  if ( ( cursor_x == -1 || cursor_y == -1) && 
+       x == 0 && y - cursor_y >= 0 && y - cursor_y < 5 ) {
     if ( cursor_x != 0 ) append( '\r' );
     append( y - cursor_y, '\n' );
   // More optimizations are possible.

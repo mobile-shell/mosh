@@ -69,7 +69,7 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
   if ( *fb.get_cell( row, col ) != replacement ) {
     *(fb.get_mutable_cell( row, col )) = replacement;
     if ( flag ) {
-      fb.get_mutable_cell()->renditions.set_attribute( Renditions::underlined, true );
+      fb.get_mutable_cell( row, col )->renditions.set_attribute( Renditions::underlined, true );
     }
   }
 }

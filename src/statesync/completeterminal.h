@@ -62,6 +62,7 @@ namespace Terminal {
     std::string act( const Parser::Action *act );
 
     const Framebuffer & get_fb( void ) const { return terminal.get_fb(); }
+    const Framebuffer & get_fb_snapshot( void ) const { return terminal.get_fb_snapshot(); }
     bool parser_grounded( void ) const { return parser.is_grounded(); }
 
     uint64_t get_echo_ack( void ) const { return echo_ack; }

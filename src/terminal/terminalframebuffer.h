@@ -42,11 +42,13 @@
 #include <string>
 #include <list>
 #include <memory>
-#include <tr1/memory>
 
 /* Terminal framebuffer */
 
 namespace Terminal {
+  using ::std::shared_ptr;
+  using ::std::make_shared;
+
   typedef uint16_t color_type;
 
   class Renditions {
@@ -272,10 +274,6 @@ namespace Terminal {
   };
 
   class Framebuffer {
-  public:
-    typedef std::vector<const Row *> rows_p_type;
-
-  private:
     // To minimize copying of rows and cells, we use shared_ptr to
     // share unchanged rows between multiple Framebuffers.  If we
     // write to a row in a Framebuffer, we copy it first.  We maintain
@@ -289,12 +287,15 @@ namespace Terminal {
     // Framebuffers is to simply compare the pointer values.  If they
     // are equal, then the rows are obviously identical.
     // * If any row has a dirty bit set, the frame has been modified.
+  public:
+    typedef std::vector<Row *> rows_p_type;
 
-    typedef std::tr1::shared_ptr<Row> row_pointer;
+  private:
     // In this pair, .first is the row data, .second is a dirty bit
     // indicating write and copy-on-write has already occurred
+    typedef shared_ptr<Row> row_pointer;
     typedef std::pair<row_pointer, bool> mutable_row_type;
-    typedef std::vector<mutable_row_type> rows_type;
+    typedef std::deque<mutable_row_type> rows_type;
     rows_type rows;
     std::deque<wchar_t> icon_name;
     std::deque<wchar_t> window_title;
@@ -307,6 +308,7 @@ namespace Terminal {
     Framebuffer( int s_width, int s_height );
     Framebuffer( const Framebuffer &other );
     Framebuffer &operator=( const Framebuffer &other );
+    const Framebuffer &get_snapshot() const;
     DrawState ds;
 
     void scroll( int N );
@@ -342,10 +344,12 @@ namespace Terminal {
       mutable_row_type &mutable_row = rows.at( row );
       // If the row hasn't already been copied, do so.
       if (!mutable_row.second) {
-	rows.at( row ).first = std::tr1::make_shared<Row>(*rows.at( row ).first );
-	rows.at( row ).second = true;
+	mutable_row_type new_row;
+	new_row.first = make_shared<Row>(*mutable_row.first );
+	new_row.second = true;
+	mutable_row = new_row;
       }
-      return rows.at( row ).first.get();
+      return mutable_row.first.get();
     }
 
     Cell *get_mutable_cell( int row = -1, int col = -1 )

@@ -262,7 +262,8 @@ void STMClient::output_new_frame( void )
   }
 
   /* fetch target state */
-  *new_state = network->get_latest_remote_state().state.get_fb();
+  // *new_state = const_cast<Terminal::Complete *>(&network->get_latest_remote_state().state)->get_fb_snapshot();
+  *new_state = network->get_latest_remote_state().state.get_fb_snapshot();
 
   /* apply local overlays */
   overlays.apply( *new_state );

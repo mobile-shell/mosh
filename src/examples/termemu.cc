@@ -305,7 +305,7 @@ void emulate_terminal( int fd )
       break;
     }
 
-    Terminal::Framebuffer new_frame( complete.get_fb() );
+    Terminal::Framebuffer new_frame( complete.get_fb_snapshot() );
 
     if ( tick( state, new_frame, display ) ) { /* there was a frame */
       timeout = -1;
