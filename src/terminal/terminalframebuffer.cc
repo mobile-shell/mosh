@@ -92,8 +92,9 @@ Framebuffer::Framebuffer( int s_width, int s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
+  row_pointer blankrow( new Row( s_width, 0 ));
   for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
-    i->first = row_pointer( new Row( s_width, 0 ));
+    i->first = blankrow;
   }
 }
 
@@ -319,12 +320,9 @@ void Framebuffer::insert_line( int before_row, int count )
   rows.erase( start, start + count );
   // insert a block of dummy rows
   start = rows.begin() + before_row;
-  rows.insert( start, count, std::make_pair( row_pointer(), false ));
+  rows.insert( start, count, std::make_pair( newrow(), false ));
   // then replace with real new rows
   start = rows.begin() + before_row;
-  for (rows_type::iterator i = start; i < start + count; i++) {
-    i->first = newrow();
-  }
 }
 
 void Framebuffer::delete_line( int row, int count )
@@ -340,12 +338,9 @@ void Framebuffer::delete_line( int row, int count )
   rows.erase( start, start + count );
   // insert a block of dummy rows
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  rows.insert( start, count, std::make_pair( row_pointer(), false ));
+  rows.insert( start, count, std::make_pair( newrow(), false ));
   // then replace with real new rows
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  for (rows_type::iterator i = start; i < start + count; i++) {
-    i->first = newrow();
-  }
 }
 
 Row::Row( size_t s_width, color_type background_color )
@@ -390,10 +385,7 @@ void Framebuffer::reset( void )
 {
   int width = ds.get_width(), height = ds.get_height();
   ds = DrawState( width, height );
-  rows = rows_type( height, std::make_pair( row_pointer(), false ));
-  for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
-    i->first = newrow();
-  }
+  rows = rows_type( height, std::make_pair( newrow(), false ));
   window_title.clear();
   /* do not reset bell_count */
 }
@@ -427,19 +419,22 @@ void Framebuffer::resize( int s_width, int s_height )
   assert( s_width > 0 );
   assert( s_height > 0 );
 
+  int oldheight = ds.get_height();
+  int oldwidth = ds.get_width();
   ds.resize( s_width, s_height );
 
-  rows.resize( s_height, std::make_pair( row_pointer(), false ));
-
+  row_pointer blankrow( newrow());
+  if ( oldheight != s_height ) {
+    rows.resize( s_height, std::make_pair( blankrow, false ));
+  }
+  if (oldwidth == s_width) {
+    return;
+  }
   for ( rows_type::iterator i = rows.begin();
-	i != rows.end();
+	i->first != blankrow;
 	i++ ) {
-    if (i->first) {
-      i->first->set_wrap( false );
-      i->first->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
-    } else {
-      i->first = row_pointer( newrow() );
-    }
+    i->first->set_wrap( false );
+    i->first->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
   }
 }
 
