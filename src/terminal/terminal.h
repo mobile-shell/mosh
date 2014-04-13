@@ -79,9 +79,7 @@ namespace Terminal {
     std::string read_octets_to_host( void );
 
     const Framebuffer & get_fb( void ) const { return fb; }
-
     const Framebuffer & get_fb_snapshot( void ) const { return fb.get_snapshot(); }
-
     bool operator==( Emulator const &x ) const;
   };
 }

@@ -88,7 +88,7 @@ namespace Terminal {
 
   class Cell {
   public:
-    typedef std::vector<uint8_t> content_type;
+    typedef std::vector<uint8_t> content_type; /* can be std::string or std::vector<uint8_t> */
     content_type contents;
     Renditions renditions;
     uint8_t width;
@@ -132,7 +132,8 @@ namespace Terminal {
     {
       static mbstate_t ps = mbstate_t();
       char tmp[MB_LEN_MAX];
-      (void)wcrtomb(NULL, 0, &ps);
+      size_t ignore = wcrtomb(NULL, 0, &ps);
+      (void)ignore;
       size_t len = wcrtomb(tmp, c, &ps);
       dest.append( tmp, len );
     }
@@ -141,7 +142,8 @@ namespace Terminal {
     {
       static mbstate_t ps = mbstate_t();
       char tmp[MB_LEN_MAX];
-      (void)wcrtomb(NULL, 0, &ps);
+      size_t ignore = wcrtomb(NULL, 0, &ps);
+      (void)ignore;
       size_t len = wcrtomb(tmp, c, &ps);
       contents.insert( contents.end(), tmp, tmp+len );
     }
@@ -149,7 +151,7 @@ namespace Terminal {
 
   class Row {
   public:
-    typedef std::vector<Cell> cells_type;
+    typedef std::vector<Cell> cells_type; /* can be either std::vector or std::deque */
     cells_type cells;
     // gen is a generation counter.  It can be used to quickly rule
     // out the possibility of two rows being identical; this is useful

@@ -143,7 +143,6 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   Row blank_row(0, 0);
   /* shortcut -- has display moved up by a certain number of lines? */
   Framebuffer::rows_p_type rows(frame.last_frame.get_p_rows());
-#if 1
   if ( initialized ) {
     int lines_scrolled = 0;
     int scroll_height = 0;
@@ -225,7 +224,6 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       }
     }
   }
-#endif
 
   /* Now update the display, row by row */
   bool wrap = false;
@@ -407,6 +405,15 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   return false;
 }
 
+FrameState::FrameState( const Framebuffer &s_last )
+      : str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
+	cursor_visible( s_last.ds.cursor_visible ),
+	last_frame( s_last )
+{
+  /* Preallocate for better performance.  Make a guess-- doesn't matter for correctness */
+  str.reserve( last_frame.ds.get_width() * last_frame.ds.get_height() * 4 );
+}
+
 /* Write a character cell */
 void FrameState::append_cell(const Cell & cell)
 {
@@ -456,13 +463,4 @@ void FrameState::update_rendition(const Renditions &r, bool force) {
     append_string( r.sgr() );
     current_rendition = r;
   }
-}
-
-FrameState::FrameState( const Framebuffer &s_last )
-      : str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
-	cursor_visible( s_last.ds.cursor_visible ),
-	last_frame( s_last )
-{
-  /* just a guess for better performance-- doesn't matter for correctness */
-  str.reserve( last_frame.ds.get_width() * last_frame.ds.get_height() * 4 );
 }
