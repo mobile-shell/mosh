@@ -41,14 +41,13 @@
 #include <deque>
 #include <string>
 #include <list>
-#include <memory>
-#include <tr1/memory>
+
+#include "shared.h"
 
 /* Terminal framebuffer */
 
 namespace Terminal {
-  using ::std::tr1::shared_ptr;
-
+  using shared::shared_ptr;
   typedef uint16_t color_type;
 
   class Renditions {
