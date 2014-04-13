@@ -612,6 +612,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
 	  /* update client with new state of terminal */
 	  if ( !network.shutdown_in_progress() ) {
+	    terminal.get_fb_snapshot();
 	    network.set_current_state( terminal );
 	  }
 	  
