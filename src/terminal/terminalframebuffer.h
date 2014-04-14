@@ -87,7 +87,7 @@ namespace Terminal {
 
   class Cell {
   public:
-    typedef std::string content_type; /* can be std::string or std::vector<uint8_t> */
+    typedef std::vector<uint8_t> content_type; /* can be std::string or std::vector<uint8_t> */
     content_type contents;
     Renditions renditions;
     uint8_t width;
@@ -296,7 +296,7 @@ namespace Terminal {
     // indicating write and copy-on-write has already occurred
     typedef shared_ptr<Row> row_pointer;
     typedef std::pair<row_pointer, bool> mutable_row_type;
-    typedef std::deque<mutable_row_type> rows_type; /* can be either std::vector or std::deque */
+    typedef std::vector<mutable_row_type> rows_type; /* can be either std::vector or std::deque */
     rows_type rows;
     std::deque<wchar_t> icon_name;
     std::deque<wchar_t> window_title;
