@@ -150,7 +150,7 @@ namespace Terminal {
 
   class Row {
   public:
-    typedef std::vector<Cell> cells_type; /* can be either std::vector or std::deque */
+    typedef std::vector<Cell> cells_type;
     cells_type cells;
     // gen is a generation counter.  It can be used to quickly rule
     // out the possibility of two rows being identical; this is useful
@@ -296,7 +296,7 @@ namespace Terminal {
     // indicating write and copy-on-write has already occurred
     typedef shared_ptr<Row> row_pointer;
     typedef std::pair<row_pointer, bool> mutable_row_type;
-    typedef std::deque<mutable_row_type> rows_type;
+    typedef std::deque<mutable_row_type> rows_type; /* can be either std::vector or std::deque */
     rows_type rows;
     std::deque<wchar_t> icon_name;
     std::deque<wchar_t> window_title;
