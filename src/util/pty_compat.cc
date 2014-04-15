@@ -140,12 +140,22 @@ pid_t my_forkpty( int *amaster, char *name,
   case 0: /* Child */
     if ( setsid() < 0 )
       perror( "setsid" );
-#ifndef _AIX
+#ifdef TIOCSCTTY
     if ( ioctl( slave, TIOCSCTTY, NULL ) < 0 ) {
       perror( "ioctl" );
       return -1;
     }
-#endif
+#else
+    {
+        int dummy_fd;
+        dummy_fd = open (slave_name, O_RDWR);
+        if (dummy_fd < 0) {
+            perror( "open(slave_name)" );
+            return -1;
+        }
+        close (dummy_fd);
+    }
+#endif /* TIOCSCTTY */
     close( master );
     dup2( slave, STDIN_FILENO );
     dup2( slave, STDOUT_FILENO );
