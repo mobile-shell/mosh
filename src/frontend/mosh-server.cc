@@ -662,7 +662,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	ssize_t bytes_read;
 	int read_errno;
 	while ((bytes_read = read( read_fd, buf + bytes_received, buf_size - bytes_received)) > 0) {
-	  fprintf(logfp, "got %ld bytes on pty\n", bytes_read);
+	  fprintf(logfp, "got %lld bytes on pty\n", (long long)bytes_read);
 	  bytes_received += bytes_read;
 	  if (bytes_received == buf_size) {
 	    fprintf(logfp, "filled read buffer from pty\n");
@@ -682,7 +682,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  }
 	}
 	if (bytes_read == 0 || (bytes_read < 0 && read_errno != EAGAIN)) {
-	  fprintf(logfp, "end of input: bytes_read %ld, errno %d (%s)\n", bytes_read, read_errno, strerror(read_errno));
+	  fprintf(logfp, "end of input: bytes_read %lld, errno %d (%s)\n", (long long)bytes_read, read_errno, strerror(read_errno));
 	  network.start_shutdown();
 	}
       }
