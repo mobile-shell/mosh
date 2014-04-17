@@ -284,9 +284,6 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
 {
   char tmp[ 64 ];
   int frame_x = 0;
-  int clear_count = 0;
-  bool wrote_last_cell = false;
-  Renditions blank_renditions = initial_rendition();
 
   const Row &row = *f.get_row( frame_y );
   const Row::cells_type &cells = row.cells;
@@ -294,7 +291,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
 
   /* If we're forced to write the first column because of wrap, go ahead and do so. */
   if ( wrap ) {
-    const Cell &cell = cells.at( frame_x );
+    const Cell &cell = cells.at( 0 );
     frame.update_rendition( cell.renditions );
     frame.append_cell( cell );
     frame_x += cell.width;
@@ -305,6 +302,10 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   if ( &row == &old_row ) {
     return false;
   }
+
+  int clear_count = 0;
+  bool wrote_last_cell = false;
+  Renditions blank_renditions = initial_rendition();
 
   /* iterate for every cell */
   while ( frame_x < f.ds.get_width() ) {
