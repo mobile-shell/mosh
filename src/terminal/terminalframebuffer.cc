@@ -636,22 +636,13 @@ void Row::reset( color_type background_color )
   }
 }
 
-void Framebuffer::prefix_window_title( const std::deque<wchar_t> &s )
+void Framebuffer::prefix_window_title( const title_type &s )
 {
   if ( icon_name == window_title ) {
     /* preserve equivalence */
-    for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
-          i != s.rend();
-          i++ ) {
-      icon_name.push_front( *i );
-    }
+    icon_name.insert(icon_name.begin(), s.begin(), s.end() );
   }
-
-  for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
-        i != s.rend();
-        i++ ) {
-    window_title.push_front( *i );
-  }
+  window_title.insert(window_title.begin(), s.begin(), s.end() );
 }
 
 wchar_t Cell::debug_contents( void ) const

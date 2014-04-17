@@ -33,6 +33,7 @@
 #include <stdio.h>
 
 #include "terminaldisplay.h"
+#include "terminalframebuffer.h"
 
 using namespace Terminal;
 
@@ -70,12 +71,13 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
        ( (!initialized)
          || (f.get_icon_name() != frame.last_frame.get_icon_name())
          || (f.get_window_title() != frame.last_frame.get_window_title()) ) ) {
+    typedef Terminal::Framebuffer::title_type title_type;
       /* set icon name and window title */
     if ( f.get_icon_name() == f.get_window_title() ) {
       /* write combined Icon Name and Window Title */
       frame.append( "\033]0;" );
-      const std::deque<wchar_t> &window_title( f.get_window_title() );
-      for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
+      const title_type &window_title( f.get_window_title() );
+      for ( title_type::const_iterator i = window_title.begin();
             i != window_title.end();
             i++ ) {
 	frame.append( *i );
@@ -85,8 +87,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     } else {
       /* write Icon Name */
       frame.append( "\033]1;" );
-      const std::deque<wchar_t> &icon_name( f.get_icon_name() );
-      for ( std::deque<wchar_t>::const_iterator i = icon_name.begin();
+      const title_type &icon_name( f.get_icon_name() );
+      for ( title_type::const_iterator i = icon_name.begin();
 	    i != icon_name.end();
 	    i++ ) {
 	frame.append( *i );
@@ -94,8 +96,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       frame.append( '\007' );
 
       frame.append( "\033]2;" );
-      const std::deque<wchar_t> &window_title( f.get_window_title() );
-      for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
+      const title_type &window_title( f.get_window_title() );
+      for ( title_type::const_iterator i = window_title.begin();
 	    i != window_title.end();
 	    i++ ) {
 	frame.append( *i );

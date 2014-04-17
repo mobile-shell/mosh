@@ -345,9 +345,9 @@ void OverlayManager::apply( Framebuffer &fb )
   title.apply( fb );
 }
 
-void TitleEngine::set_prefix( const wstring s )
+void TitleEngine::set_prefix( const wstring &s )
 {
-  prefix = deque<wchar_t>( s.begin(), s.end() );
+  prefix = Terminal::Framebuffer::title_type( s.begin(), s.end() );
 }
 
 void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const

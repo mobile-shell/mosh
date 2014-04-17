@@ -549,7 +549,7 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
     bool set_title = (cmd_num == 0 || cmd_num == 2);
     if ( set_icon || set_title ) {
       fb->set_title_initialized();
-      std::deque<wchar_t> newtitle( OSC_string.begin() + offset, OSC_string.end() );
+      Terminal::Framebuffer::title_type newtitle( OSC_string.begin() + offset, OSC_string.end() );
       if ( set_icon )  { fb->set_icon_name( newtitle ); }
       if ( set_title ) { fb->set_window_title( newtitle ); }
 

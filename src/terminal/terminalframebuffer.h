@@ -290,6 +290,7 @@ namespace Terminal {
     // * If any row has a dirty bit set, the frame has been modified.
   public:
     typedef std::vector<Row *> rows_p_type;
+    typedef std::vector<wchar_t> title_type;
 
   private:
     // In this pair, .first is the row data, .second is a dirty bit
@@ -298,8 +299,8 @@ namespace Terminal {
     typedef std::pair<row_pointer, bool> mutable_row_type;
     typedef std::vector<mutable_row_type> rows_type; /* can be either std::vector or std::deque */
     rows_type rows;
-    std::deque<wchar_t> icon_name;
-    std::deque<wchar_t> window_title;
+    title_type icon_name;
+    title_type window_title;
     unsigned int bell_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
 
@@ -376,12 +377,12 @@ namespace Terminal {
 
     void set_title_initialized( void ) { title_initialized = true; }
     bool is_title_initialized( void ) const { return title_initialized; }
-    void set_icon_name( const std::deque<wchar_t> &s ) { icon_name = s; }
-    void set_window_title( const std::deque<wchar_t> &s ) { window_title = s; }
-    const std::deque<wchar_t> & get_icon_name( void ) const { return icon_name; }
-    const std::deque<wchar_t> & get_window_title( void ) const { return window_title; }
+    void set_icon_name( const title_type &s ) { icon_name = s; }
+    void set_window_title( const title_type &s ) { window_title = s; }
+    const title_type & get_icon_name( void ) const { return icon_name; }
+    const title_type & get_window_title( void ) const { return window_title; }
 
-    void prefix_window_title( const std::deque<wchar_t> &s );
+    void prefix_window_title( const title_type &s );
 
     void resize( int s_width, int s_height );
 
