@@ -72,14 +72,16 @@ void freeze_timestamp( void )
   }
 #elif HAVE_MACH_ABSOLUTE_TIME
   static mach_timebase_info_data_t s_timebase_info;
+  static double absolute_to_millis;
 
   if (s_timebase_info.denom == 0) {
     mach_timebase_info(&s_timebase_info);
+    absolute_to_millis = 1e-6 * s_timebase_info.numer / s_timebase_info.denom;
   }
 
   // NB: mach_absolute_time() returns "absolute time units"
   // We need to apply a conversion to get milliseconds.
-  millis_cache = ((mach_absolute_time() * s_timebase_info.numer) / (1000000 * s_timebase_info.denom));
+  millis_cache = mach_absolute_time() * absolute_to_millis;
   return;								    
 #elif HAVE_GETTIMEOFDAY
   // NOTE: If time steps backwards, timeouts may be confused.
