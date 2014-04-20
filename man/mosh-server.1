@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH MOSH 1 "October 2012"
+.TH MOSH 1 "April 2014"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -20,6 +20,7 @@ mosh-server \- server-side helper for mosh
 .SH SYNOPSIS
 .B mosh-server
 new
+[\-d]
 [\-s]
 [\-v]
 [\-i \fIIP\fP]
@@ -53,6 +54,11 @@ and the client's current IP address.
 
 The argument "new" must be first on the command line to use
 command-line options.
+
+.TP
+.B \-d
+Debug mode-- do not detach from the terminal, and permit core dumps
+(normally disabled for security).
 
 .TP
 .B \-s
