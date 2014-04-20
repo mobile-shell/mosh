@@ -299,7 +299,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   }
 
   /* If rows are the same object, we don't need to do anything at all. */
-  if ( &row == &old_row ) {
+  if (initialized && &row == &old_row ) {
     return false;
   }
 
