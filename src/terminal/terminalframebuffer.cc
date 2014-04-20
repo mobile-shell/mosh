@@ -99,7 +99,7 @@ Framebuffer::Framebuffer( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( const Framebuffer &other )
-  : icon_name( other.icon_name ), window_title( other.window_title ),
+  : rows(), icon_name( other.icon_name ), window_title( other.window_title ),
     bell_count( other.bell_count ), title_initialized( other.title_initialized ), ds( other.ds )
 {
   rows_type& edit_rows = const_cast<rows_type &>(rows);

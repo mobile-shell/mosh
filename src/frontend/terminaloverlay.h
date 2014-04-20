@@ -305,6 +305,7 @@ namespace Overlay {
 
   public:
     void apply( Framebuffer &fb ) const { fb.prefix_window_title( prefix ); }
+    TitleEngine() : prefix() {}
     void set_prefix( const wstring &s );
   };
 
