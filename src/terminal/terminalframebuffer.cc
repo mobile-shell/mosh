@@ -99,24 +99,29 @@ Framebuffer::Framebuffer( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( const Framebuffer &other )
-  : rows( other.rows ), icon_name( other.icon_name ), window_title( other.window_title ),
+  : icon_name( other.icon_name ), window_title( other.window_title ),
     bell_count( other.bell_count ), title_initialized( other.title_initialized ), ds( other.ds )
 {
-  for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
+  rows_type& edit_rows = const_cast<rows_type &>(rows);
+  for (rows_type::iterator i = edit_rows.begin(); i != edit_rows.end(); i++) {
     i->second = false;
   }
+  rows = other.rows;
 }
 
 Framebuffer & Framebuffer::operator=( const Framebuffer &other )
 {
-  rows = other.rows;
-  icon_name =  other.icon_name;
-  window_title = other.window_title;
-  bell_count = other.bell_count;
-  title_initialized = other.title_initialized;
-  ds = other.ds;
-  for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
-    i->second = false;
+  if ( this != &other ) {
+    rows_type& edit_rows = const_cast<rows_type &>(rows);
+    for (rows_type::iterator i = edit_rows.begin(); i != edit_rows.end(); i++) {
+      i->second = false;
+    }
+    rows = other.rows;
+    icon_name =  other.icon_name;
+    window_title = other.window_title;
+    bell_count = other.bell_count;
+    title_initialized = other.title_initialized;
+    ds = other.ds;
   }
   return *this;
 }
