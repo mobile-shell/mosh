@@ -539,9 +539,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   socklen_t saved_addr_len = 0;
   #endif
 
-  FILE *logfp = fopen("/tmp/mosh.server.log", "a");
-  setlinebuf(logfp);
-
   while ( 1 ) {
     try {
       uint64_t now = Network::timestamp();
@@ -656,16 +653,12 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	const size_t buf_size = 65536;
 	char buf[ buf_size ];
 	
-	fprintf(logfp, "new read\n");
-
 	/* Ptys can have rather tiny brains.  Loop until they're done talking. */
 	ssize_t bytes_read;
 	int read_errno;
 	while ((bytes_read = read( read_fd, buf + bytes_received, buf_size - bytes_received)) > 0) {
-	  fprintf(logfp, "got %lld bytes on pty\n", (long long)bytes_read);
 	  bytes_received += bytes_read;
 	  if (bytes_received == buf_size) {
-	    fprintf(logfp, "filled read buffer from pty\n");
 	    break;
 	  }
 	}
@@ -683,7 +676,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  }
 	}
 	if (bytes_read == 0 || (bytes_read < 0 && read_errno != EAGAIN)) {
-	  fprintf(logfp, "end of input: bytes_read %lld, errno %d (%s)\n", (long long)bytes_read, read_errno, strerror(read_errno));
 	  network.start_shutdown();
 	}
       }
