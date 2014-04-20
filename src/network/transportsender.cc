@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <bsd/vis.h>
 
 #include "transportsender.h"
 #include "transportfragment.h"
@@ -319,19 +318,6 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
 
   if ( new_num == uint64_t(-1) ) {
     shutdown_tries++;
-  }
-
-
-  if ( verbose ) {
-    vector<char> visdiff(diff.length() * 4 + 1, '\0');
-    strvisx(const_cast<char *>(visdiff.data()), diff.data(), diff.length(), VIS_CSTYLE);
-    fprintf( stderr, "%s: old %llu, new %llu, ack %llu, throwaway %llu, diff \"%s\"\n",
-	     __PRETTY_FUNCTION__,
-	     static_cast<long long unsigned>(inst.old_num()),
-	     static_cast<long long unsigned>(inst.new_num()),
-	     static_cast<long long unsigned>(inst.ack_num()),
-	     static_cast<long long unsigned>(inst.throwaway_num()),
-	     visdiff.data() );
   }
 
   vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU() );
