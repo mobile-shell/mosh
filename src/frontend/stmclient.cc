@@ -236,11 +236,11 @@ void STMClient::main_init( void )
   }  
 
   /* local state */
-  local_framebuffer = new Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
-  new_state = new Terminal::Framebuffer( 1, 1 );
+  local_framebuffer = Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
+  new_state = Terminal::Framebuffer( 1, 1 );
 
   /* initialize screen */
-  string init = display.new_frame( false, *local_framebuffer, *local_framebuffer );
+  string init = display.new_frame( false, local_framebuffer, local_framebuffer );
   swrite( STDOUT_FILENO, init.data(), init.size() );
 
   /* open network */
@@ -262,26 +262,23 @@ void STMClient::output_new_frame( void )
   }
 
   /* fetch target state */
-  *new_state = network->get_latest_remote_state().state.get_fb_snapshot();
+  new_state = network->get_latest_remote_state().state.get_fb_snapshot();
 
   /* apply local overlays */
-  overlays.apply( *new_state );
+  overlays.apply( new_state );
 
   /* apply any mutations */
-  display.downgrade( *new_state );
+  display.downgrade( new_state );
 
   /* calculate minimal difference from where we are */
   const string diff( display.new_frame( !repaint_requested,
-					*local_framebuffer,
-					*new_state ) );
+					local_framebuffer,
+					new_state ) );
   swrite( STDOUT_FILENO, diff.data(), diff.size() );
 
   repaint_requested = false;
 
-  /* switch pointers */
-  Terminal::Framebuffer *tmp = new_state;
-  new_state = local_framebuffer;
-  local_framebuffer = tmp;
+  local_framebuffer = new_state;
 }
 
 bool STMClient::process_network_input( void )
@@ -350,10 +347,13 @@ bool STMClient::process_user_input( int fd )
 	} else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
 	  /* Emulation sequence to type escape_key is escape_key +
 	     escape_pass_key (that is escape key without Ctrl) */
+	  overlays.get_prediction_engine().new_user_byte( escape_key, local_framebuffer );
 	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
 	} else {
 	  /* Escape key followed by anything other than . and ^ gets sent literally */
+	  overlays.get_prediction_engine().new_user_byte( escape_key, local_framebuffer );
 	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
+	  overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
 	  network->get_current_state().push_back( Parser::UserByte( the_byte ) );	  
 	}
 
@@ -379,6 +379,7 @@ bool STMClient::process_user_input( int fd )
 	repaint_requested = true;
       }
 
+      overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
       network->get_current_state().push_back( Parser::UserByte( the_byte ) );		
     }
   }
