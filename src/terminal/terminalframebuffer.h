@@ -87,7 +87,7 @@ namespace Terminal {
 
   class Cell {
   public:
-    typedef std::vector<uint8_t> content_type; /* can be std::string or std::vector<uint8_t> */
+    typedef std::string content_type; /* can be std::string, std::vector<uint8_t>, or __gnu_cxx::__vstring */
     content_type contents;
     Renditions renditions;
     uint8_t width;
