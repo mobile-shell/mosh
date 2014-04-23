@@ -56,7 +56,7 @@ bool verbose = false;
 
 #define NONCE_FMT "%016"PRIx64
 
-std::string random_payload( void ) {
+static std::string random_payload( void ) {
   const size_t len = prng.uint32() % MESSAGE_SIZE_MAX;
   char *buf = new char[len];
   prng.fill( buf, len );
@@ -66,7 +66,7 @@ std::string random_payload( void ) {
   return payload;
 }
 
-void test_bad_decrypt( Session &decryption_session ) {
+static void test_bad_decrypt( Session &decryption_session ) {
   std::string bad_ct = random_payload();
 
   bool got_exn = false;
@@ -87,7 +87,7 @@ void test_bad_decrypt( Session &decryption_session ) {
 }
 
 /* Generate a single key and initial nonce, then perform some encryptions. */
-void test_one_session( void ) {
+static void test_one_session( void ) {
   Base64Key key;
   Session encryption_session( key );
   Session decryption_session( key );

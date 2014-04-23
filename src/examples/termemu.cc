@@ -70,7 +70,7 @@
 
 const size_t buf_size = 16384;
 
-void emulate_terminal( int fd );
+static void emulate_terminal( int fd );
 
 int main( void )
 {
@@ -158,8 +158,8 @@ int main( void )
 }
 
 /* Print a frame if the last frame was more than 1/50 seconds ago */
-bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame,
-	   const Terminal::Display &display )
+static bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame,
+		  const Terminal::Display &display )
 {
   static bool initialized = false;
   static struct timeval last_time;
@@ -207,7 +207,7 @@ bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame,
    assume the previous frame was sent to the real terminal.
 */
 
-void emulate_terminal( int fd )
+static void emulate_terminal( int fd )
 {
   /* get current window size */
   struct winsize window_size;
