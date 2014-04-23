@@ -200,7 +200,13 @@ int main( int argc, char *argv[] )
 	fatal_assert( desired_ip );
 	break;
       case 'c':
-	colors = myatoi( optarg );
+	try {
+	  colors = myatoi( optarg );
+	} catch ( const CryptoException & ) {
+	  fprintf( stderr, "%s: Bad number of colors (%s)\n", argv[ 0 ], optarg );
+	  print_usage( argv[ 0 ] );
+	  exit( 1 );
+	}
 	break;
       case 'v':
 	verbose = true;
