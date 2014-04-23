@@ -801,19 +801,6 @@ bool device_exists( const char *ut_line )
   return (0 == lstat( device_name.c_str(), &buf ));
 }
 
-string mosh_read_line( FILE *file )
-{
-  string ret;
-  while ( !feof( file ) ) {
-    char next = getc( file );
-    if ( next == '\n' ) {
-      return ret;
-    }
-    ret.push_back( next );
-  }
-  return ret;
-}
-
 void warn_unattached( const string & ignore_entry )
 {
 #ifdef HAVE_UTMPX_H
