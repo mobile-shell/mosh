@@ -70,7 +70,7 @@
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
 
-void usage( const char *argv0 ) {
+static void usage( const char *argv0 ) {
   fprintf( stderr, "mosh-client (%s)\n", PACKAGE_STRING );
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
@@ -78,7 +78,7 @@ void usage( const char *argv0 ) {
   fprintf( stderr, "Usage: %s IP PORT\n       %s -c\n", argv0, argv0 );
 }
 
-void print_colorcount( void )
+static void print_colorcount( void )
 {
   /* check colors */
   setupterm((char *)0, 1, (int *)0);

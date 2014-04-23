@@ -90,28 +90,28 @@
 
 typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConnection;
 
-void serve( int host_fd,
-	    Terminal::Complete &terminal,
-	    ServerConnection &network );
+static void serve( int host_fd,
+		   Terminal::Complete &terminal,
+		   ServerConnection &network );
 
-int run_server( const char *desired_ip, const char *desired_port,
-		const string &command_path, char *command_argv[],
-		const int colors, bool verbose, bool with_motd );
+static int run_server( const char *desired_ip, const char *desired_port,
+		       const string &command_path, char *command_argv[],
+		       const int colors, bool verbose, bool with_motd );
 
 using namespace std;
 
-void print_usage( const char *argv0 )
+static void print_usage( const char *argv0 )
 {
   fprintf( stderr, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
 }
 
-void print_motd( void );
-void chdir_homedir( void );
-bool motd_hushed( void );
-void warn_unattached( const string & ignore_entry );
+static void print_motd( void );
+static void chdir_homedir( void );
+static bool motd_hushed( void );
+static void warn_unattached( const string & ignore_entry );
 
 /* Simple spinloop */
-void spin( void )
+static void spin( void )
 {
   static unsigned int spincount = 0;
   spincount++;
@@ -125,7 +125,7 @@ void spin( void )
   }
 }
 
-string get_SSH_IP( void )
+static string get_SSH_IP( void )
 {
   const char *SSH_CONNECTION = getenv( "SSH_CONNECTION" );
   if ( !SSH_CONNECTION ) { /* Older sshds don't set this */
@@ -326,9 +326,9 @@ int main( int argc, char *argv[] )
   }
 }
 
-int run_server( const char *desired_ip, const char *desired_port,
-		const string &command_path, char *command_argv[],
-		const int colors, bool verbose, bool with_motd ) {
+static int run_server( const char *desired_ip, const char *desired_port,
+		       const string &command_path, char *command_argv[],
+		       const int colors, bool verbose, bool with_motd ) {
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ||
@@ -520,7 +520,7 @@ int run_server( const char *desired_ip, const char *desired_port,
   return 0;
 }
 
-void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
+static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
 {
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
@@ -745,7 +745,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 }
 
 /* OpenSSH prints the motd on startup, so we will too */
-void print_motd( void )
+static void print_motd( void )
 {
   FILE *motd = fopen( "/etc/motd", "r" );
   if ( !motd ) {
@@ -769,7 +769,7 @@ void print_motd( void )
   fclose( motd );
 }
 
-void chdir_homedir( void )
+static void chdir_homedir( void )
 {
   struct passwd *pw = getpwuid( geteuid() );
   if ( pw == NULL ) {
@@ -786,21 +786,21 @@ void chdir_homedir( void )
   }
 }
 
-bool motd_hushed( void )
+static bool motd_hushed( void )
 {
   /* must be in home directory already */
   struct stat buf;
   return (0 == lstat( ".hushlogin", &buf ));
 }
 
-bool device_exists( const char *ut_line )
+static bool device_exists( const char *ut_line )
 {
   string device_name = string( "/dev/" ) + string( ut_line );
   struct stat buf;
   return (0 == lstat( device_name.c_str(), &buf ));
 }
 
-void warn_unattached( const string & ignore_entry )
+static void warn_unattached( const string & ignore_entry )
 {
 #ifdef HAVE_UTMPX_H
   /* get username */

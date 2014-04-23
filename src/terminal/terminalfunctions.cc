@@ -50,7 +50,7 @@ static void clearline( Framebuffer *fb, int row, int start, int end )
 }
 
 /* erase in line */
-void CSI_EL( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_EL( Framebuffer *fb, Dispatcher *dispatch )
 {
   switch ( dispatch->getparam( 0, 0 ) ) {
   case 0: /* default: active position to end of line, inclusive */
@@ -68,7 +68,7 @@ void CSI_EL( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_EL( CSI, "K", CSI_EL );
 
 /* erase in display */
-void CSI_ED( Framebuffer *fb, Dispatcher *dispatch ) {
+static void CSI_ED( Framebuffer *fb, Dispatcher *dispatch ) {
   switch ( dispatch->getparam( 0, 0 ) ) {
   case 0: /* active position to end of screen, inclusive */
     clearline( fb, -1, fb->ds.get_cursor_col(), fb->ds.get_width() - 1 );
@@ -93,7 +93,7 @@ void CSI_ED( Framebuffer *fb, Dispatcher *dispatch ) {
 static Function func_CSI_ED( CSI, "J", CSI_ED );
 
 /* cursor movement -- relative and absolute */
-void CSI_cursormove( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_cursormove( Framebuffer *fb, Dispatcher *dispatch )
 {
   int num = dispatch->getparam( 0, 1 );
 
@@ -127,7 +127,7 @@ static Function func_CSI_cursormove_H( CSI, "H", CSI_cursormove );
 static Function func_CSI_cursormove_f( CSI, "f", CSI_cursormove );
 
 /* device attributes */
-void CSI_DA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
+static void CSI_DA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 {
   dispatch->terminal_to_host.append( "\033[?62c" ); /* plain vt220 */
 }
@@ -135,7 +135,7 @@ void CSI_DA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 static Function func_CSI_DA( CSI, "c", CSI_DA );
 
 /* secondary device attributes */
-void CSI_SDA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
+static void CSI_SDA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 {
   dispatch->terminal_to_host.append( "\033[>1;10;0c" ); /* plain vt220 */
 }
@@ -143,7 +143,7 @@ void CSI_SDA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 static Function func_CSI_SDA( CSI, ">c", CSI_SDA );
 
 /* screen alignment diagnostic */
-void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   for ( int y = 0; y < fb->ds.get_height(); y++ ) {
     for ( int x = 0; x < fb->ds.get_width(); x++ ) {
@@ -156,7 +156,7 @@ void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Esc_DECALN( ESCAPE, "#8", Esc_DECALN );
 
 /* line feed */
-void Ctrl_LF( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_LF( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->move_rows_autoscroll( 1 );
 }
@@ -168,7 +168,7 @@ static Function func_Ctrl_VT( CONTROL, "\x0b", Ctrl_LF );
 static Function func_Ctrl_FF( CONTROL, "\x0c", Ctrl_LF );
 
 /* carriage return */
-void Ctrl_CR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_CR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.move_col( 0 );
 }
@@ -176,7 +176,7 @@ void Ctrl_CR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_CR( CONTROL, "\x0d", Ctrl_CR );
 
 /* backspace */
-void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.move_col( -1, true );
 }
@@ -184,7 +184,7 @@ void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_BS( CONTROL, "\x08", Ctrl_BS );
 
 /* reverse index -- like a backwards line feed */
-void Ctrl_RI( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_RI( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->move_rows_autoscroll( -1 );
 }
@@ -192,7 +192,7 @@ void Ctrl_RI( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_RI( CONTROL, "\x8D", Ctrl_RI );
 
 /* newline */
-void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.move_col( 0 );
   fb->move_rows_autoscroll( 1 );
@@ -201,7 +201,7 @@ void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_NEL( CONTROL, "\x85", Ctrl_NEL );
 
 /* horizontal tab */
-void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   int col = fb->ds.get_next_tab();
   if ( col == -1 ) { /* no tabs, go to end of line */
@@ -219,7 +219,7 @@ void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_HT( CONTROL, "\x09", Ctrl_HT, false );
 
 /* horizontal tab set */
-void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.set_tab();
 }
@@ -227,7 +227,7 @@ void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_HTS( CONTROL, "\x88", Ctrl_HTS );
 
 /* tabulation clear */
-void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
 {
   int param = dispatch->getparam( 0, 0 );
   switch ( param ) {
@@ -281,7 +281,7 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
 }
 
 /* set private mode */
-void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
     bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb );
@@ -292,7 +292,7 @@ void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
 }
 
 /* clear private mode */
-void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
     bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb );
@@ -315,7 +315,7 @@ static bool *get_ANSI_mode( int param, Framebuffer *fb ) {
 }
 
 /* set mode */
-void CSI_SM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_SM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
     bool *mode = get_ANSI_mode( dispatch->getparam( i, 0 ), fb );
@@ -326,7 +326,7 @@ void CSI_SM( Framebuffer *fb, Dispatcher *dispatch )
 }
 
 /* clear mode */
-void CSI_RM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_RM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
     bool *mode = get_ANSI_mode( dispatch->getparam( i, 0 ), fb );
@@ -340,7 +340,7 @@ static Function func_CSI_SM( CSI, "h", CSI_SM );
 static Function func_CSI_RM( CSI, "l", CSI_RM );
 
 /* set top and bottom margins */
-void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
 {
   int top = dispatch->getparam( 0, 1 );
   int bottom = dispatch->getparam( 1, fb->ds.get_height() );
@@ -359,14 +359,14 @@ void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_DECSTMB( CSI, "r", CSI_DECSTBM );
 
 /* terminal bell */
-void Ctrl_BEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) ) {
+static void Ctrl_BEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) ) {
   fb->ring_bell();
 }
 
 static Function func_Ctrl_BEL( CONTROL, "\x07", Ctrl_BEL );
 
 /* select graphics rendition -- e.g., bold, blinking, etc. */
-void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
 {
   /* We need to special-case the handling of CSI [34]8 ; 5 ; Ps m,
      because Ps of 0 in that case does not mean reset to default, even
@@ -392,12 +392,12 @@ void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_SGR( CSI, "m", CSI_SGR, false ); /* changing renditions doesn't clear wrap flag */
 
 /* save and restore cursor */
-void Esc_DECSC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Esc_DECSC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.save_cursor();
 }
 
-void Esc_DECRC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Esc_DECRC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.restore_cursor();
 }
@@ -406,7 +406,7 @@ static Function func_Esc_DECSC( ESCAPE, "7", Esc_DECSC );
 static Function func_Esc_DECRC( ESCAPE, "8", Esc_DECRC );
 
 /* device status report -- e.g., cursor position (used by resize) */
-void CSI_DSR( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DSR( Framebuffer *fb, Dispatcher *dispatch )
 {
   int param = dispatch->getparam( 0, 0 );
 
@@ -427,7 +427,7 @@ void CSI_DSR( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_DSR( CSI, "n", CSI_DSR );
 
 /* insert line */
-void CSI_IL( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_IL( Framebuffer *fb, Dispatcher *dispatch )
 {
   int lines = dispatch->getparam( 0, 1 );
 
@@ -443,7 +443,7 @@ void CSI_IL( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_IL( CSI, "L", CSI_IL );
 
 /* delete line */
-void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
 {
   int lines = dispatch->getparam( 0, 1 );
 
@@ -459,7 +459,7 @@ void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_DL( CSI, "M", CSI_DL );
 
 /* insert characters */
-void CSI_ICH( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_ICH( Framebuffer *fb, Dispatcher *dispatch )
 {
   int cells = dispatch->getparam( 0, 1 );
 
@@ -471,7 +471,7 @@ void CSI_ICH( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_ICH( CSI, "@", CSI_ICH );
 
 /* delete character */
-void CSI_DCH( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DCH( Framebuffer *fb, Dispatcher *dispatch )
 {
   int cells = dispatch->getparam( 0, 1 );
 
@@ -483,7 +483,7 @@ void CSI_DCH( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_DCH( CSI, "P", CSI_DCH );
 
 /* line position absolute */
-void CSI_VPA( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_VPA( Framebuffer *fb, Dispatcher *dispatch )
 {
   int row = dispatch->getparam( 0, 1 );
   fb->ds.move_row( row - 1 );
@@ -492,7 +492,7 @@ void CSI_VPA( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_VPA( CSI, "d", CSI_VPA );
 
 /* character position absolute */
-void CSI_HPA( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_HPA( Framebuffer *fb, Dispatcher *dispatch )
 {
   int col = dispatch->getparam( 0, 1 );
   fb->ds.move_col( col - 1 );
@@ -502,7 +502,7 @@ static Function func_CSI_CHA( CSI, "G", CSI_HPA ); /* ECMA-48 name: CHA */
 static Function func_CSI_HPA( CSI, "\x60", CSI_HPA ); /* ECMA-48 name: HPA */
 
 /* erase character */
-void CSI_ECH( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_ECH( Framebuffer *fb, Dispatcher *dispatch )
 {
   int num = dispatch->getparam( 0, 1 );
   int limit = fb->ds.get_cursor_col() + num - 1;
@@ -516,7 +516,7 @@ void CSI_ECH( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_ECH( CSI, "X", CSI_ECH );
 
 /* reset to initial state */
-void Esc_RIS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Esc_RIS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->reset();
 }
@@ -524,7 +524,7 @@ void Esc_RIS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Esc_RIS( ESCAPE, "c", Esc_RIS );
 
 /* soft reset */
-void CSI_DECSTR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void CSI_DECSTR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->soft_reset();
 }
@@ -563,7 +563,7 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
 }
 
 /* scroll down or terminfo indn */
-void CSI_SD( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_SD( Framebuffer *fb, Dispatcher *dispatch )
 {
   fb->scroll( dispatch->getparam( 0, 1 ) );
 }
@@ -571,7 +571,7 @@ void CSI_SD( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_SD( CSI, "S", CSI_SD );
 
 /* scroll up or terminfo rin */
-void CSI_SU( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_SU( Framebuffer *fb, Dispatcher *dispatch )
 {
   fb->scroll( -dispatch->getparam( 0, 1 ) );
 }
