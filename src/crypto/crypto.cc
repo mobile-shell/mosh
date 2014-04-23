@@ -41,11 +41,10 @@
 #include "byteorder.h"
 #include "crypto.h"
 #include "base64.h"
+#include "prng.h"
 
 using namespace std;
 using namespace Crypto;
-
-const char rdev[] = "/dev/urandom";
 
 long int myatoi( const char *str )
 {
@@ -122,12 +121,7 @@ Base64Key::Base64Key( string printable_key )
 
 Base64Key::Base64Key()
 {
-  ifstream devrandom( rdev, ifstream::in | ifstream::binary );
-
-  devrandom.read( reinterpret_cast<char *>( key ), sizeof( key ) );
-  if ( !devrandom ) {
-    throw CryptoException( "Could not read from " + string( rdev ) );
-  }
+  PRNG().fill( key, sizeof( key ) );
 }
 
 string Base64Key::printable_key( void ) const
