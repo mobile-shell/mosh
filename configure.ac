@@ -33,11 +33,11 @@ AC_ARG_ENABLE([compile-warnings],
        ;;
      maximum)
        WARNING_CXXFLAGS="-Wall"
-       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++"
+       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
        ;;
      error)
        WARNING_CXXFLAGS="-Wall -Werror"
-       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++"
+       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
        ;;
      *)
        AC_MSG_ERROR([Unknown argument '$enableval' to --enable-compile-warnings])
