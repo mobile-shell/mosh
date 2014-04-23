@@ -104,9 +104,6 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
 
     /* this returns 0 when n = 0! */
 
-    /* This function annoying returns a size_t so we have to check
-       the negative values first before the "> 0" branch */
-
     if ( bytes_parsed == 0 ) {
       /* character was NUL, accept and clear buffer */
       assert( buf_len == 1 );
