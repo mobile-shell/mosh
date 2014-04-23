@@ -35,6 +35,7 @@
 #include <openssl/evp.h>
 
 #include "fatal_assert.h"
+#include "base64.h"
 
 bool base64_decode( const char *b64, const size_t b64_len,
 		    char *raw, size_t *raw_len )
