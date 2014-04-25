@@ -145,6 +145,12 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   Row blank_row(0, 0);
   /* shortcut -- has display moved up by a certain number of lines? */
   Framebuffer::rows_p_type rows(frame.last_frame.get_p_rows());
+  /* Extend rows if we've gotten a resize and new is bigger than old */
+  if ( rows.size() < f.ds.get_height() ) {
+    blank_row = Row( f.ds.get_width(), 0 );
+    rows.resize( f.ds.get_height(), &blank_row );
+  }
+
   if ( initialized ) {
     int lines_scrolled = 0;
     int scroll_height = 0;
