@@ -147,6 +147,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   Framebuffer::rows_p_type rows(frame.last_frame.get_p_rows());
   /* Extend rows if we've gotten a resize and new is bigger than old */
   if ( rows.size() < f.ds.get_height() ) {
+    // get a proper blank row
     blank_row = Row( f.ds.get_width(), 0 );
     rows.resize( f.ds.get_height(), &blank_row );
   }
@@ -451,17 +452,28 @@ void FrameState::append_silent_move( int y, int x )
 
 void FrameState::append_move( int y, int x )
 {
-  // Can we use CR and/or LF?  They're cheap and easier to trace.
-  if ( cursor_x != -1 && cursor_y != -1 &&
-       x == 0 && y - cursor_y >= 0 && y - cursor_y < 5 ) {
-    if ( cursor_x != 0 ) append( '\r' );
-    append( y - cursor_y, '\n' );
-  // More optimizations are possible.
-  } else {
+  do {
+    // If cursor pos is unknown, of course we can't optimize
+    if ( cursor_x != -1 && cursor_y != -1 ) {
+      // Can we use CR and/or LF?  They're cheap and easier to trace.
+      if ( x == 0 && y - cursor_y >= 0 && y - cursor_y < 5 ) {
+	if ( cursor_x != 0 ) {
+	  append( '\r' );
+	}
+	append( y - cursor_y, '\n' );
+	continue;
+      }
+      // Backspaces are good too.
+      if ( y == cursor_y && x - cursor_x < 0 && x - cursor_x > -5 ) {
+	append( cursor_x - x, '\b' );
+	continue;
+      }
+      // More optimizations are possible.
+    }
     char tmp[ 64 ];
     snprintf( tmp, 64, "\033[%d;%dH", y + 1, x + 1 );
     append( tmp );
-  }
+  } while( 0 );
   cursor_x = x;
   cursor_y = y;
 }
