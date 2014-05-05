@@ -1,1 +1,6 @@
-complete -F _known_hosts mosh
+_mosh ()
+{
+    COMPREPLY=()
+    _known_hosts_real -a -- "$(_get_cword)"
+} &&
+complete -F _mosh mosh
