@@ -37,7 +37,6 @@
    http://www.vt100.net/emu/dec_ansi_parser */
 
 #include <wchar.h>
-#include <list>
 #include <string.h>
 
 #include "parsertransition.h"
@@ -59,7 +58,7 @@ namespace Parser {
     Parser & operator=( const Parser & );
     ~Parser() {}
 
-    std::list<Action *> input( wchar_t ch );
+    void input( wchar_t ch, Actions &actions );
 
     bool operator==( const Parser &x ) const
     {
@@ -81,7 +80,7 @@ namespace Parser {
   public:
     UTF8Parser();
 
-    std::list<Action *> input( char c );
+    void input( char c, Actions &actions );
 
     bool operator==( const UTF8Parser &x ) const
     {

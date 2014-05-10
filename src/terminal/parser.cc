@@ -41,21 +41,19 @@
 const Parser::StateFamily Parser::family;
 
 static void append_or_delete( Parser::Action *act,
-			      std::list<Parser::Action *> &vec )
+			      Parser::Actions &vec )
 {
   assert( act );
 
-  if ( typeid( *act ) != typeid( Parser::Ignore ) ) {
+  if ( !act->ignore() ) {
     vec.push_back( act );
   } else {
     delete act;
   }
 }
 
-std::list<Parser::Action *> Parser::Parser::input( wchar_t ch )
+void Parser::Parser::input( wchar_t ch, Actions &ret )
 {
-  std::list<Action *> ret;
-
   Transition tx = state->input( ch );
 
   if ( tx.next_state != NULL ) {
@@ -69,8 +67,6 @@ std::list<Parser::Action *> Parser::Parser::input( wchar_t ch )
     append_or_delete( tx.next_state->enter(), ret );
     state = tx.next_state;
   }
-
-  return ret;
 }
 
 Parser::UTF8Parser::UTF8Parser()
@@ -80,7 +76,7 @@ Parser::UTF8Parser::UTF8Parser()
   buf[0] = '\0';
 }
 
-std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
+void Parser::UTF8Parser::input( char c, Actions &ret )
 {
   assert( buf_len < BUF_SIZE );
 
@@ -94,7 +90,6 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
 
   size_t total_bytes_parsed = 0;
   size_t orig_buf_len = buf_len;
-  std::list<Action *> ret;
 
   /* this routine is somewhat complicated in order to comply with
      Unicode 6.0, section 3.9, "Best Practices for using U+FFFD" */
@@ -138,7 +133,7 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
     /* Cast to unsigned for checks, because some
        platforms (e.g. ARM) use uint32_t as wchar_t,
        causing compiler warning on "pwc > 0" check. */
-    uint64_t pwcheck = pwc;
+    const uint32_t pwcheck = pwc;
 
     if ( pwcheck > 0x10FFFF ) { /* outside Unicode range */
       pwc = (wchar_t) 0xFFFD;
@@ -153,13 +148,10 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
       pwc = (wchar_t) 0xFFFD;
     }
 
-    std::list<Action *> vec = parser.input( pwc );
-    ret.insert( ret.end(), vec.begin(), vec.end() );
+    parser.input( pwc, ret );
 
     total_bytes_parsed += bytes_parsed;
   }
-
-  return ret;
 }
 
 Parser::Parser::Parser( const Parser &other )

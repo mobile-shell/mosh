@@ -46,16 +46,17 @@ string Complete::act( const string &str )
 {
   for ( unsigned int i = 0; i < str.size(); i++ ) {
     /* parse octet into up to three actions */
-    list<Action *> actions( parser.input( str[ i ] ) );
+    parser.input( str[ i ], actions );
     
     /* apply actions to terminal and delete them */
-    for ( list<Action *>::iterator it = actions.begin();
+    for ( Actions::iterator it = actions.begin();
 	  it != actions.end();
 	  it++ ) {
       Action *act = *it;
       act->act_on_terminal( &terminal );
       delete act;
     }
+    actions.clear();
   }
 
   return terminal.read_octets_to_host();

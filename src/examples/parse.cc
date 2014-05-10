@@ -195,9 +195,10 @@ static int vt_parser( int fd, Parser::UTF8Parser *parser )
   }
 
   /* feed to parser */
+  Parser::Actions actions;
   for ( int i = 0; i < bytes_read; i++ ) {
-    std::list<Parser::Action *> actions = parser->input( buf[ i ] );
-    for ( std::list<Parser::Action *>::iterator j = actions.begin();
+    parser->input( buf[ i ], actions );
+    for ( Parser::Actions::iterator j = actions.begin();
 	  j != actions.end();
 	  j++ ) {
 
@@ -218,6 +219,7 @@ static int vt_parser( int fd, Parser::UTF8Parser *parser )
 
       fflush( stdout );
     }
+    actions.clear();
   }
 
   return 0;
