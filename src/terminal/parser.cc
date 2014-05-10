@@ -156,7 +156,7 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
     }
 
     std::list<Action *> vec = parser.input( pwc );
-    ret.insert( ret.end(), vec.begin(), vec.end() );
+    ret.splice( ret.end(), vec );
 
     total_bytes_parsed += bytes_parsed;
   }
