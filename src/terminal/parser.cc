@@ -45,7 +45,7 @@ static void append_or_delete( Parser::Action *act,
 {
   assert( act );
 
-  if ( typeid( *act ) != typeid( Parser::Ignore ) ) {
+  if ( !act->ignore() ) {
     vec.push_back( act );
   } else {
     delete act;
