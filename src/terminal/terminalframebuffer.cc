@@ -325,9 +325,13 @@ void Framebuffer::insert_line( int before_row, int count )
   rows.erase( start, start + count );
   // insert a block of dummy rows
   start = rows.begin() + before_row;
-  rows.insert( start, count, std::make_pair( newrow(), false ));
+  rows.insert( start, count, std::make_pair( row_pointer(), true ));
   // then replace with real new rows
   start = rows.begin() + before_row;
+  for (int i = 0; i < count; ++i) {
+    start->first = newrow();
+    ++start;
+  }
 }
 
 void Framebuffer::delete_line( int row, int count )
@@ -343,9 +347,13 @@ void Framebuffer::delete_line( int row, int count )
   rows.erase( start, start + count );
   // insert a block of dummy rows
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  rows.insert( start, count, std::make_pair( newrow(), false ));
+  rows.insert( start, count, std::make_pair( row_pointer(), true ));
   // then replace with real new rows
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
+  for (int i = 0; i < count; ++i) {
+    start->first = newrow();
+    ++start;
+  }
 }
 
 Row::Row( size_t s_width, color_type background_color )
