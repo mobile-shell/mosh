@@ -88,49 +88,27 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows( s_height, std::make_pair( row_pointer(), false )), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
+  : rows( s_height, row_pointer(new Row( s_width, 0 ))), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
-  row_pointer blankrow( new Row( s_width, 0 ));
-  for (rows_type::iterator i = rows.begin(); i != rows.end(); i++) {
-    i->first = blankrow;
-  }
 }
 
 Framebuffer::Framebuffer( const Framebuffer &other )
-  : rows(), icon_name( other.icon_name ), window_title( other.window_title ),
+  : rows( other.rows ), icon_name( other.icon_name ), window_title( other.window_title ),
     bell_count( other.bell_count ), title_initialized( other.title_initialized ), ds( other.ds )
 {
-  rows_type& edit_rows = const_cast<rows_type &>(rows);
-  for (rows_type::iterator i = edit_rows.begin(); i != edit_rows.end(); i++) {
-    i->second = false;
-  }
-  rows = other.rows;
 }
 
 Framebuffer & Framebuffer::operator=( const Framebuffer &other )
 {
   if ( this != &other ) {
-    rows_type& edit_rows = const_cast<rows_type &>(rows);
-    for (rows_type::iterator i = edit_rows.begin(); i != edit_rows.end(); i++) {
-      i->second = false;
-    }
     rows = other.rows;
     icon_name =  other.icon_name;
     window_title = other.window_title;
     bell_count = other.bell_count;
     title_initialized = other.title_initialized;
     ds = other.ds;
-  }
-  return *this;
-}
-
-const Framebuffer & Framebuffer::get_snapshot() const
-{
-  rows_type& edit_rows = const_cast<rows_type &>(rows);
-  for (rows_type::iterator i = edit_rows.begin(); i != edit_rows.end(); i++) {
-    i->second = false;
   }
   return *this;
 }
@@ -323,15 +301,9 @@ void Framebuffer::insert_line( int before_row, int count )
   // delete old rows
   rows_type::iterator start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
   rows.erase( start, start + count );
-  // insert a block of dummy rows
+  // insert new rows
   start = rows.begin() + before_row;
-  rows.insert( start, count, std::make_pair( row_pointer(), true ));
-  // then replace with real new rows
-  start = rows.begin() + before_row;
-  for (int i = 0; i < count; ++i) {
-    start->first = newrow();
-    ++start;
-  }
+  rows.insert( start, count, newrow());
 }
 
 void Framebuffer::delete_line( int row, int count )
@@ -347,13 +319,7 @@ void Framebuffer::delete_line( int row, int count )
   rows.erase( start, start + count );
   // insert a block of dummy rows
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  rows.insert( start, count, std::make_pair( row_pointer(), true ));
-  // then replace with real new rows
-  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  for (int i = 0; i < count; ++i) {
-    start->first = newrow();
-    ++start;
-  }
+  rows.insert( start, count, newrow());
 }
 
 Row::Row( size_t s_width, color_type background_color )
@@ -398,7 +364,7 @@ void Framebuffer::reset( void )
 {
   int width = ds.get_width(), height = ds.get_height();
   ds = DrawState( width, height );
-  rows = rows_type( height, std::make_pair( newrow(), false ));
+  rows = rows_type( height, newrow() );
   window_title.clear();
   /* do not reset bell_count */
 }
@@ -419,8 +385,8 @@ void Framebuffer::posterize( void )
   for ( rows_type::iterator i = rows.begin();
         i != rows.end();
         i++ ) {
-    for ( Row::cells_type::iterator j = i->first->cells.begin();
-          j != i->first->cells.end();
+    for ( Row::cells_type::iterator j = (*i)->cells.begin();
+          j != (*i)->cells.end();
           j++ ) {
       j->renditions.posterize();
     }
@@ -438,16 +404,16 @@ void Framebuffer::resize( int s_width, int s_height )
 
   row_pointer blankrow( newrow());
   if ( oldheight != s_height ) {
-    rows.resize( s_height, std::make_pair( blankrow, false ));
+    rows.resize( s_height, blankrow );
   }
   if (oldwidth == s_width) {
     return;
   }
   for ( rows_type::iterator i = rows.begin();
-	i != rows.end() && i->first != blankrow;
+	i != rows.end() && *i != blankrow;
 	i++ ) {
-    i->first->set_wrap( false );
-    i->first->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
+    (*i)->set_wrap( false );
+    (*i)->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
   }
 }
 

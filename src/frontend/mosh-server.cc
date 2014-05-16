@@ -599,7 +599,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 
 	  /* update client with new state of terminal */
 	  if ( !network.shutdown_in_progress() ) {
-	    terminal.get_fb_snapshot();
 	    network.set_current_state( terminal );
 	  }
 	  
@@ -653,7 +652,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
 	
 	  /* update client with new state of terminal */
-	  terminal.get_fb_snapshot();
 	  network.set_current_state( terminal );
 
 	  /* write any writeback octets back to the host */
@@ -715,7 +713,6 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
       if ( terminal.set_echo_ack( now ) ) {
 	/* update client with new echo ack */
 	if ( !network.shutdown_in_progress() ) {
-	  terminal.get_fb_snapshot();
 	  network.set_current_state( terminal );
 	}
       }

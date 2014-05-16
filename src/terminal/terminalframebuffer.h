@@ -277,27 +277,22 @@ namespace Terminal {
   class Framebuffer {
     // To minimize copying of rows and cells, we use shared_ptr to
     // share unchanged rows between multiple Framebuffers.  If we
-    // write to a row in a Framebuffer, we copy it first.  We maintain
-    // a dirty bit with each row indicating that this has happened.
-    // The shared_ptr naturally manages the usage of the actual rows
-    // themselves.
+    // write to a row in a Framebuffer and it is shared with other
+    // owners, we copy it first.  The shared_ptr naturally manages the
+    // usage of the actual rows themselves.
     //
     // We gain a couple of free extras by doing this:
     //
     // * A quick check for equality between rows in different
     // Framebuffers is to simply compare the pointer values.  If they
     // are equal, then the rows are obviously identical.
-    // * If any row has a dirty bit set, the frame has been modified.
+    // * If no row is shared, the frame has not been modified.
   public:
-    typedef std::vector<Row *> rows_p_type;
     typedef std::vector<wchar_t> title_type;
+    typedef shared_ptr<Row> row_pointer;
+    typedef std::vector<row_pointer> rows_type; /* can be either std::vector or std::deque */
 
   private:
-    // In this pair, .first is the row data, .second is a dirty bit
-    // indicating write and copy-on-write has already occurred
-    typedef shared_ptr<Row> row_pointer;
-    typedef std::pair<row_pointer, bool> mutable_row_type;
-    typedef std::vector<mutable_row_type> rows_type; /* can be either std::vector or std::deque */
     rows_type rows;
     title_type icon_name;
     title_type window_title;
@@ -310,26 +305,18 @@ namespace Terminal {
     Framebuffer( int s_width, int s_height );
     Framebuffer( const Framebuffer &other );
     Framebuffer &operator=( const Framebuffer &other );
-    const Framebuffer &get_snapshot() const;
     DrawState ds;
+
+    const rows_type &get_rows() const { return rows; }
 
     void scroll( int N );
     void move_rows_autoscroll( int rows );
-
-    rows_p_type get_p_rows() const
-    {
-      rows_p_type retval;
-      for ( size_t i = 0; i < rows.size(); i++ ) {
-	retval.push_back( rows.at(i).first.get() );
-      }
-      return retval;
-    }
 
     inline const Row *get_row( int row ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
 
-      return rows.at( row ).first.get();
+      return rows.at( row ).get();
     }
 
     inline const Cell *get_cell( int row = -1, int col = -1 ) const
@@ -337,21 +324,18 @@ namespace Terminal {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
 
-      return &rows.at( row ).first->cells.at( col );
+      return &rows.at( row )->cells.at( col );
     }
 
     Row *get_mutable_row( int row )
     {
       if ( row == -1 ) row = ds.get_cursor_row();
-      mutable_row_type &mutable_row = rows.at( row );
-      // If the row hasn't already been copied, do so.
-      if (!mutable_row.second) {
-	mutable_row_type new_row;
-	new_row.first = row_pointer( new Row( *mutable_row.first ));
-	new_row.second = true;
-	mutable_row = new_row;
+      row_pointer &mutable_row = rows.at( row );
+      // If the row is shared, copy it.
+      if (!mutable_row.unique()) {
+	mutable_row = row_pointer( new Row( *mutable_row ));
       }
-      return mutable_row.first.get();
+      return mutable_row.get();
     }
 
     Cell *get_mutable_cell( int row = -1, int col = -1 )

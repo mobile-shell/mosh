@@ -142,14 +142,14 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   int frame_y = 0;
   /* Create a blank row in proper scope-- but do */
   /* it cheaply, because we likely won't use it */
-  Row blank_row(0, 0);
+  Framebuffer::row_pointer blank_row;
   /* shortcut -- has display moved up by a certain number of lines? */
-  Framebuffer::rows_p_type rows(frame.last_frame.get_p_rows());
+  Framebuffer::rows_type rows( frame.last_frame.get_rows() );
   /* Extend rows if we've gotten a resize and new is bigger than old */
-  if ( rows.size() < f.ds.get_height() ) {
+  if ( static_cast<int>( rows.size() ) < f.ds.get_height() ) {
     // get a proper blank row
-    blank_row = Row( f.ds.get_width(), 0 );
-    rows.resize( f.ds.get_height(), &blank_row );
+    blank_row = Framebuffer::row_pointer( new Row( f.ds.get_width(), 0 ) );
+    rows.resize( f.ds.get_height(), blank_row );
   }
 
   if ( initialized ) {
@@ -158,7 +158,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
       const Row *new_row = f.get_row( 0 );
-      const Row *old_row = rows.at( row );
+      const Row *old_row = &*rows.at( row );
       if ( new_row == old_row || *new_row == *old_row ) {
 	/* if row 0, we're looking at ourselves and probably didn't scroll */
 	if ( row == 0 ) {
@@ -189,7 +189,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
       if ( lines_scrolled ) {
 	/* Now we need a proper blank row. */
-	blank_row = Row( f.ds.get_width(), 0 );
+	if ( &*blank_row == NULL ) {
+	  blank_row = Framebuffer::row_pointer( new Row( f.ds.get_width(), 0 ) );
+	}
 	frame.update_rendition( initial_rendition(), true );
 
 	int top_margin = 0;
@@ -227,7 +229,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	  if ( i + lines_scrolled <= bottom_margin ) {
 	    rows.at( i ) = rows.at( i + lines_scrolled );
 	  } else {
-	    rows.at( i ) = &blank_row;
+	    rows.at( i ) = blank_row;
 	  }
 	}
       }
