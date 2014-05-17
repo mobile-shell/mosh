@@ -316,8 +316,6 @@ bool STMClient::process_user_input( int fd )
     for ( int i = 0; i < bytes_read; i++ ) {
       char the_byte = buf[ i ];
 
-      overlays.get_prediction_engine().new_user_byte( the_byte, *local_framebuffer );
-
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
 	  if ( network->has_remote_addr() && (!network->shutdown_in_progress()) ) {
