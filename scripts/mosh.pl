@@ -72,6 +72,8 @@ my $term_init = 1;
 
 my $localhost = undef;
 
+my $ssh_pty = 1;
+
 my $help = undef;
 my $version = undef;
 
@@ -103,6 +105,8 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
         --ssh=COMMAND        ssh command to run when setting up session
                                 (example: "ssh -p 2222")
                                 (default: "ssh")
+
+        --no-ssh-pty         do not allocate a pseudo tty on ssh connection
 
         --no-init            do not send terminal initialization string
 
@@ -147,6 +151,7 @@ GetOptions( 'client=s' => \$client,
 	    '6' => sub { $family = 'inet6' },
 	    'p=s' => \$port_request,
 	    'ssh=s' => sub { @ssh = shellwords($_[1]); },
+	    'ssh-pty!' => \$ssh_pty,
 	    'init!' => \$term_init,
 	    'local' => \$localhost,
 	    'help' => \$help,
@@ -328,7 +333,10 @@ die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
   open(STDERR, ">&STDOUT") or die;
 
-  my @sshopts = ( '-n', '-tt' );
+  my @sshopts = ( '-n' );
+  if ($ssh_pty) {
+      push @sshopts, '-tt';
+  }
 
   my $ssh_connection = "";
   if ( $use_remote_ip eq 'remote' ) {

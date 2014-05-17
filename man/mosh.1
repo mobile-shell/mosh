@@ -115,6 +115,12 @@ OpenSSH command to remotely execute mosh-server on remote machine (default: "ssh
 An alternate ssh port can be specified with, \fIe.g.\fP, \-\-ssh="ssh \-p 2222".
 
 .TP
+.B \-\-ssh-pty\fP
+.B \-\-no-ssh-pty\fP
+Enable or disable ssh's use of a pty when connecting to a remote host.
+The default is enabled.
+
+.TP
 .B \-\-predict=\fIWHEN\fP
 Controls use of speculative local echo. WHEN defaults to `adaptive'
 (show predictions on slower links and to smooth out network glitches)
