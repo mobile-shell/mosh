@@ -150,7 +150,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     int scroll_height = 0;
 
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
-      if ( *f.get_row( 0 ) == *rows[ row ] ) {
+      if ( *f.get_row( 0 ) == *rows.at( row ) ) {
 #if 0
 	/* if row 0, we're looking at ourselves and probably didn't scroll */
 	if ( row == 0 ) {
@@ -166,7 +166,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	      lines_scrolled + region_height < f.ds.get_height();
 	      region_height++ ) {
 	  if ( *f.get_row( region_height )
-	       == *rows[ lines_scrolled + region_height ] ) {
+	       == *rows.at( lines_scrolled + region_height ) ) {
 	    scroll_height = region_height + 1;
 	  } else {
 	    break;
@@ -205,9 +205,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	/* do the move in our local index */
 	for ( int i = top_margin; i <= bottom_margin; i++ ) {
 	  if ( i + lines_scrolled <= bottom_margin ) {
-	    rows[ i ] = rows[ i + lines_scrolled ];
+	    rows.at( i ) = rows.at( i + lines_scrolled );
 	  } else {
-	    rows[ i ] = &blankrow;
+	    rows.at( i ) = &blankrow;
 	  }
 	}
 
@@ -225,7 +225,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   /* Now update the display, row by row */
   bool wrap = false;
   for ( ; frame_y < f.ds.get_height(); frame_y++ ) {
-    wrap = put_row( initialized, frame, f, frame_y, *rows[ frame_y ], wrap );
+    wrap = put_row( initialized, frame, f, frame_y, *rows.at( frame_y ), wrap );
   }
 
   /* has cursor location changed? */
@@ -289,7 +289,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
 
   /* If we're forced to write the first column because of wrap, go ahead and do so. */
   if ( wrap ) {
-    const Cell &cell = cells[ frame_x ];
+    const Cell &cell = cells.at( frame_x );
     frame.update_rendition( cell.renditions );
     frame.append_cell( cell );
     frame_x += cell.width;
@@ -299,12 +299,12 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   /* iterate for every cell */
   while ( frame_x < f.ds.get_width() ) {
 
-    const Cell &cell = cells[ frame_x ];
+    const Cell &cell = cells.at( frame_x );
 
     /* Does cell need to be drawn?  Skip all this. */
     if ( initialized
 	 && !clear_count
-	 && ( cell == old_cells[ frame_x ] ) ) {
+	 && ( cell == old_cells.at( frame_x ) ) ) {
       frame_x += cell.width;
       continue;
     }

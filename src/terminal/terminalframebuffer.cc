@@ -183,7 +183,7 @@ Cell *Framebuffer::get_combining_cell( void )
     return NULL;
   } /* can happen if a resize came in between */
 
-  return &rows[ ds.get_combining_char_row() ].cells[ ds.get_combining_char_col() ];
+  return get_mutable_cell( ds.get_combining_char_row(), ds.get_combining_char_col() );
 }
 
 void DrawState::set_tab( void )
@@ -307,7 +307,7 @@ void Framebuffer::delete_line( int row, int count )
   start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
   rows.insert( start, count, Row( 0, 0 ) );
   // then replace with real new rows
-  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count; 
+  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
   for (rows_type::iterator i = start; i < start + count; i++) {
     *i = newrow();
   }
@@ -343,12 +343,12 @@ void Row::delete_cell( int col, color_type background_color )
 
 void Framebuffer::insert_cell( int row, int col )
 {
-  rows[ row ].insert_cell( col, ds.get_background_rendition() );
+  rows.at( row ).insert_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::delete_cell( int row, int col )
 {
-  rows[ row ].delete_cell( col, ds.get_background_rendition() );
+  rows.at( row ).delete_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::reset( void )

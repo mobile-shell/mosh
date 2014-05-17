@@ -290,8 +290,8 @@ namespace Terminal {
     rows_p_type get_p_rows() const
     {
       rows_p_type retval;
-      for ( rows_type::const_iterator i = rows.begin(); i != rows.end(); i++ ) {
-	retval.push_back( &(*i) );
+      for ( size_t i = 0; i < rows.size(); i++ ) {
+	retval.push_back( &rows.at(i) );
       }
       return retval;
     }
@@ -300,7 +300,7 @@ namespace Terminal {
     {
       if ( row == -1 ) row = ds.get_cursor_row();
 
-      return &rows[ row ];
+      return &rows.at( row );
     }
 
     inline const Cell *get_cell( int row = -1, int col = -1 ) const
@@ -308,7 +308,7 @@ namespace Terminal {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
 
-      return &rows[ row ].cells[ col ];
+      return &rows.at( row ).cells.at( col );
     }
 
     Row *get_mutable_row( int row )
