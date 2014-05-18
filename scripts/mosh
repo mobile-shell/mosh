@@ -41,7 +41,6 @@ $|=1;
 
 my $client = 'mosh-client';
 my $server = 'mosh-server';
-my $server_args = undef;
 
 my $predict = undef;
 
@@ -65,8 +64,6 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
                                 (default: "mosh-client")
         --server=COMMAND     mosh server on remote machine
                                 (default: "mosh-server")
-
-        --server-args=ARG[,...] extra arguments for mosh-server
 
         --predict=adaptive      local echo for slower links [default]
 -a      --predict=always        use local echo even on fast links
@@ -112,7 +109,6 @@ sub predict_check {
 
 GetOptions( 'client=s' => \$client,
 	    'server=s' => \$server,
-	    'server-args=s' => \$server_args,
 	    'predict=s' => \$predict,
 	    'port=s' => \$port_request,
 	    'a' => sub { $predict = 'always' },
@@ -141,8 +137,6 @@ if ( defined $predict ) {
   predict_check( $predict, 0 );
 }
 
-delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
-
 if ( defined $port_request ) {
   if ( $port_request =~ m{^(\d+)(:(\d+))?$} ) {
     my ( $low, $clause, $high ) = ( $1, $2, $3 );
@@ -163,6 +157,8 @@ if ( defined $port_request ) {
   }
 }
 
+delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
+
 my @bind_arguments;
 if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
   push @bind_arguments, '-s';
@@ -174,11 +170,6 @@ if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
   print STDERR qq{$0: Unknown server binding option: $bind_ip\n};
 
   die $usage;
-}
-
-my @server_arglist;
-if ( defined $server_args ) {
-    @server_arglist = split( ',', $server_args );
 }
 
 if ( defined $fake_proxy ) {
@@ -267,8 +258,6 @@ if ( $pid == 0 ) { # child
   for ( &locale_vars ) {
     push @server, ( '-l', $_ );
   }
-
-  push @server, @server_arglist;
 
   if ( scalar @command > 0 ) {
     push @server, '--', @command;
