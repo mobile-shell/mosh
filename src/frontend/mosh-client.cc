@@ -141,6 +141,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  char *env_key = getenv( "MOSH_KEY" );
   char *key = NULL;
   if ( key_fd ) {
     /* Read variables from a file descriptor, for forward compatibility.  But
@@ -175,21 +176,23 @@ int main( int argc, char *argv[] )
     }
     fclose( key_file );
   } else {
-    /* Read key from environment */
-    char *env_key = getenv( "MOSH_KEY" );
+    /* Get key from environment */
     if ( env_key == NULL ) {
       fprintf( stderr, "MOSH_KEY environment variable not found.\n" );
       exit( 1 );
     }
     key = strdup( env_key );
+    if ( key == NULL ) {
+      perror( "strdup" );
+      exit( 1 );
+    }
+  }
+  if (env_key) {
     if ( unsetenv( "MOSH_KEY" ) < 0 ) {
       perror( "unsetenv" );
       exit( 1 );
     }
-  }
-  if ( key == NULL ) {
-    perror( "strdup" );
-    exit( 1 );
+    env_key=NULL;
   }
 
   /* Read prediction preference */
