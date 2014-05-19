@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH MOSH 1 "April 2013"
+.TH MOSH 1 "April 2014"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -169,7 +169,8 @@ this disables alternate screen mode.
 The escape sequence to shut down the connection is \fBCtrl-^ .\fP
 (typically typed with Ctrl-Shift-6, then a period). To send a literal
 Ctrl-^, type \fBCtrl-^ ^\fP. The sequence \fBCtrl-^ Ctrl-Z\fP suspends the
-client.
+client.  \fBCtrl-^ Ctrl-L\fP refreshes the client display without sending
+anything to the server.
 
 .SH ENVIRONMENT VARIABLES
 

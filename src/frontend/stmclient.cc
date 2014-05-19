@@ -185,7 +185,7 @@ void STMClient::init( void )
     wstring escape_pass_name = std::wstring(tmp.begin(), tmp.end());
     tmp = string( escape_key_name_buf );
     wstring escape_key_name = std::wstring(tmp.begin(), tmp.end());
-    escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, " + escape_pass_name + L" gives literal " + escape_key_name;
+    escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, Ctrl-L redraws, " + escape_pass_name + L" sends " + escape_key_name;
   }
   wchar_t tmp[ 128 ];
   swprintf( tmp, 128, L"Nothing received from server on UDP port %s.", port.c_str() );
@@ -351,6 +351,9 @@ bool STMClient::process_user_input( int fd )
 	  /* Emulation sequence to type escape_key is escape_key +
 	     escape_pass_key (that is escape key without Ctrl) */
 	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
+	} else if ( the_byte == 0x0C ) {
+	  /* Escape key followed by ^L repaints locally, without sending to server. */
+	  repaint_requested = true;
 	} else {
 	  /* Escape key followed by anything other than . and ^ gets sent literally */
 	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
