@@ -140,18 +140,23 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   }
 
   int frame_y = 0;
-  /* Create a blank row in proper scope-- but do */
-  /* it cheaply, because we likely won't use it */
   Framebuffer::row_pointer blank_row;
-  /* shortcut -- has display moved up by a certain number of lines? */
   Framebuffer::rows_type rows( frame.last_frame.get_rows() );
-  /* Extend rows if we've gotten a resize and new is bigger than old */
+  /* Extend rows if we've gotten a resize and new is wider than old */
+  if ( frame.last_frame.ds.get_width() < f.ds.get_width() ) {
+    for ( Framebuffer::rows_type::iterator p = rows.begin(); p != rows.end(); p++ ) {
+      *p = Framebuffer::row_pointer( new Row( **p ) );
+      (*p)->cells.resize( f.ds.get_width(), Cell( f.ds.get_background_rendition() ) );
+    }
+  }
+  /* Add rows if we've gotten a resize and new is taller than old */
   if ( static_cast<int>( rows.size() ) < f.ds.get_height() ) {
     // get a proper blank row
     blank_row = Framebuffer::row_pointer( new Row( f.ds.get_width(), 0 ) );
     rows.resize( f.ds.get_height(), blank_row );
   }
 
+  /* shortcut -- has display moved up by a certain number of lines? */
   if ( initialized ) {
     int lines_scrolled = 0;
     int scroll_height = 0;
