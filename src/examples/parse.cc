@@ -50,6 +50,8 @@
 #include <pty.h>
 #elif HAVE_UTIL_H
 #include <util.h>
+#elif HAVE_LIBUTIL_H
+#include <libutil.h>
 #endif
 
 #include "parser.h"

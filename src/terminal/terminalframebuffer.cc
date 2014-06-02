@@ -32,17 +32,36 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "terminalframebuffer.h"
 
 using namespace Terminal;
 
-void Cell::reset( int background_color )
+Cell::Cell( color_type background_color )
+  : contents(),
+    renditions( background_color ),
+    width( 1 ),
+    fallback( false ),
+    wrap( false )
+{}
+
+Cell::Cell() /* default constructor required by C++11 STL */
+  : contents(),
+    renditions( 0 ),
+    width( 1 ),
+    fallback( false ),
+    wrap( false )
+{
+  assert( false );
+}
+
+void Cell::reset( color_type background_color )
 {
   contents.clear();
-  fallback = false;
-  width = 1;
   renditions = Renditions( background_color );
+  width = 1;
+  fallback = false;
   wrap = false;
 }
 
@@ -69,27 +88,40 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows( s_height, Row( s_width, 0 ) ), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
+  : rows( s_height, row_pointer(new Row( s_width, 0 ))), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
 }
 
+Framebuffer::Framebuffer( const Framebuffer &other )
+  : rows( other.rows ), icon_name( other.icon_name ), window_title( other.window_title ),
+    bell_count( other.bell_count ), title_initialized( other.title_initialized ), ds( other.ds )
+{
+}
+
+Framebuffer & Framebuffer::operator=( const Framebuffer &other )
+{
+  if ( this != &other ) {
+    rows = other.rows;
+    icon_name =  other.icon_name;
+    window_title = other.window_title;
+    bell_count = other.bell_count;
+    title_initialized = other.title_initialized;
+    ds = other.ds;
+  }
+  return *this;
+}
+
 void Framebuffer::scroll( int N )
 {
   if ( N >= 0 ) {
-    for ( int i = 0; i < N; i++ ) {
-      delete_line( ds.get_scrolling_region_top_row() );
-      ds.move_row( -1, true );
-    }
+    delete_line( ds.get_scrolling_region_top_row(), N );
+    ds.move_row( -N, true );
   } else {
     N = -N;
-
-    for ( int i = 0; i < N; i++ ) {
-      rows.insert( rows.begin() + ds.get_scrolling_region_top_row(), newrow() );
-      rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
-      ds.move_row( 1, true );
-    }
+    insert_line( ds.get_scrolling_region_top_row(), N );
+    ds.move_row( N, true );
   }
 }
 
@@ -170,7 +202,7 @@ Cell *Framebuffer::get_combining_cell( void )
     return NULL;
   } /* can happen if a resize came in between */
 
-  return &rows[ ds.get_combining_char_row() ].cells[ ds.get_combining_char_col() ];
+  return get_mutable_cell( ds.get_combining_char_row(), ds.get_combining_char_col() );
 }
 
 void DrawState::set_tab( void )
@@ -258,41 +290,61 @@ void DrawState::restore_cursor( void )
   new_grapheme();
 }
 
-void Framebuffer::insert_line( int before_row )
+void Framebuffer::insert_line( int before_row, int count )
 {
-  if ( (before_row < ds.get_scrolling_region_top_row())
+  if ( count == 0
+       || (before_row < ds.get_scrolling_region_top_row())
        || (before_row > ds.get_scrolling_region_bottom_row() + 1) ) {
     return;
   }
 
-  rows.insert( rows.begin() + before_row, newrow() );
-  rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
+  // delete old rows
+  rows_type::iterator start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
+  rows.erase( start, start + count );
+  // insert new rows
+  start = rows.begin() + before_row;
+  rows.insert( start, count, newrow());
 }
 
-void Framebuffer::delete_line( int row )
+void Framebuffer::delete_line( int row, int count )
 {
-  if ( (row < ds.get_scrolling_region_top_row())
+  if ( count == 0
+       || (row < ds.get_scrolling_region_top_row())
        || (row > ds.get_scrolling_region_bottom_row()) ) {
     return;
   }
 
-  int insertbefore = ds.get_scrolling_region_bottom_row() + 1;
-  if ( insertbefore == ds.get_height() ) {
-    rows.push_back( newrow() );
-  } else {
-    rows.insert( rows.begin() + insertbefore, newrow() );
-  }
-
-  rows.erase( rows.begin() + row );
+  // delete old rows
+  rows_type::iterator start = rows.begin() + row;
+  rows.erase( start, start + count );
+  // insert a block of dummy rows
+  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
+  rows.insert( start, count, newrow());
 }
 
-void Row::insert_cell( int col, int background_color )
+Row::Row( size_t s_width, color_type background_color )
+  : cells( s_width, Cell( background_color ) ), gen( get_gen() )
+{}
+
+Row::Row() /* default constructor required by C++11 STL */
+  : cells( 1, Cell() ), gen( get_gen() )
+{
+  assert( false );
+}
+
+uint64_t Row::get_gen() const
+{
+  static uint64_t gen_counter = 0;
+  return gen_counter++;
+}
+
+void Row::insert_cell( int col, color_type background_color )
 {
   cells.insert( cells.begin() + col, Cell( background_color ) );
   cells.pop_back();
 }
 
-void Row::delete_cell( int col, int background_color )
+void Row::delete_cell( int col, color_type background_color )
 {
   cells.push_back( Cell( background_color ) );
   cells.erase( cells.begin() + col );
@@ -300,19 +352,19 @@ void Row::delete_cell( int col, int background_color )
 
 void Framebuffer::insert_cell( int row, int col )
 {
-  rows[ row ].insert_cell( col, ds.get_background_rendition() );
+  get_mutable_row( row )->insert_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::delete_cell( int row, int col )
 {
-  rows[ row ].delete_cell( col, ds.get_background_rendition() );
+  get_mutable_row( row )->delete_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::reset( void )
 {
   int width = ds.get_width(), height = ds.get_height();
   ds = DrawState( width, height );
-  rows = std::deque<Row>( height, newrow() );
+  rows = rows_type( height, newrow() );
   window_title.clear();
   /* do not reset bell_count */
 }
@@ -333,8 +385,8 @@ void Framebuffer::posterize( void )
   for ( rows_type::iterator i = rows.begin();
         i != rows.end();
         i++ ) {
-    for ( Row::cells_type::iterator j = i->cells.begin();
-          j != i->cells.end();
+    for ( Row::cells_type::iterator j = (*i)->cells.begin();
+          j != (*i)->cells.end();
           j++ ) {
       j->renditions.posterize();
     }
@@ -346,16 +398,24 @@ void Framebuffer::resize( int s_width, int s_height )
   assert( s_width > 0 );
   assert( s_height > 0 );
 
-  rows.resize( s_height, newrow() );
-
-  for ( rows_type::iterator i = rows.begin();
-	i != rows.end();
-	i++ ) {
-    i->set_wrap( false );
-    i->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
-  }
-
+  int oldheight = ds.get_height();
+  int oldwidth = ds.get_width();
   ds.resize( s_width, s_height );
+
+  row_pointer blankrow( newrow());
+  if ( oldheight != s_height ) {
+    rows.resize( s_height, blankrow );
+  }
+  if (oldwidth == s_width) {
+    return;
+  }
+  for ( rows_type::iterator i = rows.begin();
+	i != rows.end() && *i != blankrow;
+	i++ ) {
+    *i = Framebuffer::row_pointer( new Row( **i ) );
+    (*i)->set_wrap( false );
+    (*i)->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
+  }
 }
 
 void DrawState::resize( int s_width, int s_height )
@@ -388,17 +448,16 @@ void DrawState::resize( int s_width, int s_height )
   }
 }
 
-Renditions::Renditions( int s_background )
-  : bold( false ), italic( false ), underlined( false ), blink( false ),
-    inverse( false ), invisible( false ), foreground_color( 0 ),
-    background_color( s_background )
+Renditions::Renditions( color_type s_background )
+  : foreground_color( 0 ), background_color( s_background ),
+    attributes( 0 )
 {}
 
 /* This routine cannot be used to set a color beyond the 16-color set. */
-void Renditions::set_rendition( int num )
+void Renditions::set_rendition( color_type num )
 {
   if ( num == 0 ) {
-    bold = italic = underlined = blink = inverse = invisible = false;
+    clear_attributes();
     foreground_color = background_color = 0;
     return;
   }
@@ -425,13 +484,14 @@ void Renditions::set_rendition( int num )
     return;
   }
 
+  bool value = num < 9;
   switch ( num ) {
-  case 1: case 22: bold = (num == 1); break;
-  case 3: case 23: italic = (num == 3); break;
-  case 4: case 24: underlined = (num == 4); break;
-  case 5: case 25: blink = (num == 5); break;
-  case 7: case 27: inverse = (num == 7); break;
-  case 8: case 28: invisible = (num == 8); break;
+  case 1: case 22: set_attribute(bold, value); break;
+  case 3: case 23: set_attribute(italic, value); break;
+  case 4: case 24: set_attribute(underlined, value); break;
+  case 5: case 25: set_attribute(blink, value); break;
+  case 7: case 27: set_attribute(inverse, value); break;
+  case 8: case 28: set_attribute(invisible, value); break;
   }
 }
 
@@ -454,12 +514,12 @@ std::string Renditions::sgr( void ) const
   std::string ret;
 
   ret.append( "\033[0" );
-  if ( bold ) ret.append( ";1" );
-  if ( italic ) ret.append( ";3" );
-  if ( underlined ) ret.append( ";4" );
-  if ( blink ) ret.append( ";5" );
-  if ( inverse ) ret.append( ";7" );
-  if ( invisible ) ret.append( ";8" );
+  if ( get_attribute( bold ) ) ret.append( ";1" );
+  if ( get_attribute( italic ) ) ret.append( ";3" );
+  if ( get_attribute( underlined ) ) ret.append( ";4" );
+  if ( get_attribute( blink ) ) ret.append( ";5" );
+  if ( get_attribute( inverse ) ) ret.append( ";7" );
+  if ( get_attribute( invisible ) ) ret.append( ";8" );
 
   if ( foreground_color
        && (foreground_color <= 37) ) {
@@ -546,8 +606,9 @@ void Renditions::posterize( void )
   }
 }
 
-void Row::reset( int background_color )
+void Row::reset( color_type background_color )
 {
+  gen = get_gen();
   for ( cells_type::iterator i = cells.begin();
 	i != cells.end();
 	i++ ) {
@@ -555,22 +616,13 @@ void Row::reset( int background_color )
   }
 }
 
-void Framebuffer::prefix_window_title( const std::deque<wchar_t> &s )
+void Framebuffer::prefix_window_title( const title_type &s )
 {
   if ( icon_name == window_title ) {
     /* preserve equivalence */
-    for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
-          i != s.rend();
-          i++ ) {
-      icon_name.push_front( *i );
-    }
+    icon_name.insert(icon_name.begin(), s.begin(), s.end() );
   }
-
-  for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
-        i != s.rend();
-        i++ ) {
-    window_title.push_front( *i );
-  }
+  window_title.insert(window_title.begin(), s.begin(), s.end() );
 }
 
 wchar_t Cell::debug_contents( void ) const
@@ -578,7 +630,11 @@ wchar_t Cell::debug_contents( void ) const
   if ( contents.empty() ) {
     return '_';
   } else {
-    return contents.front();
+    /* very, very cheesy */
+    wchar_t ch[2];
+    const std::string chars( contents.begin(), contents.end() );
+    mbstowcs(ch, chars.c_str(), 1);
+    return ch[0];
   }
 }
 

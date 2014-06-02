@@ -45,7 +45,7 @@ static void append_or_delete( Parser::Action *act,
 {
   assert( act );
 
-  if ( typeid( *act ) != typeid( Parser::Ignore ) ) {
+  if ( !act->ignore() ) {
     vec.push_back( act );
   } else {
     delete act;
@@ -87,8 +87,7 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
   /* This function will only work in a UTF-8 locale. */
 
   wchar_t pwc;
-  mbstate_t ps;
-  memset( &ps, 0, sizeof( ps ) );
+  mbstate_t ps = mbstate_t();
 
   size_t total_bytes_parsed = 0;
   size_t orig_buf_len = buf_len;
@@ -157,7 +156,7 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
     }
 
     std::list<Action *> vec = parser.input( pwc );
-    ret.insert( ret.end(), vec.begin(), vec.end() );
+    ret.splice( ret.end(), vec );
 
     total_bytes_parsed += bytes_parsed;
   }

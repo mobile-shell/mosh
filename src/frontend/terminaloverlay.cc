@@ -61,15 +61,15 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
 
   if ( unknown ) {
     if ( flag && ( col != fb.ds.get_width() - 1 ) ) {
-      fb.get_mutable_cell( row, col )->renditions.underlined = true;
+      fb.get_mutable_cell( row, col )->renditions.set_attribute(Renditions::underlined, true);
     }
     return;
   }
 
-  if ( !(*(fb.get_cell( row, col )) == replacement) ) {
+  if ( *fb.get_cell( row, col ) != replacement ) {
     *(fb.get_mutable_cell( row, col )) = replacement;
     if ( flag ) {
-      fb.get_mutable_cell( row, col )->renditions.underlined = true;
+      fb.get_mutable_cell( row, col )->renditions.set_attribute( Renditions::underlined, true );
     }
   }
 }
@@ -275,7 +275,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
     case 2: /* wide character */
       this_cell = fb.get_mutable_cell( 0, overlay_col );
       fb.reset_cell( this_cell );
-      this_cell->renditions.bold = true;
+      this_cell->renditions.set_attribute(Renditions::bold, true);
       this_cell->renditions.foreground_color = 37;
       this_cell->renditions.background_color = 44;
       
@@ -345,9 +345,9 @@ void OverlayManager::apply( Framebuffer &fb )
   title.apply( fb );
 }
 
-void TitleEngine::set_prefix( const wstring s )
+void TitleEngine::set_prefix( const wstring &s )
 {
-  prefix = deque<wchar_t>( s.begin(), s.end() );
+  prefix = Terminal::Framebuffer::title_type( s.begin(), s.end() );
 }
 
 void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const
@@ -678,7 +678,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	     act->name().c_str(), act->char_present ? act->ch : L'_' );
     */
 
-    if ( typeid( *act ) == typeid( Parser::Print ) ) {
+    const std::type_info& type_act = typeid( *act );
+    if ( type_act == typeid( Parser::Print ) ) {
       /* make new prediction */
 
       init_cursor( fb );
@@ -809,7 +810,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	  newline_carriage_return( fb );
 	}
       }
-    } else if ( typeid( *act ) == typeid( Parser::Execute ) ) {
+    } else if ( type_act == typeid( Parser::Execute ) ) {
       if ( act->char_present && (act->ch == 0x0d) /* CR */ ) {
 	become_tentative();
 	newline_carriage_return( fb );
@@ -817,10 +818,10 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	//	fprintf( stderr, "Execute 0x%x\n", act->ch );
 	become_tentative();	
       }
-    } else if ( typeid( *act ) == typeid( Parser::Esc_Dispatch ) ) {
+    } else if ( type_act == typeid( Parser::Esc_Dispatch ) ) {
       //      fprintf( stderr, "Escape sequence\n" );
       become_tentative();
-    } else if ( typeid( *act ) == typeid( Parser::CSI_Dispatch ) ) {
+    } else if ( type_act == typeid( Parser::CSI_Dispatch ) ) {
       if ( act->char_present && (act->ch == L'C') ) { /* right arrow */
 	init_cursor( fb );
 	if ( cursor().col < fb.ds.get_width() - 1 ) {
@@ -838,8 +839,6 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	//	fprintf( stderr, "CSI sequence %lc\n", act->ch );
 	become_tentative();
       }
-    } else if ( typeid( *act ) == typeid( Parser::Clear ) ) {
-
     }
 
     delete act;

@@ -33,65 +33,71 @@
 #ifndef TERMINALFB_HPP
 #define TERMINALFB_HPP
 
+#include <assert.h>
+#include <limits.h>
+#include <stdint.h>
+
 #include <vector>
 #include <deque>
 #include <string>
 #include <list>
-#include <assert.h>
+
+#include "shared.h"
 
 /* Terminal framebuffer */
 
 namespace Terminal {
+  using shared::shared_ptr;
+  typedef uint16_t color_type;
+
   class Renditions {
   public:
-    bool bold, italic, underlined, blink, inverse, invisible;
-    int foreground_color;
-    int background_color;
+    typedef enum { bold, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
 
-    Renditions( int s_background );
+    // all together, a 32 bit word now...
+    unsigned int foreground_color : 12;
+    unsigned int background_color : 12;
+  private:
+    unsigned int attributes : 8;
+
+  public:
+    Renditions( color_type s_background );
     void set_foreground_color( int num );
     void set_background_color( int num );
-    void set_rendition( int num );
+    void set_rendition( color_type num );
     std::string sgr( void ) const;
 
     void posterize( void );
 
     bool operator==( const Renditions &x ) const
     {
-      return (bold == x.bold) && (italic == x.italic) && (underlined == x.underlined)
-	&& (blink == x.blink) && (inverse == x.inverse)
-	&& (invisible == x.invisible) && (foreground_color == x.foreground_color)
-	&& (background_color == x.background_color);
+      return ( attributes == x.attributes )
+        && ( foreground_color == x.foreground_color )
+        && ( background_color == x.background_color );
     }
+    void set_attribute( attribute_type attr, bool val )
+    {
+      attributes = val ?
+	( attributes | (1 << attr) ) :
+	( attributes & ~(1 << attr) );
+    }
+    bool get_attribute( attribute_type attr ) const { return attributes & ( 1 << attr ); }
+    void clear_attributes() { attributes = 0; }
   };
 
   class Cell {
   public:
-    std::vector<wchar_t> contents;
-    char fallback; /* first character is combining character */
-    int width;
+    typedef std::string content_type; /* can be std::string, std::vector<uint8_t>, or __gnu_cxx::__vstring */
+    content_type contents;
     Renditions renditions;
+    uint8_t width;
+    bool fallback; /* first character is combining character */
     bool wrap; /* if last cell, wrap to next line */
 
-    Cell( int background_color )
-      : contents(),
-	fallback( false ),
-	width( 1 ),
-	renditions( background_color ),
-	wrap( false )
-    {}
+    Cell( color_type background_color );
+    Cell(); /* default constructor required by C++11 STL */
 
-    Cell() /* default constructor required by C++11 STL */
-      : contents(),
-	fallback( false ),
-	width( 1 ),
-	renditions( 0 ),
-	wrap( false )
-    {
-      assert( false );
-    }
-
-    void reset( int background_color );
+    void reset( color_type background_color );
 
     bool operator==( const Cell &x ) const
     {
@@ -102,13 +108,15 @@ namespace Terminal {
 	       && (wrap == x.wrap) );
     }
 
+    bool operator!=( const Cell &x ) const { return !operator==( x ); }
+
     wchar_t debug_contents( void ) const;
 
     bool is_blank( void ) const
     {
       return ( contents.empty()
-	       || ( (contents.size() == 1) && ( (contents.front() == 0x20)
-						|| (contents.front() == 0xA0) ) ) );
+	       || ( (contents.size() == 1) && ( (contents[0] == 0x20)
+						|| ((uint8_t)(contents[0]) == 0xA0) ) ) );
     }
 
     bool contents_match ( const Cell& other ) const
@@ -118,35 +126,54 @@ namespace Terminal {
     }
 
     bool compare( const Cell &other ) const;
+
+    static void append_to_str( std::string &dest, const wchar_t c )
+    {
+      static mbstate_t ps = mbstate_t();
+      char tmp[MB_LEN_MAX];
+      size_t ignore = wcrtomb(NULL, 0, &ps);
+      (void)ignore;
+      size_t len = wcrtomb(tmp, c, &ps);
+      dest.append( tmp, len );
+    }
+
+    void append( const wchar_t c )
+    {
+      static mbstate_t ps = mbstate_t();
+      char tmp[MB_LEN_MAX];
+      size_t ignore = wcrtomb(NULL, 0, &ps);
+      (void)ignore;
+      size_t len = wcrtomb(tmp, c, &ps);
+      contents.insert( contents.end(), tmp, tmp+len );
+    }
   };
 
   class Row {
   public:
     typedef std::vector<Cell> cells_type;
     cells_type cells;
+    // gen is a generation counter.  It can be used to quickly rule
+    // out the possibility of two rows being identical; this is useful
+    // in scrolling.
+    uint64_t gen;
 
-    Row( size_t s_width, int background_color )
-      : cells( s_width, Cell( background_color ) )
-    {}
+    Row( size_t s_width, color_type background_color );
+    Row(); /* default constructor required by C++11 STL */
 
-    Row() /* default constructor required by C++11 STL */
-      : cells( 1, Cell() )
-    {
-      assert( false );
-    }
+    void insert_cell( int col, color_type background_color );
+    void delete_cell( int col, color_type background_color );
 
-    void insert_cell( int col, int background_color );
-    void delete_cell( int col, int background_color );
-
-    void reset( int background_color );
+    void reset( color_type background_color );
 
     bool operator==( const Row &x ) const
     {
-      return ( cells == x.cells );
+      return ( gen == x.gen && cells == x.cells );
     }
 
     bool get_wrap( void ) const { return cells.back().wrap; }
     void set_wrap( bool w ) { cells.back().wrap = w; }
+
+    uint64_t get_gen() const;
   };
 
   class SavedCursor {
@@ -224,7 +251,7 @@ namespace Terminal {
 
     void set_foreground_color( int x ) { renditions.set_foreground_color( x ); }
     void set_background_color( int x ) { renditions.set_background_color( x ); }
-    void add_rendition( int x ) { renditions.set_rendition( x ); }
+    void add_rendition( color_type x ) { renditions.set_rendition( x ); }
     Renditions get_renditions( void ) const { return renditions; }
     int get_background_rendition( void ) const { return renditions.background_color; }
 
@@ -248,69 +275,83 @@ namespace Terminal {
   };
 
   class Framebuffer {
+    // To minimize copying of rows and cells, we use shared_ptr to
+    // share unchanged rows between multiple Framebuffers.  If we
+    // write to a row in a Framebuffer and it is shared with other
+    // owners, we copy it first.  The shared_ptr naturally manages the
+    // usage of the actual rows themselves.
+    //
+    // We gain a couple of free extras by doing this:
+    //
+    // * A quick check for equality between rows in different
+    // Framebuffers is to simply compare the pointer values.  If they
+    // are equal, then the rows are obviously identical.
+    // * If no row is shared, the frame has not been modified.
+  public:
+    typedef std::vector<wchar_t> title_type;
+    typedef shared_ptr<Row> row_pointer;
+    typedef std::vector<row_pointer> rows_type; /* can be either std::vector or std::deque */
+
   private:
-    typedef std::deque<Row> rows_type;
     rows_type rows;
-    std::deque<wchar_t> icon_name;
-    std::deque<wchar_t> window_title;
+    title_type icon_name;
+    title_type window_title;
     unsigned int bell_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
 
-    Row newrow( void ) { return Row( ds.get_width(), ds.get_background_rendition() ); }
+    row_pointer newrow( void ) { return row_pointer( new Row( ds.get_width(), ds.get_background_rendition())); }
 
   public:
     Framebuffer( int s_width, int s_height );
+    Framebuffer( const Framebuffer &other );
+    Framebuffer &operator=( const Framebuffer &other );
     DrawState ds;
+
+    const rows_type &get_rows() const { return rows; }
 
     void scroll( int N );
     void move_rows_autoscroll( int rows );
 
-    const Row *get_row( int row ) const
+    inline const Row *get_row( int row ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
 
-      return &rows[ row ];
+      return rows.at( row ).get();
     }
 
-    inline const Cell *get_cell( void ) const
-    {
-      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
-    }
-
-    inline const Cell *get_cell( int row, int col ) const
+    inline const Cell *get_cell( int row = -1, int col = -1 ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
 
-      return &rows[ row ].cells[ col ];
+      return &rows.at( row )->cells.at( col );
     }
 
     Row *get_mutable_row( int row )
     {
       if ( row == -1 ) row = ds.get_cursor_row();
-
-      return &rows[ row ];
+      row_pointer &mutable_row = rows.at( row );
+      // If the row is shared, copy it.
+      if (!mutable_row.unique()) {
+	mutable_row = row_pointer( new Row( *mutable_row ));
+      }
+      return mutable_row.get();
     }
 
-    inline Cell *get_mutable_cell( void )
-    {
-      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
-    }
-
-    inline Cell *get_mutable_cell( int row, int col )
+    Cell *get_mutable_cell( int row = -1, int col = -1 )
     {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
 
-      return &rows[ row ].cells[ col ];
+      return &get_mutable_row( row )->cells.at( col );
     }
 
     Cell *get_combining_cell( void );
 
     void apply_renditions_to_current_cell( void );
 
-    void insert_line( int before_row );
-    void delete_line( int row );
+    void insert_line( int before_row, int count );
+    void delete_line( int row, int count );
 
     void insert_cell( int row, int col );
     void delete_cell( int row, int col );
@@ -320,12 +361,12 @@ namespace Terminal {
 
     void set_title_initialized( void ) { title_initialized = true; }
     bool is_title_initialized( void ) const { return title_initialized; }
-    void set_icon_name( const std::deque<wchar_t> &s ) { icon_name = s; }
-    void set_window_title( const std::deque<wchar_t> &s ) { window_title = s; }
-    const std::deque<wchar_t> & get_icon_name( void ) const { return icon_name; }
-    const std::deque<wchar_t> & get_window_title( void ) const { return window_title; }
+    void set_icon_name( const title_type &s ) { icon_name = s; }
+    void set_window_title( const title_type &s ) { window_title = s; }
+    const title_type & get_icon_name( void ) const { return icon_name; }
+    const title_type & get_window_title( void ) const { return window_title; }
 
-    void prefix_window_title( const std::deque<wchar_t> &s );
+    void prefix_window_title( const title_type &s );
 
     void resize( int s_width, int s_height );
 
