@@ -412,6 +412,7 @@ void Framebuffer::resize( int s_width, int s_height )
   for ( rows_type::iterator i = rows.begin();
 	i != rows.end() && *i != blankrow;
 	i++ ) {
+    *i = Framebuffer::row_pointer( new Row( **i ) );
     (*i)->set_wrap( false );
     (*i)->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
   }
