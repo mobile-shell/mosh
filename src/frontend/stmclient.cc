@@ -172,12 +172,12 @@ void STMClient::init( void )
   if ( escape_key > 0 ) {
     char escape_pass_name_buf[16];
     char escape_key_name_buf[16];
-    sprintf(escape_pass_name_buf, "\"%c\"", escape_pass_key);
+    snprintf(escape_pass_name_buf, sizeof escape_pass_name_buf, "\"%c\"", escape_pass_key);
     if (escape_key < 32) {
-      sprintf(escape_key_name_buf, "Ctrl-%c", escape_pass_key);
+      snprintf(escape_key_name_buf, sizeof escape_key_name_buf, "Ctrl-%c", escape_pass_key);
       escape_requires_lf = false;
     } else {
-      sprintf(escape_key_name_buf, "\"%c\"", escape_key);
+      snprintf(escape_key_name_buf, sizeof escape_key_name_buf, "\"%c\"", escape_key);
       escape_requires_lf = true;
     }
     string tmp;
