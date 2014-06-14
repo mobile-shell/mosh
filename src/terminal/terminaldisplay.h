@@ -48,17 +48,13 @@ namespace Terminal {
 
     Framebuffer last_frame;
 
-    FrameState( const Framebuffer &s_last )
-      : x(0), y(0),
-	force_next_put( false ),
-	str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
-	last_frame( s_last )
-    {
-      str.reserve( 1024 );
-    }
+    FrameState( const Framebuffer &s_last );
 
+    void append( const char c ) { str.append( 1, c ); }
+    void append( const wchar_t wc ) { Cell::append_to_str( str, wc ); }
     void append( const char * s ) { str.append( s ); }
-    void appendstring( const std::string &s ) { str.append( s ); }
+    void append( const Cell::content_type &contents ) { str.append( contents.begin(), contents.end() ); }
+    void append_string( const std::string &append ) { str.append(append); }
 
     void append_silent_move( int y, int x );
   };

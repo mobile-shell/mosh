@@ -90,7 +90,7 @@ const char *Display::ti_str( const char *capname )
 }
 
 Display::Display( bool use_environment )
-  : has_ech( true ), has_bce( true ), has_title( true ), posterize_colors( false ), smcup( NULL ), rmcup( NULL )
+  : has_ech( true ), has_bce( true ), has_title( true ), posterize_colors( 0 ), smcup( NULL ), rmcup( NULL )
 {
   if ( use_environment ) {
     int errret = -2;

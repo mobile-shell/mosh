@@ -310,12 +310,12 @@ namespace Overlay {
 
   class TitleEngine {
   private:
-    deque<wchar_t> prefix;
+    Terminal::Framebuffer::title_type prefix;
 
   public:
     void apply( Framebuffer &fb ) const { fb.prefix_window_title( prefix ); }
-    void set_prefix( const wstring s );
     TitleEngine() : prefix() {}
+    void set_prefix( const wstring &s );
   };
 
   /* the overlay manager */
@@ -331,7 +331,7 @@ namespace Overlay {
     NotificationEngine & get_notification_engine( void ) { return notifications; }
     PredictionEngine & get_prediction_engine( void ) { return predictions; }
 
-    void set_title_prefix( const wstring s ) { title.set_prefix( s ); }
+    void set_title_prefix( const wstring &s ) { title.set_prefix( s ); }
 
     OverlayManager() : notifications(), predictions(), title() {}
 

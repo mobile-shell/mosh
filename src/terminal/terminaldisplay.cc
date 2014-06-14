@@ -33,6 +33,7 @@
 #include <stdio.h>
 
 #include "terminaldisplay.h"
+#include "terminalframebuffer.h"
 
 using namespace Terminal;
 
@@ -65,7 +66,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
   /* has bell been rung? */
   if ( f.get_bell_count() != frame.last_frame.get_bell_count() ) {
-    frame.append( "\x07" );
+    frame.append( '\007' );
   }
 
   /* has icon name or window title changed? */
@@ -73,40 +74,38 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
        ( (!initialized)
          || (f.get_icon_name() != frame.last_frame.get_icon_name())
          || (f.get_window_title() != frame.last_frame.get_window_title()) ) ) {
+    typedef Terminal::Framebuffer::title_type title_type;
       /* set icon name and window title */
     if ( f.get_icon_name() == f.get_window_title() ) {
       /* write combined Icon Name and Window Title */
       frame.append( "\033]0;" );
-      const std::deque<wchar_t> &window_title( f.get_window_title() );
-      for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
+      const title_type &window_title( f.get_window_title() );
+      for ( title_type::const_iterator i = window_title.begin();
             i != window_title.end();
             i++ ) {
-	snprintf( tmp, 64, "%lc", (wint_t)*i );
-	frame.append( tmp );
+	frame.append( *i );
       }
-      frame.append( "\007" );
+      frame.append( '\007' );
       /* ST is more correct, but BEL more widely supported */
     } else {
       /* write Icon Name */
       frame.append( "\033]1;" );
-      const std::deque<wchar_t> &icon_name( f.get_icon_name() );
-      for ( std::deque<wchar_t>::const_iterator i = icon_name.begin();
+      const title_type &icon_name( f.get_icon_name() );
+      for ( title_type::const_iterator i = icon_name.begin();
 	    i != icon_name.end();
 	    i++ ) {
-	snprintf( tmp, 64, "%lc", (wint_t)*i );
-	frame.append( tmp );
+	frame.append( *i );
       }
-      frame.append( "\007" );
+      frame.append( '\007' );
 
       frame.append( "\033]2;" );
-      const std::deque<wchar_t> &window_title( f.get_window_title() );
-      for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
+      const title_type &window_title( f.get_window_title() );
+      for ( title_type::const_iterator i = window_title.begin();
 	    i != window_title.end();
 	    i++ ) {
-	snprintf( tmp, 64, "%lc", (wint_t)*i );
-	frame.append( tmp );
+	frame.append( *i );
       }
-      frame.append( "\007" );
+      frame.append( '\007' );
     }
 
   }
@@ -192,7 +191,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
 	/* scroll */
 	for ( int i = 0; i < lines_scrolled; i++ ) {
-	  frame.append( "\n" );
+	  frame.append( '\n' );
 	}
 
 	/* do the move in memory */
@@ -285,7 +284,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   /* have renditions changed? */
   if ( (!initialized)
        || !(f.ds.get_renditions() == frame.current_rendition) ) {
-    frame.appendstring( f.ds.get_renditions().sgr() );
+    frame.append( f.ds.get_renditions().sgr() );
     frame.current_rendition = f.ds.get_renditions();
   }
 
@@ -359,7 +358,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 
   if ( !(frame.current_rendition == cell->renditions) ) {
     /* print renditions */
-    frame.appendstring( cell->renditions.sgr() );
+    frame.append( cell->renditions.sgr() );
     frame.current_rendition = cell->renditions;
   }
 
@@ -381,7 +380,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
     bool can_use_erase = has_bce || (cell->renditions == initial_rendition());
 
     if ( frame.force_next_put ) {
-      frame.append( " " );
+      frame.append( ' ' );
       frame.cursor_x++;
       frame.x++;
       frame.force_next_put = false;
@@ -404,7 +403,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
 	frame.x += clear_count;
       } else { /* no ECH, so just print a space */
 	/* unlike erases, this will use background color irrespective of BCE */
-	frame.append( " " );
+	frame.append( ' ' );
 	frame.cursor_x++;
 	frame.x++;
       }
@@ -418,12 +417,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
     frame.append( "\xC2\xA0" );
   }
 
-  for ( std::vector<wchar_t>::const_iterator i = cell->contents.begin();
-	i != cell->contents.end();
-	i++ ) {
-    snprintf( tmp, 64, "%lc", (wint_t)*i );
-    frame.append( tmp );
-  }
+  frame.append( cell->contents );
 
   frame.x += cell->width;
   frame.cursor_x += cell->width;
@@ -445,4 +439,14 @@ void FrameState::append_silent_move( int y, int x )
   append( tmp );
   cursor_x = x;
   cursor_y = y;
+}
+
+FrameState::FrameState( const Framebuffer &s_last )
+      : x(0), y(0),
+	force_next_put( false ),
+        str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
+	last_frame( s_last )
+{
+  /* just a guess-- doesn't matter for correctness */
+  str.reserve( last_frame.ds.get_width() * last_frame.ds.get_height() * 4 );
 }

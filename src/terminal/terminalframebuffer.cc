@@ -32,17 +32,37 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "terminalframebuffer.h"
 
 using namespace Terminal;
 
-void Cell::reset( int background_color )
+Cell::Cell( color_type background_color )
+  : contents(),
+    renditions( background_color ),
+    width( 1 ),
+    fallback( false ),
+    wrap( false )
+{}
+#if 0
+Cell::Cell() /* default constructor required by C++11 STL */
+  : contents(),
+    renditions( 0 ),
+    width( 1 ),
+    fallback( false ),
+    wrap( false )
+{
+  assert( false );
+}
+#endif
+
+void Cell::reset( color_type background_color )
 {
   contents.clear();
-  fallback = false;
-  width = 1;
   renditions = Renditions( background_color );
+  width = 1;
+  fallback = false;
   wrap = false;
 }
 
@@ -310,13 +330,25 @@ void Framebuffer::delete_line( int row, int count )
   }
 }
 
-void Row::insert_cell( int col, int background_color )
+Row::Row( size_t s_width, color_type background_color )
+  : cells( s_width, Cell( background_color ) )
+{}
+
+#if 0
+Row::Row() /* default constructor required by C++11 STL */
+  : cells( 1, Cell() )
+{
+  assert( false );
+}
+#endif
+
+void Row::insert_cell( int col, color_type background_color )
 {
   cells.insert( cells.begin() + col, Cell( background_color ) );
   cells.pop_back();
 }
 
-void Row::delete_cell( int col, int background_color )
+void Row::delete_cell( int col, color_type background_color )
 {
   cells.push_back( Cell( background_color ) );
   cells.erase( cells.begin() + col );
@@ -336,7 +368,7 @@ void Framebuffer::reset( void )
 {
   int width = ds.get_width(), height = ds.get_height();
   ds = DrawState( width, height );
-  rows = std::deque<Row>( height, newrow() );
+  rows = rows_type( height, newrow() );
   window_title.clear();
   /* do not reset bell_count */
 }
@@ -412,17 +444,16 @@ void DrawState::resize( int s_width, int s_height )
   }
 }
 
-Renditions::Renditions( int s_background )
-  : bold( false ), italic( false ), underlined( false ), blink( false ),
-    inverse( false ), invisible( false ), foreground_color( 0 ),
-    background_color( s_background )
+Renditions::Renditions( color_type s_background )
+  : foreground_color( 0 ), background_color( s_background ),
+    attributes( 0 )
 {}
 
 /* This routine cannot be used to set a color beyond the 16-color set. */
-void Renditions::set_rendition( int num )
+void Renditions::set_rendition( color_type num )
 {
   if ( num == 0 ) {
-    bold = italic = underlined = blink = inverse = invisible = false;
+    clear_attributes();
     foreground_color = background_color = 0;
     return;
   }
@@ -449,13 +480,14 @@ void Renditions::set_rendition( int num )
     return;
   }
 
+  bool value = num < 9;
   switch ( num ) {
-  case 1: case 22: bold = (num == 1); break;
-  case 3: case 23: italic = (num == 3); break;
-  case 4: case 24: underlined = (num == 4); break;
-  case 5: case 25: blink = (num == 5); break;
-  case 7: case 27: inverse = (num == 7); break;
-  case 8: case 28: invisible = (num == 8); break;
+  case 1: case 22: set_attribute(bold, value); break;
+  case 3: case 23: set_attribute(italic, value); break;
+  case 4: case 24: set_attribute(underlined, value); break;
+  case 5: case 25: set_attribute(blink, value); break;
+  case 7: case 27: set_attribute(inverse, value); break;
+  case 8: case 28: set_attribute(invisible, value); break;
   }
 }
 
@@ -478,12 +510,12 @@ std::string Renditions::sgr( void ) const
   std::string ret;
 
   ret.append( "\033[0" );
-  if ( bold ) ret.append( ";1" );
-  if ( italic ) ret.append( ";3" );
-  if ( underlined ) ret.append( ";4" );
-  if ( blink ) ret.append( ";5" );
-  if ( inverse ) ret.append( ";7" );
-  if ( invisible ) ret.append( ";8" );
+  if ( get_attribute( bold ) ) ret.append( ";1" );
+  if ( get_attribute( italic ) ) ret.append( ";3" );
+  if ( get_attribute( underlined ) ) ret.append( ";4" );
+  if ( get_attribute( blink ) ) ret.append( ";5" );
+  if ( get_attribute( inverse ) ) ret.append( ";7" );
+  if ( get_attribute( invisible ) ) ret.append( ";8" );
 
   if ( foreground_color
        && (foreground_color <= 37) ) {
@@ -570,7 +602,7 @@ void Renditions::posterize( void )
   }
 }
 
-void Row::reset( int background_color )
+void Row::reset( color_type background_color )
 {
   for ( cells_type::iterator i = cells.begin();
 	i != cells.end();
@@ -579,22 +611,13 @@ void Row::reset( int background_color )
   }
 }
 
-void Framebuffer::prefix_window_title( const std::deque<wchar_t> &s )
+void Framebuffer::prefix_window_title( const title_type &s )
 {
   if ( icon_name == window_title ) {
     /* preserve equivalence */
-    for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
-          i != s.rend();
-          i++ ) {
-      icon_name.push_front( *i );
-    }
+    icon_name.insert(icon_name.begin(), s.begin(), s.end() );
   }
-
-  for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
-        i != s.rend();
-        i++ ) {
-    window_title.push_front( *i );
-  }
+  window_title.insert(window_title.begin(), s.begin(), s.end() );
 }
 
 wint_t Cell::debug_contents( void ) const
@@ -602,7 +625,11 @@ wint_t Cell::debug_contents( void ) const
   if ( contents.empty() ) {
     return '_';
   } else {
-    return contents.front();
+    /* very, very cheesy */
+    wchar_t ch[2];
+    const std::string chars( contents.begin(), contents.end() );
+    mbstowcs(ch, chars.c_str(), 1);
+    return ch[0];
   }
 }
 

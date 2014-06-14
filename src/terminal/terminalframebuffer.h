@@ -33,65 +33,68 @@
 #ifndef TERMINALFB_HPP
 #define TERMINALFB_HPP
 
+#include <assert.h>
+#include <limits.h>
+#include <stdint.h>
+
 #include <vector>
 #include <deque>
 #include <string>
 #include <list>
-#include <assert.h>
 
 /* Terminal framebuffer */
 
 namespace Terminal {
+  typedef uint16_t color_type;
+
   class Renditions {
   public:
-    bool bold, italic, underlined, blink, inverse, invisible;
-    int foreground_color;
-    int background_color;
+    typedef enum { bold, faint, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
 
-    Renditions( int s_background );
+    // all together, a 32 bit word now...
+    unsigned int foreground_color : 12;
+    unsigned int background_color : 12;
+  private:
+    unsigned int attributes : 8;
+
+  public:
+    Renditions( color_type s_background );
     void set_foreground_color( int num );
     void set_background_color( int num );
-    void set_rendition( int num );
+    void set_rendition( color_type num );
     std::string sgr( void ) const;
 
     void posterize( void );
 
     bool operator==( const Renditions &x ) const
     {
-      return (bold == x.bold) && (italic == x.italic) && (underlined == x.underlined)
-	&& (blink == x.blink) && (inverse == x.inverse)
-	&& (invisible == x.invisible) && (foreground_color == x.foreground_color)
-	&& (background_color == x.background_color);
+      return ( attributes == x.attributes )
+        && ( foreground_color == x.foreground_color )
+        && ( background_color == x.background_color );
     }
+    void set_attribute( attribute_type attr, bool val )
+    {
+      attributes = val ?
+	( attributes | (1 << attr) ) :
+	( attributes & ~(1 << attr) );
+    }
+    bool get_attribute( attribute_type attr ) const { return attributes & ( 1 << attr ); }
+    void clear_attributes() { attributes = 0; }
   };
 
   class Cell {
   public:
-    std::vector<wchar_t> contents;
-    char fallback; /* first character is combining character */
-    int width;
+    typedef std::string content_type; /* can be std::string, std::vector<uint8_t>, or __gnu_cxx::__vstring */
+    content_type contents;
     Renditions renditions;
+    uint8_t width;
+    bool fallback; /* first character is combining character */
     bool wrap; /* if last cell, wrap to next line */
 
-    Cell( int background_color )
-      : contents(),
-	fallback( false ),
-	width( 1 ),
-	renditions( background_color ),
-	wrap( false )
-    {}
+    Cell( color_type background_color );
+    Cell(); /* default constructor required by C++11 STL */
 
-    Cell() /* default constructor required by C++11 STL */
-      : contents(),
-	fallback( false ),
-	width( 1 ),
-	renditions( 0 ),
-	wrap( false )
-    {
-      assert( false );
-    }
-
-    void reset( int background_color );
+    void reset( color_type background_color );
 
     bool operator==( const Cell &x ) const
     {
@@ -102,13 +105,15 @@ namespace Terminal {
 	       && (wrap == x.wrap) );
     }
 
+    bool operator!=( const Cell &x ) const { return !operator==( x ); }
+
     wint_t debug_contents( void ) const;
 
     bool is_blank( void ) const
     {
       return ( contents.empty()
-	       || ( (contents.size() == 1) && ( (contents.front() == 0x20)
-						|| (contents.front() == 0xA0) ) ) );
+	       || contents == " "
+	       || contents == "\xC2\xA0" );
     }
 
     bool contents_match ( const Cell &other ) const
@@ -118,6 +123,26 @@ namespace Terminal {
     }
 
     bool compare( const Cell &other ) const;
+
+    static void append_to_str( std::string &dest, const wchar_t c )
+    {
+      static mbstate_t ps = mbstate_t();
+      char tmp[MB_LEN_MAX];
+      size_t ignore = wcrtomb(NULL, 0, &ps);
+      (void)ignore;
+      size_t len = wcrtomb(tmp, c, &ps);
+      dest.append( tmp, len );
+    }
+
+    void append( const wchar_t c )
+    {
+      static mbstate_t ps = mbstate_t();
+      char tmp[MB_LEN_MAX];
+      size_t ignore = wcrtomb(NULL, 0, &ps);
+      (void)ignore;
+      size_t len = wcrtomb(tmp, c, &ps);
+      contents.insert( contents.end(), tmp, tmp+len );
+    }
   };
 
   class Row {
@@ -125,20 +150,13 @@ namespace Terminal {
     typedef std::vector<Cell> cells_type;
     cells_type cells;
 
-    Row( size_t s_width, int background_color )
-      : cells( s_width, Cell( background_color ) )
-    {}
+    Row( size_t s_width, color_type background_color );
+    Row(); /* default constructor required by C++11 STL */
 
-    Row() /* default constructor required by C++11 STL */
-      : cells( 1, Cell() )
-    {
-      assert( false );
-    }
+    void insert_cell( int col, color_type background_color );
+    void delete_cell( int col, color_type background_color );
 
-    void insert_cell( int col, int background_color );
-    void delete_cell( int col, int background_color );
-
-    void reset( int background_color );
+    void reset( color_type background_color );
 
     bool operator==( const Row &x ) const
     {
@@ -240,7 +258,7 @@ namespace Terminal {
 
     void set_foreground_color( int x ) { renditions.set_foreground_color( x ); }
     void set_background_color( int x ) { renditions.set_background_color( x ); }
-    void add_rendition( int x ) { renditions.set_rendition( x ); }
+    void add_rendition( color_type x ) { renditions.set_rendition( x ); }
     Renditions get_renditions( void ) const { return renditions; }
     int get_background_rendition( void ) const { return renditions.background_color; }
 
@@ -265,11 +283,14 @@ namespace Terminal {
   };
 
   class Framebuffer {
+  public:
+    typedef std::vector<wchar_t> title_type;
+
   private:
-    typedef std::deque<Row> rows_type;
+    typedef std::vector<Row> rows_type;
     rows_type rows;
-    std::deque<wchar_t> icon_name;
-    std::deque<wchar_t> window_title;
+    title_type icon_name;
+    title_type window_title;
     unsigned int bell_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
 
@@ -289,12 +310,7 @@ namespace Terminal {
       return &rows[ row ];
     }
 
-    inline const Cell *get_cell( void ) const
-    {
-      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
-    }
-
-    inline const Cell *get_cell( int row, int col ) const
+    inline const Cell *get_cell( int row = -1, int col = -1 ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
@@ -304,22 +320,12 @@ namespace Terminal {
 
     Row *get_mutable_row( int row )
     {
-      if ( row == -1 ) row = ds.get_cursor_row();
-
-      return &rows[ row ];
+      return const_cast<Row *>(get_row( row ));
     }
 
-    inline Cell *get_mutable_cell( void )
+    inline Cell *get_mutable_cell( int row = -1, int col = -1 )
     {
-      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
-    }
-
-    inline Cell *get_mutable_cell( int row, int col )
-    {
-      if ( row == -1 ) row = ds.get_cursor_row();
-      if ( col == -1 ) col = ds.get_cursor_col();
-
-      return &rows[ row ].cells[ col ];
+      return const_cast<Cell *>(get_cell( row, col ));
     }
 
     Cell *get_combining_cell( void );
@@ -337,12 +343,12 @@ namespace Terminal {
 
     void set_title_initialized( void ) { title_initialized = true; }
     bool is_title_initialized( void ) const { return title_initialized; }
-    void set_icon_name( const std::deque<wchar_t> &s ) { icon_name = s; }
-    void set_window_title( const std::deque<wchar_t> &s ) { window_title = s; }
-    const std::deque<wchar_t> & get_icon_name( void ) const { return icon_name; }
-    const std::deque<wchar_t> & get_window_title( void ) const { return window_title; }
+    void set_icon_name( const title_type &s ) { icon_name = s; }
+    void set_window_title( const title_type &s ) { window_title = s; }
+    const title_type & get_icon_name( void ) const { return icon_name; }
+    const title_type & get_window_title( void ) const { return window_title; }
 
-    void prefix_window_title( const std::deque<wchar_t> &s );
+    void prefix_window_title( const title_type &s );
 
     void resize( int s_width, int s_height );
 

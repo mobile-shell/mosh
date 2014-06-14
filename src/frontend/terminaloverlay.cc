@@ -61,15 +61,15 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
 
   if ( unknown ) {
     if ( flag && ( col != fb.ds.get_width() - 1 ) ) {
-      fb.get_mutable_cell( row, col )->renditions.underlined = true;
+      fb.get_mutable_cell( row, col )->renditions.set_attribute(Renditions::underlined, true);
     }
     return;
   }
 
-  if ( !(*(fb.get_cell( row, col )) == replacement) ) {
+  if ( *fb.get_cell( row, col ) != replacement ) {
     *(fb.get_mutable_cell( row, col )) = replacement;
     if ( flag ) {
-      fb.get_mutable_cell( row, col )->renditions.underlined = true;
+      fb.get_mutable_cell( row, col )->renditions.set_attribute( Renditions::underlined, true );
     }
   }
 }
@@ -275,7 +275,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
     case 2: /* wide character */
       this_cell = fb.get_mutable_cell( 0, overlay_col );
       fb.reset_cell( this_cell );
-      this_cell->renditions.bold = true;
+      this_cell->renditions.set_attribute(Renditions::bold, true);
       this_cell->renditions.foreground_color = 37;
       this_cell->renditions.background_color = 44;
       
@@ -296,7 +296,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 	overlay_col++;
       }
 
-      if ( combining_cell->contents.size() < 16 ) {
+      if ( combining_cell->contents.size() < 32 ) {
 	combining_cell->contents.push_back( ch );
       }
       break;
@@ -345,9 +345,9 @@ void OverlayManager::apply( Framebuffer &fb )
   title.apply( fb );
 }
 
-void TitleEngine::set_prefix( const wstring s )
+void TitleEngine::set_prefix( const wstring &s )
 {
-  prefix = deque<wchar_t>( s.begin(), s.end() );
+  prefix = Terminal::Framebuffer::title_type( s.begin(), s.end() );
 }
 
 void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const
