@@ -143,25 +143,20 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   }
 
   int frame_y = 0;
-  Row blankrow( 0, 0 );
-  Framebuffer::rows_p_type rows(frame.last_frame.get_p_rows());
+  Framebuffer::row_pointer blank_row;
+  Framebuffer::rows_type rows( frame.last_frame.get_rows() );
   /* Extend rows if we've gotten a resize and new is wider than old */
   if ( frame.last_frame.ds.get_width() < f.ds.get_width() ) {
-    for ( Framebuffer::rows_p_type::iterator p = rows.begin(); p != rows.end(); p++ ) {
-      Row *bigger_row = new Row( **p );
-      bigger_row->cells.resize( f.ds.get_width(), Cell( f.ds.get_background_rendition() ) );
-      *p = bigger_row;
+    for ( Framebuffer::rows_type::iterator p = rows.begin(); p != rows.end(); p++ ) {
+      *p = Framebuffer::row_pointer( new Row( **p ) );
+      (*p)->cells.resize( f.ds.get_width(), Cell( f.ds.get_background_rendition() ) );
     }
   }
   /* Add rows if we've gotten a resize and new is taller than old */
   if ( static_cast<int>( rows.size() ) < f.ds.get_height() ) {
-    size_t orig_size = rows.size();
     // get a proper blank row
-    blankrow = Row( f.ds.get_width(), 0 );
-    rows.resize( f.ds.get_height() );
-    for ( Framebuffer::rows_p_type::iterator p = rows.begin() + orig_size; p != rows.end(); p++ ) {
-      *p = new Row( blankrow );
-    }
+    blank_row = Framebuffer::row_pointer( new Row( f.ds.get_width(), 0 ) );
+    rows.resize( f.ds.get_height(), blank_row );
   }
 
   /* shortcut -- has display moved up by a certain number of lines? */
@@ -171,7 +166,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 
     for ( int row = 0; row < f.ds.get_height(); row++ ) {
       const Row *new_row = f.get_row( 0 );
-      const Row *old_row = rows.at( row );
+      const Row *old_row = &*rows.at( row );
       if ( new_row == old_row || *new_row == *old_row ) {
 	/* if row 0, we're looking at ourselves and probably didn't scroll */
 	if ( row == 0 ) {
@@ -201,6 +196,10 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       frame_y = scroll_height;
 
       if ( lines_scrolled ) {
+	/* Now we need a proper blank row. */
+	if ( blank_row.get() == NULL ) {
+	  blank_row = Framebuffer::row_pointer( new Row( f.ds.get_width(), 0 ) );
+	}
 	frame.update_rendition( initial_rendition(), true );
 
 	int top_margin = 0;
@@ -234,15 +233,12 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	  frame.cursor_x = frame.cursor_y = -1;
 	}
 
-	/* Create a full-width blank row to represent newly-scrolled area */
-	blankrow = Row( f.ds.get_width(), 0 );
-
 	/* do the move in our local index */
 	for ( int i = top_margin; i <= bottom_margin; i++ ) {
 	  if ( i + lines_scrolled <= bottom_margin ) {
 	    rows.at( i ) = rows.at( i + lines_scrolled );
 	  } else {
-	    rows.at( i ) = &blankrow;
+	    rows.at( i ) = blank_row;
 	  }
 	}
       }

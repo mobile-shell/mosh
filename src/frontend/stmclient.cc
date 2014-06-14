@@ -237,11 +237,11 @@ void STMClient::main_init( void )
   }  
 
   /* local state */
-  local_framebuffer = new Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
-  new_state = new Terminal::Framebuffer( 1, 1 );
+  local_framebuffer = Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
+  new_state = Terminal::Framebuffer( 1, 1 );
 
   /* initialize screen */
-  string init = display.new_frame( false, *local_framebuffer, *local_framebuffer );
+  string init = display.new_frame( false, local_framebuffer, local_framebuffer );
   swrite( STDOUT_FILENO, init.data(), init.size() );
 
   /* open network */
@@ -263,26 +263,23 @@ void STMClient::output_new_frame( void )
   }
 
   /* fetch target state */
-  *new_state = network->get_latest_remote_state().state.get_fb();
+  new_state = network->get_latest_remote_state().state.get_fb();
 
   /* apply local overlays */
-  overlays.apply( *new_state );
+  overlays.apply( new_state );
 
   /* apply any mutations */
-  display.downgrade( *new_state );
+  display.downgrade( new_state );
 
   /* calculate minimal difference from where we are */
   const string diff( display.new_frame( !repaint_requested,
-					*local_framebuffer,
-					*new_state ) );
+					local_framebuffer,
+					new_state ) );
   swrite( STDOUT_FILENO, diff.data(), diff.size() );
 
   repaint_requested = false;
 
-  /* switch pointers */
-  Terminal::Framebuffer *tmp = new_state;
-  new_state = local_framebuffer;
-  local_framebuffer = tmp;
+  local_framebuffer = new_state;
 }
 
 void STMClient::process_network_input( void )
@@ -318,7 +315,7 @@ bool STMClient::process_user_input( int fd )
     for ( int i = 0; i < bytes_read; i++ ) {
       char the_byte = buf[ i ];
 
-      overlays.get_prediction_engine().new_user_byte( the_byte, *local_framebuffer );
+      overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
 
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */

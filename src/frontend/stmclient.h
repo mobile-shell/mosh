@@ -58,7 +58,7 @@ private:
 
   struct winsize window_size;
 
-  Terminal::Framebuffer *local_framebuffer, *new_state;
+  Terminal::Framebuffer local_framebuffer, new_state;
   Overlay::OverlayManager overlays;
   Network::Transport< Network::UserStream, Terminal::Complete > *network;
   Terminal::Display display;
@@ -89,8 +89,8 @@ public:
     escape_requires_lf( false ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(),
       window_size(),
-      local_framebuffer( NULL ),
-      new_state( NULL ),
+      local_framebuffer( 1, 1 ),
+      new_state( 1, 1 ),
       overlays(),
       network( NULL ),
       display( true ), /* use TERM environment var to initialize display */
@@ -122,14 +122,6 @@ public:
 
   ~STMClient()
   {
-    if ( local_framebuffer != NULL ) {
-      delete local_framebuffer;
-    }
-
-    if ( new_state != NULL ) {
-      delete new_state;
-    }
-
     if ( network != NULL ) {
       delete network;
     }
