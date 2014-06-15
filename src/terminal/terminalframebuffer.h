@@ -48,6 +48,7 @@
 
 namespace Terminal {
   using shared::shared_ptr;
+  using shared::make_shared;
   typedef uint16_t color_type;
 
   class Renditions {
@@ -156,7 +157,7 @@ namespace Terminal {
     // in scrolling.
     uint64_t gen;
 
-    Row( size_t s_width, color_type background_color );
+    Row( const size_t s_width, const color_type background_color );
     Row(); /* default constructor required by C++11 STL */
 
     void insert_cell( int col, color_type background_color );
@@ -315,7 +316,12 @@ namespace Terminal {
     unsigned int bell_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
 
-    row_pointer newrow( void ) { return row_pointer( new Row( ds.get_width(), ds.get_background_rendition())); }
+    row_pointer newrow( void )
+    {
+      const size_t w = ds.get_width();
+      const color_type c = ds.get_background_rendition();
+      return make_shared<Row>( w, c );
+    }
 
   public:
     Framebuffer( int s_width, int s_height );
@@ -349,7 +355,7 @@ namespace Terminal {
       row_pointer &mutable_row = rows.at( row );
       // If the row is shared, copy it.
       if (!mutable_row.unique()) {
-	mutable_row = row_pointer( new Row( *mutable_row ));
+	mutable_row = make_shared<Row>( *mutable_row );
       }
       return mutable_row.get();
     }

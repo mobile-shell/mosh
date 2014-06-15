@@ -84,10 +84,13 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows( s_height, row_pointer(new Row( s_width, 0 ))), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
+  : rows(), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
+  const size_t w = s_width;
+  const color_type c = 0;
+  rows = rows_type(s_height, row_pointer(make_shared<Row>( w, c )));
 }
 
 Framebuffer::Framebuffer( const Framebuffer &other )
@@ -334,7 +337,7 @@ void Framebuffer::delete_line( int row, int count )
   rows.insert( start, count, newrow());
 }
 
-Row::Row( size_t s_width, color_type background_color )
+Row::Row( const size_t s_width, const color_type background_color )
   : cells( s_width, Cell( background_color ) ), wrap( false ), gen( get_gen() )
 {}
 
@@ -424,7 +427,7 @@ void Framebuffer::resize( int s_width, int s_height )
   for ( rows_type::iterator i = rows.begin();
 	i != rows.end() && *i != blankrow;
 	i++ ) {
-    *i = Framebuffer::row_pointer( new Row( **i ) );
+    *i = make_shared<Row>( **i );
     (*i)->set_wrap( false );
     (*i)->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
   }

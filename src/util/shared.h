@@ -42,9 +42,36 @@
 namespace shared {
 #ifdef HAVE_STD_SHARED_PTR
   using std::shared_ptr;
+  using std::make_shared;
 #else
 #ifdef HAVE_STD_TR1_SHARED_PTR
   using std::tr1::shared_ptr;
+
+  // make_shared emulation.
+  template<typename Tp, typename A1>
+    inline shared_ptr<Tp>
+    make_shared(const A1& a1)
+  {
+    return shared_ptr<Tp>(new Tp(a1));
+  }
+  template<typename Tp, typename A1, typename A2>
+    inline shared_ptr<Tp>
+    make_shared(const A1& a1, const A2& a2)
+  {
+    return shared_ptr<Tp>(new Tp(a1, a2));
+  }
+  template<typename Tp, typename A1, typename A2, typename A3>
+    inline shared_ptr<Tp>
+    make_shared(const A1& a1, const A2& a2, const A3& a3)
+  {
+    return shared_ptr<Tp>(new Tp(a1, a2, a3));
+  }
+  template<typename Tp, typename A1, typename A2, typename A3, typename A4>
+    inline shared_ptr<Tp>
+    make_shared(const A1& a1, const A2& a2, const A3& a3, const A4& a4)
+  {
+    return shared_ptr<Tp>(new Tp(a1, a2, a3, a4));
+  }
 #else
 #error Need a shared_ptr class.  Try Boost::TR1.
 #endif

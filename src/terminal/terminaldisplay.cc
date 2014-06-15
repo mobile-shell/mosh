@@ -148,14 +148,16 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   /* Extend rows if we've gotten a resize and new is wider than old */
   if ( frame.last_frame.ds.get_width() < f.ds.get_width() ) {
     for ( Framebuffer::rows_type::iterator p = rows.begin(); p != rows.end(); p++ ) {
-      *p = Framebuffer::row_pointer( new Row( **p ) );
+      *p = make_shared<Row>( **p );
       (*p)->cells.resize( f.ds.get_width(), Cell( f.ds.get_background_rendition() ) );
     }
   }
   /* Add rows if we've gotten a resize and new is taller than old */
   if ( static_cast<int>( rows.size() ) < f.ds.get_height() ) {
     // get a proper blank row
-    blank_row = Framebuffer::row_pointer( new Row( f.ds.get_width(), 0 ) );
+    const size_t w = f.ds.get_width();
+    const color_type c = 0;
+    blank_row = make_shared<Row>( w, c );
     rows.resize( f.ds.get_height(), blank_row );
   }
 
@@ -198,7 +200,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       if ( lines_scrolled ) {
 	/* Now we need a proper blank row. */
 	if ( blank_row.get() == NULL ) {
-	  blank_row = Framebuffer::row_pointer( new Row( f.ds.get_width(), 0 ) );
+	  const size_t w = f.ds.get_width();
+	  const color_type c = 0;
+	  blank_row = make_shared<Row>( w, c );
 	}
 	frame.update_rendition( initial_rendition(), true );
 
