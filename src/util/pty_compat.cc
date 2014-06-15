@@ -62,7 +62,7 @@ pid_t my_forkpty( int *amaster, char *name,
 
   master = open( PTY_DEVICE, O_RDWR | O_NOCTTY );
   if ( master < 0 ) {
-    perror( "open("PTY_DEVICE")" );
+    perror( "open(" PTY_DEVICE ")" );
     return -1;
   }
 
