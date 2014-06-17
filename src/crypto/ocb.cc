@@ -298,7 +298,7 @@
         return swap_if_le(rval);
 	}
 
-	#if __GNUC__ && __arm__
+	#if __GNUC__ && !__clang__ && __arm__
 	static inline block double_block(block b) {
 		__asm__ ("adds %1,%1,%1\n\t"
 				 "adcs %H1,%H1,%H1\n\t"
