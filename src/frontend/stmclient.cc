@@ -60,7 +60,7 @@
 #include "select.h"
 #include "timestamp.h"
 
-#include "networktransport.cc"
+#include "networktransport-impl.h"
 
 void STMClient::resume( void )
 {

@@ -89,7 +89,7 @@
 #define _PATH_BSHELL "/bin/sh"
 #endif
 
-#include "networktransport.cc"
+#include "networktransport-impl.h"
 
 typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConnection;
 

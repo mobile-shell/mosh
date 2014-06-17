@@ -30,11 +30,9 @@
     also delete it here.
 */
 
-#include <iostream>
-
 #include "networktransport.h"
 
-#include "transportsender.cc"
+#include "transportsender-impl.h"
 
 using namespace Network;
 using namespace std;
