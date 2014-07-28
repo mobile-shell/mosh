@@ -445,11 +445,17 @@ int run_server( const char *desired_ip, const char *desired_port,
     }
 #endif /* HAVE_IUTF8 */
 
-    /* set TERM */
-    const char default_term[] = "xterm";
+    /* get and set TERM */
     const char color_term[] = "xterm-256color";
+    char default_term[] = "xterm";
+    char * current_term = NULL; 
 
-    if ( setenv( "TERM", (colors == 256) ? color_term : default_term, true ) < 0 ) {
+    current_term = getenv("TERM");
+    if ( current_term == NULL ) { 
+      current_term = default_term;
+    }
+
+    if ( setenv( "TERM", (colors == 256) ? color_term : current_term, true ) < 0 ) {
       perror( "setenv" );
       exit( 1 );
     }
