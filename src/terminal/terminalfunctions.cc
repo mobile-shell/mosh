@@ -246,7 +246,7 @@ void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
 /* TBC preserves wrap state */
 static Function func_CSI_TBC( CSI, "g", CSI_TBC, false );
 
-static bool *get_DEC_mode( int param, Framebuffer *fb ) {
+static bool *get_DEC_mode( int param, Framebuffer *fb) {
   switch ( param ) {
   case 1: /* cursor key mode */
     return &(fb->ds.application_mode_cursor_keys);
@@ -286,7 +286,21 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
 void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
-    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb );
+    int param = dispatch->getparam( i, 0 );
+
+    if ( (param == 1000) || (param == 1002 ) ) {
+      // clear the other mouse modes before setting this one
+      bool *c_mode = get_DEC_mode( 1000, fb );
+      if ( c_mode ) { *c_mode = false; }
+      *c_mode = get_DEC_mode( 1002, fb );
+      if ( c_mode ) { *c_mode = false; }
+      *c_mode = get_DEC_mode( 1005, fb );
+      if ( c_mode ) { *c_mode = false; }
+      *c_mode = get_DEC_mode( 1006, fb );
+      if ( c_mode ) { *c_mode = false; }
+    }
+
+    bool *mode = get_DEC_mode(param, fb);
     if ( mode ) {
       *mode = true;
     }
@@ -297,7 +311,7 @@ void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
 void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
-    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb );
+    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb);
     if ( mode ) {
       *mode = false;
     }
