@@ -286,7 +286,21 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
 void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
-    bool *mode = get_DEC_mode( dispatch->getparam( i, 0 ), fb );
+    int param = dispatch->getparam( i, 0 );
+
+    if ( (param == 1000) || (param == 1002) ) {
+      // clear the other mouse modes before setting this one
+      bool *c_mode = get_DEC_mode( 1000, fb );
+      if ( c_mode ) { *c_mode = false; }
+      *c_mode = get_DEC_mode( 1002, fb );
+      if ( c_mode ) { *c_mode = false; }
+      *c_mode = get_DEC_mode( 1005, fb );
+      if ( c_mode ) { *c_mode = false; }
+      *c_mode = get_DEC_mode( 1006, fb );
+      if ( c_mode ) { *c_mode = false; }
+    }
+
+    bool *mode = get_DEC_mode( param, fb );
     if ( mode ) {
       *mode = true;
     }
