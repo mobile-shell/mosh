@@ -307,7 +307,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   /* has xterm mouse mode changed? */
   if ( (!initialized)
        || (f.ds.xterm_extended_mouse != frame.last_frame.ds.xterm_extended_mouse) ) {
-    frame.append( f.ds.xterm_extended_mouse ? "\033[?1006h\033[?1002h" : "\033[?1006l\033[?1002l" );
+    frame.append( f.ds.xterm_extended_mouse ? "\033[?1006h" : "\033[?1006l" );
   }
 
   return frame.str;
