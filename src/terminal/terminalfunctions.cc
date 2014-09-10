@@ -272,6 +272,8 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
     return &(fb->ds.vt100_mouse);
   case 1002:           /* xterm mouse 2 (inc. button drags) */
     return &(fb->ds.xterm_mouse);
+  case 1005:           /* xterm UTF8 mouse */
+    return &(fb->ds.xterm_utf8_mouse);
   case 1006:           /* xterm extended mouse */
     return &(fb->ds.xterm_extended_mouse);
   case 2004: /* bracketed paste */

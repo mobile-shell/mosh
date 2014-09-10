@@ -192,7 +192,8 @@ namespace Terminal {
     bool bracketed_paste;
     bool vt100_mouse;
     bool xterm_mouse;
-    bool xterm_extended_mouse;
+    bool xterm_extended_mouse; // aka SGR
+    bool xterm_utf8_mouse;
 
     bool application_mode_cursor_keys;
 
@@ -243,7 +244,8 @@ namespace Terminal {
 	&& ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible ) &&
 	( reverse_video == x.reverse_video ) && ( renditions == x.renditions ) &&
   ( bracketed_paste == x.bracketed_paste ) && ( vt100_mouse == x.vt100_mouse ) &&
-  ( xterm_mouse == x.xterm_mouse ) && ( xterm_extended_mouse == x.xterm_extended_mouse );
+  ( xterm_mouse == x.xterm_mouse ) && ( xterm_extended_mouse == x.xterm_extended_mouse ) && 
+  ( xterm_utf8_mouse == x.xterm_utf8_mouse );
     }
   };
 

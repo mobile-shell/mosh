@@ -309,6 +309,11 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
        || (f.ds.xterm_extended_mouse != frame.last_frame.ds.xterm_extended_mouse) ) {
     frame.append( f.ds.xterm_extended_mouse ? "\033[?1006h" : "\033[?1006l" );
   }
+  
+  if ( (!initialized)
+       || (f.ds.xterm_utf8_mouse != frame.last_frame.ds.xterm_utf8_mouse) ) {
+    frame.append( f.ds.xterm_utf8_mouse ? "\033[?1005h" : "\033[?1005l" );
+  }
 
   return frame.str;
 }
