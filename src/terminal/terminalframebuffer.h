@@ -370,7 +370,7 @@ namespace Terminal {
 
     Cell *get_combining_cell( void );
 
-    void apply_renditions_to_current_cell( void );
+    void apply_renditions_to_cell( Cell *cell );
 
     void insert_line( int before_row, int count );
     void delete_line( int row, int count );

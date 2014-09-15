@@ -256,9 +256,12 @@ int DrawState::limit_bottom( void ) const
   return origin_mode ? scrolling_region_bottom_row : height - 1;
 }
 
-void Framebuffer::apply_renditions_to_current_cell( void )
+void Framebuffer::apply_renditions_to_cell( Cell *cell )
 {
-  get_mutable_cell()->renditions = ds.get_renditions();
+  if (!cell) {
+    cell = get_mutable_cell();
+  }
+  cell->renditions = ds.get_renditions();
 }
 
 SavedCursor::SavedCursor()

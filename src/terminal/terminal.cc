@@ -65,8 +65,6 @@ void Emulator::print( const Parser::Print *act )
 
   Cell *this_cell = fb.get_mutable_cell();
 
-  Cell *combining_cell = fb.get_combining_cell(); /* can be null if we were resized */
-
   switch ( chwidth ) {
   case 1: /* normal character */
   case 2: /* wide character */
@@ -74,6 +72,7 @@ void Emulator::print( const Parser::Print *act )
       fb.get_mutable_row( -1 )->set_wrap( true );
       fb.ds.move_col( 0 );
       fb.move_rows_autoscroll( 1 );
+      this_cell = NULL;
     } else if ( fb.ds.auto_wrap_mode
 		&& (chwidth == 2)
 		&& (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
@@ -86,20 +85,24 @@ void Emulator::print( const Parser::Print *act )
 	 because a wide char was wrapped to the next line. */
       fb.ds.move_col( 0 );
       fb.move_rows_autoscroll( 1 );
+      this_cell = NULL;
     }
 
     if ( fb.ds.insert_mode ) {
       for ( int i = 0; i < chwidth; i++ ) {
 	fb.insert_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
       }
+      this_cell = NULL;
     }
 
-    this_cell = fb.get_mutable_cell();
+    if (!this_cell) {
+      this_cell = fb.get_mutable_cell();
+    }
 
     fb.reset_cell( this_cell );
     this_cell->append( act->ch );
     this_cell->width = chwidth;
-    fb.apply_renditions_to_current_cell();
+    fb.apply_renditions_to_cell( this_cell );
 
     if ( chwidth == 2 ) { /* erase overlapped cell */
       if ( fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) {
@@ -112,26 +115,29 @@ void Emulator::print( const Parser::Print *act )
     act->handled = true;
     break;
   case 0: /* combining character */
-    if ( combining_cell == NULL ) { /* character is now offscreen */
-      act->handled = true;
-      break;
-    }
+    {
+      Cell *combining_cell = fb.get_combining_cell(); /* can be null if we were resized */
+      if ( combining_cell == NULL ) { /* character is now offscreen */
+	act->handled = true;
+	break;
+      }
 
-    if ( combining_cell->contents.size() == 0 ) {
-      /* cell starts with combining character */
-      /* ... but isn't necessarily the target for a new
-	 base character [e.g. start of line], if the
-	 combining character has been cleared with
-	 a sequence like ED ("J") or EL ("K") */
-      assert( combining_cell->width == 1 );
-      combining_cell->fallback = true;
-      fb.ds.move_col( 1, true, true );
+      if ( combining_cell->contents.size() == 0 ) {
+	/* cell starts with combining character */
+	/* ... but isn't necessarily the target for a new
+	   base character [e.g. start of line], if the
+	   combining character has been cleared with
+	   a sequence like ED ("J") or EL ("K") */
+	assert( combining_cell->width == 1 );
+	combining_cell->fallback = true;
+	fb.ds.move_col( 1, true, true );
+      }
+      if ( combining_cell->contents.size() < 32 ) {
+	/* seems like a reasonable limit on combining characters */
+	combining_cell->append( act->ch );
+      }
+      act->handled = true;
     }
-    if ( combining_cell->contents.size() < 32 ) {
-      /* seems like a reasonable limit on combining characters */
-      combining_cell->contents.push_back( act->ch );
-    }
-    act->handled = true;
     break;
   case -1: /* unprintable character */
     break;
