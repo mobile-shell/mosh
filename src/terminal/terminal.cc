@@ -61,7 +61,13 @@ void Emulator::print( const Parser::Print *act )
 {
   assert( act->char_present );
 
-  int chwidth = act->ch == L'\0' ? -1 : wcwidth( act->ch );
+  const wchar_t ch = act->ch;
+
+  /*
+   * Check for printing ISO 8859-1 first, it's a cheap way to detect
+   * some common narrow characters.
+   */
+  const int chwidth = ch == L'\0' ? -1 : ( Cell::isprint_iso8859_1( ch ) ? 1 : wcwidth( ch ));
 
   Cell *this_cell = fb.get_mutable_cell();
 
@@ -100,7 +106,7 @@ void Emulator::print( const Parser::Print *act )
     }
 
     fb.reset_cell( this_cell );
-    this_cell->append( act->ch );
+    this_cell->append( ch );
     this_cell->width = chwidth;
     fb.apply_renditions_to_cell( this_cell );
 
@@ -134,7 +140,7 @@ void Emulator::print( const Parser::Print *act )
       }
       if ( combining_cell->contents.size() < 32 ) {
 	/* seems like a reasonable limit on combining characters */
-	combining_cell->append( act->ch );
+	combining_cell->append( ch );
       }
       act->handled = true;
     }

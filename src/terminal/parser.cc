@@ -80,10 +80,15 @@ void Parser::UTF8Parser::input( char c, Actions &ret )
 {
   assert( buf_len < BUF_SIZE );
 
+  /* 1-byte UTF-8 character, aka ASCII?  Cheat. */
+  if ( buf_len == 0 && static_cast<unsigned char>(c) <= 0x7f ) {
+    parser.input( static_cast<wchar_t>(c), ret );
+    return;
+  }
+
   buf[ buf_len++ ] = c;
 
   /* This function will only work in a UTF-8 locale. */
-
   wchar_t pwc;
   mbstate_t ps = mbstate_t();
 

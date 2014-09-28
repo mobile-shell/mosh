@@ -126,8 +126,19 @@ namespace Terminal {
 
     bool compare( const Cell &other ) const;
 
-    static void append_to_str( std::string &dest, const wchar_t c )
+    // Is this a printing ISO 8859-1 character?
+    static bool isprint_iso8859_1( const wchar_t c )
     {
+      return ( c <= 0xff && c >= 0xa0 ) || ( c <= 0x7e && c >= 0x20 );
+    }
+
+   static void append_to_str( std::string &dest, const wchar_t c )
+    {
+      /* ASCII?  Cheat. */
+      if ( static_cast<uint32_t>(c) <= 0x7f ) {
+	dest.push_back( static_cast<char>(c) );
+	return;
+      }
       static mbstate_t ps = mbstate_t();
       char tmp[MB_LEN_MAX];
       size_t ignore = wcrtomb(NULL, 0, &ps);
@@ -138,6 +149,11 @@ namespace Terminal {
 
     void append( const wchar_t c )
     {
+      /* ASCII?  Cheat. */
+      if ( static_cast<uint32_t>(c) <= 0x7f ) {
+	contents.push_back( static_cast<char>(c) );
+	return;
+      }
       static mbstate_t ps = mbstate_t();
       char tmp[MB_LEN_MAX];
       size_t ignore = wcrtomb(NULL, 0, &ps);
