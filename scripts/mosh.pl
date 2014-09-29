@@ -172,7 +172,10 @@ if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
 
 if ( defined $fake_proxy ) {
   use Errno qw(EINTR);
-  BEGIN { eval { require IO::Socket::IP; IO::Socket::IP->import('-register'); }; }
+  BEGIN {
+    eval { require IO::Socket::IP; IO::Socket::IP->import('-register'); 1 } or
+      eval { require IO::Socket::INET6 };
+  }
   use POSIX qw(_exit);
 
   my ( $host, $port ) = @ARGV;
