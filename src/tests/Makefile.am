@@ -63,7 +63,7 @@ nonce_incr_LDADD = ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a ../util
 
 inpty_SOURCES = inpty.cc
 inpty_CPPFLAGS = -I$(srcdir)/../util
-inpty_LDADD = ../util/libmoshutil.a $(LIBUTIL)
+inpty_LDADD = ../util/libmoshutil.a
 
 is_utf8_locale_SOURCES = is-utf8-locale.cc
 is_utf8_locale_CPPFLAGS = -I$(srcdir)/../util
