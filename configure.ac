@@ -179,7 +179,7 @@ AS_IF([test x"$with_utempter" != xno],
 
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
-AC_SEARCH_LIBS([socket], [socket])
+AC_SEARCH_LIBS([socket], [socket network])
 AC_SEARCH_LIBS([inet_addr], [nsl])
 
 AC_SEARCH_LIBS([clock_gettime], [rt])
@@ -352,10 +352,8 @@ AC_CHECK_DECL([forkpty],
   , [[#include <sys/types.h>
   #include <libutil.h>]])
 
-AC_CHECK_LIB([util], [forkpty], [
+AC_SEARCH_LIBS([forkpty], [util bsd], [
   AC_DEFINE([HAVE_FORKPTY],, [Define if you have forkpty().])
-  LIBUTIL="-lutil"
-  AC_SUBST([LIBUTIL])
 ])
 
 AC_MSG_CHECKING([whether pipe2(..., O_CLOEXEC) is supported])
