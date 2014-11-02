@@ -62,6 +62,10 @@ my $bind_ip = undef;
 
 my $port_request = undef;
 
+my $no_redirect = 0;
+
+my @ssh_options = ('-S', 'none', '-n', '-tt');
+my $ssh_options_txt = join(":", @ssh_options);
 
 my $help = undef;
 my $version = undef;
@@ -93,10 +97,14 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
         --ssh=COMMAND        ssh command to run when setting up session
                                 (example: "ssh -p 2222")
                                 (default: "ssh")
-
+        --ssh-options        options to pass to ssh ':' is the delimitor (default $ssh_options_txt)
         --no-init            do not send terminal initialization string
 
 -c      --config             path to the config file (default ~/.moshrc)
+
+-n      --no-stdin-redirect  do not redirect stdin to /dev/null when doing ssh (default pass -n to ssh),
+                             this could be usefull if you need to read from stdin
+                             for things like 2FA tokens
 
         --help               this message
         --version            version and copyright information
@@ -190,6 +198,9 @@ my $options = {
               'help' => \$help,
               'version' => \$version,
               'fake-proxy!' => \my $fake_proxy,
+              'n' => sub { $no_redirect = 1 },
+              'no-stdin-redirect' => \$no_redirect,
+              'ssh-options' => sub { my ($opt_name, $opt_val) = @_; @ssh_options = split(':', $opt_val); },
               'bind-server=s' => \$bind_ip };
 
 # For updating the value from the configuration file, a simple association
@@ -424,8 +435,12 @@ if ( $pid == 0 ) { # child
     push @server, '--', @command;
   }
 
+  if ($no_redirect) {
+    @ssh_options = grep { $_ ne '-n' } @ssh_options;
+  }
+
   my $quoted_self = shell_quote( $0, "--family=$family" );
-  exec "$ssh " . shell_quote( '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', "$server " . shell_quote( @server ) );
+  exec "$ssh " . shell_quote( @ssh_options, '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", $userhost, '--', "$server " . shell_quote( @server ) );
   die "Cannot exec ssh: $!\n";
 } else { # parent
   my ( $ip, $port, $key );
