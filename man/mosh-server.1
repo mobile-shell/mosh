@@ -39,7 +39,17 @@ establish a connection. It will exit if no client has contacted
 it within 60 seconds.
 
 By default, \fBmosh-server\fP binds to a port between 60000 and
-61000 and executes the user's login shell.
+61000 and executes the user's login shell.  A port or port-range 
+can be specified with the environment variable MOSH_SERVER_PORT.
+This allows the UDP port range to be set eg. in the 
+.BR .ssh/authorized_keys
+file.  That way the port range is configured on the server rather than
+the client, which is useful when multiple mosh-accessible servers
+are used through the same NAT firewall.  An example line in 
+\fB.ssh/authorized_keys\fP might start with
+\fBenvironment="MOSH_SERVER_PORT=60100:60200"\fP.  See
+.BR sshd(8) 
+for details.
 
 On platforms with \fButempter\fP, \fBmosh-server\fP maintains an entry
 in the
@@ -70,7 +80,8 @@ IP address of the local interface to bind (for multihomed hosts)
 
 .TP
 .B \-p \fIPORT\fP[:\fIPORT2\fP]
-UDP port number or port-range to bind
+UDP port number or port-range to bind.  Overrides environment variable
+MOSH_SERVER_PORT.
 
 .TP
 .B \-c \fICOLORS\fP

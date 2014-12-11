@@ -169,6 +169,9 @@ int main( int argc, char *argv[] )
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
   list<string> locale_vars;
 
+  char *env_sport = getenv( "MOSH_SERVER_PORT" );
+  if (env_sport != NULL) desired_port = env_sport;
+
   /* strip off command */
   for ( int i = 0; i < argc; i++ ) {
     if ( 0 == strcmp( argv[ i ], "--" ) ) { /* -- is mandatory */
