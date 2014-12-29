@@ -62,8 +62,8 @@ DrawState::DrawState( int s_width, int s_height )
     renditions( 0 ), save(),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true ),
     insert_mode( false ), cursor_visible( true ), reverse_video( false ),
-    bracketed_paste( false ), vt100_mouse( false ), xterm_mouse( false ), 
-    xterm_extended_mouse( false ), xterm_utf8_mouse( false ), application_mode_cursor_keys( false )
+    bracketed_paste( false ), mouse_reporting_mode( MOUSE_REPORTING_NONE ), mouse_focus_event( false ),
+    mouse_alternate_scroll( false ), mouse_encoding_mode( MOUSE_ENCODING_DEFAULT ), application_mode_cursor_keys( false )
 {
   reinitialize_tabs( 0 );
 }
