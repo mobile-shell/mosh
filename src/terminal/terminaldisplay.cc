@@ -292,27 +292,45 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     frame.append( f.ds.bracketed_paste ? "\033[?2004h" : "\033[?2004l" );
   }
 
-  /* has xterm VT100 mouse mode changed? */
+  /* has mouse reporting mode changed? */
   if ( (!initialized)
-       || (f.ds.vt100_mouse != frame.last_frame.ds.vt100_mouse) ) {
-    frame.append( f.ds.vt100_mouse ? "\033[?1000h" : "\033[?1000l" );
+       || (f.ds.mouse_reporting_mode != frame.last_frame.ds.mouse_reporting_mode) ) {
+    if (f.ds.mouse_reporting_mode == DrawState::MOUSE_REPORTING_NONE) {
+      frame.append("\033[?1003l");
+      frame.append("\033[?1002l");
+      frame.append("\033[?1001l");
+      frame.append("\033[?1000l");
+    } else {
+      if (frame.last_frame.ds.mouse_reporting_mode != DrawState::MOUSE_REPORTING_NONE) {
+        snprintf(tmp, sizeof(tmp), "\033[?%dl", frame.last_frame.ds.mouse_reporting_mode);
+        frame.append(tmp);
+      }
+      snprintf(tmp, sizeof(tmp), "\033[?%dh", f.ds.mouse_reporting_mode);
+      frame.append(tmp);
+    }
   }
 
-  /* has xterm mouse mode changed? */
+  /* has mouse focus mode changed? */
   if ( (!initialized)
-       || (f.ds.xterm_mouse != frame.last_frame.ds.xterm_mouse) ) {
-    frame.append( f.ds.xterm_mouse ? "\033[?1002h" : "\033[?1002l" );
+       || (f.ds.mouse_focus_event != frame.last_frame.ds.mouse_focus_event) ) {
+    frame.append( f.ds.mouse_focus_event ? "\033[?1004h" : "\033[?1004l" );
   }
 
-  /* has xterm mouse mode changed? */
+  /* has mouse encoding mode changed? */
   if ( (!initialized)
-       || (f.ds.xterm_extended_mouse != frame.last_frame.ds.xterm_extended_mouse) ) {
-    frame.append( f.ds.xterm_extended_mouse ? "\033[?1006h" : "\033[?1006l" );
-  }
-  
-  if ( (!initialized)
-       || (f.ds.xterm_utf8_mouse != frame.last_frame.ds.xterm_utf8_mouse) ) {
-    frame.append( f.ds.xterm_utf8_mouse ? "\033[?1005h" : "\033[?1005l" );
+       || (f.ds.mouse_encoding_mode != frame.last_frame.ds.mouse_encoding_mode) ) {
+    if (f.ds.mouse_encoding_mode == DrawState::MOUSE_ENCODING_DEFAULT) {
+      frame.append("\033[?1015l");
+      frame.append("\033[?1006l");
+      frame.append("\033[?1005l");
+    } else {
+      if (frame.last_frame.ds.mouse_encoding_mode != DrawState::MOUSE_ENCODING_DEFAULT) {
+        snprintf(tmp, sizeof(tmp), "\033[?%dl", frame.last_frame.ds.mouse_encoding_mode);
+        frame.append(tmp);
+      }
+      snprintf(tmp, sizeof(tmp), "\033[?%dh", f.ds.mouse_encoding_mode);
+      frame.append(tmp);
+    }
   }
 
   return frame.str;
