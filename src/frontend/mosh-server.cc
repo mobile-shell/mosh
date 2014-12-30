@@ -96,13 +96,13 @@ void serve( int host_fd,
 
 int run_server( const char *desired_ip, const char *desired_port,
 		const string &command_path, char *command_argv[],
-		const int colors, bool verbose, bool with_motd );
+		const int colors, bool verbose, bool debug, bool with_motd );
 
 using namespace std;
 
 void print_usage( const char *argv0 )
 {
-  fprintf( stderr, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
+  fprintf( stderr, "Usage: %s new [-d] [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
 }
 
 void print_motd( void );
@@ -167,6 +167,7 @@ int main( int argc, char *argv[] )
   int colors = 0;
   bool verbose = false; /* don't close stdin/stdout/stderr */
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
+  bool debug = false; /* don't fork-to-detach */
   list<string> locale_vars;
 
   /* strip off command */
@@ -185,7 +186,7 @@ int main( int argc, char *argv[] )
        && (strcmp( argv[ 1 ], "new" ) == 0) ) {
     /* new option syntax */
     int opt;
-    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:svl:" )) != -1 ) {
+    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:svl:d" )) != -1 ) {
       switch ( opt ) {
       case 'i':
 	desired_ip = optarg;
@@ -206,6 +207,9 @@ int main( int argc, char *argv[] )
 	break;
       case 'l':
 	locale_vars.push_back( string( optarg ) );
+	break;
+      case 'd':
+	debug = true;
 	break;
       default:
 	print_usage( argv[ 0 ] );
@@ -308,7 +312,7 @@ int main( int argc, char *argv[] )
   }
 
   try {
-    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd );
+    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, debug, with_motd );
   } catch ( const Network::NetworkException& e ) {
     fprintf( stderr, "Network exception: %s: %s\n",
 	     e.function.c_str(), strerror( e.the_errno ) );
@@ -322,7 +326,11 @@ int main( int argc, char *argv[] )
 
 int run_server( const char *desired_ip, const char *desired_port,
 		const string &command_path, char *command_argv[],
-		const int colors, bool verbose, bool with_motd ) {
+		const int colors, bool verbose, bool debug, bool with_motd ) {
+  if (debug) {
+    reenable_dumping_core();
+  }
+
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ||
@@ -360,19 +368,23 @@ int run_server( const char *desired_ip, const char *desired_port,
   fatal_assert( 0 == sigaction( SIGPIPE, &sa, NULL ) );
 
 
-  /* detach from terminal */
-  pid_t the_pid = fork();
-  if ( the_pid < 0 ) {
-    perror( "fork" );
-  } else if ( the_pid > 0 ) {
-    _exit( 0 );
+  if (!debug) {
+    /* detach from terminal */
+    pid_t the_pid = fork();
+    if ( the_pid < 0 ) {
+      perror( "fork" );
+    } else if ( the_pid > 0 ) {
+      _exit( 0 );
+    }
   }
 
   fprintf( stderr, "\nmosh-server (%s)\n", PACKAGE_STRING );
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
 
-  fprintf( stderr, "[mosh-server detached, pid = %d]\n", (int)getpid() );
+  if ( !debug ) {
+    fprintf( stderr, "[mosh-server detached, pid = %d]\n", (int)getpid() );
+  }
 
   int master;
 
@@ -381,7 +393,7 @@ int run_server( const char *desired_ip, const char *desired_port,
 #endif /* HAVE_IUTF8 */
 
   /* close file descriptors */
-  if ( !verbose ) {
+  if ( !verbose && !debug ) {
     /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
     int nullfd;
 
@@ -473,7 +485,9 @@ int run_server( const char *desired_ip, const char *desired_port,
       warn_unattached( utmp_entry );
     }
 
-    Crypto::reenable_dumping_core();
+    if (!debug) {
+      Crypto::reenable_dumping_core();
+    }
 
     if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
       perror( "execvp" );

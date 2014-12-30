@@ -245,7 +245,10 @@ die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
   open(STDERR, ">&STDOUT") or die;
 
-  my @server = ( 'new' );
+  my @server;
+  if ( $server !~ /\bnew\b/ ) {
+    push ( @server, 'new' );
+  }
 
   push @server, ( '-c', $colors );
 
