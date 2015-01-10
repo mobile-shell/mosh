@@ -169,7 +169,8 @@ this disables alternate screen mode.
 The escape sequence to shut down the connection is \fBCtrl-^ .\fP
 (typically typed with Ctrl-Shift-6, then a period). To send a literal
 Ctrl-^, type \fBCtrl-^ ^\fP. The sequence \fBCtrl-^ Ctrl-Z\fP suspends the
-client.
+client.  You can override the escape key with the environment variable
+\fBMOSH_ESCAPE_KEY\fP.
 
 .SH ENVIRONMENT VARIABLES
 
@@ -180,6 +181,10 @@ Controls local echo as described above.
 .TP
 .B MOSH_TITLE_NOPREFIX
 When set, inhibits prepending "[mosh]" to window title.
+
+.TP
+.B MOSH_ESCAPE_KEY
+Sets the key used to start escape sequences described above.
 
 .SH SEE ALSO
 .BR mosh-client (1),
