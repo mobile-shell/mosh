@@ -101,10 +101,15 @@ int main( int argc, char *argv[] )
   /* Detect edge case */
   fatal_assert( argc > 0 );
 
+  bool forward_agent = false;
+
   /* Get arguments */
   int opt;
-  while ( (opt = getopt( argc, argv, "c" )) != -1 ) {
+  while ( (opt = getopt( argc, argv, "cA" )) != -1 ) {
     switch ( opt ) {
+    case 'A':
+      forward_agent = true;
+      break;
     case 'c':
       print_colorcount();
       exit( 0 );
@@ -160,7 +165,7 @@ int main( int argc, char *argv[] )
   set_native_locale();
 
   try {
-    STMClient client( ip, desired_port, key, predict_mode );
+    STMClient client( ip, desired_port, key, predict_mode, forward_agent );
     client.init();
 
     try {

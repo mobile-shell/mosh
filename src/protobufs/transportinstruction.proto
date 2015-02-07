@@ -13,4 +13,6 @@ message Instruction {
   optional bytes diff = 6;
 
   optional bytes chaff = 7;
+
+  optional bytes oob = 8;
 }
