@@ -35,7 +35,7 @@ my $MOSH_VERSION = '1.2.4a';
 use warnings;
 use strict;
 use Getopt::Long;
-use IO::Socket;
+use IO::Socket::IP;
 
 $|=1;
 
@@ -46,7 +46,7 @@ my $predict = undef;
 
 my $bind_ip = undef;
 
-my $family = 'inet';
+my $family = "unspec"; # currently unused unless overridden
 my $port_request = undef;
 
 my $ssh = 'ssh';
@@ -180,13 +180,17 @@ if ( defined $fake_proxy ) {
   my ( $host, $port ) = @ARGV;
 
   # Resolve hostname and connect
-  my $afstr = 'AF_' . uc( $family );
-  my $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
-  my $sock = IO::Socket->new( Domain => $af,
-			      Family => $af,
-			      PeerHost => $host,
-			      PeerPort => $port,
-			      Proto => "tcp" )
+  my $af_family = AF_UNSPEC;
+  if ($family eq "inet6") {
+    $af_family = AF_INET6;
+  } elsif ($family eq "inet") {
+    $af_family = AF_INET;
+  }
+
+  my $sock = IO::Socket::IP->new(Family => $af_family,
+				PeerHost => $host,
+				PeerPort => $port,
+				Proto => "tcp")
     or die "$0: Could not connect to $host: $@\n";
 
   print STDERR "MOSH IP ", $sock->peerhost, "\n";
