@@ -180,8 +180,6 @@ if ( defined $fake_proxy ) {
   my ( $host, $port ) = @ARGV;
 
   # Resolve hostname and connect
-  my %hints = (socktype => SOCK_STREAM);
-
   my $af_family = AF_UNSPEC;
   if ($family eq "inet6") {
     $af_family = AF_INET6;
