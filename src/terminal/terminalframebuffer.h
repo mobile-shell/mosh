@@ -102,7 +102,7 @@ namespace Terminal {
 	       && (wrap == x.wrap) );
     }
 
-    wchar_t debug_contents( void ) const;
+    wint_t debug_contents( void ) const;
 
     bool is_blank( void ) const
     {
@@ -228,15 +228,15 @@ namespace Terminal {
     void clear_tab( int col );
     void clear_default_tabs( void ) { default_tabs = false; }
     /* Default tabs can't be restored without resetting the draw state. */
-    int get_next_tab( void );
+    int get_next_tab( void ) const;
 
     void set_scrolling_region( int top, int bottom );
 
     int get_scrolling_region_top_row( void ) const { return scrolling_region_top_row; }
     int get_scrolling_region_bottom_row( void ) const { return scrolling_region_bottom_row; }
 
-    int limit_top( void );
-    int limit_bottom( void );
+    int limit_top( void ) const;
+    int limit_bottom( void ) const;
 
     void set_foreground_color( int x ) { renditions.set_foreground_color( x ); }
     void set_background_color( int x ) { renditions.set_background_color( x ); }

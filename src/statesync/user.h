@@ -84,7 +84,7 @@ namespace Network {
     
     bool empty( void ) const { return actions.empty(); }
     size_t size( void ) const { return actions.size(); }
-    const Parser::Action *get_action( unsigned int i );
+    const Parser::Action *get_action( unsigned int i ) const;
     
     /* interface for Network::Transport */
     void subtract( const UserStream *prefix );
@@ -92,7 +92,7 @@ namespace Network {
     void apply_string( string diff );
     bool operator==( const UserStream &x ) const { return actions == x.actions; }
 
-    bool compare( const UserStream & ) const { return false; }
+    bool compare( const UserStream & ) { return false; }
   };
 }
 

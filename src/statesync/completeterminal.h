@@ -70,7 +70,7 @@ namespace Terminal {
     int wait_time( uint64_t now ) const;
 
     /* interface for Network::Transport */
-    void subtract( const Complete * ) {}
+    void subtract( const Complete * ) const {}
     std::string diff_from( const Complete &existing ) const;
     void apply_string( std::string diff );
     bool operator==( const Complete &x ) const;

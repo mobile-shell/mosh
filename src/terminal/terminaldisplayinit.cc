@@ -62,7 +62,7 @@
 
 using namespace Terminal;
 
-bool Display::ti_flag( const char *capname ) const
+bool Display::ti_flag( const char *capname )
 {
   int val = tigetflag( const_cast<char *>( capname ) );
   if ( val == -1 ) {
@@ -71,7 +71,7 @@ bool Display::ti_flag( const char *capname ) const
   return val;
 }
 
-int Display::ti_num( const char *capname ) const
+int Display::ti_num( const char *capname )
 {
   int val = tigetnum( const_cast<char *>( capname ) );
   if ( val == -2 ) {
@@ -80,7 +80,7 @@ int Display::ti_num( const char *capname ) const
   return val;
 }
 
-const char *Display::ti_str( const char *capname ) const
+const char *Display::ti_str( const char *capname )
 {
   const char *val = tigetstr( const_cast<char *>( capname ) );
   if ( val == (const char *)-1 ) {

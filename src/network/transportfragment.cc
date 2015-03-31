@@ -148,7 +148,7 @@ Instruction FragmentAssembly::get_assembly( void )
   return ret;
 }
 
-bool Fragment::operator==( const Fragment &x )
+bool Fragment::operator==( const Fragment &x ) const
 {
   return ( id == x.id ) && ( fragment_num == x.fragment_num ) && ( final == x.final )
     && ( initialized == x.initialized ) && ( contents == x.contents );

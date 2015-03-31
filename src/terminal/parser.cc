@@ -76,6 +76,7 @@ Parser::UTF8Parser::UTF8Parser()
   : parser(), buf_len( 0 )
 {
   assert( BUF_SIZE >= (size_t)MB_CUR_MAX );
+  buf[0] = '\0';
 }
 
 std::list<Parser::Action *> Parser::UTF8Parser::input( char c )

@@ -98,7 +98,7 @@ public:
     FD_ZERO( &all_fds );
   }
 
-  void add_signal( int signum )
+  static void add_signal( int signum )
   {
     fatal_assert( signum >= 0 );
     fatal_assert( signum <= MAX_SIGNAL_NUMBER );

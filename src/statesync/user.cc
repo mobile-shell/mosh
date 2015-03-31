@@ -123,7 +123,7 @@ void UserStream::apply_string( string diff )
   }
 }
 
-const Parser::Action *UserStream::get_action( unsigned int i )
+const Parser::Action *UserStream::get_action( unsigned int i ) const
 {
   switch( actions[ i ].type ) {
   case UserByteType:

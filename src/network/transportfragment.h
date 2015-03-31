@@ -73,7 +73,7 @@ namespace Network {
 
     string tostring( void );
 
-    bool operator==( const Fragment &x );
+    bool operator==( const Fragment &x ) const;
   };
 
   class FragmentAssembly

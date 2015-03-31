@@ -183,7 +183,7 @@ void DrawState::clear_tab( int col )
   tabs[ col ] = false;
 }
 
-int DrawState::get_next_tab( void )
+int DrawState::get_next_tab( void ) const
 {
   for ( int i = cursor_col + 1; i < width; i++ ) {
     if ( tabs[ i ] ) {
@@ -215,12 +215,12 @@ void DrawState::set_scrolling_region( int top, int bottom )
   }
 }
 
-int DrawState::limit_top( void )
+int DrawState::limit_top( void ) const
 {
   return origin_mode ? scrolling_region_top_row : 0;
 }
 
-int DrawState::limit_bottom( void )
+int DrawState::limit_bottom( void ) const
 {
   return origin_mode ? scrolling_region_bottom_row : height - 1;
 }
@@ -573,7 +573,7 @@ void Framebuffer::prefix_window_title( const std::deque<wchar_t> &s )
   }
 }
 
-wchar_t Cell::debug_contents( void ) const
+wint_t Cell::debug_contents( void ) const
 {
   if ( contents.empty() ) {
     return '_';
@@ -589,7 +589,7 @@ bool Cell::compare( const Cell &other ) const
   if ( !contents_match( other ) ) {
     ret = true;
     fprintf( stderr, "Contents: %lc vs. %lc\n",
-	     (wint_t)debug_contents(), (wint_t)other.debug_contents() );
+	     debug_contents(), other.debug_contents() );
   }
 
   if ( fallback != other.fallback ) {
