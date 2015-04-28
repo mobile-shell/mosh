@@ -61,6 +61,7 @@
 #include "timestamp.h"
 
 #include "networktransport.cc"
+#include "network.cc"
 
 void STMClient::resume( void )
 {
@@ -185,7 +186,7 @@ void STMClient::init( void )
     wstring escape_pass_name = std::wstring(tmp.begin(), tmp.end());
     tmp = string( escape_key_name_buf );
     wstring escape_key_name = std::wstring(tmp.begin(), tmp.end());
-    escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, " + escape_pass_name + L" gives literal " + escape_key_name;
+    escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, \"r\" refreshes server IP, " + escape_pass_name + L" gives literal " + escape_key_name;
   }
   wchar_t tmp[ 128 ];
   swprintf( tmp, 128, L"Nothing received from server on UDP port %s.", port.c_str() );
@@ -347,6 +348,22 @@ bool STMClient::process_user_input( int fd )
 	  kill( 0, SIGSTOP );
 
 	  resume();
+	} else if ( the_byte == 'r' ) {
+	  /* Re-Lookup the remote address */
+	  overlays.get_notification_engine().set_notification_string( wstring( L"mosh re-lookup started." ), false, false);
+	  struct addrinfo hints;
+	  memset( &hints, 0, sizeof( hints ) );
+	  Addr a = network->get_remote_addr();
+	  hints.ai_family = a.sa.sa_family;
+	  hints.ai_socktype = SOCK_DGRAM;
+	  hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
+	  AddrInfo ai( name.c_str(), "0", &hints );
+	  if (a.sa.sa_family == AF_INET) {
+	    memcpy(&(((struct sockaddr_in*) &a.sa)->sin_addr), &(((struct sockaddr_in*) ai.res->ai_addr)->sin_addr), sizeof (struct in_addr));
+	  } else if (a.sa.sa_family == AF_INET6) {
+	    memcpy(&(((struct sockaddr_in6*) &a.sa)->sin6_addr), &(((struct sockaddr_in6*) ai.res->ai_addr)->sin6_addr), sizeof (struct in6_addr));
+	  }
+	  network->update_remote_addr(a);
 	} else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
 	  /* Emulation sequence to type escape_key is escape_key +
 	     escape_pass_key (that is escape key without Ctrl) */
