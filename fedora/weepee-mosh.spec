@@ -16,8 +16,6 @@ BuildRequires:	ncurses-devel
 BuildRequires:	openssl-devel
 Requires:	openssh-clients
 Requires:	openssl
-Requires: perl-IO-Socket-INET6
-Requires: perl-Net-DNS
 
 %description
 Mosh is a remote terminal application that supports:
