@@ -5,15 +5,13 @@ set -e
 echo "Building into prefix..."
 
 PREFIX=`pwd`/prefix
-PREFIX_i386=`pwd`/prefix_i386
+#PREFIX_i386=`pwd`/prefix_i386
 PREFIX_x86_64=`pwd`/prefix_x86_64
 #PREFIX_ppc=`pwd`/prefix_ppc
 #PREFIX_ppc64=`pwd`/prefix_ppc64
 
-export MACOSX_DEPLOYMENT_TARGET=10.6
-
 mkdir -p "$PREFIX"
-mkdir -p "$PREFIX_i386"
+#mkdir -p "$PREFIX_i386"
 mkdir -p "$PREFIX_x86_64"
 #mkdir -p "$PREFIX_ppc"
 #mkdir -p "$PREFIX_ppc64"
@@ -29,18 +27,18 @@ fi
 echo "Building for x86_64..."
 ./configure --prefix="$PREFIX_x86_64" ac_cv_poll_pty=no \
     CC="clang -arch x86_64" CPP="clang -arch x86_64 -E" CXX="clang++ -arch x86_64" \
-    TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a \
+    TINFO_LIBS=-lncurses \
     OPENSSL_CFLAGS="  " OPENSSL_LIBS="-lssl -lcrypto -lz"
 make clean
 make install -j8
 
-echo "Building for i386..."
-./configure --prefix="$PREFIX_i386" ac_cv_poll_pty=no \
-    CC="clang -arch i386" CPP="clang -arch i386 -E" CXX="clang++ -arch i386" \
-    TINFO_LIBS=-lncurses protobuf_LIBS=/opt/local/lib/libprotobuf.a \
-    OPENSSL_CFLAGS="  " OPENSSL_LIBS="-lssl -lcrypto -lz"
-make clean
-make install -j8
+#echo "Building for i386..."
+#./configure --prefix="$PREFIX_i386" ac_cv_poll_pty=no \
+#    CC="clang -arch i386" CPP="clang -arch i386 -E" CXX="clang++ -arch i386" \
+#    TINFO_LIBS=-lncurses \
+#    OPENSSL_CFLAGS="  " OPENSSL_LIBS="-lssl -lcrypto -lz"
+#make clean
+#make install -j8
 
 #echo "Building for ppc..."
 #./configure --prefix="$PREFIX_ppc" ac_cv_poll_pty=no \
@@ -62,8 +60,8 @@ echo "Building universal binaries..."
 
 cp -r "$PREFIX_x86_64/" "$PREFIX/"
 
-strip "$PREFIX_i386/bin/mosh-client"
-strip "$PREFIX_i386/bin/mosh-server"
+#strip "$PREFIX_i386/bin/mosh-client"
+#strip "$PREFIX_i386/bin/mosh-server"
 strip "$PREFIX_x86_64/bin/mosh-client"
 strip "$PREFIX_x86_64/bin/mosh-server"
 #strip "$PREFIX_ppc/bin/mosh-client"
@@ -73,8 +71,8 @@ strip "$PREFIX_x86_64/bin/mosh-server"
 
 #lipo -create "$PREFIX_ppc/bin/mosh-client" "$PREFIX_ppc64/bin/mosh-client" "$PREFIX_i386/bin/mosh-client" "$PREFIX_x86_64/bin/mosh-client" -output "$PREFIX/bin/mosh-client"
 #lipo -create "$PREFIX_ppc/bin/mosh-server" "$PREFIX_ppc64/bin/mosh-server" "$PREFIX_i386/bin/mosh-server" "$PREFIX_x86_64/bin/mosh-server" -output "$PREFIX/bin/mosh-server"
-lipo -create "$PREFIX_i386/bin/mosh-client" "$PREFIX_x86_64/bin/mosh-client" -output "$PREFIX/bin/mosh-client"
-lipo -create "$PREFIX_i386/bin/mosh-server" "$PREFIX_x86_64/bin/mosh-server" -output "$PREFIX/bin/mosh-server"
+lipo -create "$PREFIX_x86_64/bin/mosh-client" -output "$PREFIX/bin/mosh-client"
+lipo -create "$PREFIX_x86_64/bin/mosh-server" -output "$PREFIX/bin/mosh-server"
 
 perl -wlpi -e 's{#!/usr/bin/env perl}{#!/usr/bin/perl}' "$PREFIX/bin/mosh"
 

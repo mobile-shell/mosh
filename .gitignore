@@ -27,3 +27,15 @@ Makefile.in
 compile
 
 test-driver
+
+macosx/prefix_x86_64/bin/mosh
+
+macosx/prefix_x86_64/bin/mosh-client
+
+macosx/prefix_x86_64/bin/mosh-server
+
+macosx/prefix_x86_64/share/man/man1/mosh-client.1
+
+macosx/prefix_x86_64/share/man/man1/mosh-server.1
+
+macosx/prefix_x86_64/share/man/man1/mosh.1
