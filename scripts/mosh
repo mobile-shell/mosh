@@ -234,9 +234,9 @@ my $userhost = shift;
 
 my $resolver = new Net::DNS::Resolver();
 
-my $hasipv6 = 0;
+my $hasipv6 = undef;
 
-if ($autoipv6 eq 1) {
+if (defined $autoipv6) {
   my $autohostname = $userhost;
   my $user;
 
