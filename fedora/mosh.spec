@@ -1,5 +1,5 @@
 Name:		mosh
-Version:	1.2.4
+Version:	1.2.4a
 Release:	1%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
@@ -16,6 +16,7 @@ BuildRequires:	ncurses-devel
 BuildRequires:	openssl-devel
 Requires:	openssh-clients
 Requires:	openssl
+Requires:       perl-IO-Socket-INET6
 
 %description
 Mosh is a remote terminal application that supports:
@@ -51,6 +52,9 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Apr 29 2015 Joeri van Dooren <joeri@weepee.org> - 1.2.4a
+- Centos / Fedora / Redhat requires perl-IO-Socket-INET6 for ipv6 support
+
 * Wed Mar 27 2013 Alexander Chernyakhovsky <achernya@mit.edu> - 1.2.4-1
 - Update to mosh 1.2.4
 
