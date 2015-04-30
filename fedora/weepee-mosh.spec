@@ -1,6 +1,6 @@
 Name:		mosh
 Version:	1.2.4a
-Release:	1%{?dist}
+Release:	weepee%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
 License:	GPLv3+
@@ -16,8 +16,6 @@ BuildRequires:	ncurses-devel
 BuildRequires:	openssl-devel
 Requires:	openssh-clients
 Requires:	openssl
-Requires: perl-IO-Socket-INET6
-Requires: perl-Net-DNS
 
 %description
 Mosh is a remote terminal application that supports:
