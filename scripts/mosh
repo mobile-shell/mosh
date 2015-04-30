@@ -36,7 +36,6 @@ use warnings;
 use strict;
 use Getopt::Long;
 use IO::Socket;
-use IO::Socket::INET6;
 use Net::DNS;
 
 $|=1;
@@ -236,7 +235,7 @@ my $resolver = new Net::DNS::Resolver();
 
 my $hasipv6 = undef;
 
-if (defined $autoipv6) {
+if (defined $autoipv6 || $family eq 'inet6') {
   my $autohostname = $userhost;
   my $user;
 
