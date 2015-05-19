@@ -12,6 +12,7 @@ Makefile.in
 /aclocal.m4
 /ar-lib
 /autom4te.cache
+/compile
 /config.h
 /config.h.in
 /config.h.in~
@@ -23,3 +24,4 @@ Makefile.in
 /missing
 /mosh-*.tar.gz
 /stamp-h1
+/test-driver
