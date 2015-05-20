@@ -27,7 +27,7 @@ IP PORT
 .br
 .SH DESCRIPTION
 \fBmosh-client\fP is a helper program for the 
-.BR mosh(1)
+.BR mosh (1)
 remote terminal application.
 
 \fBmosh\fP itself is a setup script that establishes an SSH
@@ -48,6 +48,29 @@ directly.
 
 With the \-c option, \fBmosh-client\fP instead prints the number of colors
 of the terminal given by the TERM environment variable.
+
+.SH ENVIRONMENT VARIABLES
+
+.TP
+.B MOSH_KEY
+This variable must be set, and must contain a Base64-encoded cryptographic key from
+.BR mosh-server (1).
+
+.TP
+.B MOSH_ESCAPE_KEY
+See
+.BR mosh (1).
+
+.TP
+.B MOSH_PREDICTION_DISPLAY
+Controls local echo as described in
+.BR mosh (1).
+
+.TP
+.B MOSH_TITLE_NOPREFIX
+See
+.BR mosh (1).
+
 
 .SH SEE ALSO
 .BR mosh (1),
