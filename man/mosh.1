@@ -166,16 +166,51 @@ this disables alternate screen mode.
 
 .SH ESCAPE SEQUENCES
 
-The escape sequence to shut down the connection is \fBCtrl-^ .\fP
-(typically typed with Ctrl-Shift-6, then a period). To send a literal
-Ctrl-^, type \fBCtrl-^ ^\fP. The sequence \fBCtrl-^ Ctrl-Z\fP suspends the
-client.
+The default escape character used by Mosh is ASCII RS (decimal 30).
+This is typically typed as \fBCtrl-^\fP or \fBCtrl-Shift-6\fP, on US
+English keyboards.  Users of non-English keyboards may find it
+difficult or impossible to type the default escape character, and may
+need to change the escape character.  See the description of
+MOSH_ESCAPE_KEY, below.  In this description, the configured escape
+character is represented as \fBEsc\fP.
+
+There are two slightly different modes for escape sequences, depending
+whether the escape character is printable or not.
+
+If the escape character is a printable character, it must be prefixed
+with a newline, similar to \fBOpenSSH\fP.  To send the escape character
+itself, type it twice.  If the escape character is set to \fB~\fP,
+\fBmosh\fP will behave much like \fBOpenSSH\fP.
+
+If the escape character is a non-printable control character, no
+prefix is used and the escape character is recognized at any time.  To
+send the escape character itself, type the escape character, then its
+corresponding ASCII character (for \fBCtrl-^\fP you would type \fB^\fP,
+for \fBCtrl-B\fP you would type \fBB\fP).
+
+The escape sequence to shut down the connection is
+\fBEsc .\fP. The sequence \fBEsc Ctrl-Z\fP suspends the client.
+Any other sequence passes both characters through to the server.
 
 .SH ENVIRONMENT VARIABLES
+These variables are not actually interpreted by
+.BR mosh (1)
+itself, but are passed through to
+.BR mosh-server (1).
+They are described here for ease of use.
+
+.TP
+.B MOSH_ESCAPE_KEY
+When set, this configures the escape character used for local
+commands.  The escape character may be set to any ASCII character in
+the range 1-127.  The variable must be set with a single literal ASCII
+character.  Control characters are set with the actual ASCII
+control character, not with a printable representation such as "^B".
 
 .TP
 .B MOSH_PREDICTION_DISPLAY
-Controls local echo as described above.
+Controls local echo as described above.  The command-line flag
+overrides this variable.
 
 .TP
 .B MOSH_TITLE_NOPREFIX
