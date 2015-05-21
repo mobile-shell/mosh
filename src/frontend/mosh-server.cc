@@ -31,6 +31,7 @@
 */
 
 #include "config.h"
+#include "version.h"
 
 #include <errno.h>
 #include <locale.h>
@@ -368,7 +369,7 @@ int run_server( const char *desired_ip, const char *desired_port,
     _exit( 0 );
   }
 
-  fprintf( stderr, "\nmosh-server (%s)\n", PACKAGE_STRING );
+  fprintf( stderr, "\nmosh-server (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
 

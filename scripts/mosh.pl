@@ -30,8 +30,6 @@
 #   this exception statement from all source files in the program, then
 #   also delete it here.
 
-my $MOSH_VERSION = '1.2.4a';
-
 use warnings;
 use strict;
 use Getopt::Long;
@@ -89,7 +87,7 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 Please report bugs to mosh-devel\@mit.edu.
 Mosh home page: http://mosh.mit.edu\n};
 
-my $version_message = qq{mosh $MOSH_VERSION
+my $version_message = qq{@PACKAGE_STRING@ [build @VERSION@]
 Copyright 2012 Keith Winstein <mosh-devel\@mit.edu>
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
