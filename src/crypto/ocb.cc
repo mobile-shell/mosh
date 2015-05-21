@@ -260,7 +260,7 @@
 	}
 	static inline block double_block(block b)
 	{
-		const block mask = {135,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+		const block mask = {-121,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 		block tmp = vshrq_n_s8(b,7);
 		tmp = vandq_s8(tmp, mask);
 		tmp = vextq_s8(tmp, tmp, 1);  /* Rotate high byte to end */
