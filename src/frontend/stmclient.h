@@ -47,6 +47,7 @@ private:
   std::string ip;
   std::string port;
   std::string key;
+  std::string name;
 
   int escape_key;
   int escape_pass_key;
@@ -83,8 +84,8 @@ private:
   void resume( void ); /* restore state after SIGCONT */
 
 public:
-  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode )
-    : ip( s_ip ), port( s_port ), key( s_key ),
+  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, const char *s_name )
+    : ip( s_ip ), port( s_port ), key( s_key ), name( s_name ),
     escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
     escape_requires_lf( false ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(),

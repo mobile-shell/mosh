@@ -118,6 +118,7 @@ namespace Network {
 
     const Addr &get_remote_addr( void ) const { return connection.get_remote_addr(); }
     socklen_t get_remote_addr_len( void ) const { return connection.get_remote_addr_len(); }
+    void update_remote_addr( Addr a ) { connection.update_remote_addr( a ); }
 
     const NetworkException *get_send_exception( void ) const { return connection.get_send_exception(); }
   };
