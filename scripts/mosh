@@ -36,25 +36,407 @@ use warnings;
 use strict;
 use Getopt::Long;
 use IO::Socket;
+use File::Spec;
+use Text::Glob;
 
 $|=1;
 
-my $client = 'mosh-client';
-my $server = 'mosh-server';
+{
+    package ConfigFile;
+
+    my $_Ok                 = undef;
+    my $_UnrecognisedEscape = "Unrecognised escape sequence";
+    my $_UnterminatedQuote  = "Unterminated quoted string";
+    my $_BadlyFormatted     = "Badly formatted string";
+
+    sub _splitLine($)
+    {
+        my $line  = shift;
+        my $err   = undef;
+        my @words = ( );
+
+        while (length($line)) {
+
+            if (substr($line, 0, 1) ne '"')
+            {
+                if ($line !~ m/^(.*?)(\s+)(.*)$/)
+                {
+                    push @words, $line;
+                    last;
+                }
+                push @words, $1;
+                $line = $3;
+            }
+            else
+            {
+                my $rhSentinel = '-"';
+                my $lhSentinel = '-';
+
+                substr($line, 0, length($lhSentinel)) = $lhSentinel;
+                $line .= $rhSentinel;
+
+                return ( $_BadlyFormatted )
+                    unless ($line =~ m/^((\\[\\"]|.)*?)"\s*(.*)$/);
+
+                my $word = substr($1, length($lhSentinel));
+
+                return ( $_UnterminatedQuote )
+                    if (length($3) < length($rhSentinel));
+
+                $line = substr($3, length($lhSentinel), -length($rhSentinel));
+
+                my $syntax = $word;
+                $syntax =~ s/\\([\\"])//g;
+
+                return ( $_UnrecognisedEscape )
+                    if index($syntax, "\\") >= 0;
+
+                $word =~ s/\\([\\"])/$1/g;
+
+                push @words, $word;
+            }
+        }
+
+        shift   @words if ($#words >= 0 && length($words[0]) == 0);
+        unshift @words, $err;
+
+        return @words;
+    }
+
+    sub _areValuesEqual($$)
+    {
+        my $lhs = shift;
+        my $rhs = shift;
+
+        return undef if (defined($lhs) != defined($rhs));
+        return undef if (defined($lhs) && $lhs ne $rhs);
+
+        return 1;
+    }
+
+    sub _areListsEqual($$)
+    {
+        my $lhs = shift;
+        my $rhs = shift;
+
+        return undef if (defined($lhs) != defined($rhs));
+        return undef if ($#{$lhs} != $#{$rhs});
+
+        for (my $ix = 0; $ix <= $#{$lhs}; ++$ix)
+        { return undef if (${$lhs}[$ix] ne ${$rhs}[$ix]) }
+
+        return 1;
+    }
+
+    sub _printValue($)
+    {
+        my $value = shift;
+
+        print defined($value) ?  "'$value'" : "undefined";
+    }
+
+    sub _printList($)
+    {
+        my $list = shift;
+
+        print defined($list) ? "[ @{$list} ]" : "undefined";
+    }
+
+    sub testSplitLine()
+    {
+        my @tests = (
+            [ '',      $_Ok,                 [ ] ],
+            [ '"\x"',  $_UnrecognisedEscape, [ ] ],
+            [ '"',     $_UnterminatedQuote,  [ ] ],
+            [ '" a',   $_UnterminatedQuote,  [ ] ],
+            [ '\\',    $_Ok,                 [ '\\' ] ],
+            [ '"\\"',  $_UnterminatedQuote,  [ ] ],
+            [ '"\\',   $_UnterminatedQuote,  [ ] ],
+            [ 'a b',   $_Ok,                 [ 'a', 'b' ] ],
+            [ '"a b"', $_Ok,                 [ 'a b' ] ],
+        );
+
+        foreach my $test (@tests)
+        {
+            my $line     = ${$test}[0];
+            my $retval   = ${$test}[1];
+            my $retwords = ${$test}[2];
+
+            print "Checking '$line'\n";
+
+            my @words = _splitLine($line);
+            my $val   = shift @words;
+
+            unless (_areValuesEqual($val, $retval))
+            {
+                print "Expected: "; _printValue($val);    print "\n";
+                print "Obtained: "; _printValue($retval); print "\n";
+
+                die "Invalid return values from: $line";
+            }
+
+            unless (_areListsEqual(\@words, $retwords))
+            {
+                print "Expected: "; _printList(\@words);   print "\n";
+                print "Obtained: "; _printList($retwords); print "\n";
+
+                die "Extracted from: $line";
+            }
+        }
+    }
+
+    sub testConfigFile($)
+    {
+        my $self = shift;
+
+        $self->_resetConfig();
+
+        my @configuration = (
+            'GlobalKey globalkey',
+
+            'Host this this.com',
+            'User thisuser',
+
+            'Host *.com',
+            'User anyuser',
+            '# DefaultKey unusedkey',
+            ' # DefaultKey unusedkey',
+            'List item1 item2',
+
+            'Host *',
+            'User defaultuser',
+            'DefaultKey defaultkey',
+        );
+
+        foreach my $line (@configuration)
+        {
+            my $err = $self->_parseLine($line);
+            die "Error parsing configuration: $line" if ($err);
+        }
+
+        my @tests = (
+            [ 'any.org',              'GlobalKey',    [ 'globalkey' ] ],
+            [ 'any.com',              'GlobalKey',    [ 'globalkey' ] ],
+            [ 'this.com',             'GlobalKey',    [ 'globalkey' ] ],
+
+            [ 'any.org',              'User',         [ 'defaultuser' ] ],
+            [ 'any.com',              'User',         [ 'anyuser' ] ],
+            [ 'this.com',             'User',         [ 'thisuser' ] ],
+            [ 'this',                 'User',         [ 'thisuser' ] ],
+
+            [ 'any.org',              'DefaultKey',   [ 'defaultkey' ] ],
+            [ 'any.com',              'DefaultKey',   [ 'defaultkey' ] ],
+            [ 'this.com',             'DefaultKey',   [ 'defaultkey' ] ],
+
+            [ 'any.com',              'List',         [ 'item1', 'item2' ] ],
+            [ 'any.com',              'Absent',       [ ] ],
+        );
+
+        foreach my $test (@tests)
+        {
+            my $host  = ${$test}[0];
+            my $key   = ${$test}[1];
+            my $value = ${$test}[2];
+
+            print "Checking $key in $host\n";
+
+            $self->lookupHost($host);
+
+            my @hostValue = $self->lookupOption($key);
+
+            unless (_areListsEqual($value, \@hostValue))
+            {
+                print "Expected: "; _printList($value);      print "\n";
+                print "Obtained: "; _printList(\@hostValue); print "\n";
+
+                die "Mismatched for $key in $host";
+            }
+        }
+    }
+
+    sub new($$)
+    {
+        my $class     = shift;
+        my $fileNames = shift;
+        my $self      = bless { }, $class;
+
+        $self->_resetConfig();
+        $self->_readConfigFile(@{$fileNames}) if defined($fileNames);
+
+        return $self;
+    }
+
+    sub lookupHost($$)
+    {
+        my $self = shift;
+        my $host = shift;
+
+        my @hostList = ( 0 );
+
+        foreach my $hostEntry (@{$self->{hostNames}})
+        {
+            my $hostIndex    = ${$hostEntry}[0];
+            my @hostPatterns = @{${$hostEntry}[1]};
+
+            for my $hostPattern (@hostPatterns)
+            {
+                push @hostList, $hostIndex
+                    if (Text::Glob::match_glob($hostPattern, $host));
+            }
+        }
+
+        my %hostConfig = ( );
+
+        foreach my $hostIndex (@hostList)
+        {
+            my $hostRecord = ${$self->{hostConfigs}}{$hostIndex};
+
+            %hostConfig = ( %{$hostRecord}, %hostConfig );
+        }
+
+        $self->{hostEntry} = \%hostConfig;
+    }
+
+    sub lookupOption($$)
+    {
+        my $self      = shift;
+        my $option    = shift;
+        my $hostEntry = $self->{hostEntry};
+
+        return wantarray ? ( ) : undef unless (defined($hostEntry));
+
+        my $resultref = ${$hostEntry}{$option};
+
+        return wantarray ? ( ) : undef unless (defined($resultref));
+
+        my @resultlist = defined($resultref) ? @{$resultref} : ( );
+
+        return wantarray ? @resultlist : "@resultlist";
+    }
+
+    sub _resetConfig($)
+    {
+        my $self = shift;
+
+        $self->{hostIndex}   = 0;
+        $self->{hostNames}   = [ ];
+        $self->{hostConfigs} = { };
+        $self->{hostEntry}   = undef;
+
+        my $hostIndex = $self->{hostIndex};
+
+        ${$self->{hostConfigs}}{$hostIndex} = { };
+    }
+
+    sub _readConfigFile($$)
+    {
+        my $self      = shift;
+        my @filePaths = @_;
+
+        foreach my $filePath (@filePaths) {
+
+            my $hostName  = '';
+            my $lineNum   = 0;
+            my @fileName  = @{$filePath};
+
+            if (substr($fileName[0], 0, 1) eq '$')
+            {
+                my $var = substr($fileName[0], 1);
+
+                defined($fileName[0] = $ENV{$var}) || next;
+            }
+
+            my $configFileName = File::Spec->catfile(@fileName);
+            my $configFile;
+
+            if ( ! open($configFile, "<", $configFileName))
+            {
+                $!{ENOENT} || die "Unable to read $configFileName";
+            }
+            else
+            {
+                while (<$configFile>) {
+                    chomp;
+
+                    ++$lineNum;
+
+                    my $err = $self->_parseLine($_);
+
+                    die "$err at line $lineNum: '$_'" if (defined($err));
+                }
+
+                close($configFile);
+
+                last;
+            }
+        }
+    }
+
+    sub _parseLine($$)
+    {
+        my $self  = shift;
+        my $line  = shift;
+        my @words = _splitLine($line);
+        my $err   = shift @words;
+
+        return $err if defined($err);
+
+        unless (defined($err) || $#words < 0)
+        {
+            my $key = shift @words;
+            my @val = @words;
+
+            if (substr($key, 0, 1) ne '#')
+            {
+                return "Malformed configuration" unless (@val);
+
+                my $hostIndex = $self->{hostIndex};
+
+                if ($key ne "Host")
+                {
+                    my $hostRecord = ${$self->{hostConfigs}}{$hostIndex};
+
+                    ${$hostRecord}{$key} = [ ]
+                        unless (defined(${$hostRecord}{$key}));
+
+                    push @{${$hostRecord}{$key}}, @val;
+                }
+                else
+                {
+                    ++$hostIndex;
+                    push @{$self->{hostNames}}, [ $hostIndex, \@val ];
+                    ${$self->{hostConfigs}}{$hostIndex} = { };
+                }
+
+                $self->{hostIndex} = $hostIndex;
+            }
+        }
+
+        return $err;
+    }
+}
+
+my $configFile = ConfigFile->new([ [ '$HOME',           '.mosh', 'config' ],
+                                   [ '$XDG_CONFIG_HOME', 'mosh', 'config' ],
+                                   [ '$HOME', '.config', 'mosh', 'config' ] ]);
+
+my $client = undef;
+my $server = undef;
 
 my $predict = undef;
 
 my $bind_ip = undef;
 
-my $family = 'inet';
+my $family = undef;
 my $port_request = undef;
 
-my $ssh = 'ssh';
+my $ssh = undef;
 
-my $term_init = 1;
+my $term_init = undef;
 
 my $help = undef;
 my $version = undef;
+my $unittest = undef;
 
 my @cmdline = @ARGV;
 
@@ -121,56 +503,18 @@ GetOptions( 'client=s' => \$client,
 	    'init!' => \$term_init,
 	    'help' => \$help,
 	    'version' => \$version,
+            'test' => \$unittest,
 	    'fake-proxy!' => \my $fake_proxy,
 	    'bind-server=s' => \$bind_ip) or die $usage;
 
+if ( defined $unittest ) {
+  $configFile->testSplitLine();
+  $configFile->testConfigFile();
+  exit(0);
+}
+
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
-
-if ( defined $predict ) {
-  predict_check( $predict, 0 );
-} elsif ( defined $ENV{ 'MOSH_PREDICTION_DISPLAY' } ) {
-  $predict = $ENV{ 'MOSH_PREDICTION_DISPLAY' };
-  predict_check( $predict, 1 );
-} else {
-  $predict = 'adaptive';
-  predict_check( $predict, 0 );
-}
-
-if ( defined $port_request ) {
-  if ( $port_request =~ m{^(\d+)(:(\d+))?$} ) {
-    my ( $low, $clause, $high ) = ( $1, $2, $3 );
-    # good port or port-range
-    if ( $low <= 0 or $low > 65535 ) {
-      die "$0: Server-side (low) port ($low) must be within valid range [1..65535].\n";
-    }
-    if ( defined $high ) {
-      if ( $high <= 0 or $high > 65535 ) {
-	die "$0: Server-side high port ($high) must be within valid range [1..65535].\n";
-      }
-      if ( $low > $high ) {
-	die "$0: Server-side port range ($port_request): low port greater than high port.\n";
-      }
-    }
-  } else {
-    die "$0: Server-side port or range ($port_request) is not valid.\n";
-  }
-}
-
-delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
-
-my @bind_arguments;
-if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
-  push @bind_arguments, '-s';
-} elsif ( $bind_ip =~ m{^any$}i ) {
-  # do nothing
-} elsif ( $bind_ip =~ m{^[0-9\.]+$} ) {
-  push @bind_arguments, ('-i', "$bind_ip");
-} else {
-  print STDERR qq{$0: Unknown server binding option: $bind_ip\n};
-
-  die $usage;
-}
 
 if ( defined $fake_proxy ) {
   use Errno qw(EINTR);
@@ -221,7 +565,95 @@ if ( scalar @ARGV < 1 ) {
 }
 
 my $userhost = shift;
+my $host = (split(/@/, $userhost))[-1];
 my @command = @ARGV;
+my %hostconfig = %{$configFile->lookupHost($host)};
+
+my %configFileOptions = (
+    'Client'     => \$client,
+    'Server'     => \$server,
+    'Predict'    => \$predict,
+    'Port'       => \$port_request,
+    'Family'     => \$family,
+    'Ssh'        => \$ssh,
+    'TermInit=?' => \$term_init );
+
+foreach my $key (keys %configFileOptions) {
+  my @words = split(/=/, $key);
+  my $name  = $words[0];
+  my $kind  = $words[1];
+  my $var   = $configFileOptions{$key};
+
+  $kind = '' unless (defined($kind));
+
+  unless (defined ${$var}) {
+
+    ${$var} = $configFile->lookupOption($name);
+
+    if (defined ${$var}) {
+      if ($kind eq '?') {
+        my $yes = uc(${$var}) eq 'YES';
+        my $no  = uc(${$var}) eq 'NO';
+
+        die "Configuration $name must have value yes or no\n"
+            unless ($yes or $no);
+
+        ${$var} = $yes;
+      }
+    }
+  }
+}
+
+$client = 'mosh-client' unless defined($client);
+$server = 'mosh-server' unless defined($server);
+$ssh = 'ssh' unless defined($ssh);
+$term_init = 1 unless defined($term_init);
+$family = 'inet' unless defined($family);
+
+if ( defined $predict ) {
+  predict_check( $predict, 0 );
+} elsif ( defined $ENV{ 'MOSH_PREDICTION_DISPLAY' } ) {
+  $predict = $ENV{ 'MOSH_PREDICTION_DISPLAY' };
+  predict_check( $predict, 1 );
+} else {
+  $predict = 'adaptive';
+  predict_check( $predict, 0 );
+}
+
+if ( defined $port_request ) {
+  if ( $port_request =~ m{^(\d+)(:(\d+))?$} ) {
+    my ( $low, $clause, $high ) = ( $1, $2, $3 );
+    # good port or port-range
+    if ( $low <= 0 or $low > 65535 ) {
+      die "$0: Server-side (low) port ($low) must be within valid range [1..65535].\n";
+    }
+    if ( defined $high ) {
+      if ( $high <= 0 or $high > 65535 ) {
+	die "$0: Server-side high port ($high) must be within valid range [1..65535].\n";
+      }
+      if ( $low > $high ) {
+	die "$0: Server-side port range ($port_request): low port greater than high port.\n";
+      }
+    }
+  } else {
+    die "$0: Server-side port or range ($port_request) is not valid.\n";
+  }
+}
+
+delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
+
+my @bind_arguments;
+if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
+  push @bind_arguments, '-s';
+} elsif ( $bind_ip =~ m{^any$}i ) {
+  # do nothing
+} elsif ( $bind_ip =~ m{^[0-9\.]+$} ) {
+  push @bind_arguments, ('-i', "$bind_ip");
+} else {
+  print STDERR qq{$0: Unknown server binding option: $bind_ip\n};
+
+  die $usage;
+}
 
 # Count colors
 open COLORCOUNT, '-|', $client, ('-c') or die "Can't count colors: $!\n";
