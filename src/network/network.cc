@@ -34,6 +34,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
@@ -42,6 +43,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "dos_assert.h"
 #include "fatal_assert.h"
@@ -97,6 +99,44 @@ string Packet::tostring( Session *session )
   return session->encrypt( Message( Nonce( direction_seq ), timestamps + payload ) );
 }
 
+uint16_t & AddrLen::Addr::port() {
+  switch( sa.sa_family ) {
+    case AF_INET:
+      return sin.sin_port;
+    case AF_INET6:
+      return sin6.sin6_port;
+    default:
+      throw NetworkException( "Unknown address family", 0 );
+  }
+}
+bool AddrLen::Addr::same_addr( const struct addrinfo* other ) {
+  if( sa.sa_family == other->ai_family ) {
+    size_t size = 0;
+    const void *addr1 = NULL;
+    const void *addr2 = NULL;
+
+    switch( sa.sa_family ) {
+      case AF_INET: {
+        const struct sockaddr_in *other4 = (const struct sockaddr_in*)other->ai_addr;
+        size = sizeof( sin.sin_addr );
+        addr1 = &sin.sin_addr;
+        addr2 = &other4->sin_addr;
+      }
+      case AF_INET6: {
+        const struct sockaddr_in6 *other6 = (const struct sockaddr_in6*)other->ai_addr;
+        size = sizeof( sin6.sin6_addr );
+        addr1 = &sin6.sin6_addr;
+        addr2 = &other6->sin6_addr;
+      }
+      default:
+        throw NetworkException( "Unknown address family", 0 );
+    }
+
+    return memcmp( addr1, addr2, size ) == 0;
+  }
+  return false;
+}
+
 Packet Connection::new_packet( string &s_payload )
 {
   uint16_t outgoing_timestamp_reply = -1;
@@ -119,9 +159,21 @@ void Connection::hop_port( void )
 {
   assert( !server );
 
+  switch ( remote_addr_resolver.try_start_stop( remote_addr ) ) {
+    case DNSResolverAsync::STARTED:
+    case DNSResolverAsync::ERROR: {
+      // because of round-robin DNS servers that only return one record, we also want to retry the last working IP sometimes
+      remote_addr = remote_addr_last_working;
+      break;
+    }
+    case DNSResolverAsync::RESULT_RETURNED:
+    case DNSResolverAsync::STILL_RUNNING:
+      // do nothing
+      break;
+  }
   setup();
-  assert( remote_addr_len != 0 );
-  socks.push_back( Socket( remote_addr.sa.sa_family ) );
+  assert( remote_addr.len != 0 );
+  socks.push_back( Socket( remote_addr.addr.sa.sa_family ) );
 
   prune_sockets();
 }
@@ -186,6 +238,68 @@ void Connection::setup( void )
   last_port_choice = timestamp();
 }
 
+Connection::DNSResolverAsync::DNSResolverAsync( const std::string &hostname )
+  : thread(),
+    resolving( false ),
+    result_waiting( false ),
+    hostname( hostname )
+{
+}
+
+Connection::DNSResolverAsync::Status Connection::DNSResolverAsync::try_start_stop( AddrLen &addr )
+{
+  if( !resolving ) {
+    resolving = true;
+    int ok = pthread_create( &thread, NULL, resolve_thread, this );
+    return ok == 0 ? STARTED : ERROR;
+  } else if( result_waiting ) {
+    result_waiting = false;
+    resolving = false;
+
+    void *res;
+    int ok = pthread_join( thread, &res );
+    struct addrinfo *result = (struct addrinfo*)res, *rp;
+    if( ok == 0 && result != NULL ) {
+      bool old_record_found = false;
+      for( rp = result; rp != NULL && !old_record_found; rp = rp->ai_next ) {
+        old_record_found = addr.addr.same_addr( rp );
+      }
+
+      if( !old_record_found ) {
+        uint16_t old_port = addr.addr.port();
+
+        fatal_assert( result->ai_addrlen <= sizeof( addr.addr ) );
+        addr.len = result->ai_addrlen;
+        memcpy( &addr.addr.sa, result->ai_addr, addr.len );
+        addr.addr.port() = old_port;
+      }
+      freeaddrinfo( result );
+      return RESULT_RETURNED;
+    }
+    return ERROR;
+  }
+  return STILL_RUNNING;
+}
+
+void *Connection::DNSResolverAsync::resolve_thread(void *param)
+{
+  DNSResolverAsync *resolver = (DNSResolverAsync*)param;
+
+  struct addrinfo hints = addrinfo();
+  hints.ai_flags = AI_ADDRCONFIG;
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_DGRAM;
+
+  struct addrinfo *result;
+  if( getaddrinfo( resolver->hostname.c_str(), NULL, &hints, &result ) != 0 ) {
+    result = NULL;
+  }
+  resolver->result_waiting = true;
+  return (void*)result;
+}
+
+
+
 const std::vector< int > Connection::fds( void ) const
 {
   std::vector< int > ret;
@@ -220,7 +334,8 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   : socks(),
     has_remote_addr( false ),
     remote_addr(),
-    remote_addr_len( 0 ),
+    remote_addr_last_working(),
+    remote_addr_resolver( "" ),
     server( true ),
     MTU( DEFAULT_SEND_MTU ),
     key(),
@@ -288,9 +403,9 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
   hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST | AI_NUMERICSERV;
   AddrInfo ai( addr, "0", &hints );
 
-  Addr local_addr;
-  socklen_t local_addr_len = ai.res->ai_addrlen;
-  memcpy( &local_addr.sa, ai.res->ai_addr, local_addr_len );
+  AddrLen local_addr;
+  local_addr.len = ai.res->ai_addrlen;
+  memcpy( &local_addr.addr.sa, ai.res->ai_addr, local_addr.len );
 
   int search_low = PORT_RANGE_LOW, search_high = PORT_RANGE_HIGH;
 
@@ -301,26 +416,17 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
     search_high = port_high;
   }
 
-  socks.push_back( Socket( local_addr.sa.sa_family ) );
+  socks.push_back( Socket( local_addr.addr.sa.sa_family ) );
   for ( int i = search_low; i <= search_high; i++ ) {
-    switch (local_addr.sa.sa_family) {
-    case AF_INET:
-      local_addr.sin.sin_port = htons( i );
-      break;
-    case AF_INET6:
-      local_addr.sin6.sin6_port = htons( i );
-      break;
-    default:
-      throw NetworkException( "Unknown address family", 0 );
-    }
+    local_addr.addr.port() = htons( i );
 
-    if ( bind( sock(), &local_addr.sa, local_addr_len ) == 0 ) {
+    if ( bind( sock(), &local_addr.addr.sa, local_addr.len ) == 0 ) {
       return true;
     } else if ( i == search_high ) { /* last port to search */
       int saved_errno = errno;
       socks.pop_back();
       char host[ NI_MAXHOST ], serv[ NI_MAXSERV ];
-      int errcode = getnameinfo( &local_addr.sa, local_addr_len,
+      int errcode = getnameinfo( &local_addr.addr.sa, local_addr.len,
 				 host, sizeof( host ), serv, sizeof( serv ),
 				 NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
       if ( errcode != 0 ) {
@@ -336,11 +442,12 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
   return false;
 }
 
-Connection::Connection( const char *key_str, const char *ip, const char *port ) /* client */
+Connection::Connection( const char *key_str, const char *ip, const char *hostname, const char *port ) /* client */
   : socks(),
     has_remote_addr( false ),
     remote_addr(),
-    remote_addr_len( 0 ),
+    remote_addr_last_working(),
+    remote_addr_resolver( hostname ),
     server( false ),
     MTU( DEFAULT_SEND_MTU ),
     key( key_str ),
@@ -368,13 +475,14 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
   AddrInfo ai( ip, port, &hints );
-  fatal_assert( ai.res->ai_addrlen <= sizeof( remote_addr ) );
-  remote_addr_len = ai.res->ai_addrlen;
-  memcpy( &remote_addr.sa, ai.res->ai_addr, remote_addr_len );
+  fatal_assert( ai.res->ai_addrlen <= sizeof( remote_addr.addr ) );
+  remote_addr.len = ai.res->ai_addrlen;
+  memcpy( &remote_addr.addr.sa, ai.res->ai_addr, remote_addr.len );
+  remote_addr_last_working = remote_addr;
 
   has_remote_addr = true;
 
-  socks.push_back( Socket( remote_addr.sa.sa_family ) );
+  socks.push_back( Socket( remote_addr.addr.sa.sa_family ) );
 }
 
 void Connection::send( string s )
@@ -388,7 +496,7 @@ void Connection::send( string s )
   string p = px.tostring( &session );
 
   ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
-			       &remote_addr.sa, remote_addr_len );
+			       &remote_addr.addr.sa, remote_addr.len );
 
   if ( bytes_sent == static_cast<ssize_t>( p.size() ) ) {
     have_send_exception = false;
@@ -449,7 +557,7 @@ string Connection::recv( void )
 string Connection::recv_one( int sock_to_recv, bool nonblocking )
 {
   /* receive source address, ECN, and payload in msghdr structure */
-  Addr packet_remote_addr;
+  AddrLen packet_remote;
   struct msghdr header;
   struct iovec msg_iovec;
 
@@ -457,8 +565,8 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
   char msg_control[ Session::RECEIVE_MTU ];
 
   /* receive source address */
-  header.msg_name = &packet_remote_addr.sa;
-  header.msg_namelen = sizeof( packet_remote_addr );
+  header.msg_name = &packet_remote.addr.sa;
+  header.msg_namelen = sizeof( packet_remote.addr );
 
   /* receive payload */
   msg_iovec.iov_base = msg_payload;
@@ -545,12 +653,12 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
     last_heard = timestamp();
 
     if ( server ) { /* only client can roam */
-      if ( remote_addr_len != header.msg_namelen ||
-	   memcmp( &remote_addr, &packet_remote_addr, remote_addr_len ) != 0 ) {
-	remote_addr = packet_remote_addr;
-	remote_addr_len = header.msg_namelen;
+      if ( remote_addr.len != header.msg_namelen ||
+	   memcmp( &remote_addr.addr, &packet_remote.addr, remote_addr.len ) != 0 ) {
+	remote_addr.addr = packet_remote.addr;
+	remote_addr.len = header.msg_namelen;
 	char host[ NI_MAXHOST ], serv[ NI_MAXSERV ];
-	int errcode = getnameinfo( &remote_addr.sa, remote_addr_len,
+	int errcode = getnameinfo( &remote_addr.addr.sa, remote_addr.len,
 				   host, sizeof( host ), serv, sizeof( serv ),
 				   NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
 	if ( errcode != 0 ) {
@@ -559,6 +667,9 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
 	fprintf( stderr, "Server now attached to client at %s:%s\n",
 		 host, serv );
       }
+    } else {
+      remote_addr_last_working.addr = packet_remote.addr;
+      remote_addr_last_working.len = header.msg_namelen;
     }
   }
 
@@ -567,15 +678,15 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
 
 std::string Connection::port( void ) const
 {
-  Addr local_addr;
-  socklen_t addrlen = sizeof( local_addr );
+  AddrLen local_addr;
+  local_addr.len = sizeof( local_addr.addr );
 
-  if ( getsockname( sock(), &local_addr.sa, &addrlen ) < 0 ) {
+  if ( getsockname( sock(), &local_addr.addr.sa, &local_addr.len ) < 0 ) {
     throw NetworkException( "getsockname", errno );
   }
 
   char serv[ NI_MAXSERV ];
-  int errcode = getnameinfo( &local_addr.sa, addrlen,
+  int errcode = getnameinfo( &local_addr.addr.sa, local_addr.len,
 			     NULL, 0, serv, sizeof( serv ),
 			     NI_DGRAM | NI_NUMERICSERV );
   if ( errcode != 0 ) {

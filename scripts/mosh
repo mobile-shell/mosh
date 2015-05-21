@@ -189,7 +189,7 @@ if ( defined $fake_proxy ) {
 			      Proto => "tcp" )
     or die "$0: Could not connect to $host: $@\n";
 
-  print STDERR "MOSH IP ", $sock->peerhost, "\n";
+  print STDERR "MOSH IP_HOSTNAME ", $sock->peerhost, " ", $host, "\n";
 
   # Act like netcat
   binmode($sock);
@@ -267,15 +267,15 @@ if ( $pid == 0 ) { # child
   exec "$ssh " . shell_quote( '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', "$server " . shell_quote( @server ) );
   die "Cannot exec ssh: $!\n";
 } else { # parent
-  my ( $ip, $port, $key );
+  my ( $ip, $hostname, $port, $key );
   my $bad_udp_port_warning = 0;
   LINE: while ( <$pipe> ) {
     chomp;
-    if ( m{^MOSH IP } ) {
+    if ( m{^MOSH IP_HOSTNAME } ) {
       if ( defined $ip ) {
-	die "$0 error: detected attempt to redefine MOSH IP.\n";
+	die "$0 error: detected attempt to redefine MOSH IP_HOSTNAME.\n";
       }
-      ( $ip ) = m{^MOSH IP (\S+)\s*$} or die "Bad MOSH IP string: $_\n";
+      ( $ip, $hostname ) = m{^MOSH IP_HOSTNAME (\S+) (\S+)\s*$} or die "Bad MOSH IP_HOSTNAME string: $_\n";
     } elsif ( m{^MOSH CONNECT } ) {
       if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) ([A-Za-z0-9/+]{22})\s*$} ) {
 	last LINE;
@@ -293,7 +293,7 @@ if ( $pid == 0 ) { # child
   close $pipe;
 
   if ( not defined $ip ) {
-      die "$0: Did not find remote IP address (is SSH ProxyCommand disabled?).\n";
+      die "$0: Did not find remote IP address and host name (is SSH ProxyCommand disabled?).\n";
   }
 
   if ( not defined $key or not defined $port ) {
@@ -307,7 +307,7 @@ if ( $pid == 0 ) { # child
   $ENV{ 'MOSH_KEY' } = $key;
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
   $ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
-  exec {$client} ("$client @cmdline |", $ip, $port);
+  exec {$client} ("$client @cmdline |", $ip, $hostname, $port);
 }
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }

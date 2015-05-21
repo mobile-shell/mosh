@@ -191,6 +191,8 @@ AC_CHECK_HEADERS([m4_normalize([
   unistd.h
   wchar.h
   wctype.h
+  pthread.h
+  netdb.h
   ])], [], [AC_MSG_ERROR([Missing required header file.])])
 
 AC_CHECK_HEADERS([pty.h util.h libutil.h paths.h])

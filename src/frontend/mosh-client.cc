@@ -75,7 +75,8 @@ void usage( const char *argv0 ) {
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
 
-  fprintf( stderr, "Usage: %s IP PORT\n       %s -c\n", argv0, argv0 );
+  fprintf( stderr, "Usage: %s HOSTNAME PORT\n       %s -c\n", argv0, argv0 );
+  fprintf( stderr, "Usage: %s IP HOSTNAME PORT\n       %s -c\n", argv0, argv0 );
 }
 
 void print_colorcount( void )
@@ -120,15 +121,16 @@ int main( int argc, char *argv[] )
     }
   }
 
-  char *ip, *desired_port;
+  char *ip, *hostname, *desired_port;
 
-  if ( argc - optind != 2 ) {
+  if ( argc - optind != 3 ) {
     usage( argv[ 0 ] );
     exit( 1 );
   }
 
   ip = argv[ optind ];
-  desired_port = argv[ optind + 1 ];
+  hostname = argv[ optind + 1 ];
+  desired_port = argv[ optind + 2 ];
 
   /* Sanity-check arguments */
   if ( desired_port
@@ -164,7 +166,7 @@ int main( int argc, char *argv[] )
   set_native_locale();
 
   try {
-    STMClient client( ip, desired_port, key, predict_mode );
+    STMClient client( ip, hostname, desired_port, key, predict_mode );
     client.init();
 
     try {

@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <deque>
 #include <sys/socket.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <string>
 #include <math.h>
@@ -84,11 +85,17 @@ namespace Network {
     string tostring( Session *session );
   };
 
-  union Addr {
-    struct sockaddr sa;
-    struct sockaddr_in sin;
-    struct sockaddr_in6 sin6;
-    struct sockaddr_storage ss;
+  struct AddrLen {
+    union Addr {
+        struct sockaddr sa;
+        struct sockaddr_in sin;
+        struct sockaddr_in6 sin6;
+        struct sockaddr_storage ss;
+
+        uint16_t & port();
+        bool same_addr( const struct addrinfo* other );
+    } addr;
+    socklen_t len;
   };
 
   class Connection {
@@ -124,10 +131,35 @@ namespace Network {
       Socket & operator=( const Socket & other );
     };
 
+    class DNSResolverAsync
+    {
+    private:
+      pthread_t thread;
+      bool resolving; /* thread started, still running */
+      volatile bool result_waiting; /* thread finished, not yet joined */
+      const std::string hostname;
+
+      static void *resolve_thread( void * );
+
+
+    public:
+      enum Status {
+        STARTED,
+        STILL_RUNNING,
+        RESULT_RETURNED,
+        ERROR
+      };
+
+      DNSResolverAsync( const std::string & );
+      Status try_start_stop( AddrLen & );
+
+    };
+
     std::deque< Socket > socks;
     bool has_remote_addr;
-    Addr remote_addr;
-    socklen_t remote_addr_len;
+    AddrLen remote_addr;
+    AddrLen remote_addr_last_working;
+    DNSResolverAsync remote_addr_resolver;
 
     bool server;
 
@@ -169,7 +201,7 @@ namespace Network {
 
   public:
     Connection( const char *desired_ip, const char *desired_port ); /* server */
-    Connection( const char *key_str, const char *ip, const char *port ); /* client */
+    Connection( const char *key_str, const char *ip, const char *hostname, const char *port ); /* client */
 
     void send( string s );
     string recv( void );
@@ -183,8 +215,7 @@ namespace Network {
     uint64_t timeout( void ) const;
     double get_SRTT( void ) const { return SRTT; }
 
-    const Addr &get_remote_addr( void ) const { return remote_addr; }
-    socklen_t get_remote_addr_len( void ) const { return remote_addr_len; }
+    const AddrLen &get_remote_addr( void ) const { return remote_addr; }
 
     const NetworkException *get_send_exception( void ) const
     {

@@ -69,7 +69,7 @@ namespace Network {
     Transport( MyState &initial_state, RemoteState &initial_remote,
 	       const char *desired_ip, const char *desired_port );
     Transport( MyState &initial_state, RemoteState &initial_remote,
-	       const char *key_str, const char *ip, const char *port );
+	       const char *key_str, const char *ip, const char *desired_hostname, const char *port );
 
     /* Send data or an ack if necessary. */
     void tick( void ) { sender.tick(); }
@@ -116,8 +116,7 @@ namespace Network {
 
     unsigned int send_interval( void ) const { return sender.send_interval(); }
 
-    const Addr &get_remote_addr( void ) const { return connection.get_remote_addr(); }
-    socklen_t get_remote_addr_len( void ) const { return connection.get_remote_addr_len(); }
+    const AddrLen &get_remote_addr( void ) const { return connection.get_remote_addr(); }
 
     const NetworkException *get_send_exception( void ) const { return connection.get_send_exception(); }
   };

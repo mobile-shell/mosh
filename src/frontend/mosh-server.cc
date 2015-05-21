@@ -526,8 +526,7 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
   #ifdef HAVE_UTEMPTER
   bool connected_utmp = false;
 
-  Addr saved_addr;
-  socklen_t saved_addr_len = 0;
+  AddrLen saved_addr;
   #endif
 
   while ( 1 ) {
@@ -610,16 +609,15 @@ void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network
 	  #ifdef HAVE_UTEMPTER
 	  /* update utmp entry if we have become "connected" */
 	  if ( (!connected_utmp)
-	       || saved_addr_len != network.get_remote_addr_len()
-	       || memcmp( &saved_addr, &network.get_remote_addr(),
-			  saved_addr_len ) != 0 ) {
+	       || saved_addr.len != network.get_remote_addr().len
+	       || memcmp( &saved_addr.addr, &network.get_remote_addr().addr,
+			  saved_addr.len ) != 0 ) {
 	    utempter_remove_record( host_fd );
 
 	    saved_addr = network.get_remote_addr();
-	    saved_addr_len = network.get_remote_addr_len();
 
 	    char host[ NI_MAXHOST ];
-	    int errcode = getnameinfo( &saved_addr.sa, saved_addr_len,
+	    int errcode = getnameinfo( &saved_addr.addr.sa, saved_addr.len,
 				       host, sizeof( host ), NULL, 0,
 				       NI_NUMERICHOST );
 	    if ( errcode != 0 ) {
