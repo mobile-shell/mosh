@@ -185,7 +185,7 @@ void STMClient::init( void )
     wstring escape_pass_name = std::wstring(tmp.begin(), tmp.end());
     tmp = string( escape_key_name_buf );
     wstring escape_key_name = std::wstring(tmp.begin(), tmp.end());
-    escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, " + escape_pass_name + L" gives literal " + escape_key_name;
+    escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, Ctrl-L redraws, " + escape_pass_name + L" sends " + escape_key_name;
   }
   wchar_t tmp[ 128 ];
   swprintf( tmp, 128, L"Nothing received from server on UDP port %s.", port.c_str() );
@@ -319,8 +319,6 @@ bool STMClient::process_user_input( int fd )
     for ( int i = 0; i < bytes_read; i++ ) {
       char the_byte = buf[ i ];
 
-      overlays.get_prediction_engine().new_user_byte( the_byte, *local_framebuffer );
-
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
 	  if ( network->has_remote_addr() && (!network->shutdown_in_progress()) ) {
@@ -350,10 +348,16 @@ bool STMClient::process_user_input( int fd )
 	} else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
 	  /* Emulation sequence to type escape_key is escape_key +
 	     escape_pass_key (that is escape key without Ctrl) */
+	  overlays.get_prediction_engine().new_user_byte( escape_key, *local_framebuffer );
 	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
+	} else if ( the_byte == 0x0C ) {
+	  /* Escape key followed by ^L repaints locally, without sending to server. */
+	  repaint_requested = true;
 	} else {
 	  /* Escape key followed by anything other than . and ^ gets sent literally */
+	  overlays.get_prediction_engine().new_user_byte( escape_key, *local_framebuffer );
 	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
+	  overlays.get_prediction_engine().new_user_byte( the_byte, *local_framebuffer );
 	  network->get_current_state().push_back( Parser::UserByte( the_byte ) );	  
 	}
 
@@ -379,6 +383,7 @@ bool STMClient::process_user_input( int fd )
 	repaint_requested = true;
       }
 
+      overlays.get_prediction_engine().new_user_byte( the_byte, *local_framebuffer );
       network->get_current_state().push_back( Parser::UserByte( the_byte ) );		
     }
   }
