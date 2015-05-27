@@ -33,15 +33,15 @@
 #include "config.h"
 
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <errno.h>
-#include <string.h>
-#include <locale.h>
-#include <wchar.h>
-#include <assert.h>
-#include <wctype.h>
+#include <cstdio>
+#include <cstdlib>
+#include <csignal>
+#include <cerrno>
+#include <cstring>
+#include <clocale>
+#include <cwchar>
+#include <cassert>
+#include <cwctype>
 #include <iostream>
 #include <typeinfo>
 #include <sys/ioctl.h>
