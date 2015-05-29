@@ -172,11 +172,22 @@ if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
 
 if ( defined $fake_proxy ) {
   use Errno qw(EINTR);
-  BEGIN {
-    eval { require IO::Socket::IP; IO::Socket::IP->import('-register'); 1 } or
-      eval { require IO::Socket::INET6 };
-  }
+  my $have_ipv6 = eval {
+      require IO::Socket::IP;
+      IO::Socket::IP->import('-register');
+      1;
+  } || eval {
+      require IO::Socket::INET6;
+      1;
+  };
   use POSIX qw(_exit);
+
+  # Report failure if IPv6 needed and not available.
+  if (lc($family) eq "inet6") {
+	if (!$have_ipv6) {
+		die "$0: IPv6 sockets not available in this Perl install\n";
+	}
+  }
 
   my ( $host, $port ) = @ARGV;
 
