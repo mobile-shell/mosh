@@ -197,7 +197,7 @@ namespace Terminal {
       MOUSE_REPORTING_VT220 = 1000,
       MOUSE_REPORTING_VT220_HILIGHT = 1001,
       MOUSE_REPORTING_BTN_EVENT = 1002,
-      MOUSE_REPORTING_ANY_EVENT = 1003,
+      MOUSE_REPORTING_ANY_EVENT = 1003
     } mouse_reporting_mode;
 
     bool mouse_focus_event;       // 1004
@@ -207,7 +207,7 @@ namespace Terminal {
       MOUSE_ENCODING_DEFAULT = 0,
       MOUSE_ENCODING_UTF8 = 1005,
       MOUSE_ENCODING_SGR = 1006,
-      MOUSE_ENCODING_URXVT = 1015,
+      MOUSE_ENCODING_URXVT = 1015
     } mouse_encoding_mode;
 
     bool application_mode_cursor_keys;
