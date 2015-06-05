@@ -241,13 +241,17 @@ int main( int argc, char *argv[] )
   string shell_name;
   if ( !command_argv ) {
     /* get shell name */
-    struct passwd *pw = getpwuid( geteuid() );
-    if ( pw == NULL ) {
-      perror( "getpwuid" );
-      exit( 1 );
+    const char *shell = getenv( "SHELL" );
+    if ( shell == NULL ) {
+      struct passwd *pw = getpwuid( geteuid() );
+      if ( pw == NULL ) {
+	perror( "getpwuid" );
+	exit( 1 );
+      }
+      shell = pw->pw_shell;
     }
 
-    string shell_path( pw->pw_shell );
+    string shell_path( shell );
     if ( shell_path.empty() ) { /* empty shell means Bourne shell */
       shell_path = _PATH_BSHELL;
     }
@@ -766,17 +770,21 @@ void print_motd( void )
 
 void chdir_homedir( void )
 {
-  struct passwd *pw = getpwuid( geteuid() );
-  if ( pw == NULL ) {
-    perror( "getpwuid" );
-    return; /* non-fatal */
+  const char *home = getenv( "HOME" );
+  if ( home == NULL ) {
+    struct passwd *pw = getpwuid( geteuid() );
+    if ( pw == NULL ) {
+      perror( "getpwuid" );
+      return; /* non-fatal */
+    }
+    home = pw->pw_dir;
   }
 
-  if ( chdir( pw->pw_dir ) < 0 ) {
+  if ( chdir( home ) < 0 ) {
     perror( "chdir" );
   }
 
-  if ( setenv( "PWD", pw->pw_dir, 1 ) < 0 ) {
+  if ( setenv( "PWD", home, 1 ) < 0 ) {
     perror( "setenv" );
   }
 }

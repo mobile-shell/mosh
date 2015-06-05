@@ -117,18 +117,22 @@ int main( void )
     }
 
     /* get shell name */
-    struct passwd *pw = getpwuid( geteuid() );
-    if ( pw == NULL ) {
-      perror( "getpwuid" );
-      exit( 1 );
+    char *shell = getenv( "SHELL" );
+    if ( shell == NULL ) {
+      struct passwd *pw = getpwuid( geteuid() );
+      if ( pw == NULL ) {
+	perror( "getpwuid" );
+	exit( 1 );
+      }
+      shell = strdup( pw->pw_shell );
     }
 
     char *my_argv[ 2 ];
-    my_argv[ 0 ] = strdup( pw->pw_shell );
+    my_argv[ 0 ] = shell;
     assert( my_argv[ 0 ] );
     my_argv[ 1 ] = NULL;
 
-    if ( execv( pw->pw_shell, my_argv ) < 0 ) {
+    if ( execv( shell, my_argv ) < 0 ) {
       perror( "execve" );
       exit( 1 );
     }
