@@ -585,8 +585,9 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  us.apply_string( network.get_remote_diff() );
 	  /* apply userstream to terminal */
 	  for ( size_t i = 0; i < us.size(); i++ ) {
-	    terminal_to_host += terminal.act( us.get_action( i ) );
-	    if ( typeid( *us.get_action( i ) ) == typeid( Parser::Resize ) ) {
+	    const Parser::Action *action = us.get_action( i );
+	    terminal_to_host += terminal.act( action );
+	    if ( typeid( action ) == typeid( Parser::Resize ) ) {
 	      /* tell child process of resize */
 	      const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
 	      struct winsize window_size;

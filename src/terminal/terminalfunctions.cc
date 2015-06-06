@@ -279,7 +279,7 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
 }
 
 /* helper for CSI_DECSM and CSI_DECRM */
-void set_if_available( bool *mode, bool value )
+static void set_if_available( bool *mode, bool value )
 {
   if ( mode ) { *mode = value; }
 }

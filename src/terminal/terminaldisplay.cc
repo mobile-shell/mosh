@@ -81,7 +81,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
             i != window_title.end();
             i++ ) {
-	snprintf( tmp, 64, "%lc", *i );
+	snprintf( tmp, 64, "%lc", (wint_t)*i );
 	frame.append( tmp );
       }
       frame.append( "\007" );
@@ -93,7 +93,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       for ( std::deque<wchar_t>::const_iterator i = icon_name.begin();
 	    i != icon_name.end();
 	    i++ ) {
-	snprintf( tmp, 64, "%lc", *i );
+	snprintf( tmp, 64, "%lc", (wint_t)*i );
 	frame.append( tmp );
       }
       frame.append( "\007" );
@@ -103,7 +103,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       for ( std::deque<wchar_t>::const_iterator i = window_title.begin();
 	    i != window_title.end();
 	    i++ ) {
-	snprintf( tmp, 64, "%lc", *i );
+	snprintf( tmp, 64, "%lc", (wint_t)*i );
 	frame.append( tmp );
       }
       frame.append( "\007" );
@@ -421,7 +421,7 @@ void Display::put_cell( bool initialized, FrameState &frame, const Framebuffer &
   for ( std::vector<wchar_t>::const_iterator i = cell->contents.begin();
 	i != cell->contents.end();
 	i++ ) {
-    snprintf( tmp, 64, "%lc", *i );
+    snprintf( tmp, 64, "%lc", (wint_t)*i );
     frame.append( tmp );
   }
 

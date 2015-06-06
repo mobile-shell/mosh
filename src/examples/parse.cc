@@ -206,7 +206,7 @@ static int vt_parser( int fd, Parser::UTF8Parser *parser )
 
       if ( act->char_present ) {
 	if ( iswprint( act->ch ) ) {
-	  printf( "%s(0x%02x=%lc) ", act->name().c_str(), (unsigned int)act->ch, act->ch );
+	  printf( "%s(0x%02x=%lc) ", act->name().c_str(), (unsigned int)act->ch, (wint_t)act->ch );
 	} else {
 	  printf( "%s(0x%02x) ", act->name().c_str(), (unsigned int)act->ch );
 	}
