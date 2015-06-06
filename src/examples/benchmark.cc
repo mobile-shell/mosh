@@ -65,19 +65,19 @@ using namespace Terminal;
 int main( int argc, char **argv )
 {
   int fbmod = 0;
-  int height = 80, width = 24;
+  int width = 80, height = 24;
   int iterations = ITERATIONS;
   if (argc > 1) iterations = atoi(argv[1]);
   if (argc > 3) {
-    height = atoi(argv[2]);
-    width = atoi(argv[3]);
+    width = atoi(argv[2]);
+    height = atoi(argv[3]);
   }
-  Framebuffer local_framebuffers[ 2 ] = { Framebuffer(height,width), Framebuffer(height,width) };
+  Framebuffer local_framebuffers[ 2 ] = { Framebuffer(width,height), Framebuffer(width,height) };
   Framebuffer *local_framebuffer = &(local_framebuffers[ fbmod ]);
   Framebuffer *new_state = &(local_framebuffers[ !fbmod ]);
   Overlay::OverlayManager overlays;
   Display display( true );
-  Complete local_terminal( height, width );
+  Complete local_terminal( width, height );
 
   /* Adopt native locale */
   set_native_locale();
