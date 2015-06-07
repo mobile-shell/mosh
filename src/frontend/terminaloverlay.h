@@ -263,6 +263,7 @@ namespace Overlay {
 
   private:
     DisplayPreference display_preference;
+    bool predict_overwrite;
 
     bool active( void ) const;
 
@@ -273,6 +274,7 @@ namespace Overlay {
 
   public:
     void set_display_preference( DisplayPreference s_pref ) { display_preference = s_pref; }
+    void set_predict_overwrite( bool overwrite ) { predict_overwrite = overwrite; }
 
     void apply( Framebuffer &fb ) const;
     void new_user_byte( char the_byte, const Framebuffer &fb );
@@ -303,7 +305,8 @@ namespace Overlay {
 			       last_quick_confirmation( 0 ),
 			       send_interval( 250 ),
 			       last_height( 0 ), last_width( 0 ),
-			       display_preference( Adaptive )
+			       display_preference( Adaptive ),
+			       predict_overwrite( false )
     {
     }
   };

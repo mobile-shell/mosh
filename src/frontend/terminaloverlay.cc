@@ -692,7 +692,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	//	fprintf( stderr, "Backspace.\n" );
 	ConditionalOverlayRow &the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
 
-	if ( cursor().col > 0 ) {
+	if ( !predict_overwrite && cursor().col > 0 ) {
 	  cursor().col--;
 	  cursor().expire( local_frame_sent + 1, now );
 
@@ -744,7 +744,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	}
 
 	/* do the insert */
-	for ( int i = fb.ds.get_width() - 1; i > cursor().col; i-- ) {
+	int rightmost_column = predict_overwrite ? cursor().col + 1 : fb.ds.get_width() - 1;
+	for ( int i = rightmost_column; i > cursor().col; i-- ) {
 	  ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
 	  cell.reset_with_orig();
 	  cell.active = true;
