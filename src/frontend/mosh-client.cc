@@ -175,6 +175,10 @@ int main( int argc, char *argv[] )
   char *predict_mode = getenv( "MOSH_PREDICTION_DISPLAY" );
   /* can be NULL */
 
+  /* Read prediction insertion preference */
+  char *predict_overwrite = getenv( "MOSH_PREDICTION_OVERWRITE" );
+  /* can be NULL */
+
   char *key = strdup( env_key );
   if ( key == NULL ) {
     perror( "strdup" );
@@ -191,7 +195,7 @@ int main( int argc, char *argv[] )
 
   bool success = false;
   try {
-    STMClient client( ip, desired_port, key, predict_mode, verbose );
+    STMClient client( ip, desired_port, key, predict_mode, verbose, predict_overwrite );
     client.init();
 
     try {

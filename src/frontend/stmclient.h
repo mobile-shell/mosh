@@ -84,7 +84,7 @@ private:
   void resume( void ); /* restore state after SIGCONT */
 
 public:
-  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, unsigned int s_verbose )
+  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, unsigned int s_verbose, const char *predict_overwrite )
     : ip( s_ip ? s_ip : "" ), port( s_port ? s_port : "" ),
     key( s_key ? s_key : "" ),
     escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
@@ -117,6 +117,9 @@ public:
 	exit( 1 );
       }
     }
+    if ( predict_overwrite && !strcmp( predict_overwrite, "yes" ) ) {
+      overlays.get_prediction_engine().set_predict_overwrite( true );
+    } 
   }
 
   void init( void );
