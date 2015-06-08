@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <installer-script minSpecVersion="1.000000" authoringTool="com.apple.PackageMaker" authoringToolVersion="3.0.6" authoringToolBuild="201">
-    <title>Mosh 1.2.4</title>
+    <title>@PACKAGE_VERSION@</title>
     <options customize="never" allow-external-scripts="no"/>
     <domains enable_anywhere="true"/>
     <readme file="ReadMe"/>
@@ -8,8 +8,8 @@
     <choices-outline>
         <line choice="choice0"/>
     </choices-outline>
-    <choice id="choice0" title="Default" customLocation="/">
+    <choice id="choice0" title="Default" customLocation="/usr">
         <pkg-ref id="edu.mit.mosh.mosh.pkg"/>
     </choice>
-    <pkg-ref id="edu.mit.mosh.mosh.pkg" installKBytes="2204" version="1.2.4" auth="Root">#prefix.pkg</pkg-ref>
+    <pkg-ref id="edu.mit.mosh.mosh.pkg" installKBytes="2204" version="@PACKAGE_VERSION@" auth="Root">#edu.mit.mosh.mosh.pkg</pkg-ref>
 </installer-script>
