@@ -186,6 +186,7 @@ void STMClient::init( void )
     tmp = string( escape_key_name_buf );
     wstring escape_key_name = std::wstring(tmp.begin(), tmp.end());
     escape_key_help = L"Commands: Ctrl-Z suspends, \".\" quits, " + escape_pass_name + L" gives literal " + escape_key_name;
+    overlays.get_notification_engine().set_escape_key_string( tmp );
   }
   wchar_t tmp[ 128 ];
   swprintf( tmp, 128, L"Nothing received from server on UDP port %s.", port.c_str() );
