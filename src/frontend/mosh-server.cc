@@ -587,7 +587,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  for ( size_t i = 0; i < us.size(); i++ ) {
 	    const Parser::Action *action = us.get_action( i );
 	    terminal_to_host += terminal.act( action );
-	    if ( typeid( action ) == typeid( Parser::Resize ) ) {
+	    if ( typeid( *action ) == typeid( Parser::Resize ) ) {
 	      /* tell child process of resize */
 	      const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
 	      struct winsize window_size;
