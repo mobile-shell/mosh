@@ -1,5 +1,5 @@
 Name:		mosh
-Version:	1.2.4
+Version:	1.2.4.95rc1
 Release:	1%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
@@ -16,6 +16,7 @@ BuildRequires:	ncurses-devel
 BuildRequires:	openssl-devel
 Requires:	openssh-clients
 Requires:	openssl
+Requires:	perl-IO-Socket-IP
 
 %description
 Mosh is a remote terminal application that supports:
@@ -51,6 +52,9 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Jun 08 2015 John Hood <cgull@glup.org> - 1.2.4.95rc1-1
+- Update to mosh 1.2.4.95rc1
+
 * Wed Mar 27 2013 Alexander Chernyakhovsky <achernya@mit.edu> - 1.2.4-1
 - Update to mosh 1.2.4
 
