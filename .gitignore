@@ -25,3 +25,6 @@ Makefile.in
 /mosh-*.tar.gz
 /stamp-h1
 /test-driver
+/VERSION
+/scripts/mosh
+/version.h
