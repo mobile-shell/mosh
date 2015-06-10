@@ -65,12 +65,11 @@ int main( int argc, char *argv[] )
     } else {
       n = new Transport<UserStream, UserStream>( me, remote, NULL, NULL );
     }
-  } catch ( const CryptoException &e ) {
-    fprintf( stderr, "Fatal error: %s\n", e.what() );
+    fprintf( stderr, "Port bound is %s, key is %s\n", n->port().c_str(), n->get_key().c_str() );
+  } catch ( const std::exception &e ) {
+    fprintf( stderr, "Fatal startup error: %s\n", e.what() );
     exit( 1 );
   }
-
-  fprintf( stderr, "Port bound is %s, key is %s\n", n->port().c_str(), n->get_key().c_str() );
 
   if ( server ) {
     Select &sel = Select::get_instance();
@@ -97,8 +96,8 @@ int main( int argc, char *argv[] )
 	    last_num = n->get_remote_state_num();
 	  }
 	}
-      } catch ( const CryptoException &e ) {
-	fprintf( stderr, "Cryptographic error: %s\n", e.what() );
+      } catch ( const std::exception &e ) {
+	fprintf( stderr, "Server error: %s\n", e.what() );
       }
     }
   } else {
@@ -163,11 +162,8 @@ int main( int argc, char *argv[] )
 	if ( network_ready_to_read ) {
 	  n->recv();
 	}
-      } catch ( const NetworkException &e ) {
-	fprintf( stderr, "%s\n", e.what() );
-	break;
-      } catch ( const CryptoException &e ) {
-	fprintf( stderr, "Cryptographic error: %s\n", e.what() );
+      } catch ( const std::exception &e ) {
+	fprintf( stderr, "Client error: %s\n", e.what() );
       }
     }
 

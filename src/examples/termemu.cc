@@ -51,6 +51,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <sys/time.h>
+#include <exception>
 
 #if HAVE_PTY_H
 #include <pty.h>
@@ -123,7 +124,7 @@ int main( int argc, char *argv[] )
     } else {
       /* get shell name */
       my_argv[ 0 ] = getenv( "SHELL" );
-      if ( my_argv[ 0 ] == NULL ) {
+      if ( my_argv[ 0 ] == NULL || *my_argv[ 0 ] == '\0' ) {
 	struct passwd *pw = getpwuid( geteuid() );
 	if ( pw == NULL ) {
 	  perror( "getpwuid" );
@@ -151,7 +152,11 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
-    emulate_terminal( master );
+    try {
+      emulate_terminal( master );
+    } catch ( const std::exception &e ) {
+      fprintf( stderr, "\r\nException caught: %s\r\n", e.what() );
+    }
 
     if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
       perror( "tcsetattr" );
