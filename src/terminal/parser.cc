@@ -63,6 +63,7 @@ std::list<Parser::Action *> Parser::Parser::input( wchar_t ch )
   }
 
   append_or_delete( tx.action, ret );
+  tx.action = NULL;
 
   if ( tx.next_state != NULL ) {
     append_or_delete( tx.next_state->enter(), ret );

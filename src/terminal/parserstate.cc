@@ -56,7 +56,7 @@ Transition State::anywhere_rule( wchar_t ch ) const
     return Transition( &family->s_CSI_Entry );
   }
 
-  return Transition( NULL, NULL ); /* don't allocate an Ignore action */
+  return Transition(( State * )NULL, NULL ); /* don't allocate an Ignore action */
 }
 
 Transition State::input( wchar_t ch ) const

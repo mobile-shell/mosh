@@ -43,6 +43,8 @@ namespace Parser {
   class Transition
   {
   public:
+    // Transition is only a courier for an Action; it should
+    // never create/delete one on its own.
     Action *action;
     State *next_state;
 
@@ -56,14 +58,21 @@ namespace Parser {
 
       return *this;
     }
-    virtual ~Transition() {}
+    virtual ~Transition()
+    {
+      // Indicate to checkers that we don't own *action anymore
+      action = NULL;
+    }
 
     Transition( Action *s_action=new Ignore, State *s_next_state=NULL )
       : action( s_action ), next_state( s_next_state )
     {}
 
-    Transition( State *s_next_state )
-      : action( new Ignore ), next_state( s_next_state )
+    // This is only ever used in the 1-argument form;
+    // we use this instead of an initializer to
+    // tell Coverity the object never owns *action.
+    Transition( State *s_next_state, Action *s_action=new Ignore )
+      : action( s_action ), next_state( s_next_state )
     {}
   };
 }
