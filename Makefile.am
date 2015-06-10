@@ -8,17 +8,20 @@ CLANG_SCAN_BUILD = scan-build
 .PHONY:	VERSION
 
 VERSION:
-	@-[ -f VERSION ] || echo @PACKAGE_STRING@ > VERSION
-	@-git status > /dev/null 2>&1 && \
-		git describe --dirty > VERSION.new && \
-		! diff -q VERSION VERSION.new > /dev/null && \
-		mv VERSION.new VERSION
+	@set -e; if [ ! -f VERSION ]; then echo @PACKAGE_STRING@ > VERSION; fi
+	@set -e; if git status > /dev/null 2>&1; then \
+		git describe --dirty > VERSION.new;  \
+		if ! diff -q VERSION VERSION.new > /dev/null 2>&1; then \
+			mv -f VERSION.new VERSION; \
+		fi; \
+	fi
 	@rm -f VERSION.new
 
 version.h:	VERSION
 	@printf '#define BUILD_VERSION "%s"\n' "$$(cat VERSION)" > version.h.new
-	@-! diff -q version.h version.h.new > /dev/null && \
-		mv version.h.new version.h
+	@set -e; if ! diff -q version.h version.h.new > /dev/null 2>&1; then \
+		mv -f version.h.new version.h; \
+	fi
 	@rm -f version.h.new
 
 clean-local:
