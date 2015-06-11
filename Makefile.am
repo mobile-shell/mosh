@@ -36,8 +36,8 @@ cppcheck: $(BUILT_SOURCES) config.h
 
 cov-build: $(BUILT_SOURCES) config.h
 	$(MAKE) clean && rm -rf cov-int && \
-		cov-build --dir cov-int $(MAKE) && \
+		cov-build --dir cov-int $(MAKE) check && \
 		tar -caf mosh-coverity.txz cov-int
 
 scan-build: $(BUILT_SOURCES) config.h
-	$(MAKE) clean && $(CLANG_SCAN_BUILD) $(MAKE)
+	$(MAKE) clean && $(CLANG_SCAN_BUILD) $(MAKE) check
