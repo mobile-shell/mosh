@@ -185,7 +185,7 @@
 		bl = _mm_slli_epi32(bl, 1);
 		return _mm_xor_si128(bl,tmp);
 	}
-#elif __ALTIVEC__
+#elif __ALTIVEC__ && _CALL_ELF != 2
     #include <altivec.h>
     typedef vector unsigned block;
     #define xor_block(x,y)         vec_xor(x,y)
