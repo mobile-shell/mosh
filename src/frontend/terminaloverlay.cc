@@ -166,6 +166,7 @@ void ConditionalCursorMove::apply( Framebuffer &fb, uint64_t confirmed_epoch ) c
 NotificationEngine::NotificationEngine()
   : last_word_from_server( timestamp() ),
     last_acked_state( timestamp() ),
+    escape_key_string(),
     message(),
     message_is_network_exception( false ),
     message_expiration( -1 ),
