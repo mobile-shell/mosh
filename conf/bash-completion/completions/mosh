@@ -1,0 +1,9 @@
+_mosh () {
+    local cur prev
+
+    _init_completion || return
+
+    _known_hosts_real -a "$cur"
+}
+
+complete -F _mosh mosh
