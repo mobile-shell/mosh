@@ -1,0 +1,108 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1138\cocoasubrtf320
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 Courier;}
+{\colortbl;\red255\green255\blue255;\red38\green38\blue38;\red246\green246\blue246;\red51\green108\blue190;
+}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid101\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}}
+\deftab720
+\pard\pardeftab720\sa200
+
+\f0\b\fs56 \cf0 Mosh: the mobile shell\
+\pard\pardeftab720\sa300
+
+\b0\fs28 \cf2 Mosh is a remote terminal application that supports intermittent connectivity, allows roaming, and provides speculative local echo and line editing of user keystrokes.\
+It aims to support the typical interactive uses of SSH, plus:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls1\ilvl0\cf2 {\listtext	\'95	}Mosh keeps the session alive if the client goes to sleep and wakes up later, or temporarily loses its Internet connection.\
+{\listtext	\'95	}Mosh allows the client and server to "roam" and change IP addresses, while keeping the connection alive. Unlike SSH, Mosh can be used while switching between Wi-Fi networks or from Wi-Fi to cellular data to wired Ethernet.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa300
+\ls1\ilvl0\cf2 {\listtext	\'95	}The Mosh client runs a predictive model of the server's behavior in the background and tries to guess intelligently how each keystroke will affect the screen state. When it is confident in its predictions, it will show them to the user while waiting for confirmation from the server. Most typing and uses of the left- and right-arrow keys can be echoed immediately.\uc0\u8232 As a result, Mosh is usable on high-latency links, e.g. on a cellular data connection or spotty Wi-Fi. In distinction from previous attempts at local echo modes in other protocols, Mosh works properly with full-screen applications such as emacs, vi, alpine, and irssi, and automatically recovers from occasional prediction errors within an RTT. On high-latency links, Mosh underlines its predictions while they are outstanding and removes the underline when they are confirmed by the server.\
+\pard\pardeftab720\sa300
+\cf2 Mosh does not support X forwarding or the non-interactive uses of SSH, including port forwarding.\
+\pard\pardeftab720\sa200
+
+\b\fs48 \cf0 Other features\
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls2\ilvl0
+\b0\fs28 \cf2 {\listtext	\'95	}Mosh adjusts its frame rate so as not to fill up network queues on slow links, so "Control-C" always works within an RTT to halt a runaway process.\
+{\listtext	\'95	}Mosh warns the user when it has not heard from the server in a while.\
+{\listtext	\'95	}Mosh supports lossy links that lose a significant fraction of their packets.\
+{\listtext	\'95	}Mosh handles some Unicode edge cases better than SSH and existing terminal emulators by themselves, but requires a UTF-8 environment to run.\
+{\listtext	\'95	}Mosh leverages SSH to set up the connection and authenticate users. Mosh does not contain any privileged (root) code.\
+\
+\pard\pardeftab720\sa200
+
+\b\fs48 \cf0 Usage\
+\pard\pardeftab720\sa300
+
+\b0\fs28 \cf2 The 
+\f1\fs24 \cb3 mosh-client
+\f0\fs28 \cb1  binary must be installed on the user's machine, and the 
+\f1\fs24 \cb3 mosh-server
+\f0\fs28 \cb1  binary on the remote host.\
+The user runs:\
+\pard\pardeftab720
+
+\f1\fs24 \cf2 \cb3 $ mosh [user@]host\
+\pard\pardeftab720\sa300
+
+\f0\fs28 \cf2 \cb1 A command may also be specified, for example:\
+\pard\pardeftab720
+
+\f1\fs24 \cf2 \cb3 $ mosh host -- screen -r\
+\pard\pardeftab720\sa300
+
+\f0\fs28 \cf2 \cb1 If the 
+\f1\fs24 \cb3 mosh-client
+\f0\fs28 \cb1  or 
+\f1\fs24 \cb3 mosh-server
+\f0\fs28 \cb1  binaries are installed outside the user's PATH, 
+\f1\fs24 \cb3 mosh
+\f0\fs28 \cb1  accepts the arguments 
+\f1\fs24 \cb3 --client=PATH
+\f0\fs28 \cb1  and 
+\f1\fs24 \cb3 --server=PATH
+\f0\fs28 \cb1  to select alternate locations. More options are documented in the mosh(1) manual page.\
+Mosh supports 256-color mode as long as the user's own terminal does. Generally this means the 
+\f1\fs24 \cb3 TERM
+\f0\fs28 \cb1  environment variable must be set to 
+\f1\fs24 \cb3 xterm-256color
+\f0\fs28 \cb1  or 
+\f1\fs24 \cb3 screen-256color-bce
+\f0\fs28 \cb1  before running 
+\f1\fs24 \cb3 mosh
+\f0\fs28 \cb1 .\
+\pard\pardeftab720\sa200
+
+\b\fs48 \cf0 How it works\
+\pard\pardeftab720\sa300
+
+\b0\fs28 \cf2 The 
+\f1\fs24 \cb3 mosh
+\f0\fs28 \cb1  program will SSH to 
+\f1\fs24 \cb3 user@host
+\f0\fs28 \cb1  to establish the connection. SSH may prompt the user for a password or use public-key authentication to log in.\
+From this point, 
+\f1\fs24 \cb3 mosh
+\f0\fs28 \cb1  runs the 
+\f1\fs24 \cb3 mosh-server
+\f0\fs28 \cb1  process (as the user) on the server machine. The server process listens on a high UDP port and sends its port number and an AES-128 secret key back to the client over SSH. The SSH connection is then shut down and the terminal session begins over UDP.\
+If the client changes IP addresses, the server will begin sending to the client on the new IP address within a few seconds.\
+To function, Mosh requires UDP datagrams to be passed between client and server. By default, 
+\f1\fs24 \cb3 mosh
+\f0\fs28 \cb1  uses a port number between 60000 and 61000, but the user can select a particular port with the -p option.\
+\pard\pardeftab720\sa200
+
+\b\fs48 \cf0 More info\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa300
+\ls3\ilvl0
+\b0\fs28 \cf2 {\listtext	\'95	}Mosh Web site:\uc0\u8232 {\field{\*\fldinst{HYPERLINK "http://mosh.mit.edu/"}}{\fldrslt \cf4 http://mosh.mit.edu}}\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa300
+\ls3\ilvl0
+\f1\fs24 \cf2 \cb3 {\listtext	\'95	}mosh-devel@mit.edu
+\f0\fs28 \cb1  mailing list:\uc0\u8232 {\field{\*\fldinst{HYPERLINK "http://mailman.mit.edu/mailman/listinfo/mosh-devel"}}{\fldrslt \cf4 http://mailman.mit.edu/mailman/listinfo/mosh-devel}}\
+\ls3\ilvl0
+\f1\fs24 \cb3 {\listtext	\'95	}mosh-users@mit.edu
+\f0\fs28 \cb1  mailing list:\uc0\u8232 {\field{\*\fldinst{HYPERLINK "http://mailman.mit.edu/mailman/listinfo/mosh-users"}}{\fldrslt \cf4 http://mailman.mit.edu/mailman/listinfo/mosh-users}}}

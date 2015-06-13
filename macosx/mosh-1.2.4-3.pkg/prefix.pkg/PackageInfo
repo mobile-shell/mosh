@@ -1,0 +1,4 @@
+
+<pkg-info format-version="2" identifier="edu.mit.mosh.mosh.pkg" version="1.2.4" install-location="/usr" auth="root">
+    <payload installKBytes="2204" numberOfFiles="12"/>
+</pkg-info>
