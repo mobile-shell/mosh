@@ -55,6 +55,10 @@
 #define MSG_DONTWAIT MSG_NONBLOCK
 #endif
 
+#ifndef AI_NUMERICSERV
+#define AI_NUMERICSERV 0
+#endif
+
 using namespace std;
 using namespace Network;
 using namespace Crypto;
