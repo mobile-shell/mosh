@@ -75,15 +75,11 @@ namespace Terminal {
 
     bool has_title; /* supports window title and icon name */
 
-    int posterize_colors; /* downsample input colors >8 to [0..7] */
-
     const char *smcup, *rmcup; /* enter and exit alternate screen mode */
 
     bool put_row( bool initialized, FrameState &frame, const Framebuffer &f, int frame_y, const Row &old_row, bool wrap ) const;
 
   public:
-    void downgrade( Framebuffer &f ) const { if ( posterize_colors ) { f.posterize(); } }
-
     std::string open() const;
     std::string close() const;
 

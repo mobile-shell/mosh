@@ -90,7 +90,7 @@ const char *Display::ti_str( const char *capname )
 }
 
 Display::Display( bool use_environment )
-  : has_ech( true ), has_bce( true ), has_title( true ), posterize_colors( 0 ), smcup( NULL ), rmcup( NULL )
+  : has_ech( true ), has_bce( true ), has_title( true ), smcup( NULL ), rmcup( NULL )
 {
   if ( use_environment ) {
     int errret = -2;
@@ -140,12 +140,6 @@ Display::Display( bool use_environment )
         }
       }
     }
-
-    /* posterization disabled because server now only advertises
-       xterm-256color when client has colors = 256 */
-    /*
-    posterize_colors = ti_num( "colors" ) < 256;
-    */
 
     if ( !getenv( "MOSH_NO_TERM_INIT" ) ) {
       smcup = ti_str("smcup");

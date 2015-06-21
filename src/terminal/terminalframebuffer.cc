@@ -398,19 +398,6 @@ void Framebuffer::soft_reset( void )
   ds.clear_saved_cursor();
 }
 
-void Framebuffer::posterize( void )
-{
-  for ( rows_type::iterator i = rows.begin();
-        i != rows.end();
-        i++ ) {
-    for ( Row::cells_type::iterator j = (*i)->cells.begin();
-          j != (*i)->cells.end();
-          j++ ) {
-      j->renditions.posterize();
-    }
-  }
-}
-
 void Framebuffer::resize( int s_width, int s_height )
 {
   assert( s_width > 0 );
@@ -569,59 +556,6 @@ std::string Renditions::sgr( void ) const
   }
 
   return ret;
-}
-
-/* Reduce 256 "standard" colors to the 8 ANSI colors. */
-
-/* Terminal emulators generally agree on the (R',G',B') values of the
-   "standard" 256-color palette beyond #15, but for the first 16
-   colors there is disagreement. Most terminal emulators are roughly
-   self-consistent, except on Ubuntu's gnome-terminal where "ANSI
-   blue" (#4) has been replaced with the aubergine system-wide
-   color. See
-   https://lists.ubuntu.com/archives/ubuntu-devel/2011-March/032726.html
-
-   Terminal emulators that advertise "xterm" are inconsistent on the
-   handling of initc to change the contents of a cell in the color
-   palette. On RIS (reset to initial state) or choosing reset from
-   the user interface, xterm resets all entries, but gnome-terminal
-   only resets entries beyond 16. (rxvt doesn't reset any entries,
-   and Terminal.app ignores initc.) On initc, xterm applies changes
-   immediately (but slowly), but gnome-terminal's changes are only
-   prospective unless the user resizes the terminal.
-
-   mosh ignores initc for now, despite advertising xterm-256color. */
-
-/* Table mapping common color cube for [16 .. 255]
-   to xterm's system colors (0 .. 7) with closest
-   CIE deltaE(2000). */
-static const char standard_posterization[] = {
-  0, 1, 2, 3, 4, 5, 6, 7, 7, 1, 2, 3, 4, 5, 6, 7,
-  0, 4, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4, 2, 6, 6, 6,
-  6, 4, 2, 2, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 2, 2,
-  2, 2, 6, 6, 1, 4, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4,
-  2, 2, 6, 6, 4, 5, 2, 2, 6, 6, 6, 6, 2, 2, 2, 6,
-  6, 6, 2, 2, 2, 2, 6, 6, 1, 5, 5, 4, 4, 4, 1, 1,
-  5, 5, 5, 5, 3, 3, 7, 5, 5, 5, 2, 2, 2, 6, 7, 7,
-  2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 6, 6, 1, 5, 5, 5,
-  5, 5, 1, 1, 5, 5, 5, 5, 3, 1, 7, 5, 5, 5, 3, 3,
-  3, 7, 7, 7, 3, 3, 2, 7, 6, 7, 3, 2, 2, 2, 6, 6,
-  1, 5, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5, 3, 1, 1, 5,
-  5, 5, 3, 3, 7, 7, 7, 7, 3, 3, 3, 7, 7, 7, 3, 3,
-  3, 3, 7, 7, 1, 1, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5,
-  1, 1, 1, 5, 5, 5, 3, 7, 7, 7, 7, 7, 3, 3, 3, 7,
-  7, 7, 3, 3, 3, 3, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 1, 1, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7 };
-
-void Renditions::posterize( void )
-{
-  if ( foreground_color ) {
-    foreground_color = 30 + standard_posterization[ foreground_color - 30 ];
-  }
-
-  if ( background_color ) {
-    background_color = 40 + standard_posterization[ background_color - 40 ];
-  }
 }
 
 void Row::reset( color_type background_color )

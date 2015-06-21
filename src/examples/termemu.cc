@@ -187,8 +187,6 @@ static bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame
 
   if ( (!initialized)
        || (diff >= 0.02) ) {
-    display.downgrade( new_frame );
-
     std::string update = display.new_frame( initialized, state, new_frame );
     swrite( STDOUT_FILENO, update.c_str() );
     state = new_frame;
