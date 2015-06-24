@@ -369,6 +369,13 @@ AC_CHECK_DECL([IUTF8],
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 
+# Bash completion needs to ask where it goes if >= 2.0 is installed.
+AS_IF([test "$install_completion" != no],
+  [PKG_CHECK_MODULES([BASH_COMPLETION], [bash-completion >= 2.0],
+     [completions="`pkg-config --variable=completionsdir bash-completion`"],
+     [completions="${sysconfdir}/bash-completion.d"])
+   AC_SUBST([completions])])
+
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
