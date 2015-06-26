@@ -1,28 +1,38 @@
-mosh (1.2.4.95rc1-1) unstable; urgency=low
+mosh (1.2.4.95rc2-1) unstable; urgency=low
 
   * Version 1.2.5 release candidate.
 
   * New features:
-    * Bind to a specific IP address with --bind-server. (Philipp Haselwarter)
-    * MOSH_ESCAPE_KEY configures escape character.  (Timo J. Rinne)
+    * Bind to a specific IP address with --bind-server. (Philipp
+      Haselwarter)
+    * MOSH_ESCAPE_KEY configures escape character.  (Timo
+      J. Rinne)
     * Support non-roaming IPv6. (Anders Kaseorg)
-    * Implement XTerm mouse mode. (Barosl LEE, Andrew Chin, Louis Kruger)
-    * Report Git revision along with version if available.  (John Hood)
+    * Implement XTerm mouse mode. (Barosl LEE, Andrew Chin,
+      Louis Kruger)
+    * Report Git revision along with version if available.
+      (John Hood)
 
   * Platform support:
     * Add pselect() emulation. (Jérémie Courrèges-Anglas)
-    * OpenBSD, OS X: Fix be64toh-related issues. (Jérémie Courrèges-Anglas)
+    * OpenBSD, OS X: Fix be64toh-related issues. (Jérémie
+      Courrèges-Anglas)
     * ARM Neon: fix gcc4.8 compiling problem(Pasi Sjöholm)
-    * NaCl: Conditionally rename main to mosh_main. (Richard Woodbury)
+    * NaCl: Conditionally rename main to mosh_main. (Richard
+      Woodbury)
     * FreeBSD: Token pasting, forkpty(), ARM fixes. (John Hood)
     * AIX: Implement CTTY grabbing when TIOCSCTTY is missing
       (Anton Lundin)
+    * OS X: Broaden build support to cover OS X 10.5 through
+      10.10. (John Hood)
+    * Debian: Improve bash-completion install and
+      functionality. (Suggested by Gabriel Filion, John Hood)
 
   * Bug fixes:
     * Automake/autoconf workarounds.  (Anders Kaseorg)
     * mosh-server: Allow startup without PTY.  (Keith Winstein)
-    * network.cc: Properly close old fd on Socket assignment operator.
-      (Thanks to Igor Bukanov)
+    * network.cc: Properly close old fd on Socket assignment
+      operator. (Thanks to Igor Bukanov)
     * mosh-server:  Allow startup with zero-window-size PTY.
       (Igor Bukanov)
     * AddrInfo: Fix error message generation when node == NULL

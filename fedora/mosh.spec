@@ -1,5 +1,5 @@
 Name:		mosh
-Version:	1.2.4.95rc1
+Version:	1.2.4.95rc2
 Release:	1%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
@@ -52,6 +52,9 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Jun 26 2015 John Hood <cgull@glup.org> - 1.2.4.95rc2-1
+- Update to mosh 1.2.4.95rc2
+
 * Mon Jun 08 2015 John Hood <cgull@glup.org> - 1.2.4.95rc1-1
 - Update to mosh 1.2.4.95rc1
 
