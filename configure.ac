@@ -377,7 +377,7 @@ AS_IF([test "$install_completion" != no],
       else
         completions="`pkg-config --define-variable=prefix=$prefix --variable=completionsdir bash-completion`"
       fi],
-     [completions="${sysconfdir}/bash-completion.d"])
+     [completions="${sysconfdir}/bash_completion.d"])
    AC_SUBST([completions])])
 
 AC_CONFIG_FILES([
