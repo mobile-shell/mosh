@@ -372,7 +372,11 @@ PKG_CHECK_MODULES([protobuf], [protobuf])
 # Bash completion needs to ask where it goes if >= 2.0 is installed.
 AS_IF([test "$install_completion" != no],
   [PKG_CHECK_MODULES([BASH_COMPLETION], [bash-completion >= 2.0],
-     [completions="`pkg-config --variable=completionsdir bash-completion`"],
+     [if test "$prefix" = "NONE"; then
+        completions="`pkg-config --variable=completionsdir bash-completion`"
+      else
+        completions="`pkg-config --define-variable=prefix=$prefix --variable=completionsdir bash-completion`"
+      fi],
      [completions="${sysconfdir}/bash-completion.d"])
    AC_SUBST([completions])])
 
