@@ -1,21 +1,22 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src scripts man conf
 EXTRA_DIST = autogen.sh ocb-license.html README.md COPYING.iOS
-nodist_noinst_HEADERS = version.h
 BUILT_SOURCES = version.h
 CLANG_SCAN_BUILD = scan-build
 
 .PHONY:	VERSION
 
 VERSION:
-	@set -e; if [ ! -f VERSION ]; then echo @PACKAGE_STRING@ > VERSION; fi
-	@set -e; if git status > /dev/null 2>&1; then \
-		git describe --dirty > VERSION.new;  \
-		if ! diff -q VERSION VERSION.new > /dev/null 2>&1; then \
-			mv -f VERSION.new VERSION; \
+	@echo @PACKAGE_STRING@ > VERSION.dist
+	@set -e; if git describe --dirty --always > VERSION.git 2>&1 && \
+		[ -z `git rev-parse --show-prefix` ]; then \
+		if ! diff -q VERSION.git VERSION > /dev/null 2>&1; then \
+			mv -f VERSION.git VERSION; \
 		fi; \
+	elif ! diff -q VERSION.dist VERSION > /dev/null 2>&1; then \
+		mv -f VERSION.dist VERSION; \
 	fi
-	@rm -f VERSION.new
+	@rm -f VERSION.dist VERSION.git
 
 version.h:	VERSION
 	@printf '#define BUILD_VERSION "%s"\n' "$$(cat VERSION)" > version.h.new
