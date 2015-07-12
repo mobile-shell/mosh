@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([mosh], [1.2.4.95rc2], [mosh-devel@mit.edu])
+AC_INIT([mosh], [1.2.5], [mosh-devel@mit.edu])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
