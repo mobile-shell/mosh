@@ -64,6 +64,11 @@ pass between client and server. By default, \fBmosh\fP uses the ports
 between 60000 and 61000, but allows the user to request a particular
 UDP port instead.
 
+Currently, \fBmosh\fP has limited support for IPv6, dual-stack
+networks, and servers with multiple addresses.  At session start, it
+will select a single IPv4 or IPv6 server address to connect to for the
+lifetime of the session.
+
 \fBmosh\fP will do its best to arrange a UTF-8 character set locale on
 the client and server. The client must have locale-related environment
 variables that specify UTF-8. \fBmosh\fP will pass these client
@@ -128,17 +133,36 @@ Synonym for \-\-predict=always
 Synonym for \-\-predict=never
 
 .TP
-.B --family=\fIFAMILY\fP
-Force the use of a particular address family, which defaults to `inet'
-(IPv4), and can also be `inet6' (IPv6; requires IO::Socket::IP or
-IO::Socket::INET6).
+.B \-\-family=inet
+Only use IPv4 for the SSH connection and Mosh session.
 
 .TP
-.B -4
+.B \-\-family=inet6
+Only use IPv6 for the SSH connection and Mosh session.  This and the
+following two dual-stack modes require Perl's IO::Socket::IP or
+IO::Socket::INET6 modules.
+
+.TP
+.B \-\-family=all
+Choose an address from all available IPv4 or IPv6 address, even for
+dual-stack hosts.  This is the most convenient option, but requires
+dual-stack connectivity when roaming with dual-stack servers.  This is
+the default.
+
+.TP
+.B \-\-family=auto
+Autodetect IPv4 or IPv6 for hosts that only have addresses
+in a single family.  Hosts with both IPv4 and IPv6 addresses will
+raise an error, and require re-invocation of \fBmosh\fP with another
+.B \-\-family
+option.
+
+.TP
+.B \-4
 Synonym for \-\-family=inet
 
 .TP
-.B -6
+.B \-6
 Synonym for \-\-family=inet6
 
 .TP

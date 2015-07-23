@@ -35,6 +35,19 @@ use strict;
 use Getopt::Long;
 use IO::Socket;
 use Text::ParseWords;
+use Socket qw( :addrinfo IPPROTO_IP IPPROTO_IPV6 IPPROTO_TCP IPPROTO_UDP );
+use Errno qw(EINTR);
+use POSIX qw(_exit);
+
+
+my $have_ipv6 = eval {
+  require IO::Socket::IP;
+  IO::Socket::IP->import('-register');
+  1;
+} || eval {
+  require IO::Socket::INET6;
+  1;
+};
 
 $|=1;
 
@@ -45,7 +58,7 @@ my $predict = undef;
 
 my $bind_ip = undef;
 
-my $family = 'inet';
+my $family = 'all';
 my $port_request = undef;
 
 my @ssh = ('ssh');
@@ -71,8 +84,10 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 -n      --predict=never         never use local echo
         --predict=experimental  aggressively echo even when incorrect
 
--4      --family=inet        use IPv4 only [default]
+-4      --family=inet        use IPv4 only
 -6      --family=inet6       use IPv6 only
+        --family=auto        autodetect network type for single-family hosts
+        --family=all         try all network types [default]
 -p PORT[:PORT2]
         --port=PORT[:PORT2]  server-side UDP port or range
         --bind-server={ssh|any|IP}  ask the server to reply from an IP address
@@ -190,36 +205,83 @@ if ( ! defined $fake_proxy ) {
   }
 } else {
   my ( $host, $port ) = @ARGV;
+  my $err;
+  my @res;
+  my $af;
 
-  use Errno qw(EINTR);
-  my $have_ipv6 = eval {
-      require IO::Socket::IP;
-      IO::Socket::IP->import('-register');
-      1;
-  } || eval {
-      require IO::Socket::INET6;
-      1;
-  };
-  use POSIX qw(_exit);
-
-  # Report failure if IPv6 needed and not available.
-  if (lc($family) eq "inet6") {
-	if (!$have_ipv6) {
-		die "$0: IPv6 sockets not available in this Perl install\n";
-	}
+  $family = lc( $family );
+  # Handle IPv4-only Perl installs.
+  if (!$have_ipv6) {
+      # Report failure if IPv6 needed and not available.
+      if (defined($family) && $family eq "inet6") {
+	  die "$0: IPv6 sockets not available in this Perl install\n";
+      }
+      # Force IPv4.
+      $family = "inet";
   }
 
-  # Resolve hostname and connect
-  my $afstr = 'AF_' . uc( $family );
-  my $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
-  my $sock = IO::Socket->new( Domain => $af,
-			      Family => $af,
-			      PeerHost => $host,
-			      PeerPort => $port,
-			      Proto => "tcp" )
-    or die "$0: Could not connect to $host: $@\n";
+  # If the user selected a specific family, parse it.
+  if ( defined( $family ) && ( $family ne "auto" && $family ne "all" )) {
+      # Choose an address family, or cause pain.
+      my $afstr = 'AF_' . uc( $family );
+      $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
+  }
 
-  print STDERR "MOSH IP ", $sock->peerhost, "\n";
+  # First try the address as a numeric.
+  my %hints = ( flags => AI_NUMERICHOST,
+		socktype => SOCK_STREAM,
+		protocol => IPPROTO_TCP );
+  if ( defined( $af )) {
+    $hints{family} = $af;
+  }
+  ( $err, @res ) = getaddrinfo( $host, $port, \%hints );
+  if ( $err ) {
+    # Get canonical name for this host.
+    $hints{flags} = AI_CANONNAME;
+    ( $err, @res ) = getaddrinfo( $host, $port, \%hints );
+    die "$0: could not get canonical name for $host: ${err}\n" if $err;
+    # Then get final resolution of the canonical name.
+    $hints{flags} = undef;
+    my @newres;
+    ( $err, @newres ) = getaddrinfo( $res[0]{canonname}, $port, \%hints );
+    die "$0: could not resolve canonical name ${res[0]{canonname}} for ${host}: ${err}\n" if $err;
+    @res = @newres;
+  }
+
+  # If v4 or v6 was specified, reduce the host list.
+  if ( defined( $af )) {
+    @res = grep {$_->{family} == $af} @res;
+  } elsif ( $family ne "all" ) {
+    # If v4/v6/all were not specified, verify that this host only has one address family available.
+    for my $ai ( @res ) {
+      if ( !defined( $af )) {
+	$af = $ai->{family};
+      } else {
+	die "$0: host has both IPv4 and IPv6 addresses, use --family to specify behavior\n"
+	    if $af != $ai->{family};
+      }
+    }
+  }
+
+  # Now try and connect to something.
+  my $sock;
+  my $addr_string;
+  my $service;
+  for my $ai ( @res ) {
+    ( $err, $addr_string, $service ) = getnameinfo( $ai->{addr}, NI_NUMERICHOST );
+    next if $err;
+    if ( $sock = IO::Socket->new( Domain => $ai->{family},
+				  Family => $ai->{family},
+				  PeerHost => $addr_string,
+				  PeerPort => $port,
+				  Proto => "tcp" )) {
+      print STDERR "MOSH IP ", $sock->peerhost, "\n";
+      last;
+    } else {
+      $err = $@;
+    }
+  }
+  die "$0: Could not connect to ${host}, last tried ${addr_string}: ${err}\n" if !$sock;
 
   # Act like netcat
   binmode($sock);
@@ -298,8 +360,9 @@ if ( $pid == 0 ) { # child
     exec( $server, @server );
     die "Cannot exec $server: $!\n";
   }
-  my $quoted_self = shell_quote( $0, "--family=$family" );
-  exec @ssh, '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', "$server " . shell_quote( @server );
+
+  my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
+  exec @ssh, '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', "$server " . shell_quote( @server );
   die "Cannot exec ssh: $!\n";
 } else { # parent
   my ( $ip, $port, $key );
@@ -328,7 +391,7 @@ if ( $pid == 0 ) { # child
   close $pipe;
 
   if ( not defined $ip ) {
-      die "$0: Did not find remote IP address (is SSH ProxyCommand disabled?).\n";
+    die "$0: Did not find remote IP address (is SSH ProxyCommand disabled?).\n";
   }
 
   if ( not defined $key or not defined $port ) {
