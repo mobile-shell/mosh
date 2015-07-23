@@ -313,7 +313,6 @@ int main( int argc, char *argv[] )
       fprintf( stderr, "mosh-server needs a UTF-8 native locale to run.\n\n" );
       fprintf( stderr, "Unfortunately, the local environment (%s) specifies\nthe character set \"%s\",\n\n", native_ctype.str().c_str(), native_charset.c_str() );
       fprintf( stderr, "The client-supplied environment (%s) specifies\nthe character set \"%s\".\n\n", client_ctype.str().c_str(), client_charset.c_str() );
-      int unused __attribute((unused)) = system( "locale" );
       exit( 1 );
     }
   }
