@@ -57,7 +57,7 @@ my $predict = undef;
 
 my $bind_ip = undef;
 
-my $family = "auto";
+my $family = 'auto';
 my $port_request = undef;
 
 my $ssh = 'ssh';
@@ -189,15 +189,15 @@ $family = lc( $family );
 # Handle IPv4-only Perl installs.
 if (!$have_ipv6) {
   # Report failure if IPv6 needed and not available.
-  if (defined($family) && $family eq "inet6") {
+  if (defined($family) && $family eq 'inet6') {
     die "$0: IPv6 sockets not available in this Perl install\n";
   }
   # Force IPv4.
-  $family = "inet";
+  $family = 'inet';
 }
 
 # If the user selected a specific family, parse it.
-if ( defined( $family ) && ( $family ne "auto" && $family ne "all" )) {
+if ( defined( $family ) && ( $family ne 'auto' && $family ne 'all' )) {
   # Choose an address family, or cause pain.
   my $afstr = 'AF_' . uc( $family );
   $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
@@ -233,7 +233,7 @@ if ( defined $fake_proxy ) {
   # If v4 or v6 was specified, reduce the host list.
   if ( defined( $af )) {
     @res = grep {$_->{family} == $af} @res;
-  } elsif ( $family ne "all" ) {
+  } elsif ( $family ne 'all' ) {
     # If v4/v6/all were not specified, verify that this host only has one address family available.
     for my $ai ( @res ) {
       if ( !defined( $af )) {
@@ -256,8 +256,8 @@ if ( defined $fake_proxy ) {
 				  Family => $ai->{family},
 				  PeerHost => $addr_string,
 				  PeerPort => $port,
-				  Proto => "tcp" )) {
-      print STDERR "MOSH IP ", $sock->peerhost, "\n";
+				  Proto => 'tcp' )) {
+      print STDERR 'MOSH IP ', $sock->peerhost, '\n';
       last;
     }
   }
