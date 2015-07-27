@@ -200,7 +200,6 @@ if ( ! defined $fake_proxy ) {
     push @bind_arguments, ('-i', "$bind_ip");
   } else {
     print STDERR qq{$0: Unknown server binding option: $bind_ip\n};
-
     die $usage;
   }
 } else {
@@ -251,7 +250,7 @@ if ( ! defined $fake_proxy ) {
   # If v4 or v6 was specified, reduce the host list.
   if ( defined( $af )) {
     @res = grep {$_->{family} == $af} @res;
-  } elsif ( $family ne "all" ) {
+  } elsif ( $family ne 'all' ) {
     # If v4/v6/all were not specified, verify that this host only has one address family available.
     for my $ai ( @res ) {
       if ( !defined( $af )) {
@@ -274,8 +273,8 @@ if ( ! defined $fake_proxy ) {
 				  Family => $ai->{family},
 				  PeerHost => $addr_string,
 				  PeerPort => $port,
-				  Proto => "tcp" )) {
-      print STDERR "MOSH IP ", $sock->peerhost, "\n";
+				  Proto => 'tcp' )) {
+      print STDERR 'MOSH IP ', $sock->peerhost, "\n";
       last;
     } else {
       $err = $@;
