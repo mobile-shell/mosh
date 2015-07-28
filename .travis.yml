@@ -1,0 +1,17 @@
+language: cpp
+sudo: false
+
+addons:
+  apt:
+    packages:
+    - protobuf-compiler
+    - libprotobuf-dev
+    - libutempter-dev
+
+before_install:
+  - git fetch --tags --unshallow
+
+script:
+  - ./autogen.sh
+  - ./configure --enable-compile-warnings=error --enable-examples
+  - make distcheck
