@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mobile-shell/mosh.svg?branch=master)](https://travis-ci.org/mobile-shell/mosh)
+
 Mosh: the mobile shell
 ======================
 
