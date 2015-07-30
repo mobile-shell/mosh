@@ -51,6 +51,8 @@ my $ssh = 'ssh';
 
 my $term_init = 1;
 
+my $localhost = undef;
+
 my $help = undef;
 my $version = undef;
 
@@ -80,6 +82,8 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
                                 (default: "ssh")
 
         --no-init            do not send terminal initialization string
+
+        --local              run mosh-server locally without using ssh
 
         --help               this message
         --version            version and copyright information
@@ -117,6 +121,7 @@ GetOptions( 'client=s' => \$client,
 	    'p=s' => \$port_request,
 	    'ssh=s' => \$ssh,
 	    'init!' => \$term_init,
+	    'local' => \$localhost,
 	    'help' => \$help,
 	    'version' => \$version,
 	    'fake-proxy!' => \my $fake_proxy,
@@ -158,7 +163,7 @@ if ( defined $port_request ) {
 delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
 
 my @bind_arguments;
-if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
+if ( ( not defined $bind_ip && not defined $localhost ) || $bind_ip =~ m{^ssh$}i ) {
   push @bind_arguments, '-s';
 } elsif ( $bind_ip =~ m{^any$}i ) {
   # do nothing
@@ -278,6 +283,13 @@ if ( $pid == 0 ) { # child
     push @server, '--', @command;
   }
 
+  if ( defined( $localhost )) {
+    delete $ENV{ 'SSH_CONNECTION' };
+    chdir; # $HOME
+    print "MOSH IP ${userhost}\n";
+    exec( $server, @server );
+    die "Cannot exec $server: $!\n";
+  }
   my $quoted_self = shell_quote( $0, "--family=$family" );
   exec "$ssh " . shell_quote( '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', "$server " . shell_quote( @server ) );
   die "Cannot exec ssh: $!\n";

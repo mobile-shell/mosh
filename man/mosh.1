@@ -165,6 +165,12 @@ Do not send the \fBsmcup\fP initialization string and \fBrmcup\fP
 deinitialization string to the client's terminal. On many terminals
 this disables alternate screen mode.
 
+.TP
+.B \-\-local
+Invoke \fBmosh-server\fP locally, without using \fBssh\fP.  This
+option requires the \fBhost\fP argument to be a local, numeric
+IPv4/IPv6 address.  This option is useful for testing.
+
 .SH ESCAPE SEQUENCES
 
 The default escape character used by Mosh is ASCII RS (decimal 30).
