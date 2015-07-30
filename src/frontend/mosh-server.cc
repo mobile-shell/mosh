@@ -131,14 +131,14 @@ static string get_SSH_IP( void )
   const char *SSH_CONNECTION = getenv( "SSH_CONNECTION" );
   if ( !SSH_CONNECTION ) { /* Older sshds don't set this */
     fprintf( stderr, "Warning: SSH_CONNECTION not found; binding to any interface.\n" );
-    return string( "0.0.0.0" );
+    return string( "" );
   }
   istringstream ss( SSH_CONNECTION );
   string dummy, local_interface_IP;
   ss >> dummy >> dummy >> local_interface_IP;
   if ( !ss ) {
     fprintf( stderr, "Warning: Could not parse SSH_CONNECTION; binding to any interface.\n" );
-    return string( "0.0.0.0" );
+    return string( "" );
   }
 
   /* Strip IPv6 prefix. */
@@ -196,8 +196,10 @@ int main( int argc, char *argv[] )
 	break;
       case 's':
 	desired_ip_str = get_SSH_IP();
-	desired_ip = desired_ip_str.c_str();
-	fatal_assert( desired_ip );
+	if ( !desired_ip_str.empty() ) {
+	  desired_ip = desired_ip_str.c_str();
+	  fatal_assert( desired_ip );
+	}
 	break;
       case 'c':
 	try {
