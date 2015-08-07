@@ -34,6 +34,7 @@ use warnings;
 use strict;
 use Getopt::Long;
 use IO::Socket;
+use Text::ParseWords;
 
 $|=1;
 
@@ -47,7 +48,7 @@ my $bind_ip = undef;
 my $family = 'inet';
 my $port_request = undef;
 
-my $ssh = 'ssh';
+my @ssh = ('ssh');
 
 my $term_init = 1;
 
@@ -119,7 +120,7 @@ GetOptions( 'client=s' => \$client,
 	    '4' => sub { $family = 'inet' },
 	    '6' => sub { $family = 'inet6' },
 	    'p=s' => \$port_request,
-	    'ssh=s' => \$ssh,
+	    'ssh=s' => sub { @ssh = shellwords($_[1]); },
 	    'init!' => \$term_init,
 	    'local' => \$localhost,
 	    'help' => \$help,
@@ -296,7 +297,7 @@ if ( $pid == 0 ) { # child
     die "Cannot exec $server: $!\n";
   }
   my $quoted_self = shell_quote( $0, "--family=$family" );
-  exec "$ssh " . shell_quote( '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', "$server " . shell_quote( @server ) );
+  exec @ssh, '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', "$server " . shell_quote( @server );
   die "Cannot exec ssh: $!\n";
 } else { # parent
   my ( $ip, $port, $key );
