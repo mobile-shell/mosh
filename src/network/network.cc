@@ -175,7 +175,10 @@ Connection::Socket::Socket( int family )
   int tosflag = true;
   socklen_t tosoptlen = sizeof( tosflag );
   if ( setsockopt( _fd, IPPROTO_IP, IP_RECVTOS, &tosflag, tosoptlen ) < 0 ) {
-    perror( "setsockopt( IP_RECVTOS )" );
+    /* FreeBSD disallows this option on IPv6 sockets. */
+    if ( family == IPPROTO_IP ) {
+      perror( "setsockopt( IP_RECVTOS )" );
+    }
   }
 #endif
 }
@@ -503,7 +506,11 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
   struct cmsghdr *ecn_hdr = CMSG_FIRSTHDR( &header );
   if ( ecn_hdr
        && (ecn_hdr->cmsg_level == IPPROTO_IP)
-       && (ecn_hdr->cmsg_type == IP_TOS) ) {
+       && ((ecn_hdr->cmsg_type == IP_TOS)
+#ifdef IP_RECVTOS
+	   || (ecn_hdr->cmsg_type == IP_RECVTOS)
+#endif
+	   )) {
     /* got one */
     uint8_t *ecn_octet_p = (uint8_t *)CMSG_DATA( ecn_hdr );
     assert( ecn_octet_p );
