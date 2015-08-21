@@ -101,9 +101,9 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
 using namespace std;
 
-static void print_usage( const char *argv0 )
+static void print_usage( FILE *stream, const char *argv0 )
 {
-  fprintf( stderr, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
+  fprintf( stream, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
 }
 
 static void print_motd( void );
@@ -172,6 +172,10 @@ int main( int argc, char *argv[] )
 
   /* strip off command */
   for ( int i = 0; i < argc; i++ ) {
+    if ( 0 == strcmp( argv[ i ], "--help" ) || 0 == strcmp( argv[ i ], "-h" ) ) {
+      print_usage( stdout, argv[ 0 ] );
+      exit( 0 );
+    }
     if ( 0 == strcmp( argv[ i ], "--" ) ) { /* -- is mandatory */
       if ( i != argc - 1 ) {
 	command_argv = argv + i + 1;
@@ -206,7 +210,7 @@ int main( int argc, char *argv[] )
 	  colors = myatoi( optarg );
 	} catch ( const CryptoException & ) {
 	  fprintf( stderr, "%s: Bad number of colors (%s)\n", argv[ 0 ], optarg );
-	  print_usage( argv[ 0 ] );
+	  print_usage( stderr, argv[ 0 ] );
 	  exit( 1 );
 	}
 	break;
@@ -217,7 +221,7 @@ int main( int argc, char *argv[] )
 	locale_vars.push_back( string( optarg ) );
 	break;
       default:
-	print_usage( argv[ 0 ] );
+	print_usage( stderr, argv[ 0 ] );
 	/* don't die on unknown options */
       }
     }
@@ -230,7 +234,7 @@ int main( int argc, char *argv[] )
     desired_ip = argv[ 1 ];
     desired_port = argv[ 2 ];
   } else {
-    print_usage( argv[ 0 ] );
+    print_usage( stderr, argv[ 0 ] );
     exit( 1 );
   }
 
@@ -238,7 +242,7 @@ int main( int argc, char *argv[] )
   int dpl, dph;
   if ( desired_port && ! Connection::parse_portrange( desired_port, dpl, dph ) ) {
     fprintf( stderr, "%s: Bad UDP port range (%s)\n", argv[ 0 ], desired_port );
-    print_usage( argv[ 0 ] );
+    print_usage( stderr, argv[ 0 ] );
     exit( 1 );
   }
 
