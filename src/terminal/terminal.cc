@@ -119,7 +119,10 @@ void Emulator::print( const Parser::Print *act )
 
     if ( combining_cell->contents.size() == 0 ) {
       /* cell starts with combining character */
-      assert( this_cell == combining_cell );
+      /* ... but isn't necessarily the target for a new
+	 base character [e.g. start of line], if the
+	 combining character has been cleared with
+	 a sequence like ED ("J") or EL ("K") */
       assert( combining_cell->width == 1 );
       combining_cell->fallback = true;
       fb.ds.move_col( 1, true, true );
