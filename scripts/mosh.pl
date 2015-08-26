@@ -162,12 +162,8 @@ if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
   push @bind_arguments, '-s';
 } elsif ( $bind_ip =~ m{^any$}i ) {
   # do nothing
-} elsif ( $bind_ip =~ m{^[0-9\.]+$} ) {
-  push @bind_arguments, ('-i', "$bind_ip");
 } else {
-  print STDERR qq{$0: Unknown server binding option: $bind_ip\n};
-
-  die $usage;
+  push @bind_arguments, ('-i', "$bind_ip");
 }
 
 if ( defined $fake_proxy ) {
