@@ -1,0 +1,196 @@
+#!/bin/sh
+
+#
+# Validate that mosh produces expected output, using screen captures
+# in tmux.
+#
+
+#
+# In accordance with GNU Automake, this script returns these exit
+# status values:
+#
+# 0 test success
+# 1 test failure
+# 77 test skipped (tmux or ssh is unavailable if needed)
+# 99 hard error
+#
+
+#
+# tmux is run in command mode, always with size 80x24.  tmux output is
+# logged to basename.test.log.  If tmux is unavailable the test is reported
+# as skipped.
+#
+
+# This scripts takes a single argument: the name of the test being
+# invoked.  It uses that as a basename for additional executables used in
+# testing.  All executables are expected to return a useful exitstatus.
+
+# `basename.client` is a program used to invoke the client and
+# (possibly) generate input and capture output.  If absent, the script
+# simply runs mosh directly with no input and discards output.
+
+# `basename.client-ssh` is a program used to invoke the client and
+# (possibly) generate input and capture output.  This will run mosh
+# with ssh, without using the --local flag.  It will validate that
+# 'ssh localhost` works first; if it fails this test is reported as skipped.
+
+# `basename.server` is a test program invoked on the server.  It is
+# a standalone test not expected to generate anything other than an
+# exitstatus.  It will only be run with mosh.
+
+# `basename.server-baseline` is a test program invoked on the server.
+# It is expected to capture a screenshot from tmux with `tmux
+# capture-pane -e > basename.server-baseline.capture`.  This script
+# will be run both with and without mosh and the captures will be
+# compared.  If they are different, the test fails.
+
+# `basename.server-same` is a test program invoked on the server.  It
+# is intended to be used after `basename.server-baseline`, but to have
+# slightly different behavior that is expected to produce the same
+# output from mosh as the baseline test.  This script is only run with
+# mosh.  Any difference will fail the test.  It will capture into
+# basename.server-same.capture.
+
+# `basename.server-different` is a test program invoked on the server.
+# It is intended to be used after `basename.server-baseline`, but to
+# have slightly different behavior that is expected to produce
+# different output from mosh from the baseline test.  This script is
+# only run with mosh.  Results that are the same will fail the test.
+# It will capture into basename.server-same.capture
+
+log()
+{
+    printf "%@"
+}
+
+error()
+{
+    printf "$@" >&2
+}
+
+test_success()
+{
+    exit 0
+}
+test_failure()
+{
+    error "$@"
+    exit 1
+}
+test_skipped()
+{
+    error "$@"
+    exit 77
+}
+test_error()
+{
+    error "$@"
+    exit 99
+}
+
+
+# Tmux check.
+tmux_check()
+{
+    local version version_major version_minor
+    version=$(tmux -V)
+    if [ $? != 0 ]; then
+	error "tmux unavailable\n"
+	return 1
+    fi
+    version=${version##tmux }
+    version_major=${version%%.*}
+    version_minor=${version##*.}
+    # need version 1.8 for capture-pane
+    if [ $version_major -lt 1 ] ||
+	   [ $version_major -eq 1 -a $version_minor -lt 8 ]; then
+	error "tmux version %s too old\n" "$version"
+	return 1
+    fi
+    return 0
+}
+
+ssh_localhost_check()
+{
+    ssh localhost :
+    if [ $? -ne 0 ]; then
+	error "ssh to localhost failed\n"
+	return 1
+    fi
+    return 0
+}
+
+# main
+if !tmux_check; then
+    test_skipped "tmux unavailable\n"
+fi
+
+# Get arguments (only one so far)
+test_name=$1
+
+# Validate that we can run a test
+if [[ ! -x ${test_name}.server-baseline 
+	      || ( -f ${test_name}.server-same && ! -x ${test_name}.server-same )
+	      || ( -f ${test_name}.server-different && ! -x ${test_name}.server-different )
+	      || ( -f ${test_name}.server-same && ! -x ${test_name}.server-same )
+		  || ( -f ${test_name}.client && ! -x ${test_name}.client ) ]]; then
+    test_failure "test script(s) missing or not executable\n"
+fi
+
+
+# Run test(s).
+client_wrapper=env
+if [ -f ${test_name}.client ]; then
+    client_wrapper=${test_name}.client
+fi
+
+for server_test in baseline same different; do
+    if [ ! -f ${test_name}.server-${server_test}]; then
+	continue
+    fi
+    log "Running $server_test.\n"
+    tests=$server_test
+    if [ $server_test -eq baseline ]; then
+	tests="$server_test.direct $server_test.baseline"
+    fi
+    for run in $tests; do
+	tested="sh -c"
+	if [ $run -ne "baseline.direct" ]; then
+	    tested="mosh --local 127.0.0.1"
+	fi
+	# Actually execute code under test
+	if ! tmux -C new-session $client_wrapper $tested ./display-server-harness $run > tmux.log 2>&1; then
+	    test_error "tmux failure on test $run\n"
+	fi
+	# Check for server harness failures
+	if [[ ! -n $testname.capture
+	      !! ! -n $testname.exitstatus ]]; then
+	    test_error "server harness failure on test $run\n"
+	fi
+	read server_rv < $run.exitstatus
+	if [ $server_rv -ne 0 ]; then
+	    test_error "server harness exited with status $server_rv\n"
+	fi
+    done
+    # Compare captures
+    if [ $server_test -eq baseline ]; then
+	files="${test_name}.baseline.direct ${test_name}.baseline"
+    else
+	files="${test_name}.baseline ${test_name}.${server_test}"
+    fi
+    if diff -q $files; then
+	differ=y
+    else
+	differ=n
+    fi
+    if [ $server_test -eq different ]; then
+	desired=y
+	badresult=same
+    else
+	desired=n
+	badresult=different
+    fi
+    if [ $differ != $desired ]; then
+	test_fail "Output is $badresult on test $server_test"
+    fi
+done
