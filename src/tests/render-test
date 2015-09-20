@@ -27,16 +27,9 @@
 
 # `basename.client` is a program used to invoke the client and
 # (possibly) generate input and capture output.  If absent, the script
-# simply runs mosh directly with no input and discards output.
-
-# `basename.client-ssh` is a program used to invoke the client and
-# (possibly) generate input and capture output.  This will run mosh
-# with ssh, without using the --local flag.  It will validate that
-# 'ssh localhost` works first; if it fails this test is reported as skipped.
-
-# `basename.server` is a test program invoked on the server.  It is
-# a standalone test not expected to generate anything other than an
-# exitstatus.  It will only be run with mosh.
+# simply runs mosh directly with no input and discards output.  This
+# could be used with expect to carry on a dialog with an appropriate
+# server script.  This functionality is untested.
 
 # `basename.server-baseline` is a test program invoked on the server.
 # It is expected to capture a screenshot from tmux with `tmux
@@ -121,6 +114,10 @@ ssh_localhost_check()
 }
 
 # main
+
+# Dump environment
+env
+
 if ! tmux_check; then
     test_skipped "tmux unavailable\n"
 fi
