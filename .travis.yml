@@ -15,6 +15,8 @@ addons:
     - protobuf-compiler
     - libprotobuf-dev
     - libutempter-dev
+    - tmux			# test suite
+    - perl			# test suite
 
 before_install:
   - if test "$TRAVIS_OS_NAME" = osx; then brew update; fi
@@ -25,7 +27,7 @@ before_install:
 script:
   - ./autogen.sh
   - ./configure --enable-compile-warnings=error --enable-examples
-  - make distcheck
+  - AM_TESTS_REDIRECT='9>&2' make distcheck 9>&2
 
 notifications:
   irc: "chat.freenode.net#mosh"
