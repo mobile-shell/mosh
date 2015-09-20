@@ -60,7 +60,7 @@
 
 log()
 {
-    printf "%@"
+    printf "$@"
 }
 
 error()
@@ -121,12 +121,20 @@ ssh_localhost_check()
 }
 
 # main
-if !tmux_check; then
+if ! tmux_check; then
     test_skipped "tmux unavailable\n"
+fi
+
+if [ $# -ne 1 ]; then
+    test_error "not enough args\n"
 fi
 
 # Get arguments (only one so far)
 test_name=$1
+test_dir=${test_name}.d
+
+rm -rf ${test_dir}
+mkdir ${test_dir}
 
 # Validate that we can run a test
 if [[ ! -x ${test_name}.server-baseline 
@@ -134,56 +142,58 @@ if [[ ! -x ${test_name}.server-baseline
 	      || ( -f ${test_name}.server-different && ! -x ${test_name}.server-different )
 	      || ( -f ${test_name}.server-same && ! -x ${test_name}.server-same )
 		  || ( -f ${test_name}.client && ! -x ${test_name}.client ) ]]; then
-    test_failure "test script(s) missing or not executable\n"
+    test_error "test script(s) missing or not executable\n"
 fi
 
 
 # Run test(s).
 client_wrapper=env
 if [ -f ${test_name}.client ]; then
-    client_wrapper=${test_name}.client
+    client_wrapper=./${test_name}.client
 fi
 
 for server_test in baseline same different; do
-    if [ ! -f ${test_name}.server-${server_test}]; then
+    testfile_name=${test_name}.server-${server_test}
+    if [ ! -x ${testfile_name} ]; then
 	continue
     fi
     log "Running $server_test.\n"
-    tests=$server_test
-    if [ $server_test -eq baseline ]; then
-	tests="$server_test.direct $server_test.baseline"
+    if [ "$server_test" = baseline ]; then
+	tests="$server_test.direct $server_test"
+    else
+	tests=$server_test
     fi
     for run in $tests; do
-	tested="sh -c"
-	if [ $run -ne "baseline.direct" ]; then
-	    tested="mosh --local 127.0.0.1"
+	tested="../../scripts/mosh --client=../frontend/mosh-client --server=$PWD/../frontend/mosh-server --local 127.0.0.1"
+	if [ "$run" = "baseline.direct" ]; then
+	    tested=""
 	fi
 	# Actually execute code under test
-	if ! tmux -C new-session $client_wrapper $tested ./display-server-harness $run > tmux.log 2>&1; then
+	if ! tmux -C new-session $client_wrapper $tested ${PWD}/render-test-server-harness ${PWD}/${test_dir}/${run} ${PWD}/${testfile_name} > ${test_dir}/${run}.tmux.log 2>&1; then
 	    test_error "tmux failure on test $run\n"
 	fi
 	# Check for server harness failures
-	if [[ ! -n $testname.capture
-	      !! ! -n $testname.exitstatus ]]; then
+	if [[ ! -s ${test_dir}/${run}.capture
+	      || ! -s ${test_dir}/${run}.exitstatus ]]; then
 	    test_error "server harness failure on test $run\n"
 	fi
-	read server_rv < $run.exitstatus
-	if [ $server_rv -ne 0 ]; then
+	read server_rv < ${test_dir}/${run}.exitstatus
+	if [ "$server_rv" -ne 0 ]; then
 	    test_error "server harness exited with status $server_rv\n"
 	fi
     done
     # Compare captures
-    if [ $server_test -eq baseline ]; then
-	files="${test_name}.baseline.direct ${test_name}.baseline"
+    if [ "$server_test" = baseline ]; then
+	files="${test_dir}/baseline.direct.capture ${test_dir}/baseline.capture"
     else
-	files="${test_name}.baseline ${test_name}.${server_test}"
+	files="${test_dir}/baseline.capture ${test_dir}/${server_test}.capture"
     fi
     if diff -q $files; then
-	differ=y
-    else
 	differ=n
+    else
+	differ=y
     fi
-    if [ $server_test -eq different ]; then
+    if [ "$server_test" = different ]; then
 	desired=y
 	badresult=same
     else
@@ -191,6 +201,6 @@ for server_test in baseline same different; do
 	badresult=different
     fi
     if [ $differ != $desired ]; then
-	test_fail "Output is $badresult on test $server_test"
+	test_failure "Output is $badresult on test $server_test\n"
     fi
 done
