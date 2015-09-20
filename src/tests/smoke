@@ -1,0 +1,2 @@
+#!/bin/sh
+../../scripts/mosh --local --client=../frontend/mosh-client --server="$PWD/../frontend/mosh-server" --bind-server=127.0.0.1 127.0.0.1 echo xyzzy | grep -q xyzzy

@@ -2,7 +2,7 @@ AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXF
 AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 
 check_PROGRAMS = ocb-aes encrypt-decrypt
-TESTS = ocb-aes encrypt-decrypt
+TESTS = ocb-aes encrypt-decrypt smoke
 
 ocb_aes_SOURCES = ocb-aes.cc test_utils.cc test_utils.h
 ocb_aes_CPPFLAGS = -I$(srcdir)/../crypto -I$(srcdir)/../util
