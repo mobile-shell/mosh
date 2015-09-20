@@ -1,2 +1,5 @@
 /ocb-aes
 /encrypt-decrypt
+/*.d/
+*.log
+*.trs
