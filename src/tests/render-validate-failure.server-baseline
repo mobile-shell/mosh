@@ -1,2 +1,2 @@
 #!/bin/sh
-printf "\e[H\e[J"
+printf "\033[H\033[J"

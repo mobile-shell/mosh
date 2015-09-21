@@ -115,8 +115,8 @@ ssh_localhost_check()
 
 # main
 
-# Dump environment
-env
+# Set up environment
+: ${srcdir:=$PWD}
 
 if ! tmux_check; then
     test_skipped "tmux unavailable\n"
@@ -128,29 +128,30 @@ fi
 
 # Get arguments (only one so far)
 test_name=$1
+# XXX could use AM testsubdir macro instead
 test_dir=${test_name}.d
-
+test_script_base=${srcdir}/${test_name}
 rm -rf ${test_dir}
 mkdir ${test_dir}
 
 # Validate that we can run a test
-if [[ ! -x ${test_name}.server-baseline 
-	      || ( -f ${test_name}.server-same && ! -x ${test_name}.server-same )
-	      || ( -f ${test_name}.server-different && ! -x ${test_name}.server-different )
-	      || ( -f ${test_name}.server-same && ! -x ${test_name}.server-same )
-		  || ( -f ${test_name}.client && ! -x ${test_name}.client ) ]]; then
+if [ ! -x ${test_script_base}.server-baseline ] \
+	      || [ -f ${test_script_base}.server-same -a ! -x ${test_script_base}.server-same ] \
+	      || [ -f ${test_script_base}.server-different -a ! -x ${test_script_base}.server-different ] \
+	      || [ -f ${test_script_base}.server-same -a ! -x ${test_script_base}.server-same ] \
+	      || [ -f ${test_script_base}.client -a ! -x ${test_script_base}.client ]; then
     test_error "test script(s) missing or not executable\n"
 fi
 
 
 # Run test(s).
 client_wrapper=env
-if [ -f ${test_name}.client ]; then
-    client_wrapper=./${test_name}.client
+if [ -f ${test_script_base}.client ]; then
+    client_wrapper=${test_script_base}.client
 fi
 
 for server_test in baseline same different; do
-    testfile_name=${test_name}.server-${server_test}
+    testfile_name=${test_script_base}.server-${server_test}
     if [ ! -x ${testfile_name} ]; then
 	continue
     fi
@@ -161,17 +162,17 @@ for server_test in baseline same different; do
 	tests=$server_test
     fi
     for run in $tests; do
-	tested="../../scripts/mosh --client=../frontend/mosh-client --server=$PWD/../frontend/mosh-server --local 127.0.0.1"
+	tested="../../scripts/mosh --client=../frontend/mosh-client --server=$PWD/../frontend/mosh-server --local --bind-server=127.0.0.1 127.0.0.1"
 	if [ "$run" = "baseline.direct" ]; then
 	    tested=""
 	fi
 	# Actually execute code under test
-	if ! tmux -C new-session $client_wrapper $tested ${PWD}/render-test-server-harness ${PWD}/${test_dir}/${run} ${PWD}/${testfile_name} > ${test_dir}/${run}.tmux.log 2>&1; then
+	if ! tmux -C new-session $client_wrapper $tested ${srcdir}/render-test-server-harness ${PWD}/${test_dir}/${run} ${testfile_name} > ${test_dir}/${run}.tmux.log 2>&1; then
 	    test_error "tmux failure on test $run\n"
 	fi
 	# Check for server harness failures
-	if [[ ! -s ${test_dir}/${run}.capture
-	      || ! -s ${test_dir}/${run}.exitstatus ]]; then
+	if [ ! -s ${test_dir}/${run}.capture ] \
+	      || [ ! -s ${test_dir}/${run}.exitstatus ]; then
 	    test_error "server harness failure on test $run\n"
 	fi
 	read server_rv < ${test_dir}/${run}.exitstatus
