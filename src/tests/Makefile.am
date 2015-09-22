@@ -3,7 +3,8 @@ AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 
 displaytests = render-validate-success render-validate-failure
 check_PROGRAMS = ocb-aes encrypt-decrypt
-TESTS = ocb-aes encrypt-decrypt smoke $(displaytests)
+# XXX return smoke to the top
+TESTS = ocb-aes encrypt-decrypt $(displaytests) smoke
 XFAIL_TESTS = render-validate-failure
 
 ocb_aes_SOURCES = ocb-aes.cc test_utils.cc test_utils.h
