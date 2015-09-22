@@ -1,11 +1,15 @@
+EXTRA_DIST = smoke.test \
+	render-test render-test-server-harness \
+	render-validate-failure.test render-validate-failure.server-baseline render-validate-failure.server-different \
+	render-validate-success.test render-validate-success.server-baseline render-validate-success.server-same
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
 AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 
-displaytests = render-validate-success render-validate-failure
+displaytests = render-validate-success.test render-validate-failure.test
 check_PROGRAMS = ocb-aes encrypt-decrypt
 # XXX return smoke to the top
-TESTS = ocb-aes encrypt-decrypt $(displaytests) smoke
-XFAIL_TESTS = render-validate-failure
+TESTS = ocb-aes encrypt-decrypt $(displaytests) smoke.test
+XFAIL_TESTS = render-validate-failure.test
 
 ocb_aes_SOURCES = ocb-aes.cc test_utils.cc test_utils.h
 ocb_aes_CPPFLAGS = -I$(srcdir)/../crypto -I$(srcdir)/../util

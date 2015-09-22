@@ -1,0 +1,3 @@
+#!/bin/sh
+PATH=$PATH:.:$srcdir
+render-test $(basename $0 .test)
