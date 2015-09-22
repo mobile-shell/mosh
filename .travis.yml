@@ -8,6 +8,7 @@ addons:
     - protobuf-compiler
     - libprotobuf-dev
     - libutempter-dev
+    - bsdutils			# for script, for smoke test
 
 before_install:
   - git fetch --tags --unshallow

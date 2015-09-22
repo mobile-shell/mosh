@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 #
 # Validate that mosh produces expected output, using screen captures
@@ -180,6 +180,10 @@ for server_test in baseline same different; do
 	if ! tmux -C new-session $client_wrapper $tested "${srcdir}/render-test-server-harness" "${PWD}/${test_dir}/${run}" "${testfile_name}" > "${test_dir}/${run}.tmux.log" 2>&1; then
 	    test_error "tmux failure on test %s\n" "$run"
 	fi
+	# XXX This should not should not should not be necessary.
+	# I don't know how tmux can exit before the logfiles are created.
+	# Yet it is needed on Ubuntu 15.05.
+	sleep 1
 	# Check for server harness failures
 	if [ ! -s "${test_dir}/${run}.capture" ] \
 	      || [ ! -s "${test_dir}/${run}.exitstatus" ]; then

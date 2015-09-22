@@ -1,2 +1,10 @@
 #!/bin/sh
-../../scripts/mosh --local --client=../frontend/mosh-client --server="$PWD/../frontend/mosh-server" --bind-server=127.0.0.1 127.0.0.1 echo xyzzy | grep -q xyzzy
+if [ ! -t 0 ]; then
+    if ! type script; then
+	printf "script not found\n" >&2
+	exit 77
+    fi
+    SHELL=$0 script /dev/null | grep xyzzy
+else
+    ../../scripts/mosh --local --client=../frontend/mosh-client --server="$PWD/../frontend/mosh-server" --bind-server=127.0.0.1 127.0.0.1 echo xyzzy | grep xyzzy
+fi
