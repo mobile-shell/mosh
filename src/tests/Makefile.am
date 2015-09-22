@@ -22,4 +22,4 @@ encrypt_decrypt_LDADD = ../crypto/libmoshcrypto.a ../util/libmoshutil.a $(OPENSS
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
-	-for i in $(displaytests); do rm -rf $$i.d/; done
+	-for i in $(displaytests); do rm -rf $$(basename $$i .test).d/; done
