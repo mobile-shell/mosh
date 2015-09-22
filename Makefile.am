@@ -3,7 +3,7 @@ SUBDIRS = src scripts man conf
 EXTRA_DIST = autogen.sh ocb-license.html README.md COPYING.iOS
 BUILT_SOURCES = version.h
 CLANG_SCAN_BUILD = scan-build
-AM_DISTCHECK_CONFIGURE_FLAGS = --enable-compile-warnings=error --enable-examples
+AM_DISTCHECK_CONFIGURE_FLAGS = --enable-compile-warnings=distcheck --enable-examples
 
 .PHONY:	VERSION
 
