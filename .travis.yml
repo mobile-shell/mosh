@@ -20,6 +20,7 @@ addons:
 
 before_install:
   - if test "$TRAVIS_OS_NAME" = osx; then brew update; fi
+  - if test "$TRAVIS_OS_NAME" = osx; then brew install protobuf tmux; fi
   - if test "$TRAVIS_OS_NAME" = osx; then brew outdated protobuf tmux || brew upgrade protobuf tmux; fi
   - git fetch --tags --unshallow
 
