@@ -1,7 +1,8 @@
 EXTRA_DIST = smoke.test \
+	hold-stdin \
 	render-test render-test-server-harness \
-	render-validate-failure.test render-validate-failure.server-baseline render-validate-failure.server-different \
-	render-validate-success.test render-validate-success.server-baseline render-validate-success.server-same
+	render-validate-failure.test \
+	render-validate-success.test
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
 AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 
@@ -22,4 +23,4 @@ encrypt_decrypt_LDADD = ../crypto/libmoshcrypto.a ../util/libmoshutil.a $(OPENSS
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
-	-for i in $(displaytests); do rm -rf $$(basename $$i .test).d/; done
+	-for i in $(displaytests); do rm -rf $$i.d/; done

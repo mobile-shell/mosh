@@ -1,3 +1,34 @@
 #!/bin/sh
+
+fail()
+{
+    printf "$@" 2>&1
+    exit 99
+}
+
+
+
 PATH=$PATH:.:$srcdir
-render-test $(basename $0 .test)
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    render-test $0 baseline same
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    printf "\033[H\033[J"
+}
+
+case $1 in
+    baseline|same)
+	baseline;;
+    *)
+	fail "unknown test argument %s\n" $1;;
+esac
+return 0

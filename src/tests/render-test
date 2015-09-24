@@ -125,59 +125,67 @@ else
 	exit 99
     fi
 fi
-env
 
 if ! tmux_check; then
     test_skipped "tmux unavailable\n"
 fi
 
-if [ $# -ne 1 ]; then
+if [ $# -lt 2 ]; then
     test_error "not enough args\n"
 fi
 
 # Get arguments (only one so far)
 test_name=$1
+shift
+test_args=$@
 # XXX could use AM testsubdir macro instead
-test_dir=${test_name}.d
-test_script_base="${srcdir}/${test_name}"
+test_dir=$(basename ${test_name}).d
+test_script="${test_name}"
 rm -rf "${test_dir}"
 mkdir "${test_dir}"
 
-# Validate that we can run a test
-if [ ! -x "${test_script_base}.server-baseline" ] \
-	      || [ -f "${test_script_base}.server-same" -a ! -x "${test_script_base}.server-same" ] \
-	      || [ -f "${test_script_base}.server-different" -a ! -x "${test_script_base}.server-different" ] \
-	      || [ -f "${test_script_base}.server-same" -a ! -x "${test_script_base}.server-same" ] \
-	      || [ -f "${test_script_base}.client" -a ! -x "${test_script_base}.client" ]; then
-    test_error "test script(s) missing or not executable\n"
-fi
-
+# Set up tests to run.
+server_tests=baseline # we always run this one
+for i in $test_args; do
+    case $i in
+	baseline)
+	    ;;
+	same)
+	    server_tests="$server_tests same";;
+	different)
+	    server_tests="$server_tests different";;
+	client)
+	    client=1;;
+	*)
+	    error "unknown test type argument %s", $i
+	    exit 99
+	    ;;
+    esac
+done
 
 # Run test(s).
 client_wrapper=env
-if [ -f "${test_script_base}.client" ]; then
-    client_wrapper="${test_script_base}.client"
+if [ -n "$client" ]; then
+    client_wrapper="${test_script} client"
 fi
 
-for server_test in baseline same different; do
-    testfile_name="${test_script_base}.server-${server_test}"
-    if [ ! -x "${testfile_name}" ]; then
-	continue
-    fi
-    log "Running $server_test.\n"
+for server_test in $server_tests; do
+    log "Running server test %s.\n" "$server_test"
     if [ "$server_test" = baseline ]; then
-	tests="$server_test.direct $server_test"
+	tests="direct $server_test"
     else
 	tests=$server_test
     fi
     for run in $tests; do
-	# XXX need to quote server pathname here somehow
-	tested="../../scripts/mosh --client=../frontend/mosh-client --server=$PWD/../frontend/mosh-server --local --bind-server=127.0.0.1 127.0.0.1"
-	if [ "$run" = "baseline.direct" ]; then
-	    tested=""
+	# XXX need to quote special chars in server pathname here somehow
+	sut="../../scripts/mosh --client=../frontend/mosh-client --server=$PWD/../frontend/mosh-server --local --bind-server=127.0.0.1 127.0.0.1"
+	testarg=$run
+	if [ "$run" = "direct" ]; then
+	    testarg=baseline
+	    sut=""
 	fi
 	# Actually execute code under test
-	if ! ${srcdir}/hold-stdin tmux -C new-session $client_wrapper $tested "${srcdir}/render-test-server-harness" "${PWD}/${test_dir}/${run}" "${testfile_name}" > "${test_dir}/${run}.tmux.log" 2>&1; then
+	if ! ${srcdir}/hold-stdin tmux -C new-session $client_wrapper $sut "${srcdir}/render-test-server-harness" "${PWD}/${test_dir}/${run}" "${PWD}/${test_script} ${testarg}" > "${test_dir}/${run}.tmux.log" 2>&1; then
 	    test_error "tmux failure on test %s\n" "$run"
 	fi
 	# Check for server harness failures
@@ -192,7 +200,7 @@ for server_test in baseline same different; do
     done
     # Compare captures
     if [ "$server_test" = baseline ]; then
-	file1="${test_dir}/baseline.direct.capture"
+	file1="${test_dir}/direct.capture"
 	file2="${test_dir}/baseline.capture"
     else
 	file1="${test_dir}/baseline.capture"
@@ -211,6 +219,6 @@ for server_test in baseline same different; do
 	badresult=different
     fi
     if [ $differ != $desired ]; then
-	test_failure "Output is %s on test %s\n" "$server_test" " $badresult"
+	test_failure "Output is %s on test %s\n" "$badresult" "$server_test"
     fi
 done
