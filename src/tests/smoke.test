@@ -1,4 +1,5 @@
 #!/bin/sh
+: ${srcdir:=$PWD}
 echo starting
 sleep 1
 if [ ! -t 0 ]; then
