@@ -163,12 +163,13 @@ int main( int argc, char *argv[] )
   /* Adopt native locale */
   set_native_locale();
 
+  bool success = false;
   try {
     STMClient client( ip, desired_port, key, predict_mode );
     client.init();
 
     try {
-      client.main();
+      success = client.main();
     } catch ( ... ) {
       client.shutdown();
       throw;
@@ -178,16 +179,19 @@ int main( int argc, char *argv[] )
   } catch ( const Network::NetworkException &e ) {
     fprintf( stderr, "Network exception: %s\r\n",
 	     e.what() );
+    success = false;
   } catch ( const Crypto::CryptoException &e ) {
     fprintf( stderr, "Crypto exception: %s\r\n",
 	     e.what() );
+    success = false;
   } catch ( const std::exception &e ) {
     fprintf( stderr, "Error: %s\r\n", e.what() );
+    success = false;
   }
 
   printf( "\n[mosh is exiting.]\n" );
 
   free( key );
 
-  return 0;
+  return !success;
 }

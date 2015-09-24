@@ -118,7 +118,7 @@ public:
 
   void init( void );
   void shutdown( void );
-  void main( void );
+  bool main( void );
 
   ~STMClient()
   {
