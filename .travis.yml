@@ -16,3 +16,6 @@ script:
   - ./autogen.sh
   - ./configure --enable-compile-warnings=error --enable-examples
   - make distcheck
+
+notifications:
+  irc: "chat.freenode.net#mosh"
