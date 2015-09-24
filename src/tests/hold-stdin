@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+
+#
+# The sole function of this script is to provide a stdin that doesn't
+# read data or return EOF to its children.  If there's a clean,
+# portable, not-Perl way to do this, then that should replace this.
+#
+use warnings;
+use strict;
+
+my $pid = open(my $fh, "|-", @ARGV) or die;
+waitpid($pid, 0) == $pid or die;
+my $rc;
+if ($? == 0) {
+    $rc = 0;
+} elsif ($? >= 256) {
+    $rc = $? >> 8;
+} else {
+    $rc = ($? & 127) | 128;
+}
+exit $rc;

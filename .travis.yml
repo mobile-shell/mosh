@@ -8,7 +8,8 @@ addons:
     - protobuf-compiler
     - libprotobuf-dev
     - libutempter-dev
-    - bsdutils			# for script, for smoke test
+    - tmux			# test suite
+    - perl			# test suite
 
 before_install:
   - git fetch --tags --unshallow
