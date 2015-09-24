@@ -1,5 +1,6 @@
 language: cpp
-sudo: false
+sudo: required
+services: docker
 
 addons:
   apt:
