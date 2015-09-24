@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 #
 # Validate that mosh produces expected output, using screen captures
@@ -163,6 +163,7 @@ mkdir "${test_dir}"
 
 if [ "x$AM_TESTS_REDIRECT" != "x" ]; then
     RENDER_REDIRECT=">&9"
+    exec 2>&9
 fi
 trap 'rv=$?; if test $rv -ne 0; then dump_logs '"$test_dir $test_args $RENDER_REDIRECT"'; fi; exit $rv' EXIT
 
@@ -207,7 +208,7 @@ for server_test in $server_tests; do
 	    sut=""
 	fi
 	# Actually execute code under test
-	if ! ${srcdir}/hold-stdin tmux -C new-session $client_wrapper $sut "${srcdir}/render-test-server-harness" "${PWD}/${test_dir}/${run}" "${PWD}/${test_script} ${testarg}" > "${test_dir}/${run}.tmux.log" 2>&1; then
+	if ! ${srcdir}/hold-stdin tmux -C new-session $client_wrapper $sut "${srcdir}/render-test-server-harness" "${PWD}/${test_dir}/${run}" "${PWD}/${test_script} ${testarg}" > "${test_dir}/${run}.tmux.log"; then
 	    test_error "tmux failure on test %s\n" "$run"
 	fi
 	# Check for server harness failures
