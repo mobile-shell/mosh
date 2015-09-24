@@ -1,3 +1,10 @@
+os:
+  - linux
+  - osx
+
+cache:
+  - apt
+
 language: cpp
 sudo: required
 services: docker
@@ -10,6 +17,9 @@ addons:
     - libutempter-dev
 
 before_install:
+  - if test "$TRAVIS_OS_NAME" = osx; then brew update; fi
+  - if test "$TRAVIS_OS_NAME" = osx; then brew install protobuf tmux; fi
+  - if test "$TRAVIS_OS_NAME" = osx; then brew outdated protobuf tmux || brew upgrade protobuf tmux; fi
   - git fetch --tags --unshallow
 
 script:
