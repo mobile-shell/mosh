@@ -61,6 +61,22 @@ error()
     printf "$@" >&2
 }
 
+dump_logs()
+{
+    local dir
+    local testname
+    dir=$1
+    shift
+    testname=$(basename $dir .d)
+    printf "travis_fold:start:%s\n" $testname
+	for logfile in $dir/*.tmux.log; do
+	    printf "travis_fold:start:%s-%s\n" $testname $logfile
+	    cat $logfile
+	    printf "travis_fold:end:%s-%s\n" $testname $logfile
+	done
+    printf "travis_fold:end:%s\n" $testname
+}
+
 test_success()
 {
     exit 0
@@ -143,6 +159,12 @@ test_dir=$(basename ${test_name}).d
 test_script="${test_name}"
 rm -rf "${test_dir}"
 mkdir "${test_dir}"
+
+
+if [ "x$AM_TESTS_REDIRECT" != "x" ]; then
+    RENDER_REDIRECT=">&9"
+fi
+trap 'rv=$?; if test $rv -ne 0; then dump_logs '"$test_dir $test_args $RENDER_REDIRECT"'; fi; exit $rv' EXIT
 
 # Set up tests to run.
 server_tests=baseline # we always run this one

@@ -27,6 +27,7 @@ before_install:
 script:
   - ./autogen.sh
   - ./configure --enable-compile-warnings=error --enable-examples
+  - AM_TESTS_REDIRECT='9>&2' make distcheck 9>&2
   - make distcheck
 
 notifications:
