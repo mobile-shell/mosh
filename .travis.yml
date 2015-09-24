@@ -1,3 +1,10 @@
+os:
+  - linux
+  - osx
+
+cache:
+  - apt
+
 language: cpp
 sudo: required
 services: docker
@@ -12,6 +19,8 @@ addons:
     - perl			# test suite
 
 before_install:
+  - test "$TRAVIS_OS_NAME" = osx && brew update
+  - test "$TRAVIS_OS_NAME" = osx && brew outdated protobuf tmux && brew upgrade protobuf tmux
   - git fetch --tags --unshallow
 
 script:
