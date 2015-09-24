@@ -19,8 +19,8 @@ addons:
     - perl			# test suite
 
 before_install:
-  - test "$TRAVIS_OS_NAME" = osx && brew update
-  - test "$TRAVIS_OS_NAME" = osx && brew outdated protobuf tmux || brew upgrade protobuf tmux
+  - if test "$TRAVIS_OS_NAME" = osx; then brew update; fi
+  - if test "$TRAVIS_OS_NAME" = osx; then brew outdated protobuf tmux || brew upgrade protobuf tmux; fi
   - git fetch --tags --unshallow
 
 script:
