@@ -31,4 +31,3 @@ case $1 in
     *)
 	fail "unknown test argument %s\n" $1;;
 esac
-return 0
