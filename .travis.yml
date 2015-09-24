@@ -16,7 +16,6 @@ addons:
     - libprotobuf-dev
     - libutempter-dev
     - tmux			# test suite
-    - perl			# test suite
 
 before_install:
   - if test "$TRAVIS_OS_NAME" = osx; then brew update; fi
