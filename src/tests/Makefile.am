@@ -1,5 +1,5 @@
 EXTRA_DIST = smoke.test \
-	hold-stdin \
+	hold-stdin print-exitstatus \
 	render-test render-test-server-harness \
 	render-validate-failure.test \
 	render-validate-success.test

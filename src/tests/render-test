@@ -187,7 +187,7 @@ for i in $test_args; do
 done
 
 # Run test(s).
-client_wrapper=env
+client_wrapper=
 if [ -n "$client" ]; then
     client_wrapper="${test_script} client"
 fi
@@ -209,9 +209,14 @@ for server_test in $server_tests; do
 	fi
 	# Actually execute code under test
 	# XXX tmux 1.8 requires shell command as a single arg; once we move to 2.0, undo these quotes
-	if ! ${srcdir}/hold-stdin tmux -C new-session "$client_wrapper $sut \"${srcdir}/render-test-server-harness\" \"${PWD}/${test_dir}/${run}\" \"${PWD}/${test_script} ${testarg}\"" > "${test_dir}/${run}.tmux.log"; then
+	if ! ${srcdir}/hold-stdin tmux -C new-session "${srcdir}/print-exitstatus ${client_wrapper} ${sut} \"${srcdir}/render-test-server-harness\" \"${PWD}/${test_dir}/${run}\" \"${PWD}/${test_script} ${testarg}\"" > "${test_dir}/${run}.tmux.log"; then
 	    test_error "tmux failure on test %s\n" "$run"
 	fi
+	# Check for mosh failures
+	if ! grep -q "%%% exitstatus: 0 %%%" "${test_dir}/${run}.tmux.log"; then
+	    test_error "mosh-client had non-zero exitstatus\n"
+	fi
+
 	# Check for server harness failures
 	if [ ! -s "${test_dir}/${run}.capture" ] \
 	      || [ ! -s "${test_dir}/${run}.exitstatus" ]; then
