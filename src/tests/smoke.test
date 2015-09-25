@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 : ${srcdir:=$PWD}
 echo starting
 if [ ! -t 0 ]; then
@@ -7,9 +7,13 @@ if [ ! -t 0 ]; then
 	exit 77
     fi
     ${srcdir}/hold-stdin tmux -C new-session $0 | grep xyzzy
+    rc=$?
 else
-    ../../scripts/mosh --local --client=../frontend/mosh-client --server="$PWD/../frontend/mosh-server" --bind-server=127.0.0.1 127.0.0.1 printf xy%s zzy | grep xyzzy
+    output="$(../../scripts/mosh --local --client=../frontend/mosh-client --server="$PWD/../frontend/mosh-server" --bind-server=127.0.0.1 127.0.0.1 printf xy%s zzy 2>&1)"
+    rc=$?
+    if !(echo "$output" | grep xyzzy); then
+	rc=1
+    fi
 fi
-rc=$?
 echo ending
 exit $rc
