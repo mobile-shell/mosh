@@ -1,7 +1,6 @@
 #!/bin/sh
 : ${srcdir:=$PWD}
 echo starting
-sleep 1
 if [ ! -t 0 ]; then
     if ! type tmux; then
 	printf "tmux not found\n" >&2
@@ -11,7 +10,6 @@ if [ ! -t 0 ]; then
 else
     ../../scripts/mosh --local --client=../frontend/mosh-client --server="$PWD/../frontend/mosh-server" --bind-server=127.0.0.1 127.0.0.1 printf xy%s zzy | grep xyzzy
 fi
-sleep 1
 rc=$?
 echo ending
 exit $rc
