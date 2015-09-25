@@ -1,4 +1,4 @@
-EXTRA_DIST = smoke.test \
+EXTRA_DIST = \
 	hold-stdin print-exitstatus \
 	render-test render-test-server-harness \
 	render-validate-failure.test \
@@ -8,8 +8,7 @@ AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 
 displaytests = render-validate-success.test render-validate-failure.test
 check_PROGRAMS = ocb-aes encrypt-decrypt
-# XXX return smoke to the top
-TESTS = ocb-aes encrypt-decrypt $(displaytests) smoke.test
+TESTS = ocb-aes encrypt-decrypt $(displaytests)
 XFAIL_TESTS = render-validate-failure.test
 
 ocb_aes_SOURCES = ocb-aes.cc test_utils.cc test_utils.h
