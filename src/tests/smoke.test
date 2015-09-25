@@ -12,15 +12,11 @@ else
     output="$(../../scripts/mosh --local --client=../frontend/mosh-client --server="$PWD/../frontend/mosh-server" --bind-server=127.0.0.1 127.0.0.1 printf xy%s zzy 2>&1)"
     rc=$?
 fi
-if ! (printf "%s\n" "$output" | grep -q xyzzyq); then
+if ! (printf "%s\n" "$output" | grep -q xyzzy); then
     rc=1
-    if [ "x$AM_TESTS_REDIRECT" != "x" ]; then
-	(
-	    printf "travis_fold:start:smoke\n"
-	    printf "%s\n" "$output"
-	    printf "travis_fold:end:smoke\n"
-	) >&9
-    fi
+    printf "travis_fold:start:smoke\n"
+    printf "%s\n" "$output"
+    printf "travis_fold:end:smoke\n"
 fi
 echo ending
 exit $rc
