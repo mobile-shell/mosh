@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+# vim: syntax=perl ts=2 expandtab sw=2:
 
 #   Mosh: the mobile shell
 #   Copyright 2012 Keith Winstein
@@ -37,22 +38,40 @@ use IO::Socket;
 
 $|=1;
 
+# for tracking default configuration values
+my $def_values = {};
+
 my $client = 'mosh-client';
+$def_values->{"client"} = $client;
+
 my $server = 'mosh-server';
+$def_values->{"server"} = $server;
+
+my $family = 'inet';
+$def_values->{"family"} = $family;
+
+my $ssh = 'ssh';
+$def_values->{"ssh"} = $ssh;
+
+my $term_init = 1;
+$def_values->{"init"} = $term_init;
 
 my $predict = undef;
 
 my $bind_ip = undef;
 
-my $family = 'inet';
 my $port_request = undef;
 
-my $ssh = 'ssh';
+my $no_redirect = 0;
 
-my $term_init = 1;
+my @ssh_options = ('-S', 'none', '-n', '-tt');
+my $ssh_options_txt = join(":", @ssh_options);
 
 my $help = undef;
 my $version = undef;
+
+my $config_name = $ENV{"HOME"}."/.moshrc";
+my $DEF_CONFIG_NAME = $config_name;
 
 my @cmdline = @ARGV;
 
@@ -78,8 +97,14 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
         --ssh=COMMAND        ssh command to run when setting up session
                                 (example: "ssh -p 2222")
                                 (default: "ssh")
-
+        --ssh-options        options to pass to ssh ':' is the delimitor (default $ssh_options_txt)
         --no-init            do not send terminal initialization string
+
+-c      --config             path to the config file (default ~/.moshrc)
+
+-n      --no-stdin-redirect  do not redirect stdin to /dev/null when doing ssh (default pass -n to ssh),
+                             this could be usefull if you need to read from stdin
+                             for things like 2FA tokens
 
         --help               this message
         --version            version and copyright information
@@ -97,7 +122,7 @@ sub predict_check {
   my ( $predict, $env_set ) = @_;
 
   if ( not exists { adaptive => 0, always => 0,
-		    never => 0, experimental => 0 }->{ $predict } ) {
+       never => 0, experimental => 0 }->{ $predict } ) {
     my $explanation = $env_set ? " (MOSH_PREDICTION_DISPLAY in environment)" : "";
     print STDERR qq{$0: Unknown mode \"$predict\"$explanation.\n\n};
 
@@ -105,22 +130,155 @@ sub predict_check {
   }
 }
 
-GetOptions( 'client=s' => \$client,
-	    'server=s' => \$server,
-	    'predict=s' => \$predict,
-	    'port=s' => \$port_request,
-	    'a' => sub { $predict = 'always' },
-	    'n' => sub { $predict = 'never' },
-	    'family=s' => \$family,
-	    '4' => sub { $family = 'inet' },
-	    '6' => sub { $family = 'inet6' },
-	    'p=s' => \$port_request,
-	    'ssh=s' => \$ssh,
-	    'init!' => \$term_init,
-	    'help' => \$help,
-	    'version' => \$version,
-	    'fake-proxy!' => \my $fake_proxy,
-	    'bind-server=s' => \$bind_ip) or die $usage;
+sub getdefaultconfigfile() {
+  return $DEF_CONFIG_NAME;
+}
+
+sub parseconfigfile($) {
+  my $cfg_name = shift @_;
+  my $conf_settings = {};
+  my $cfh;
+  my $hst;
+  # Open config file, if open fail then finish
+  if (! open($cfh, "<", $cfg_name)) {
+    if ($cfg_name ne  $DEF_CONFIG_NAME) {
+      print "Unable to open config file $cfg_name\n";
+    }
+    return {};
+  }
+  my $in_section = 0;
+  while (<$cfh>) {
+    chomp;
+    # comments or empty line
+    if (m/^(?:(\s+$)|#)/) {
+      $in_section = 0 if ($1);
+      next;
+    }
+
+    if (m/^\s+([^\s=]+)\s*=\s*([^\s].*)/) {
+      if (!$in_section) {
+        print "Statement $1 out of an host section, ignoring it\n";
+        next;
+      }
+      my $key = lc($1);
+      my $val = $2;
+      if (defined $conf_settings->{$hst}->{$key}) {
+        print "Key $key already defined for host $hst, overridding the value\n";
+      }
+      $conf_settings->{$hst}->{$key} = $val;
+    }
+
+    if (m/^host\s+((?:\w+)|\*)/i) {
+      $hst = lc($1);
+      $in_section = 1;
+      if (! defined $conf_settings->{$hst}) {
+        $conf_settings->{$hst} = {};
+      }
+    }
+
+  }
+  return $conf_settings;
+}
+
+my $options = {
+              'client=s' => \$client,
+              'server=s' => \$server,
+              'predict=s' => \$predict,
+              'port=s' => \$port_request,
+              'a' => sub { $predict = 'always' },
+              'n' => sub { $predict = 'never' },
+              'family=s' => \$family,
+              '4' => sub { $family = 'inet' },
+              '6' => sub { $family = 'inet6' },
+              'p=s' => \$port_request,
+              'ssh=s' => \$ssh,
+              'init!' => \$term_init,
+              'config' => \$config_name,
+              'c' => \$config_name,
+              'help' => \$help,
+              'version' => \$version,
+              'fake-proxy!' => \my $fake_proxy,
+              'n' => sub { $no_redirect = 1 },
+              'no-stdin-redirect' => \$no_redirect,
+              'ssh-options' => sub { my ($opt_name, $opt_val) = @_; @ssh_options = split(':', $opt_val); },
+              'bind-server=s' => \$bind_ip };
+
+# For updating the value from the configuration file, a simple association
+# pure key / value is needed
+sub get_options_askeyvalue($) {
+  my $opts = shift;
+  my $key_values = {};
+
+  foreach my $c (keys(%$opts)) {
+    # Ignore the short version of the options
+    my $key;
+    if ($c =~ m/([^=!]+)/) {
+      $key = $1
+    }
+    next if (length($key) == 1);
+
+    next if ($key eq "version");
+    next if ($key eq "help");
+    next if ($key eq "fake-proxy");
+    $key_values->{$key} = $opts->{$c};
+  }
+  return $key_values;
+}
+
+sub get_conf_settings_for_host($$) {
+  my $conf = shift;
+  my $host = lc(shift);
+
+  my $settings = {};
+  if (defined $conf->{"*"}) {
+    $settings = {%{$conf->{"*"}}};
+  }
+
+  if (defined $conf->{$host}) {
+    foreach my $k (keys(%{$conf->{$host}})) {
+      $settings->{$k} = $conf->{$host}->{$k};
+    }
+  }
+  return $settings;
+}
+
+sub apply_cfg_settings($$$) {
+  my $settings = shift;
+  my $opts = shift;
+  my $def_values = shift;
+
+  my $keyvalues = get_options_askeyvalue($opts);
+  my @opt_name = keys(%$keyvalues);
+  my $unknown = 0;
+  my $ignored = 0;
+
+  foreach my $s (keys %$settings) {
+    if (!grep /^$s$/, @opt_name) {
+      print "Configuration setting $s is unknown\n";
+      $unknown++;
+      next;
+    }
+    if (defined $def_values->{$s} and ($def_values->{$s} ne ${$keyvalues->{$s}})) {
+        print "$s is ignored\n";
+        $ignored++;
+        next;
+    }
+    ${$keyvalues->{$s}} = $settings->{$s};
+  }
+
+  return ($unknown, $ignored);
+}
+
+if (caller()) {
+  # So that the module can be loaded, when used like that
+  return 1;
+}
+
+GetOptions(%$options) or die $usage;
+my $cfg = parseconfigfile($config_name);
+my $settings_from_cfg = get_conf_settings_for_host($cfg, $ARGV[0]);
+
+apply_cfg_settings($settings_from_cfg, $options, $def_values);
 
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
@@ -144,10 +302,10 @@ if ( defined $port_request ) {
     }
     if ( defined $high ) {
       if ( $high <= 0 or $high > 65535 ) {
-	die "$0: Server-side high port ($high) must be within valid range [1..65535].\n";
+        die "$0: Server-side high port ($high) must be within valid range [1..65535].\n";
       }
       if ( $low > $high ) {
-	die "$0: Server-side port range ($port_request): low port greater than high port.\n";
+        die "$0: Server-side port range ($port_request): low port greater than high port.\n";
       }
     }
   } else {
@@ -195,10 +353,10 @@ if ( defined $fake_proxy ) {
   my $afstr = 'AF_' . uc( $family );
   my $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
   my $sock = IO::Socket->new( Domain => $af,
-			      Family => $af,
-			      PeerHost => $host,
-			      PeerPort => $port,
-			      Proto => "tcp" )
+                              Family => $af,
+                              PeerHost => $host,
+                              PeerPort => $port,
+                              Proto => "tcp" )
     or die "$0: Could not connect to $host: $@\n";
 
   print STDERR "MOSH IP ", $sock->peerhost, "\n";
@@ -230,7 +388,6 @@ if ( defined $fake_proxy ) {
   waitpid $pid, 0;
   exit;
 }
-
 if ( scalar @ARGV < 1 ) {
   die $usage;
 }
@@ -278,8 +435,12 @@ if ( $pid == 0 ) { # child
     push @server, '--', @command;
   }
 
+  if ($no_redirect) {
+    @ssh_options = grep { $_ ne '-n' } @ssh_options;
+  }
+
   my $quoted_self = shell_quote( $0, "--family=$family" );
-  exec "$ssh " . shell_quote( '-S', 'none', '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', "$server " . shell_quote( @server ) );
+  exec "$ssh " . shell_quote( @ssh_options, '-o', "ProxyCommand=$quoted_self --fake-proxy -- %h %p", $userhost, '--', "$server " . shell_quote( @server ) );
   die "Cannot exec ssh: $!\n";
 } else { # parent
   my ( $ip, $port, $key );
@@ -288,18 +449,18 @@ if ( $pid == 0 ) { # child
     chomp;
     if ( m{^MOSH IP } ) {
       if ( defined $ip ) {
-	die "$0 error: detected attempt to redefine MOSH IP.\n";
+        die "$0 error: detected attempt to redefine MOSH IP.\n";
       }
       ( $ip ) = m{^MOSH IP (\S+)\s*$} or die "Bad MOSH IP string: $_\n";
     } elsif ( m{^MOSH CONNECT } ) {
       if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) ([A-Za-z0-9/+]{22})\s*$} ) {
-	last LINE;
+        last LINE;
       } else {
-	die "Bad MOSH CONNECT string: $_\n";
+        die "Bad MOSH CONNECT string: $_\n";
       }
     } else {
       if ( defined $port_request and $port_request =~ m{:} and m{Bad UDP port} ) {
-	$bad_udp_port_warning = 1;
+        $bad_udp_port_warning = 1;
       }
       print "$_\n";
     }
