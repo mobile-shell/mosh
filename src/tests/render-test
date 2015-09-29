@@ -96,6 +96,13 @@ test_error()
     error "$@"
     exit 99
 }
+test_exitstatus()
+{
+    status=$1
+    shift
+    error "$@"
+    exit $status
+}
 
 
 # Tmux check.
@@ -168,17 +175,18 @@ fi
 trap 'rv=$?; if test $rv -ne 0; then dump_logs '"$test_dir $test_args $RENDER_REDIRECT"'; fi; exit $rv' EXIT
 
 # Set up tests to run.
-server_tests=baseline # we always run this one
+server_tests=
+compare_tests=
 for i in $test_args; do
     case $i in
-	baseline)
-	    ;;
-	same)
-	    server_tests="$server_tests same";;
-	different)
-	    server_tests="$server_tests different";;
+	baseline|direct|variant)
+	    server_tests="$server_tests $i";;
+	verify|same|different)
+	    compare_tests="$compare_tests $i";;
 	client)
 	    client=1;;
+	post)
+	    post=1;;
 	*)
 	    error "unknown test type argument %s", $i
 	    exit 99
@@ -192,19 +200,12 @@ if [ -n "$client" ]; then
     client_wrapper="${test_script} client"
 fi
 
-for server_test in $server_tests; do
-    log "Running server test %s.\n" "$server_test"
-    if [ "$server_test" = baseline ]; then
-	tests="direct $server_test"
-    else
-	tests=$server_test
-    fi
-    for run in $tests; do
+for run in $server_tests; do
+    log "Running server test %s.\n" "$run"
 	# XXX need to quote special chars in server pathname here somehow
 	sut="../../scripts/mosh --client=../frontend/mosh-client --server=$PWD/../frontend/mosh-server --local --bind-server=127.0.0.1 127.0.0.1"
 	testarg=$run
 	if [ "$run" = "direct" ]; then
-	    testarg=baseline
 	    sut=""
 	fi
 	# Actually execute code under test
@@ -226,21 +227,25 @@ for server_test in $server_tests; do
 	if [ "$server_rv" -ne 0 ]; then
 	    test_error "server harness exited with status %s\n" "$server_rv"
 	fi
-    done
+
+done
+
+for compare in $compare_tests; do
+    log "Running server comparison %s.\n" "$compare"
     # Compare captures
-    if [ "$server_test" = baseline ]; then
-	file1="${test_dir}/direct.capture"
-	file2="${test_dir}/baseline.capture"
+    if [ "$compare" = baseline ]; then
+	test1="direct"
+	test2="baseline"
     else
-	file1="${test_dir}/baseline.capture"
-	file2="${test_dir}/${server_test}.capture"
+	test1="baseline"
+	test2="variant"
     fi
-    if diff -q "$file1" "$file2"; then
+    if diff -q "${test_dir}/${test1}.capture" "${test_dir}/${test2}.capture"; then
 	differ=n
     else
 	differ=y
     fi
-    if [ "$server_test" = different ]; then
+    if [ "$compare" = different ]; then
 	desired=y
 	badresult=same
     else
@@ -248,6 +253,15 @@ for server_test in $server_tests; do
 	badresult=different
     fi
     if [ $differ != $desired ]; then
-	test_failure "Output is %s on test %s\n" "$badresult" "$server_test"
+	test_failure "Output is %s betweens tests %s and %s\n" "$badresult" "test1" "$test2"
     fi
 done
+
+# Run a post script (usually a custom validation of results)
+if [ -n "$post" ]; then
+    (cd "${test_dir}" && "${test_script}" post)
+    status=$?
+    if [ $status -ne 0 ]; then
+	test_exitstatus $status "Post test failed with exitstatus %d\n" $status
+    fi
+fi

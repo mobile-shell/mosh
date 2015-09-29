@@ -11,7 +11,7 @@ fail()
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
-    render-test $0 baseline different
+    render-test $0 baseline variant different
     exit
 fi
 
@@ -26,7 +26,7 @@ baseline()
 }
 
 case $1 in
-    baseline|different)
+    baseline|variant)
 	baseline;;
     *)
 	fail "unknown test argument %s\n" $1;;
