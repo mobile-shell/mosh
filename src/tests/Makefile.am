@@ -2,14 +2,24 @@ EXTRA_DIST = \
 	hold-stdin print-exitstatus \
 	render-test render-test-server-harness \
 	render-validate-failure.test \
-	render-validate-success.test
+	render-validate-success.test \
+	emulation-back-tab.test \
+	unicode-later-combining.test
+
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
 AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 
-displaytests = render-validate-success.test render-validate-failure.test
+displaytests = \
+	render-validate-success.test \
+	render-validate-failure.test \
+	emulation-back-tab.test \
+	unicode-later-combining.test
+
 check_PROGRAMS = ocb-aes encrypt-decrypt
 TESTS = ocb-aes encrypt-decrypt $(displaytests)
-XFAIL_TESTS = render-validate-failure.test
+XFAIL_TESTS = \
+	render-validate-failure.test \
+	emulation-back-tab.test
 
 ocb_aes_SOURCES = ocb-aes.cc test_utils.cc test_utils.h
 ocb_aes_CPPFLAGS = -I$(srcdir)/../crypto -I$(srcdir)/../util
