@@ -5,6 +5,10 @@
 # page, a combining character drawn on a cell after returning the
 # cursor to that cell.
 #
+# XXX This test is fragile because it depends on tmux's unicode rendering.
+# The baseline and variant tests produce different (but valid) outputs
+# that are visually identical.
+#
 
 fail()
 {
