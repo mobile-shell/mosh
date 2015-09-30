@@ -26,15 +26,15 @@ fi
 
 baseline()
 {
-    printf 'hello, wurld\e[Zo\n'
+    printf 'hello, wurld\033[Zo\n'
 }
 
 post()
 {
-    if grep -q 'hello, world' tmux.capture.log; then
+    if grep -q 'hello, world' baseline.capture; then
 	exit 0
     fi
-    if grep -q 'hello, wurldo' tmux.capture.log; then
+    if grep -q 'hello, wurldo' baseline.capture; then
 	exit 1
     fi
     exit 99
