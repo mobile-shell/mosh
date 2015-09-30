@@ -31,10 +31,10 @@ baseline()
 
 post()
 {
-    if grep -q 'hello, world' baseline.capture; then
+    if grep -q 'hello, world' $(basename $0).d/baseline.capture; then
 	exit 0
     fi
-    if grep -q 'hello, wurldo' baseline.capture; then
+    if grep -q 'hello, wurldo' $(basename $0).d/baseline.capture; then
 	exit 1
     fi
     exit 99

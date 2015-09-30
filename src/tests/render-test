@@ -259,7 +259,7 @@ done
 
 # Run a post script (usually a custom validation of results)
 if [ -n "$post" ]; then
-    (cd "${test_dir}" && "${srcdir}/${test_script}" post)
+    "${test_script}" post
     status=$?
     if [ $status -ne 0 ]; then
 	test_exitstatus $status "Post test failed with exitstatus %d\n" $status

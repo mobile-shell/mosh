@@ -19,10 +19,10 @@ if [ -z "$TMUX_PANE" ]; then
     exit 99
 fi
 # run harnessed command
-eval $@
+eval "$@"
 testret=$?
 # Wait a bit for tmux screen to become up to date.
-sleep 1
+(sleep .1 && sleep 1)
 # capture screen
 if ! tmux capture-pane -et $TMUX_PANE -b buffer-$$; then
     printf "tmux capture-pane failed, erroring test\n" >&2

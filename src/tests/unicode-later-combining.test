@@ -7,7 +7,7 @@
 #
 # XXX This test is fragile because it depends on tmux's unicode rendering.
 # The baseline and variant tests produce different (but valid) outputs
-# that are visually identical.
+# that are visually identical.  The variant test is not run or validated.
 #
 
 fail()
@@ -32,18 +32,21 @@ fi
 
 baseline()
 {
-    printf 'abc\n\314\202\ndef'
+    printf 'abc\n\314\202\ndef\n'
 }
 
 variant()
 {
-    printf 'abc\n \314\202\ndef'
+    printf 'abc\n \314\202\ndef\n'
 }
 
 post()
 {
-    grep -q "$(printf '^\302\240\314\202$')" baseline.capture
-    exit
+    export LANG=C
+    if grep -q "$(printf '^\302\240\314\202$')" $(basename $0).d/baseline.capture; then
+	exit 0
+    fi
+    exit 1
 }
 
 case $1 in
