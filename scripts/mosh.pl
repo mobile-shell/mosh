@@ -162,20 +162,34 @@ if ( defined $port_request ) {
 
 delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
 
+my $userhost;
+my @command;
 my @bind_arguments;
-if ( ( not defined $bind_ip && not defined $localhost ) || $bind_ip =~ m{^ssh$}i ) {
-  push @bind_arguments, '-s';
-} elsif ( $bind_ip =~ m{^any$}i ) {
-  # do nothing
-} elsif ( $bind_ip =~ m{^[0-9\.]+$} ) {
-  push @bind_arguments, ('-i', "$bind_ip");
+
+if ( ! defined $fake_proxy ) {
+  if ( scalar @ARGV < 1 ) {
+    die $usage;
+  }
+  $userhost = shift;
+  @command = @ARGV;
+  if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
+    if ( not defined $localhost ) {
+      push @bind_arguments, '-s';
+    } else {
+      push @bind_arguments, ('-i', "$userhost");
+    }
+  } elsif ( $bind_ip =~ m{^any$}i ) {
+    # do nothing
+  } elsif ( $bind_ip =~ m{^[0-9\.]+$} ) {
+    push @bind_arguments, ('-i', "$bind_ip");
+  } else {
+    print STDERR qq{$0: Unknown server binding option: $bind_ip\n};
+
+    die $usage;
+  }
 } else {
-  print STDERR qq{$0: Unknown server binding option: $bind_ip\n};
+  my ( $host, $port ) = @ARGV;
 
-  die $usage;
-}
-
-if ( defined $fake_proxy ) {
   use Errno qw(EINTR);
   my $have_ipv6 = eval {
       require IO::Socket::IP;
@@ -193,8 +207,6 @@ if ( defined $fake_proxy ) {
 		die "$0: IPv6 sockets not available in this Perl install\n";
 	}
   }
-
-  my ( $host, $port ) = @ARGV;
 
   # Resolve hostname and connect
   my $afstr = 'AF_' . uc( $family );
@@ -235,13 +247,6 @@ if ( defined $fake_proxy ) {
   waitpid $pid, 0;
   exit;
 }
-
-if ( scalar @ARGV < 1 ) {
-  die $usage;
-}
-
-my $userhost = shift;
-my @command = @ARGV;
 
 # Count colors
 open COLORCOUNT, '-|', $client, ('-c') or die "Can't count colors: $!\n";
