@@ -10,6 +10,7 @@ displaytests = \
 	e2e-success.test \
 	e2e-failure.test \
 	emulation-back-tab.test \
+	unicode-combine-fallback-assert.test \
 	unicode-later-combining.test
 
 check_PROGRAMS = ocb-aes encrypt-decrypt
