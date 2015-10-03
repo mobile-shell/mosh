@@ -1,0 +1,268 @@
+#!/bin/sh
+
+#
+# Validate that mosh produces expected output, using screen captures
+# in tmux.
+#
+
+#
+# In accordance with GNU Automake, this script returns these exit
+# status values:
+#
+# 0 test success
+# 1 test failure
+# 77 test skipped (tmux or ssh is unavailable if needed)
+# 99 hard error
+#
+
+#
+# tmux is run in command mode, always with size 80x24.  tmux output is
+# logged to basename.test.log.  If tmux is unavailable the test is reported
+# as skipped.
+#
+
+# This scripts takes a single argument: the name of the test being
+# invoked.  It uses that as a basename for additional executables used in
+# testing.  All executables are expected to return a useful exitstatus.
+
+# `basename.client` is a program used to invoke the client and
+# (possibly) generate input and capture output.  If absent, the script
+# simply runs mosh directly with no input and discards output.  This
+# could be used with expect to carry on a dialog with an appropriate
+# server script.  This functionality is untested.
+
+# `basename.server-baseline` is a test program invoked on the server.
+# It is expected to capture a screenshot from tmux with `tmux
+# capture-pane -e > basename.server-baseline.capture`.  This script
+# will be run both with and without mosh and the captures will be
+# compared.  If they are different, the test fails.
+
+# `basename.server-same` is a test program invoked on the server.  It
+# is intended to be used after `basename.server-baseline`, but to have
+# slightly different behavior that is expected to produce the same
+# output from mosh as the baseline test.  This script is only run with
+# mosh.  Any difference will fail the test.  It will capture into
+# basename.server-same.capture.
+
+# `basename.server-different` is a test program invoked on the server.
+# It is intended to be used after `basename.server-baseline`, but to
+# have slightly different behavior that is expected to produce
+# different output from mosh from the baseline test.  This script is
+# only run with mosh.  Results that are the same will fail the test.
+# It will capture into basename.server-same.capture
+
+log()
+{
+    printf "$@"
+}
+
+error()
+{
+    printf "$@" >&2
+}
+
+dump_logs()
+{
+    local dir
+    local testname
+    dir=$1
+    shift
+    testname=$(basename $dir .d)
+    printf "travis_fold:start:%s\n" $testname
+	for logfile in $dir/*.tmux.log; do
+	    printf "travis_fold:start:%s-%s\n" $testname $logfile
+	    cat $logfile
+	    printf "travis_fold:end:%s-%s\n" $testname $logfile
+	done
+    printf "travis_fold:end:%s\n" $testname
+}
+
+test_success()
+{
+    exit 0
+}
+test_failure()
+{
+    error "$@"
+    exit 1
+}
+test_skipped()
+{
+    error "$@"
+    exit 77
+}
+test_error()
+{
+    error "$@"
+    exit 99
+}
+test_exitstatus()
+{
+    status=$1
+    shift
+    error "$@"
+    exit $status
+}
+
+
+# Tmux check.
+tmux_check()
+{
+    local version version_major version_minor
+    version=$(tmux -V)
+    if [ $? != 0 ]; then
+	error "tmux unavailable\n"
+	return 1
+    fi
+    version=${version##tmux }
+    version_major=${version%%.*}
+    version_minor=${version##*.}
+    # need version 1.8 for capture-pane
+    if [ $version_major -lt 1 ] ||
+	   [ $version_major -eq 1 -a $version_minor -lt 8 ]; then
+	error "tmux version %s too old\n" "$version"
+	return 1
+    fi
+    return 0
+}
+
+ssh_localhost_check()
+{
+    ssh localhost :
+    if [ $? -ne 0 ]; then
+	error "ssh to localhost failed\n"
+	return 1
+    fi
+    return 0
+}
+
+# main
+
+# Set up environment
+if [ -z "$srcdir" ]; then
+    : ${srcdir:=$PWD}
+else
+    srcdir="$(cd $srcdir && pwd)"
+    if [ $? -ne 0 ]; then
+	error "can't cd to srcdir: %s\n" "$srcdir"
+	exit 99
+    fi
+fi
+
+if ! tmux_check; then
+    test_skipped "tmux unavailable\n"
+fi
+
+if [ $# -lt 2 ]; then
+    test_error "not enough args\n"
+fi
+
+# Get arguments (only one so far)
+test_name=$1
+shift
+test_args=$@
+# XXX could use AM testsubdir macro instead
+test_dir=$(basename ${test_name}).d
+test_script="${test_name}"
+rm -rf "${test_dir}"
+mkdir "${test_dir}"
+
+
+if [ "x$AM_TESTS_REDIRECT" != "x" ]; then
+    RENDER_REDIRECT=">&9"
+    exec 2>&9
+fi
+trap 'rv=$?; if test $rv -ne 0; then dump_logs '"$test_dir $test_args $RENDER_REDIRECT"'; fi; exit $rv' EXIT
+
+# Set up tests to run.
+server_tests=
+compare_tests=
+for i in $test_args; do
+    case $i in
+	baseline|direct|variant)
+	    server_tests="$server_tests $i";;
+	verify|same|different)
+	    compare_tests="$compare_tests $i";;
+	client)
+	    client=1;;
+	post)
+	    post=1;;
+	*)
+	    error "unknown test type argument %s", $i
+	    exit 99
+	    ;;
+    esac
+done
+
+# Run test(s).
+client_wrapper=
+if [ -n "$client" ]; then
+    client_wrapper="${test_script} client"
+fi
+
+for run in $server_tests; do
+    log "Running server test %s.\n" "$run"
+	# XXX need to quote special chars in server pathname here somehow
+	sut="../../scripts/mosh --client=../frontend/mosh-client --server=$PWD/../frontend/mosh-server --local --bind-server=127.0.0.1 127.0.0.1"
+	testarg=$run
+	if [ "$run" = "direct" ]; then
+	    sut=""
+	fi
+	# Actually execute code under test
+	# XXX tmux 1.8 requires shell command as a single arg; once we move to 2.0, undo these quotes
+	# XXX this ignores $TMPDIR, because it results in an overlong pathname on OS X
+	if ! ${srcdir}/hold-stdin tmux -S "/tmp/.tmux-mosh-test-$$" -C new-session "${srcdir}/print-exitstatus ${client_wrapper} ${sut} \"${srcdir}/e2e-test-server\" \"${PWD}/${test_dir}/${run}\" \"${PWD}/${test_script} ${testarg}\"" > "${test_dir}/${run}.tmux.log"; then
+	    test_error "tmux failure on test %s\n" "$run"
+	fi
+	# Check for mosh failures
+	if ! grep -q "%%% exitstatus: 0 %%%" "${test_dir}/${run}.tmux.log"; then
+	    test_error "mosh-client had non-zero exitstatus\n"
+	fi
+
+	# Check for server harness failures
+	if [ ! -s "${test_dir}/${run}.capture" ] \
+	      || [ ! -s "${test_dir}/${run}.exitstatus" ]; then
+	    test_error "server harness failure on test %s\n" "$run"
+	fi
+	read server_rv < "${test_dir}/${run}.exitstatus"
+	if [ "$server_rv" -ne 0 ]; then
+	    test_error "server harness exited with status %s\n" "$server_rv"
+	fi
+
+done
+
+for compare in $compare_tests; do
+    log "Running server comparison %s.\n" "$compare"
+    # Compare captures
+    if [ "$compare" = verify ]; then
+	test1="direct"
+	test2="baseline"
+    else
+	test1="baseline"
+	test2="variant"
+    fi
+    if diff -q "${test_dir}/${test1}.capture" "${test_dir}/${test2}.capture"; then
+	differ=n
+    else
+	differ=y
+    fi
+    if [ "$compare" = different ]; then
+	desired=y
+	badresult=same
+    else
+	desired=n
+	badresult=different
+    fi
+    if [ $differ != $desired ]; then
+	test_failure "Output is %s between tests %s and %s\n" "$badresult" "$test1" "$test2"
+    fi
+done
+
+# Run a post script (usually a custom validation of results)
+if [ -n "$post" ]; then
+    "${test_script}" post
+    status=$?
+    if [ $status -ne 0 ]; then
+	test_exitstatus $status "Post test failed with exitstatus %d\n" $status
+    fi
+fi

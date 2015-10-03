@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+
+#
+# Print exitstatus on stderr.
+#
+use warnings;
+use strict;
+
+my $rc = system(@ARGV);
+if ($? == -1) {
+    die "system failed: %!\n";
+}
+if ($? == 0) {
+    $rc = 0;
+} elsif ($? >= 256) {
+    $rc = $? >> 8;
+} else {
+    $rc = ($? & 127) | 128;
+}
+print STDERR "%%% exitstatus: ${rc} %%%\n";
+exit $rc;

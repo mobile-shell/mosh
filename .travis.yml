@@ -1,3 +1,10 @@
+os:
+  - linux
+  - osx
+
+cache:
+  - apt
+
 language: cpp
 sudo: required
 services: docker
@@ -8,14 +15,16 @@ addons:
     - protobuf-compiler
     - libprotobuf-dev
     - libutempter-dev
+    - tmux			# test suite
+    - perl			# test suite
 
 before_install:
+  - if test "$TRAVIS_OS_NAME" = osx; then brew update; fi
+  - if test "$TRAVIS_OS_NAME" = osx; then brew install protobuf tmux; fi
+  - if test "$TRAVIS_OS_NAME" = osx; then brew outdated protobuf tmux || brew upgrade protobuf tmux; fi
   - git fetch --tags --unshallow
 
 script:
   - ./autogen.sh
   - ./configure --enable-compile-warnings=error --enable-examples
-  - make distcheck
-
-notifications:
-  irc: "chat.freenode.net#mosh"
+  - AM_TESTS_REDIRECT='9>&2' make distcheck 9>&2

@@ -1,0 +1,50 @@
+#!/bin/sh
+
+#
+# This test is for issue 539 on github.
+#
+
+fail()
+{
+    printf "$@" 2>&1
+    exit 99
+}
+
+
+
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test $0 baseline post
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    printf 'hello, wurld\033[Zo\n'
+}
+
+post()
+{
+    if grep -q 'hello, world' $(basename $0).d/baseline.capture; then
+	exit 0
+    fi
+    if grep -q 'hello, wurldo' $(basename $0).d/baseline.capture; then
+	exit 1
+    fi
+    exit 99
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" $1;;
+esac

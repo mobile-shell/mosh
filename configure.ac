@@ -23,7 +23,7 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""
 AC_ARG_ENABLE([compile-warnings],
-  [AS_HELP_STRING([--enable-compile-warnings@<:@=no/yes/maximum/error@:>@],
+  [AS_HELP_STRING([--enable-compile-warnings@<:@=no/yes/maximum/error/distcheck@:>@],
      [Turn on compiler warnings])],
   [case "$enableval" in
      no)
@@ -37,6 +37,14 @@ AC_ARG_ENABLE([compile-warnings],
        ;;
      error)
        WARNING_CXXFLAGS="-Wall -Werror"
+       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
+       ;;
+     distcheck)
+       if test "$(uname -s)" = Linux; then
+         WARNING_CXXFLAGS="-Wall -Werror"
+       else
+         WARNING_CXXFLAGS="-Wall"
+       fi
        PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
        ;;
      *)
