@@ -234,7 +234,7 @@ done
 for compare in $compare_tests; do
     log "Running server comparison %s.\n" "$compare"
     # Compare captures
-    if [ "$compare" = baseline ]; then
+    if [ "$compare" = verify ]; then
 	test1="direct"
 	test2="baseline"
     else
