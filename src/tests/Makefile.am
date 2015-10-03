@@ -1,8 +1,8 @@
 EXTRA_DIST = \
 	hold-stdin print-exitstatus \
-	render-test render-test-server-harness \
-	render-validate-failure.test \
-	render-validate-success.test \
+	e2e-test e2e-test-server \
+	e2e-failure.test \
+	e2e-success.test \
 	emulation-back-tab.test \
 	unicode-later-combining.test
 
@@ -10,15 +10,15 @@ AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXF
 AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 
 displaytests = \
-	render-validate-success.test \
-	render-validate-failure.test \
+	e2e-success.test \
+	e2e-failure.test \
 	emulation-back-tab.test \
 	unicode-later-combining.test
 
 check_PROGRAMS = ocb-aes encrypt-decrypt
 TESTS = ocb-aes encrypt-decrypt $(displaytests)
 XFAIL_TESTS = \
-	render-validate-failure.test \
+	e2e-failure.test \
 	emulation-back-tab.test
 
 ocb_aes_SOURCES = ocb-aes.cc test_utils.cc test_utils.h

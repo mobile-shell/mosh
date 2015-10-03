@@ -211,7 +211,7 @@ for run in $server_tests; do
 	# Actually execute code under test
 	# XXX tmux 1.8 requires shell command as a single arg; once we move to 2.0, undo these quotes
 	# XXX this ignores $TMPDIR, because it results in an overlong pathname on OS X
-	if ! ${srcdir}/hold-stdin tmux -S "/tmp/.tmux-mosh-test-$$" -C new-session "${srcdir}/print-exitstatus ${client_wrapper} ${sut} \"${srcdir}/render-test-server-harness\" \"${PWD}/${test_dir}/${run}\" \"${PWD}/${test_script} ${testarg}\"" > "${test_dir}/${run}.tmux.log"; then
+	if ! ${srcdir}/hold-stdin tmux -S "/tmp/.tmux-mosh-test-$$" -C new-session "${srcdir}/print-exitstatus ${client_wrapper} ${sut} \"${srcdir}/e2e-test-server\" \"${PWD}/${test_dir}/${run}\" \"${PWD}/${test_script} ${testarg}\"" > "${test_dir}/${run}.tmux.log"; then
 	    test_error "tmux failure on test %s\n" "$run"
 	fi
 	# Check for mosh failures
