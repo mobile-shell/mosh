@@ -1,76 +1,152 @@
-#
-# This is an end-to-end test for mosh.  It works by generating stimuli
-# for mosh, capturing its generated screens with tmux, comparing the
-# resulting captures, and of course checking exit statuses.
-#
-# In accordance with GNU Automake, this script returns these exit
-# status values:
-#
-# 0 test success
-# 1 test failure
-# 77 test skipped (tmux or ssh is unavailable if needed)
-# 99 hard error
-#
+# Mosh Tests
 
-#
-# This test is structured as 3 different scripts:
-# <testname>.test, the actual test code
-# e2e-test, the meat of the test framework
-# e2e-test-server-wrapper, a framework script to handle server-side test execution
-#
-# <testname>.test is a multirole script.  If invoked with no
-# arguments, it should simply invoke e2e-test <testname>.test
-# <test-actions>.  If invoked with an argument (one of the test-action
-# names given as arguments by the no-argument form), it performs some
-# part of the actual test.
-#
-# e2e-test is the heart of this test system.  It runs multiple
-# actions, logs their output, compares their results, and generates
-# the final result (exitstatus, mostly) for the Automake testing
-# framework.  Each action is run, and recorded in
-# <testname>.test.d/<run>.*
-# <run>.exitstatus is the exitstatus from the server wrapper.
-# <run>.tmux.log is the output of tmux for the entire test run
-# <run>.capture is a capture of the Mosh client screen after the test
-#  action is complete, generated with tmux capture-pane.
-#
-# The possible test-actions are:
-# baseline
-# same
-# different
-# client
-#
-# The first three of these are tests to be run on the server.  Simple
-# ones will just output some text to the console After the test is
-# run, the tmux screen will be captured from the client mosh.  The
-# `baseline` test is always run twice: once without mosh and once
-# with.  The `different` test is expected to use some slightly
-# different stimuli to mosh that we expect will cause mosh to generate
-# different output.  A sample use case for this might be a regression
-# test for a new escape sequence handler.  The `same` test is also
-# expected to use slightly different stimuli to mosh that we expect
-# will cause mosh to generate the *same* output.  A sample use case
-# might be code that validates Mosh's handling of edge cases involving
-# Unicode.  The `client` test is simply an invocation of Mosh that
-# replaces e2e-test's default, and might be used to test Mosh's
-# network and/or SSH handling.
-#
-# As noted above, `baseline` actually does two test runs, one called
-# `baseline`, with mosh, and one called `direct`, without mosh.  Both
-# invoke the test script with action name `baseline`.  The screen
-# captures of these two runs are compared.
-#
-# The `same` action runs once and is compared with `baseline`.  If
-# they compare identical, the test succeeds.
-#
-# The `different` action runs once and is compared with `baseline`.
-# If they compare different, the test succeeds.
-#
+## ocb-aes
+
+This is a unit test for the OCB-AES encryption used in mosh, including
+Rogaway's OCB implementation and some of mosh's surrounding C++
+support code.
+
+## encrypt-decrypt
+
+This is a simple functional test of mosh's implementation of encrypted messages.
+
+## e2e-test
+
+This is a test framework for end-to-end testing of mosh.  It uses tmux
+to invoke mosh in a nicely stable interactive pty, and also uses
+tmux's `capture-pane` command to get a dump of the terminal screen
+that mosh-client has drawn, neatly getting around Mosh's somewhat
+non-deterministic display redraw.
+
+There are three essential parts to the framework:
+
+* your test script,
+
+* `e2e-test`,
+
+* `e2e-test-server`.
+
+The test script has two roles: when invoked without argments, it is a
+wrapper script for the overall test, and when invoked with an
+argument, it performs a testing-related action.  In wrapper mode, it
+invokes e2e-test with action arguments, which are used to invoke the
+test script for actions at appropriate points by e2e-test.  These
+provide a suite of behaviors that you can use to test various mosh
+behaviors.
+
+`e2e-test` is the heart of the framework.  It runs actions as
+requested, logs their output, compares and/or validates their results,
+and generates the final result (exitstatus, mostly) for the Automake
+testing framework used by the mosh build.  For test execution, it runs
+an action in an interactive session, in a tmux `screen`, to exercise
+some behavior.  The action can optionally be run in a mosh session, or
+directly in tmux (doing both and comparing the result is a useful way
+to test complex terminal emulation behaviors).  The action generally
+writes some output to the terminal that can later be verified by
+another action.  Optionally, a client action can generate tty input or
+otherwise exercise mosh in some fashion (this capability is untested,
+but it's a useful place to use `expect` or other interactive
+simulations).  The action is run by `e2e-test-server`, which is a
+relatively small wrapper script to capture errors, and capture the
+tmux screen.
+
+There are several different categories of actions:
+
+### Execution
+
+`baseline` is an action that almost all tests will use.  This invokes
+the test script inside mosh, where it can generate some output, and
+then captures the client-side tmux display with `tmux capture-pane`.
+
+`direct` is the same as the above, except that mosh is not used--
+`e2e-wrapper-script` and the test script are invoked directly inside
+tmux.
+
+`variant` can be used to provide a slightly different action from
+`baseline`.
+
+### Verification
+
+`verify` compares captures from the `baseline` and `direct` test
+actions, which are expected to be identical.
+
+`same` compares captures from the `baseline` and `variant` test
+actions, which are expected to be identical.
+
+`different` compares captures from the `baseline` and `variant` test
+actions, which are expected to be different.
+
+`post` is a catchall script hook which allows custom verification
+acions to be coded.
+
+### Client wrapper
+
+`client` simply injects a wrapper command into the (long) test command
+between tmux and mosh.  It's expected to interact with its wrapped
+command line as `expect` might do.  This is not actually tested yet.
 
 
-#
-# tmux is run in command mode, always with its default size 80x24, as
-# `tmux -C new-session test args...`  This generates a printable
-# output captured into <run>.tmux.log.
-#
+## Logging and error reporting
 
+Each execution action is run, and recorded in
+`<testname>.test.d/<action>.*`. `<action>.exitstatus` is the
+exitstatus from the server wrapper.  `<action>.tmux.log` is the output
+of tmux for the entire test run for that action; `<action>.capture` is
+a capture of the Mosh client screen after the test action is complete,
+generated with `tmux capture-pane`.
+
+In accordance with GNU Automake's test framework, the test should
+return these exit status values:
+
+0 test success
+1 test failure
+77 test skipped (tmux or ssh is unavailable if needed)
+99 hard error
+
+These values are also used internally between the various scripts;
+errors are conveyed out to the build test framework.
+
+
+## Sample tests
+
+A few tests have been implemented so far to test the framework itself,
+and to provide examples for further development.
+
+`e2e-success` is a simple test that executes `baseline` and `direct`
+with the same stimulus (simply clearing the screen), and expects to
+see identical results.
+
+`e2e-failure` is similar `e2e-success`, but expects to see different
+results from `baseline` and `variant`.  Since it uses the same
+stimulus for the two execution action, it fails.  A more realistic
+test might be to have `variant` execute some escape sequence that is
+absent from `baseline`; this would verify that the escape sequence
+actually does something.
+
+`emulation-back-tab` tests an escape sequence that mosh does not
+support.  It expects the test to produce the output that would be
+generated if the escape sequence were implemented.  If it gets output
+as expected when the escape sequence is *not* implemented, the test
+fails.  But if the output does not match one of these two cases, the
+test returns an error.  This is an example of error handling within
+the test framework.
+
+`unicode-later-combining` demonstrates mosh's handling of a Unicode
+edge case, a combining character drawn without a printing character in
+the same cell.  It verifies the output in the `post` action; since
+there are a couple of different Unicode renderings that are reasonable
+in this case, a regex that covers both is used.  It also implements an
+unused `variant` action that draws blank-space+combiner in a correct
+fashion.
+
+## Notes
+
+The shell command `printf` is generally used in place of
+`echo` in this framework, because of its more precisely-specified and
+portable behavior.  But beware, even `printf` varies between systems--
+GNU printf, for example, implements `\e`, which is a non-POSIX
+extension unavailable in BSD implementations
+
+It's fairly simple to test each of these scripts independently, but
+the entire chain is a bit prone to behaving oddly in hard-to-debug
+ways.  `set -x` is your friend here.
