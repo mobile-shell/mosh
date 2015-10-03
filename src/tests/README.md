@@ -20,11 +20,9 @@ non-deterministic display redraw.
 
 There are three essential parts to the framework:
 
-* your test script,
-
-* `e2e-test`,
-
-* `e2e-test-server`.
+* your test script
+* `e2e-test`
+* `e2e-test-server`
 
 The test script has two roles: when invoked without argments, it is a
 wrapper script for the overall test, and when invoked with an
@@ -98,10 +96,10 @@ generated with `tmux capture-pane`.
 In accordance with GNU Automake's test framework, the test should
 return these exit status values:
 
-0 test success
-1 test failure
-77 test skipped (tmux or ssh is unavailable if needed)
-99 hard error
+* 0 test success
+* 1 test failure
+* 77 test skipped (tmux or ssh is unavailable if needed)
+* 99 hard error
 
 These values are also used internally between the various scripts;
 errors are conveyed out to the build test framework.
