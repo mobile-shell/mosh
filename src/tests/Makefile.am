@@ -10,6 +10,7 @@ displaytests = \
 	e2e-success.test \
 	e2e-failure.test \
 	emulation-back-tab.test \
+	emulation-multiline-scroll.test \
 	unicode-combine-fallback-assert.test \
 	unicode-later-combining.test
 
