@@ -59,8 +59,7 @@ for arch in $ARCHS; do
     mkdir "${prefix}"
     if ./configure --prefix="${prefix}/local" \
 		   CC="cc -arch ${arch}" CPP="cc -arch ${arch} -E" CXX="c++ -arch ${arch}" \
-		   TINFO_LIBS=-lncurses \
-		   OPENSSL_CFLAGS="  " OPENSSL_LIBS="-lssl -lcrypto -lz" &&
+		   TINFO_LIBS=-lncurses &&
 	    make clean &&
 	    make install -j8 &&
 	    rm -f "${prefix}/etc"

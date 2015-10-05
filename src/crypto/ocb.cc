@@ -50,9 +50,13 @@
 
 /* This implementation has built-in support for multiple AES APIs. Set any
 /  one of the following to non-zero to specify which to use.               */
+#if 0
+#define USE_APPLE_COMMON_CRYPTO_AES       0
+#define USE_NETTLE_AES       0
 #define USE_OPENSSL_AES      1  /* http://openssl.org                      */
 #define USE_REFERENCE_AES    0  /* Internet search: rijndael-alg-fst.c     */
 #define USE_AES_NI           0  /* Uses compiler's intrinsics              */
+#endif
 
 /* During encryption and decryption, various "L values" are required.
 /  The L values can be precomputed during initialization (requiring extra
@@ -72,6 +76,7 @@
 /* Includes and compiler specific definitions                              */
 /* ----------------------------------------------------------------------- */
 
+#include "config.h"
 #include "ae.h"
 #include <stdlib.h>
 #include <string.h>
@@ -95,8 +100,12 @@
 	#include <intrin.h>
 	#pragma intrinsic(_byteswap_uint64, _BitScanForward, memcpy)
 #elif __GNUC__
+	#ifndef inline
 	#define inline __inline__            /* No "inline" in GCC ansi C mode */
+	#endif
+	#ifndef restrict
 	#define restrict __restrict__      /* No "restrict" in GCC ansi C mode */
+	#endif
 #endif
 
 #if _MSC_VER
@@ -348,6 +357,131 @@ static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *ke
 #define BPI 4  /* Number of blocks in buffer per ECB call */
 
 /*-------------------*/
+#elif USE_APPLE_COMMON_CRYPTO_AES
+/*-------------------*/
+
+#include <fatal_assert.h>
+#include <CommonCrypto/CommonCryptor.h>
+
+typedef struct {
+	CCCryptorRef ref;
+	uint8_t b[4096];
+} AES_KEY;
+#if (OCB_KEY_LEN == 0)
+#define ROUNDS(ctx) ((ctx)->rounds)
+#else
+#define ROUNDS(ctx) (6+OCB_KEY_LEN/4)
+#endif
+
+static inline void AES_set_encrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	CCCryptorStatus rv = CCCryptorCreateFromData(
+		kCCEncrypt,
+		kCCAlgorithmAES,
+		kCCOptionECBMode,
+		handle,
+		bits / 8,
+		NULL,
+		&(key->b),
+		sizeof (key->b),
+		&(key->ref),
+		NULL);
+
+	fatal_assert(rv == kCCSuccess);
+}
+static inline void AES_set_decrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	CCCryptorStatus rv = CCCryptorCreateFromData(
+		kCCDecrypt,
+		kCCAlgorithmAES,
+		kCCOptionECBMode,
+		handle,
+		bits / 8,
+		NULL,
+		&(key->b),
+		sizeof (key->b),
+		&(key->ref),
+		NULL);
+
+	fatal_assert(rv == kCCSuccess);
+}
+static inline void AES_encrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	size_t dataOutMoved;
+	CCCryptorStatus rv = CCCryptorUpdate(
+		key->ref,
+		(const void *)src,
+		kCCBlockSizeAES128,
+		(void *)dst,
+		kCCBlockSizeAES128,
+		&dataOutMoved);
+	fatal_assert(rv == kCCSuccess);
+	fatal_assert(dataOutMoved == kCCBlockSizeAES128);
+}
+#if 0
+/* unused */
+static inline void AES_decrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	AES_encrypt(src, dst, key);
+}
+#endif
+static inline void AES_ecb_encrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	const size_t dataSize = kCCBlockSizeAES128 * nblks;
+	size_t dataOutMoved;
+	CCCryptorStatus rv = CCCryptorUpdate(
+		key->ref,
+		(const void *)blks,
+		dataSize,
+		(void *)blks,
+		dataSize,
+		&dataOutMoved);
+	fatal_assert(rv == kCCSuccess);
+	fatal_assert(dataOutMoved == dataSize);
+}
+static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	AES_ecb_encrypt_blks(blks, nblks, key);
+}
+
+#define BPI 4  /* Number of blocks in buffer per ECB call */
+
+/*-------------------*/
+#elif USE_NETTLE_AES
+/*-------------------*/
+
+#include <nettle/aes.h>
+
+typedef struct aes_ctx AES_KEY;
+#if (OCB_KEY_LEN == 0)
+#define ROUNDS(ctx) ((ctx)->rounds)
+#else
+#define ROUNDS(ctx) (6+OCB_KEY_LEN/4)
+#endif
+
+static inline void AES_set_encrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	nettle_aes_set_encrypt_key(key, bits/8, (const uint8_t *)handle);
+}
+static inline void AES_set_decrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	nettle_aes_set_decrypt_key(key, bits/8, (const uint8_t *)handle);
+}
+static inline void AES_encrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	nettle_aes_encrypt(key, AES_BLOCK_SIZE, dst, src);
+}
+#if 0
+/* unused */
+static inline void AES_decrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	nettle_aes_decrypt(key, AES_BLOCK_SIZE, dst, src);
+}
+#endif
+static inline void AES_ecb_encrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	nettle_aes_encrypt(key, nblks * AES_BLOCK_SIZE, (unsigned char*)blks, (unsigned char*)blks);
+}
+static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	nettle_aes_decrypt(key, nblks * AES_BLOCK_SIZE, (unsigned char*)blks, (unsigned char*)blks);
+}
+
+#define BPI 4  /* Number of blocks in buffer per ECB call */
+
+/*-------------------*/
 #elif USE_REFERENCE_AES
 /*-------------------*/
 
@@ -560,6 +694,8 @@ static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *ke
 #define BPI 8  /* Number of blocks in buffer per ECB call   */
                /* Set to 4 for Westmere, 8 for Sandy Bridge */
 
+#else
+#error "No AES implementation selected."
 #endif
 
 /* ----------------------------------------------------------------------- */
