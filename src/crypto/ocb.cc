@@ -50,7 +50,8 @@
 
 /* This implementation has built-in support for multiple AES APIs. Set any
 /  one of the following to non-zero to specify which to use.               */
-#define USE_OPENSSL_AES      1  /* http://openssl.org                      */
+#define USE_NETTLE_AES       1
+#define USE_OPENSSL_AES      0  /* http://openssl.org                      */
 #define USE_REFERENCE_AES    0  /* Internet search: rijndael-alg-fst.c     */
 #define USE_AES_NI           0  /* Uses compiler's intrinsics              */
 
@@ -343,6 +344,45 @@ static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *ke
 		--nblks;
 		AES_decrypt((unsigned char *)(blks+nblks), (unsigned char *)(blks+nblks), key);
 	}
+}
+
+#define BPI 4  /* Number of blocks in buffer per ECB call */
+
+/*-------------------*/
+#elif USE_NETTLE_AES
+/*-------------------*/
+
+#include <nettle/aes.h>
+
+typedef struct aes_ctx AES_KEY;
+#if (OCB_KEY_LEN == 0)
+#define ROUNDS(ctx) ((ctx)->rounds)
+#else
+#define ROUNDS(ctx) (6+OCB_KEY_LEN/4)
+#endif
+
+static inline void AES_set_encrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	nettle_aes_set_encrypt_key(key, bits/8, (const uint8_t *)handle);
+}
+static inline void AES_set_decrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	nettle_aes_set_decrypt_key(key, bits/8, (const uint8_t *)handle);
+}
+static inline void AES_encrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	nettle_aes_encrypt(key, AES_BLOCK_SIZE, dst, src);
+}
+#if 0
+/* unused */
+static inline void AES_decrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	nettle_aes_decrypt(key, AES_BLOCK_SIZE, dst, src);
+}
+#endif
+static inline void AES_ecb_encrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	nettle_aes_encrypt(key, nblks * AES_BLOCK_SIZE, (unsigned char*)blks, (unsigned char*)blks);
+}
+static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	nettle_aes_decrypt(key, nblks * AES_BLOCK_SIZE, (unsigned char*)blks, (unsigned char*)blks);
 }
 
 #define BPI 4  /* Number of blocks in buffer per ECB call */
