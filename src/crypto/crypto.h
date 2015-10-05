@@ -44,7 +44,10 @@ using std::string;
 
 long int myatoi( const char *str );
 
+class PRNG;
+
 namespace Crypto {
+
   class CryptoException : public std::exception {
   public:
     string text;
@@ -84,6 +87,7 @@ namespace Crypto {
 
   public:
     Base64Key(); /* random key */
+    Base64Key(PRNG &prng);
     Base64Key( string printable_key );
     string printable_key( void ) const;
     unsigned char *data( void ) { return key; }

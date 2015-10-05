@@ -105,7 +105,7 @@ Base64Key::Base64Key( string printable_key )
   string base64 = printable_key + "==";
 
   size_t len = 16;
-  if ( !base64_decode( base64.data(), 24, (char *)&key[ 0 ], &len ) ) {
+  if ( !base64_decode( base64.data(), 24, key, &len ) ) {
     throw CryptoException( "Key must be well-formed base64." );
   }
 
@@ -124,11 +124,16 @@ Base64Key::Base64Key()
   PRNG().fill( key, sizeof( key ) );
 }
 
+Base64Key::Base64Key(PRNG &prng)
+{
+  prng.fill( key, sizeof( key ) );
+}
+
 string Base64Key::printable_key( void ) const
 {
   char base64[ 24 ];
   
-  base64_encode( (char *)key, 16, base64, 24 );
+  base64_encode( key, 16, base64, 24 );
 
   if ( (base64[ 23 ] != '=')
        || (base64[ 22 ] != '=') ) {

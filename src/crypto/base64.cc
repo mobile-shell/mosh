@@ -31,103 +31,78 @@
 */
 
 #include <string.h>
-#include <openssl/bio.h>
-#include <openssl/evp.h>
+#include <stdlib.h>
 
 #include "fatal_assert.h"
 #include "base64.h"
 
-bool base64_decode( const char *b64, const size_t b64_len,
-		    char *raw, size_t *raw_len )
-{
-  bool ret = false;
+static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+/* Reverse maps from an ASCII char to a base64 sixbit value.  Returns > 0x3f on failure. */
+static unsigned char base64_char_to_sixbit(char c)
+{
+  /*
+   * Yes, this is slow.  But it's also very simple, and easy to verify.
+   * We don't need performance here.
+   */
+  const char *match = strchr(table, c);
+  if (!match) {
+    return 0xff;
+  }
+  return match - table;
+}
+
+bool base64_decode( const char *b64, const size_t b64_len,
+		    uint8_t *raw, size_t *raw_len )
+{
   fatal_assert( b64_len == 24 ); /* only useful for Mosh keys */
   fatal_assert( *raw_len == 16 );
 
-  /* initialize input/output */
-  BIO_METHOD *b64_method = BIO_f_base64();
-  fatal_assert( b64_method );
-
-  BIO *b64_bio = BIO_new( b64_method );
-  fatal_assert( b64_bio );
-
-  BIO_set_flags( b64_bio, BIO_FLAGS_BASE64_NO_NL );
-
-  BIO *mem_bio = BIO_new_mem_buf( (void *) b64, b64_len );
-  fatal_assert( mem_bio );
-
-  BIO *combined_bio = BIO_push( b64_bio, mem_bio );
-  fatal_assert( combined_bio );
-
-  fatal_assert( 1 == BIO_flush( combined_bio ) );
-  
-  /* read the string */
-  int bytes_read = BIO_read( combined_bio, raw, *raw_len );
-  if ( bytes_read <= 0 ) {
-    goto end;
+  uint32_t bytes = 0;
+  for (int i = 0; i < 22; i++) {
+    unsigned char sixbit = base64_char_to_sixbit(*(b64++));
+    if (sixbit > 0x3f) {
+      return false;
+    }
+    bytes <<= 6;
+    bytes |= sixbit;
+    /* write groups of 3 */
+    if (i % 4 == 3) {
+      raw[0] = bytes >> 16;
+      raw[1] = bytes >> 8;
+      raw[2] = bytes;
+      raw += 3;
+      bytes = 0;
+    }
   }
-
-  if ( bytes_read != (int)*raw_len ) {
-    goto end;
+  /* last byte of output */
+  *raw = bytes >> 4;
+  if (b64[0] != '=' || b64[1] != '=') {
+    return false;
   }
-
-  fatal_assert( 1 == BIO_flush( combined_bio ) );
-
-  /* check if there is more to read */
-  char extra[ 256 ];
-  bytes_read = BIO_read( combined_bio, extra, 256 );
-  if ( bytes_read > 0 ) {
-    goto end;
-  }
-
-  /* check if mem buf is empty */
-  if ( !BIO_eof( mem_bio ) ) {
-    goto end;
-  }
-
-  ret = true;
- end:
-  BIO_free_all( combined_bio );
-  return ret;
+  return true;
 }
 
-void base64_encode( const char *raw, const size_t raw_len,
+void base64_encode( const uint8_t *raw, const size_t raw_len,
 		    char *b64, const size_t b64_len )
 {
   fatal_assert( b64_len == 24 ); /* only useful for Mosh keys */
   fatal_assert( raw_len == 16 );
 
-  /* initialize input/output */
-  BIO_METHOD *b64_method = BIO_f_base64(), *mem_method = BIO_s_mem();
-  fatal_assert( b64_method );
-  fatal_assert( mem_method );
-
-  BIO *b64_bio = BIO_new( b64_method ), *mem_bio = BIO_new( mem_method );
-  fatal_assert( b64_bio );
-  fatal_assert( mem_bio );
-
-  BIO_set_flags( b64_bio, BIO_FLAGS_BASE64_NO_NL );
-
-  BIO *combined_bio = BIO_push( b64_bio, mem_bio );
-  fatal_assert( combined_bio );
+  /* first 15 bytes of input */
+  for (int i = 0; i < 5; i++) {
+    uint32_t bytes = (raw[0] << 16) | (raw[1] << 8) | raw[2];
+    b64[0] = table[(bytes >> 18) & 0x3f];
+    b64[1] = table[(bytes >> 12) & 0x3f];
+    b64[2] = table[(bytes >> 6) & 0x3f];
+    b64[3] = table[(bytes) & 0x3f];
+    raw += 3;
+    b64 += 4;
+  }
   
-  /* write the string */
-  int bytes_written = BIO_write( combined_bio, raw, raw_len  );
-  fatal_assert( bytes_written >= 0 );
-
-  fatal_assert( bytes_written == (int)raw_len );
-
-  fatal_assert( 1 == BIO_flush( combined_bio ) );
-
-  /* check if mem buf has desired length */
-  fatal_assert( BIO_pending( mem_bio ) == (int)b64_len );
-
-  char *mem_ptr;
-
-  BIO_get_mem_data( mem_bio, &mem_ptr );
-
-  memcpy( b64, mem_ptr, b64_len );
-
-  BIO_free_all( combined_bio );
+  /* last byte of input, last 4 of output */
+  b64[0] = table[*raw >> 2];
+  b64[1] = table[(*raw << 4) & 0x3f];
+  b64[2] = '=';
+  b64[3] = '=';
 }
