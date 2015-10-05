@@ -9,6 +9,7 @@ AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 displaytests = \
 	e2e-success.test \
 	e2e-failure.test \
+	emulation-80th-column.test \
 	emulation-back-tab.test \
 	emulation-multiline-scroll.test \
 	unicode-combine-fallback-assert.test \

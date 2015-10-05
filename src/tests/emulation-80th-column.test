@@ -1,0 +1,94 @@
+#!/bin/sh
+
+#
+# This test validates the ancient VT100 behavior of positioning the
+# cursor at column 80 (and not wrapping) after 80 characters are
+# output, and behaving accordingly with subsequent cursor motion
+# commands (CR+LF in this state should not result in an extra blank
+# line).
+#
+
+fail()
+{
+    printf "$@" 2>&1
+    exit 99
+}
+
+
+
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test $0 baseline post
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+sleepf()
+{
+    (sleep .1 || sleep 1) > /dev/null 2>&1
+}
+
+seq()
+{
+    if [ $# -lt 1 -o $# -gt 3 ]; then
+	echo "bad args" >&2
+    fi
+    first=$1
+    incr=1
+    last=0
+    case $# in
+	3)
+	    incr=$2
+	    last=$3
+	    ;;
+	2)
+	    last=$2
+	    ;;
+	1)
+	    ;;
+    esac
+    while :; do
+	printf '%d\n' $first
+	first=$(expr $first + $incr)
+	if [ $first -gt $last ]; then
+	    break
+	fi
+    done
+}
+
+baseline()
+{
+    # We need to control CR and LF individually for this test.
+    stty raw
+    printf '\033[H\033[J'
+    for lines in $(seq 1 25); do
+	for tencols in $(seq 1 8); do
+	    printf "EEEEEEEEEE"
+	done
+	printf "\r\n"
+    done
+}
+
+post()
+{
+    # If hidden 80th column is working properly, then the lines
+    # will have no blank lines in between and we should see 23
+    # of them.
+    if [ $(grep -c "EEEEEEEEEE" $(basename $0).d/baseline.capture) -ne 23 ]; then
+	exit 1
+    fi
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" $1;;
+esac
