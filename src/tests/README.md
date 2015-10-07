@@ -77,12 +77,18 @@ actions, which are expected to be different.
 `post` is a catchall script hook which allows custom verification
 acions to be coded.
 
-### Client wrapper
+### Client wrappers
+
+`tmux` injects a wrapper command into the test command before tmux.
+If this is not run, a default command called `hold-stdin` is run
+instead.  These commands are expected to hold tmux's stdin open,
+possibly injecting tmux commands, while the test runs.  See
+`window-resize.test` for an example of this that manipulates tmux
+state.  Alternately, this could use expect or something similar.
 
 `client` simply injects a wrapper command into the (long) test command
 between tmux and mosh.  It's expected to interact with its wrapped
 command line as `expect` might do.  This is not actually tested yet.
-
 
 ## Logging and error reporting
 
