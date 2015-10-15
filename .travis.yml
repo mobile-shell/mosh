@@ -7,7 +7,7 @@ cache:
 
 language: cpp
 sudo: required
-services: docker
+dist: trusty
 
 addons:
   apt:
