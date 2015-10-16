@@ -11,6 +11,7 @@ displaytests = \
 	e2e-failure.test \
 	emulation-80th-column.test \
 	emulation-back-tab.test \
+	emulation-cursor-motion.test \
 	emulation-multiline-scroll.test \
 	server-network-timeout.test \
 	server-signal-timeout.test \
