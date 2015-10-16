@@ -10,6 +10,7 @@ AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 displaytests = \
 	e2e-success.test \
 	e2e-failure.test \
+	emulation-ascii-iso-8859.test \
 	emulation-80th-column.test \
 	emulation-attributes-vt100.test \
 	emulation-attributes-16color.test \
