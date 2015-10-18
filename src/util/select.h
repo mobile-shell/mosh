@@ -58,8 +58,6 @@ public:
 private:
   Select()
     : max_fd( -1 )
-    , got_any_signal( 0 )
-
     /* These initializations are not used; they are just
        here to appease -Weffc++. */
     , all_fds( dummy_fd_set )
@@ -124,7 +122,6 @@ public:
     memcpy( &read_fds,  &all_fds, sizeof( read_fds  ) );
     memcpy( &error_fds, &all_fds, sizeof( error_fds ) );
     clear_got_signal();
-    got_any_signal = 0;
 
 #ifdef HAVE_PSELECT
     struct timespec ts;
@@ -185,16 +182,25 @@ public:
     return FD_ISSET( fd, &error_fds );
   }
 
-  bool signal( int signum ) const
+  /* This method consumes a signal notification. */
+  bool signal( int signum )
   {
     fatal_assert( signum >= 0 );
     fatal_assert( signum <= MAX_SIGNAL_NUMBER );
-    return got_signal[ signum ];
+    /* XXX This requires a guard against concurrent signals. */
+    bool rv = got_signal[ signum ];
+    got_signal[ signum ] = 0;
+    return rv;
   }
 
+  /* This method does not consume signal notifications. */
   bool any_signal( void ) const
   {
-    return got_any_signal;
+    bool rv = false;
+    for (int i = 0; i < MAX_SIGNAL_NUMBER; i++) {
+      rv |= got_signal[ i ];
+    }
+    return rv;
   }
 
 private:
@@ -206,7 +212,6 @@ private:
 
   /* We assume writes to these ints are atomic, though we also try to mask out
      concurrent signal handlers. */
-  int got_any_signal;
   int got_signal[ MAX_SIGNAL_NUMBER + 1 ];
 
   fd_set all_fds, read_fds, error_fds;

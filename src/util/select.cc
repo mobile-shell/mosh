@@ -43,5 +43,4 @@ void Select::handle_signal( int signum )
 
   Select &sel = get_instance();
   sel.got_signal[ signum ] = 1;
-  sel.got_any_signal = 1;
 }

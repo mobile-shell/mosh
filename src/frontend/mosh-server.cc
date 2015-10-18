@@ -95,7 +95,8 @@ typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConn
 static void serve( int host_fd,
 		   Terminal::Complete &terminal,
 		   ServerConnection &network,
-		   long network_timeout );
+		   long network_timeout,
+		   long network_signaled_timeout );
 
 static int run_server( const char *desired_ip, const char *desired_port,
 		       const string &command_path, char *command_argv[],
@@ -352,6 +353,16 @@ static int run_server( const char *desired_ip, const char *desired_port,
       network_timeout = 0;
     }
   }
+  /* get network signaled idle timeout */
+  long network_signaled_timeout = 0;
+  char *signal_envar = getenv( "MOSH_SERVER_SIGNAL_TMOUT" );
+  if ( signal_envar ) {
+    /* We don't care about strtol errors here, they all produce sensible return values. */
+    network_signaled_timeout = strtol( signal_envar, NULL, 10 );
+    if ( network_signaled_timeout < 0 ) {
+      network_signaled_timeout = 0;
+    }
+  }
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ||
@@ -517,7 +528,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
 #endif
 
     try {
-      serve( master, terminal, *network, network_timeout );
+      serve( master, terminal, *network, network_timeout, network_signaled_timeout );
     } catch ( const Network::NetworkException &e ) {
       fprintf( stderr, "Network exception: %s\n",
 	       e.what() );
@@ -543,14 +554,16 @@ static int run_server( const char *desired_ip, const char *desired_port,
   return 0;
 }
 
-static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network, long network_timeout )
+static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network, long network_timeout, long network_signaled_timeout )
 {
-  /* scale timeout */
-  const uint64_t network_timeout_ms = static_cast<uint64_t>(network_timeout) * 1000;
+  /* scale timeouts */
+  const uint64_t network_timeout_ms = static_cast<uint64_t>( network_timeout ) * 1000;
+  const uint64_t network_signaled_timeout_ms = static_cast<uint64_t>( network_signaled_timeout ) * 1000;
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
   sel.add_signal( SIGTERM );
   sel.add_signal( SIGINT );
+  sel.add_signal( SIGUSR1 );
 
   uint64_t last_remote_num = network.get_remote_state_num();
 
@@ -710,6 +723,12 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	   network_timeout_ms <= time_since_remote_state ) {
 	idle_shutdown = true;
 	fprintf( stderr, "Network idle for %" PRIu64 " seconds.\n", time_since_remote_state / 1000 );
+      }
+      if ( sel.signal( SIGUSR1 ) ) {
+	if ( !network_signaled_timeout_ms || network_signaled_timeout_ms <= time_since_remote_state ) {
+	  idle_shutdown = true;
+	  fprintf( stderr, "Network idle for %"PRIu64" seconds when SIGUSR1 received\n", time_since_remote_state / 1000 );
+	}
       }
 
       if ( sel.any_signal() || idle_shutdown ) {

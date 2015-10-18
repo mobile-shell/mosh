@@ -103,6 +103,23 @@ client to reappear.  This variable is somewhat similar to the
 a login-session inactivity timeout; it only applies to network
 connectivity.
 
+.TP
+.B MOSH_SERVER_NETWORK_TMOUT
+When set to an integer number, this variable specifies how long the
+server will wait, in seconds, to receive an update from the client
+before allowing \fBSIGUSR1\fP to terminate a session.  When unset,
+\fBSIGUSR1\fP will always terminate sessions.  With this feature,
+users and administrators may implement scripts to clean up
+disconnected Mosh sessions without fear of accidentally killing those
+that have active connectivity.  With this variable set, a user
+connected via Mosh can
+issue
+.nf
+$ pkill -SIGUSR1 mosh-server
+.fi
+to kill disconnected sessions without killing their current login
+session.
+
 .SH EXAMPLE
 
 .nf
