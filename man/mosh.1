@@ -92,6 +92,13 @@ command to run server helper on remote machine (default: "mosh-server")
 The server helper is unprivileged and can be installed in the user's
 home directory.
 
+This option can be used to set environment variables for the server by
+using the
+.BR env (1)
+command to wrap the actual server command.  See
+.BR mosh-server (1)
+for available environment variables.
+
 .TP
 .B \-\-ssh=\fICOMMAND\fP
 OpenSSH command to remotely execute mosh-server on remote machine (default: "ssh")

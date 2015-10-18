@@ -82,6 +82,43 @@ Locale-related environment variable to try as part of a fallback
 environment, if the startup environment does not specify a character
 set of UTF-8.
 
+.SH ENVIRONMENT VARIABLES
+These variables allow server-side configuration of Mosh's behavior.
+They may be set by administrators in system login/rc files,
+/etc/login.conf, or similar mechanisms, or users in their shell's
+login/rc files.  \fBmosh-server\fP passes these variables to the login
+session and shell that it starts, but changing them there will have no
+effect.
+
+.TP
+.B MOSH_SERVER_NETWORK_TMOUT
+If this variable is set to a positive integer number, it specifies how
+long (in seconds) \fBmosh-server\fP will wait to receive an update from the
+client before exiting.  Since \fPmosh\fP is very useful for mobile
+clients with intermittent operation and connectivity, we suggest
+setting this variable to a high value, such as 604800 (one week) or
+2592000 (30 days).  Otherwise, \fBmosh-server\fP will wait
+indefinitely for a client to reappear.  This variable is somewhat
+similar to the \fBTMOUT\fP variable found in many Bourne shells.
+However, it is not a login-session inactivity timeout; it only applies
+to network connectivity.
+
+.TP
+.B MOSH_SERVER_SIGNAL_TMOUT
+If this variable is set to a positive integer number, it specifies how
+long (in seconds) \fBmosh-server\fP will ignore SIGUSR1 while waiting
+to receive an update from the client.  Otherwise, \fBSIGUSR1\fP will
+always terminate \fBmosh-server\fP.  Users and administrators may
+implement scripts to clean up disconnected Mosh sessions.  With this
+variable set, a user or administrator can issue
+
+.nf
+$ pkill -SIGUSR1 mosh-server
+.fi
+
+to kill disconnected sessions without killing connected login
+sessions.
+
 .SH EXAMPLE
 
 .nf

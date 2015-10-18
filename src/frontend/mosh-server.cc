@@ -54,6 +54,7 @@
 #include <netdb.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <inttypes.h>
 
 #ifdef HAVE_UTMPX_H
 #include <utmpx.h>
@@ -93,7 +94,9 @@ typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConn
 
 static void serve( int host_fd,
 		   Terminal::Complete &terminal,
-		   ServerConnection &network );
+		   ServerConnection &network,
+		   long network_timeout,
+		   long network_signaled_timeout );
 
 static int run_server( const char *desired_ip, const char *desired_port,
 		       const string &command_path, char *command_argv[],
@@ -340,6 +343,34 @@ int main( int argc, char *argv[] )
 static int run_server( const char *desired_ip, const char *desired_port,
 		       const string &command_path, char *command_argv[],
 		       const int colors, bool verbose, bool with_motd ) {
+  /* get network idle timeout */
+  long network_timeout = 0;
+  char *timeout_envar = getenv( "MOSH_SERVER_NETWORK_TMOUT" );
+  if ( timeout_envar && *timeout_envar ) {
+    errno = 0;
+    char *endptr;
+    network_timeout = strtol( timeout_envar, &endptr, 10 );
+    if ( *endptr != '\0' || ( network_timeout == 0 && errno == EINVAL ) ) {
+      fprintf( stderr, "MOSH_SERVER_NETWORK_TMOUT not a valid integer, ignoring\n" );
+    } else if ( network_timeout < 0 ) {
+      fprintf( stderr, "MOSH_SERVER_NETWORK_TMOUT is negative, ignoring\n" );
+      network_timeout = 0;
+    }
+  }
+  /* get network signaled idle timeout */
+  long network_signaled_timeout = 0;
+  char *signal_envar = getenv( "MOSH_SERVER_SIGNAL_TMOUT" );
+  if ( signal_envar && *signal_envar ) {
+    errno = 0;
+    char *endptr;
+    network_signaled_timeout = strtol( signal_envar, &endptr, 10 );
+    if ( *endptr != '\0' || ( network_signaled_timeout == 0 && errno == EINVAL ) ) {
+      fprintf( stderr, "MOSH_SERVER_SIGNAL_TMOUT not a valid integer, ignoring\n" );
+    } else if ( network_signaled_timeout < 0 ) {
+      fprintf( stderr, "MOSH_SERVER_SIGNAL_TMOUT is negative, ignoring\n" );
+      network_signaled_timeout = 0;
+    }
+  }
   /* get initial window size */
   struct winsize window_size;
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ||
@@ -505,7 +536,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
 #endif
 
     try {
-      serve( master, terminal, *network );
+      serve( master, terminal, *network, network_timeout, network_signaled_timeout );
     } catch ( const Network::NetworkException &e ) {
       fprintf( stderr, "Network exception: %s\n",
 	       e.what() );
@@ -531,12 +562,16 @@ static int run_server( const char *desired_ip, const char *desired_port,
   return 0;
 }
 
-static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network )
+static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network, long network_timeout, long network_signaled_timeout )
 {
+  /* scale timeouts */
+  const uint64_t network_timeout_ms = static_cast<uint64_t>( network_timeout ) * 1000;
+  const uint64_t network_signaled_timeout_ms = static_cast<uint64_t>( network_signaled_timeout ) * 1000;
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
   sel.add_signal( SIGTERM );
   sel.add_signal( SIGINT );
+  sel.add_signal( SIGUSR1 );
 
   uint64_t last_remote_num = network.get_remote_state_num();
 
@@ -549,13 +584,30 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
   while ( 1 ) {
     try {
+      static const uint64_t timeout_if_no_client = 60000;
+      int timeout = INT_MAX;
       uint64_t now = Network::timestamp();
 
-      const int timeout_if_no_client = 60000;
-      int timeout = min( network.wait_time(), terminal.wait_time( now ) );
+      timeout = min( timeout, network.wait_time() );
+      timeout = min( timeout, terminal.wait_time( now ) );
       if ( (!network.get_remote_state_num())
 	   || network.shutdown_in_progress() ) {
         timeout = min( timeout, 5000 );
+      }
+      /*
+       * The server goes completely asleep if it has no remote peer.
+       * We may want to wake up sooner.
+       */
+      if ( network_timeout_ms ) {
+	int64_t network_sleep = network_timeout_ms -
+	  ( now - network.get_latest_remote_state().timestamp );
+	if ( network_sleep < 0 ) {
+	  network_sleep = 0;
+	} else if ( network_sleep > INT_MAX ) {
+	  /* 24 days might be too soon.  That's OK. */
+	  network_sleep = INT_MAX;
+	}
+	timeout = min( timeout, static_cast<int>(network_sleep) );
       }
 
       /* poll for events */
@@ -679,7 +731,20 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	}
       }
 
-      if ( sel.any_signal() ) {
+      bool idle_shutdown = false;
+      if ( network_timeout_ms &&
+	   network_timeout_ms <= time_since_remote_state ) {
+	idle_shutdown = true;
+	fprintf( stderr, "Network idle for %" PRIu64 " seconds.\n", time_since_remote_state / 1000 );
+      }
+      if ( sel.signal( SIGUSR1 ) ) {
+	if ( !network_signaled_timeout_ms || network_signaled_timeout_ms <= time_since_remote_state ) {
+	  idle_shutdown = true;
+	  fprintf( stderr, "Network idle for %"PRIu64" seconds when SIGUSR1 received\n", time_since_remote_state / 1000 );
+	}
+      }
+
+      if ( sel.any_signal() || idle_shutdown ) {
 	/* shutdown signal */
 	if ( network.has_remote_addr() && (!network.shutdown_in_progress()) ) {
 	  network.start_shutdown();
@@ -736,8 +801,8 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
       }
 
       if ( !network.get_remote_state_num()
-           && time_since_remote_state >= uint64_t( timeout_if_no_client ) ) {
-        fprintf( stderr, "No connection within %d seconds.\n",
+           && time_since_remote_state >= timeout_if_no_client ) {
+        fprintf( stderr, "No connection within %" PRIu64 " seconds.\n",
                  timeout_if_no_client / 1000 );
         break;
       }
