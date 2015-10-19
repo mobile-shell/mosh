@@ -643,16 +643,26 @@ void Framebuffer::prefix_window_title( const title_type &s )
   window_title.insert(window_title.begin(), s.begin(), s.end() );
 }
 
-wint_t Cell::debug_contents( void ) const
+std::string Cell::debug_contents( void ) const
 {
   if ( contents.empty() ) {
-    return '_';
+    return "'_' ()";
   } else {
-    /* very, very cheesy */
-    wchar_t ch[2];
-    const std::string chars( contents.begin(), contents.end() );
-    mbstowcs(ch, chars.c_str(), 1);
-    return ch[0];
+    std::string chars( 1, '\'' );
+    print_grapheme( chars );
+    chars.append( "' [" );
+    const char *lazycomma = "";
+    char buf[64];
+    for ( content_type::const_iterator i = contents.begin();
+	  i < contents.end();
+	  i++ ) {
+
+      sprintf( buf, "%s0x%02x", lazycomma, static_cast<uint8_t>(*i) );
+      chars.append( buf );
+      lazycomma = ", ";
+    }
+    chars.append( "]" );
+    return chars;
   }
 }
 
@@ -660,15 +670,28 @@ bool Cell::compare( const Cell &other ) const
 {
   bool ret = false;
 
-  if ( !contents_match( other ) ) {
+  std::string grapheme, other_grapheme;
+
+  print_grapheme( grapheme );
+  other.print_grapheme( other_grapheme );
+
+  if ( grapheme != other_grapheme ) {
     ret = true;
-    fprintf( stderr, "Contents: %lc (%ld) vs. %lc (%ld)\n",
-	     debug_contents(), contents.size(),
-	     other.debug_contents(), other.contents.size() );
+  fprintf( stderr, "Graphemes: '%s' vs. '%s'\n",
+	   grapheme.c_str(), other_grapheme.c_str() );
+  }
+
+  if ( !contents_match( other ) ) {
+    // ret = true;
+    fprintf( stderr, "Contents: %s (%ld) vs. %s (%ld)\n",
+	     debug_contents().c_str(),
+	     static_cast<long int>( contents.size() ),
+	     other.debug_contents().c_str(),
+	     static_cast<long int>( other.contents.size() ) );
   }
 
   if ( fallback != other.fallback ) {
-    ret = true;
+    // ret = true;
     fprintf( stderr, "fallback: %d vs. %d\n",
 	     fallback, other.fallback );
   }

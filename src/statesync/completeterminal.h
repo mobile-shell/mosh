@@ -76,6 +76,7 @@ namespace Terminal {
     /* interface for Network::Transport */
     void subtract( const Complete * ) const {}
     std::string diff_from( const Complete &existing ) const;
+    std::string init_diff( void ) const;
     void apply_string( std::string diff );
     bool operator==( const Complete &x ) const;
 

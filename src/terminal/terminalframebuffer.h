@@ -109,7 +109,7 @@ namespace Terminal {
 
     bool operator!=( const Cell &x ) const { return !operator==( x ); }
 
-    wint_t debug_contents( void ) const;
+    std::string debug_contents( void ) const;
 
     bool is_blank( void ) const
     {
@@ -165,18 +165,18 @@ namespace Terminal {
 
     void print_grapheme( std::string &output ) const
     {
-      if ( cell.contents.empty() ) {
-	output.append( ' ' );
+      if ( contents.empty() ) {
+	output.append( 1, ' ' );
 	return;
       }
       /*
        * cells that begin with combining character get combiner
        * attached to no-break space
        */
-      if ( cell.fallback ) {
+      if ( fallback ) {
 	output.append( "\xC2\xA0" );
       }
-      output.append( cell.contents );
+      output.append( contents );
     }
   };
 

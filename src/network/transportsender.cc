@@ -176,6 +176,12 @@ void TransportSender<MyState>::tick( void )
     if ( current_state.compare( newstate ) ) {
       fprintf( stderr, "Warning, round-trip Instruction verification failed!\n" );
     }
+    /* Also verify that both the original frame and generated frame have the same initial diff. */
+    std::string current_diff( current_state.init_diff() );
+    std::string new_diff( newstate.init_diff() );
+    if ( current_diff != new_diff ) {
+      fprintf( stderr, "Warning, target state Instruction verification failed!\n" );
+    }
   }
 
   if ( diff.empty() && (now >= next_ack_time) ) {

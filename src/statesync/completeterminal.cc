@@ -94,6 +94,11 @@ string Complete::diff_from( const Complete &existing ) const
   return output.SerializeAsString();
 }
 
+string Complete::init_diff( void ) const
+{
+  return diff_from( Complete( get_fb().ds.get_width(), get_fb().ds.get_height() ));
+}
+
 void Complete::apply_string( string diff )
 {
   HostBuffers::HostMessage input;
@@ -174,22 +179,35 @@ int Complete::wait_time( uint64_t now ) const
 bool Complete::compare( const Complete &other ) const
 {
   bool ret = false;
-  for ( int y = 0; y < terminal.get_fb().ds.get_height(); y++ ) {
-    for ( int x = 0; x < terminal.get_fb().ds.get_width(); x++ ) {
-      if ( terminal.get_fb().get_cell( y, x )->compare( *other.terminal.get_fb().get_cell( y, x ) ) ) {
+  const Framebuffer &fb = terminal.get_fb();
+  const Framebuffer &other_fb = other.terminal.get_fb();
+  const int height = fb.ds.get_height();
+  const int other_height = other_fb.ds.get_height();
+  const int width = fb.ds.get_width();
+  const int other_width = other_fb.ds.get_width();
+
+  if ( height != other_height || width != other_width ) {
+    fprintf( stderr, "Framebuffer size (%dx%d, %dx%d) differs.\n", width, height, other_width, other_height );
+    return true;
+  }
+
+  for ( int y = 0; y < height; y++ ) {
+    for ( int x = 0; x < width; x++ ) {
+      if ( fb.get_cell( y, x )->compare( *other_fb.get_cell( y, x ) ) ) {
 	fprintf( stderr, "Cell (%d, %d) differs.\n", y, x );
 	ret = true;
       }
     }
   }
 
-  if ( (terminal.get_fb().ds.get_cursor_row() != other.terminal.get_fb().ds.get_cursor_row())
-       || (terminal.get_fb().ds.get_cursor_col() != other.terminal.get_fb().ds.get_cursor_col()) ) {
+  if ( (fb.ds.get_cursor_row() != other_fb.ds.get_cursor_row())
+       || (fb.ds.get_cursor_col() != other_fb.ds.get_cursor_col()) ) {
     fprintf( stderr, "Cursor mismatch: (%d, %d) vs. (%d, %d).\n",
-	     terminal.get_fb().ds.get_cursor_row(), terminal.get_fb().ds.get_cursor_col(),
-	     other.terminal.get_fb().ds.get_cursor_row(), other.terminal.get_fb().ds.get_cursor_col() );
+	     fb.ds.get_cursor_row(), fb.ds.get_cursor_col(),
+	     other_fb.ds.get_cursor_row(), other_fb.ds.get_cursor_col() );
     ret = true;
   }
+  /* XXX should compare other terminal state too (mouse mode, bell. etc.) */
 
   return ret;
 }
