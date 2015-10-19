@@ -1,6 +1,7 @@
 EXTRA_DIST = \
 	hold-stdin print-exitstatus \
 	e2e-test e2e-test-server \
+	mosh-client mosh-server \
 	$(displaytests) \
 	emulation-attributes.test
 

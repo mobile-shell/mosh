@@ -193,8 +193,18 @@ int main( int argc, char *argv[] )
        && (strcmp( argv[ 1 ], "new" ) == 0) ) {
     /* new option syntax */
     int opt;
-    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:svl:" )) != -1 ) {
+    while ( (opt = getopt( argc - 1, argv + 1, "@:i:p:c:svl:" )) != -1 ) {
       switch ( opt ) {
+	/*
+	 * This undocumented option does nothing but eat its argument.
+	 * Useful in scripting where you prepend something to a
+	 * mosh-server argv, and might end up with something like
+	 * "mosh-server new -v new -c 256", now you can say
+	 * "mosh-server new -v -@ new -c 256" to discard the second
+	 * "new".
+	 */
+      case '@':
+	break;
       case 'i':
 	desired_ip = optarg;
 	break;
