@@ -266,6 +266,8 @@ if ( (not defined $colors)
   $colors = 0;
 }
 
+$ENV{ 'MOSH_CLIENT_PID' } = $$; # We don't support this, but it's useful for test and debug.
+
 my $pid = open(my $pipe, "-|");
 die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child

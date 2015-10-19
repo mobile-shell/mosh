@@ -12,9 +12,11 @@ displaytests = \
 	emulation-80th-column.test \
 	emulation-back-tab.test \
 	emulation-multiline-scroll.test \
-	window-resize.test \
+	server-network-timeout.test \
+	server-signal-timeout.test \
 	unicode-combine-fallback-assert.test \
-	unicode-later-combining.test
+	unicode-later-combining.test \
+	window-resize.test
 
 check_PROGRAMS = ocb-aes encrypt-decrypt base64
 TESTS = ocb-aes encrypt-decrypt base64 $(displaytests)

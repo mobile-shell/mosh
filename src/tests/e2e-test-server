@@ -5,6 +5,8 @@
 # then captures screen with `tmux capture-pane`.  Captures exitstatus
 # of both and returns appropriate errors.
 #
+export MOSH_SERVER_PID=$PPID
+
 if [ $# -lt 2 ]; then
     printf "not enough args\n" >&2
     exit 99
@@ -12,6 +14,7 @@ fi
 testname=$1
 shift
 rm -f $testname.capture $testname.exitstatus
+trap ":" TERM HUP QUIT # If the session closes on us, let the test we're running drive.
 trap 'rv=$?; echo $rv > $testname.exitstatus; exit $rv' EXIT
 # check for tmux
 if [ -z "$TMUX_PANE" ]; then
