@@ -662,8 +662,9 @@ bool Cell::compare( const Cell &other ) const
 
   if ( !contents_match( other ) ) {
     ret = true;
-    fprintf( stderr, "Contents: %lc vs. %lc\n",
-	     debug_contents(), other.debug_contents() );
+    fprintf( stderr, "Contents: %lc (%ld) vs. %lc (%ld)\n",
+	     debug_contents(), contents.size(),
+	     other.debug_contents(), other.contents.size() );
   }
 
   if ( fallback != other.fallback ) {

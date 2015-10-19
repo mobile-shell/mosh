@@ -60,12 +60,11 @@ namespace Parser {
 
     void input( wchar_t ch, Actions &actions );
 
-    bool operator==( const Parser &x ) const
+    void reset_input( void )
     {
-      return state == x.state;
+      state = &family.s_Ground;
     }
 
-    bool is_grounded( void ) const { return state == &family.s_Ground; }
   };
 
   static const size_t BUF_SIZE = 8;
@@ -82,12 +81,12 @@ namespace Parser {
 
     void input( char c, Actions &actions );
 
-    bool operator==( const UTF8Parser &x ) const
+    void reset_input( void )
     {
-      return parser == x.parser;
+      parser.reset_input();
+      buf[0] = '\0';
+      buf_len = 0;
     }
-
-    bool is_grounded( void ) const { return parser.is_grounded(); }
   };
 }
 

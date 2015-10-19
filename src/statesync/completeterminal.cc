@@ -174,8 +174,8 @@ int Complete::wait_time( uint64_t now ) const
 bool Complete::compare( const Complete &other ) const
 {
   bool ret = false;
-  for ( int x = 0; x < terminal.get_fb().ds.get_width(); x++ ) {
-    for ( int y = 0; y < terminal.get_fb().ds.get_height(); y++ ) {
+  for ( int y = 0; y < terminal.get_fb().ds.get_height(); y++ ) {
+    for ( int x = 0; x < terminal.get_fb().ds.get_width(); x++ ) {
       if ( terminal.get_fb().get_cell( y, x )->compare( *other.terminal.get_fb().get_cell( y, x ) ) ) {
 	fprintf( stderr, "Cell (%d, %d) differs.\n", y, x );
 	ret = true;
