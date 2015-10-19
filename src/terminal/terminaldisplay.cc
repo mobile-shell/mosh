@@ -462,21 +462,6 @@ FrameState::FrameState( const Framebuffer &s_last )
   str.reserve( last_frame.ds.get_width() * last_frame.ds.get_height() * 4 );
 }
 
-/* Write a character cell */
-void FrameState::append_cell(const Cell & cell)
-{
-  if ( cell.contents.empty() ) {
-    append( ' ' );
-    return;
-  }
-  /* cells that begin with combining character get combiner attached to no-break space */
-  if ( cell.fallback ) {
-    append( "\xC2\xA0" );
-  }
-  append( cell.contents );
-}
-
-
 void FrameState::append_silent_move( int y, int x )
 {
   if ( cursor_x == x && cursor_y == y ) return;

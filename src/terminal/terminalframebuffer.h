@@ -113,6 +113,7 @@ namespace Terminal {
 
     bool is_blank( void ) const
     {
+      // XXX fix.
       return ( contents.empty()
 	       || contents == " "
 	       || contents == "\xC2\xA0" );
@@ -160,6 +161,22 @@ namespace Terminal {
       (void)ignore;
       size_t len = wcrtomb(tmp, c, &ps);
       contents.insert( contents.end(), tmp, tmp+len );
+    }
+
+    void print_grapheme( std::string &output ) const
+    {
+      if ( cell.contents.empty() ) {
+	output.append( ' ' );
+	return;
+      }
+      /*
+       * cells that begin with combining character get combiner
+       * attached to no-break space
+       */
+      if ( cell.fallback ) {
+	output.append( "\xC2\xA0" );
+      }
+      output.append( cell.contents );
     }
   };
 

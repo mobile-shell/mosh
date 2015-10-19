@@ -56,7 +56,7 @@ namespace Terminal {
     void append( const Cell::content_type &contents ) { str.append( contents.begin(), contents.end() ); }
     void append_string( const std::string &append ) { str.append(append); }
 
-    void append_cell(const Cell & cell);
+    void append_cell(const Cell & cell) { cell.print_grapheme( str ); }
     void append_silent_move( int y, int x );
     void append_move( int y, int x );
     void update_rendition( const Renditions &r, bool force = false );
