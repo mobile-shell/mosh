@@ -45,8 +45,13 @@ static unsigned char base64_char_to_sixbit(char c)
    * Yes, this is slow.  But it's also very simple, and easy to verify.
    * We don't need performance here.
    */
-  const char *match = strchr(table, c);
-  if (!match) {
+  const char *match = NULL;
+  for ( const char *search = table; *search; search++ ) {
+    if ( *search == c ) {
+      match = search;
+    }
+  }
+  if ( !match ) {
     return 0xff;
   }
   return match - table;
