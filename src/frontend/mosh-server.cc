@@ -656,8 +656,13 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	    const Parser::Action *action = us.get_action( i );
 	    terminal_to_host += terminal.act( action );
 	    if ( typeid( *action ) == typeid( Parser::Resize ) ) {
+	      /* elide consecutive Resize actions */
+	      if ( i < us.size() - 1 &&
+		   typeid( us.get_action( i + 1 ) ) == typeid( Parser::Resize ) ) {
+		continue;
+	      }
 	      /* tell child process of resize */
-	      const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
+	      const Parser::Resize *res = static_cast<const Parser::Resize *>( action );
 	      struct winsize window_size;
 	      if ( ioctl( host_fd, TIOCGWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCGWINSZ" );
