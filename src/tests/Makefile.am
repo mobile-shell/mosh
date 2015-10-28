@@ -19,8 +19,10 @@ displaytests = \
 	emulation-back-tab.test \
 	emulation-cursor-motion.test \
 	emulation-multiline-scroll.test \
+	emulation-wrap-across-frames.test \
 	server-network-timeout.test \
 	server-signal-timeout.test \
+	window-resize.test \
 	unicode-combine-fallback-assert.test \
 	unicode-later-combining.test \
 	window-resize.test
