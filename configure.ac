@@ -40,12 +40,11 @@ AC_ARG_ENABLE([compile-warnings],
        PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
        ;;
      distcheck)
-       if test "$(uname -s)" = Linux; then
-         WARNING_CXXFLAGS="-Wall -Werror"
-       else
-         WARNING_CXXFLAGS="-Wall"
-       fi
+       WARNING_CXXFLAGS="-Wall -Werror"
        PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
+       if test "$(uname -s)" != Linux; then
+         PICKY_CXXFLAGS="${PICKY_CXXFLAGS} -Wno-error=unused-parameter"
+       fi
        ;;
      *)
        AC_MSG_ERROR([Unknown argument '$enableval' to --enable-compile-warnings])
