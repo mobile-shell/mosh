@@ -92,33 +92,32 @@ effect.
 
 .TP
 .B MOSH_SERVER_NETWORK_TMOUT
-When set to an integer number, this variable specifies how long the
-server will wait, in seconds, to receive an update from the client
-before exiting.  Since \fPmosh\fP is very useful for mobile clients
-with intermittent operation and connectivity, we suggest setting this
-variable to a high value, such as 604800 (one week) or 2592000 (30
-days).  When not set, \fBmosh-server\fP will wait indefinitely for a
-client to reappear.  This variable is somewhat similar to the
-\fBTMOUT\fP variable found in many Bourne shells.  However, it is not
-a login-session inactivity timeout; it only applies to network
-connectivity.
+If this variable is set to a positive integer number, it specifies how
+long (in seconds) \fBmosh-server\fP will wait to receive an update from the
+client before exiting.  Since \fPmosh\fP is very useful for mobile
+clients with intermittent operation and connectivity, we suggest
+setting this variable to a high value, such as 604800 (one week) or
+2592000 (30 days).  Otherwise, \fBmosh-server\fP will wait
+indefinitely for a client to reappear.  This variable is somewhat
+similar to the \fBTMOUT\fP variable found in many Bourne shells.
+However, it is not a login-session inactivity timeout; it only applies
+to network connectivity.
 
 .TP
-.B MOSH_SERVER_NETWORK_TMOUT
-When set to an integer number, this variable specifies how long the
-server will wait, in seconds, to receive an update from the client
-before allowing \fBSIGUSR1\fP to terminate a session.  When unset,
-\fBSIGUSR1\fP will always terminate sessions.  With this feature,
-users and administrators may implement scripts to clean up
-disconnected Mosh sessions without fear of accidentally killing those
-that have active connectivity.  With this variable set, a user
-connected via Mosh can
-issue
+.B MOSH_SERVER_SIGNAL_TMOUT
+If this variable is set to a positive integer number, it specifies how
+long (in seconds) \fBmosh-server\fP will ignore SIGUSR1 while waiting
+to receive an update from the client.  Otherwise, \fBSIGUSR1\fP will
+always terminate \fBmosh-server\fP.  Users and administrators may
+implement scripts to clean up disconnected Mosh sessions.  With this
+variable set, a user or administrator can issue
+
 .nf
 $ pkill -SIGUSR1 mosh-server
 .fi
-to kill disconnected sessions without killing their current login
-session.
+
+to kill disconnected sessions without killing connected login
+sessions.
 
 .SH EXAMPLE
 

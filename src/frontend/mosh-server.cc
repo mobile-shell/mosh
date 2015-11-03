@@ -347,9 +347,12 @@ static int run_server( const char *desired_ip, const char *desired_port,
   long network_timeout = 0;
   char *timeout_envar = getenv( "MOSH_SERVER_NETWORK_TMOUT" );
   if ( timeout_envar ) {
-    /* We don't care about strtol errors here, they all produce sensible return values. */
+    errno = 0;
     network_timeout = strtol( timeout_envar, NULL, 10 );
-    if ( network_timeout < 0 ) {
+    if ( network_timeout == 0 && errno == EINVAL ) {
+      fprintf( stderr, "MOSH_SERVER_NETWORK_TMOUT not a valid integer, ignoring\n" );
+    } else if ( network_timeout < 0 ) {
+      fprintf( stderr, "MOSH_SERVER_NETWORK_TMOUT is negative, ignoring\n" );
       network_timeout = 0;
     }
   }
@@ -357,9 +360,12 @@ static int run_server( const char *desired_ip, const char *desired_port,
   long network_signaled_timeout = 0;
   char *signal_envar = getenv( "MOSH_SERVER_SIGNAL_TMOUT" );
   if ( signal_envar ) {
-    /* We don't care about strtol errors here, they all produce sensible return values. */
+    errno = 0;
     network_signaled_timeout = strtol( signal_envar, NULL, 10 );
-    if ( network_signaled_timeout < 0 ) {
+    if ( network_signaled_timeout == 0 && errno == EINVAL ) {
+      fprintf( stderr, "MOSH_SERVER_SIGNAL_TMOUT not a valid integer, ignoring\n" );
+    } else if ( network_signaled_timeout < 0 ) {
+      fprintf( stderr, "MOSH_SERVER_SIGNAL_TMOUT is negative, ignoring\n" );
       network_signaled_timeout = 0;
     }
   }
@@ -586,15 +592,20 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	   || network.shutdown_in_progress() ) {
         timeout = min( timeout, 5000 );
       }
-      /* The server goes completely asleep if it has no remote peer. */
+      /*
+       * The server goes completely asleep if it has no remote peer.
+       * We may want to wake up sooner.
+       */
       if ( network_timeout_ms ) {
-	int64_t wait = network_timeout_ms - ( now - network.get_latest_remote_state().timestamp );
-	if ( wait < 0 ) {
-	  wait = 0;
-	} else if ( wait > INT_MAX ) {
-	  wait = INT_MAX;
+	int64_t network_sleep = network_timeout_ms -
+	  ( now - network.get_latest_remote_state().timestamp );
+	if ( network_sleep < 0 ) {
+	  network_sleep = 0;
+	} else if ( network_sleep > INT_MAX ) {
+	  /* 24 days might be too soon.  That's OK. */
+	  network_sleep = INT_MAX;
 	}
-	timeout = min( timeout, static_cast<int>(wait) );
+	timeout = min( timeout, static_cast<int>(network_sleep) );
       }
 
       /* poll for events */
