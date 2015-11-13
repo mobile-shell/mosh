@@ -346,10 +346,11 @@ static int run_server( const char *desired_ip, const char *desired_port,
   /* get network idle timeout */
   long network_timeout = 0;
   char *timeout_envar = getenv( "MOSH_SERVER_NETWORK_TMOUT" );
-  if ( timeout_envar ) {
+  if ( timeout_envar && *timeout_envar ) {
     errno = 0;
-    network_timeout = strtol( timeout_envar, NULL, 10 );
-    if ( network_timeout == 0 && errno == EINVAL ) {
+    char *endptr;
+    network_timeout = strtol( timeout_envar, &endptr, 10 );
+    if ( *endptr != '\0' || ( network_timeout == 0 && errno == EINVAL ) ) {
       fprintf( stderr, "MOSH_SERVER_NETWORK_TMOUT not a valid integer, ignoring\n" );
     } else if ( network_timeout < 0 ) {
       fprintf( stderr, "MOSH_SERVER_NETWORK_TMOUT is negative, ignoring\n" );
@@ -359,10 +360,11 @@ static int run_server( const char *desired_ip, const char *desired_port,
   /* get network signaled idle timeout */
   long network_signaled_timeout = 0;
   char *signal_envar = getenv( "MOSH_SERVER_SIGNAL_TMOUT" );
-  if ( signal_envar ) {
+  if ( signal_envar && *signal_envar ) {
     errno = 0;
-    network_signaled_timeout = strtol( signal_envar, NULL, 10 );
-    if ( network_signaled_timeout == 0 && errno == EINVAL ) {
+    char *endptr;
+    network_signaled_timeout = strtol( signal_envar, &endptr, 10 );
+    if ( *endptr != '\0' || ( network_signaled_timeout == 0 && errno == EINVAL ) ) {
       fprintf( stderr, "MOSH_SERVER_SIGNAL_TMOUT not a valid integer, ignoring\n" );
     } else if ( network_signaled_timeout < 0 ) {
       fprintf( stderr, "MOSH_SERVER_SIGNAL_TMOUT is negative, ignoring\n" );
