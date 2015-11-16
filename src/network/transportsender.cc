@@ -320,8 +320,9 @@ void TransportSender<MyState>::send_in_fragments( string diff, uint64_t new_num 
     shutdown_tries++;
   }
 
-  vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU() );
-
+  vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU()
+							  - Network::Connection::ADDED_BYTES
+							  - Crypto::Session::ADDED_BYTES );
   for ( vector<Fragment>::iterator i = fragments.begin();
         i != fragments.end();
         i++ ) {

@@ -132,6 +132,8 @@ namespace Crypto {
     
   public:
     static const int RECEIVE_MTU = 2048;
+    /* Overhead (not counting the nonce, which is handled by network transport) */
+    static const int ADDED_BYTES = 16 /* final OCB block */;
 
     Session( Base64Key s_key );
     ~Session();

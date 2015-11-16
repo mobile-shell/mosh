@@ -101,7 +101,33 @@ namespace Network {
 
   class Connection {
   private:
-    static const int DEFAULT_SEND_MTU = 1300;
+    /*
+     * For IPv4, guess the typical (minimum) header length;
+     * fragmentation is not dangerous, just inefficient.
+     */
+    static const int IPV4_HEADER_LEN = 20 /* base IP header */
+      + 8 /* UDP */;
+    /*
+     * For IPv6, we don't want to ever have MTU issues, so make a
+     * conservative guess about header size.
+     */
+    static const int IPV6_HEADER_LEN = 40 /* base IPv6 header */
+      + 16 /* 2 minimum-sized extension headers */
+      + 8 /* UDP */;
+    /* Application datagram MTU. For constructors and fallback. */
+    static const int DEFAULT_SEND_MTU = 500;
+    /*
+     * IPv4 MTU. Don't use full Ethernet-derived MTU,
+     * mobile networks have high tunneling overhead.
+     *
+     * About 95% of IPv4 TCP MSS I see are >= 1360.
+     * An IP MTU is 20 bytes larger.
+     * We let smaller MTUs fragment.
+     */
+    static const int DEFAULT_IPV4_MTU = 1380;
+    /* IPv6 MTU. Use the guaranteed minimum to avoid fragmentation. */
+    static const int DEFAULT_IPV6_MTU = 1280;
+
     static const uint64_t MIN_RTO = 50; /* ms */
     static const uint64_t MAX_RTO = 1000; /* ms */
 
@@ -139,7 +165,7 @@ namespace Network {
 
     bool server;
 
-    int MTU;
+    int MTU; /* application datagram MTU */
 
     Base64Key key;
     Session session;
@@ -175,7 +201,12 @@ namespace Network {
 
     string recv_one( int sock_to_recv, bool nonblocking );
 
+    void set_MTU( int family );
+
   public:
+    /* Network transport overhead. */
+    static const int ADDED_BYTES = 8 /* seqno/nonce */ + 4 /* timestamps */;
+
     Connection( const char *desired_ip, const char *desired_port ); /* server */
     Connection( const char *key_str, const char *ip, const char *port ); /* client */
 
