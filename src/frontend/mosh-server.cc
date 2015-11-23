@@ -638,6 +638,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       now = Network::timestamp();
       uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
+      string terminal_to_host;
 
       if ( sel.read( network_fd ) ) {
 	/* packet received from the network */
@@ -647,7 +648,6 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	if ( network.get_remote_state_num() != last_remote_num ) {
 	  last_remote_num = network.get_remote_state_num();
 
-	  string terminal_to_host;
 	  
 	  Network::UserStream us;
 	  us.apply_string( network.get_remote_diff() );
@@ -687,11 +687,6 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	    network.set_current_state( terminal );
 	  }
 	  
-	  /* write any writeback octets back to the host */
-	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	    break;
-	  }
-
 	  #ifdef HAVE_UTEMPTER
 	  /* update utmp entry if we have become "connected" */
 	  if ( (!connected_utmp)
@@ -734,16 +729,16 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
         if ( bytes_read <= 0 ) {
 	  network.start_shutdown();
 	} else {
-	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
+	  terminal_to_host += terminal.act( string( buf, bytes_read ) );
 	
 	  /* update client with new state of terminal */
 	  network.set_current_state( terminal );
-
-	  /* write any writeback octets back to the host */
-	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	    break;
-	  }
 	}
+      }
+
+      /* write user input and terminal writeback to the host */
+      if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
+	break;
       }
 
       bool idle_shutdown = false;
