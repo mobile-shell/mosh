@@ -577,6 +577,46 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
       now = Network::timestamp();
       uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
 
+      /*
+       * Read from the terminal first.  On BSD pty implementations, writing \013 to the pty
+       * can make formerly-available data unavailable.  Mosh used to operate
+       * in this order:
+       *
+       * sel.select()
+       * network.read(), possibly with pty write()
+       * pty read()
+       *
+       * If select returned read status for both the network socket
+       * and the pty, and the incoming packet delivered a ^S, mosh
+       * would deadlock in read() with the pty driver, waiting for
+       * output, which of course won't appear until the pty is
+       * unblocked with a ^Q or equivalent ioctl.
+       */
+      if ( (!network.shutdown_in_progress()) && sel.read( host_fd ) ) {
+	/* input from the host needs to be fed to the terminal */
+	const int buf_size = 16384;
+	char buf[ buf_size ];
+	
+	/* fill buffer if possible */
+	ssize_t bytes_read = read( host_fd, buf, buf_size );
+
+        /* If the pty slave is closed, reading from the master can fail with
+           EIO (see #264).  So we treat errors on read() like EOF. */
+        if ( bytes_read <= 0 ) {
+	  network.start_shutdown();
+	} else {
+	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
+	
+	  /* update client with new state of terminal */
+	  network.set_current_state( terminal );
+
+	  /* write any writeback octets back to the host */
+	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
+	    break;
+	  }
+	}
+      }
+
       if ( sel.read( network_fd ) ) {
 	/* packet received from the network */
 	network.recv();
@@ -654,31 +694,6 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	}
       }
       
-      if ( (!network.shutdown_in_progress()) && sel.read( host_fd ) ) {
-	/* input from the host needs to be fed to the terminal */
-	const int buf_size = 16384;
-	char buf[ buf_size ];
-	
-	/* fill buffer if possible */
-	ssize_t bytes_read = read( host_fd, buf, buf_size );
-
-        /* If the pty slave is closed, reading from the master can fail with
-           EIO (see #264).  So we treat errors on read() like EOF. */
-        if ( bytes_read <= 0 ) {
-	  network.start_shutdown();
-	} else {
-	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
-	
-	  /* update client with new state of terminal */
-	  network.set_current_state( terminal );
-
-	  /* write any writeback octets back to the host */
-	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	    break;
-	  }
-	}
-      }
-
       if ( sel.any_signal() ) {
 	/* shutdown signal */
 	if ( network.has_remote_addr() && (!network.shutdown_in_progress()) ) {

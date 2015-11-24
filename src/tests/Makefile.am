@@ -12,6 +12,7 @@ displaytests = \
 	emulation-80th-column.test \
 	emulation-back-tab.test \
 	emulation-multiline-scroll.test \
+	pty-deadlock.test \
 	window-resize.test \
 	unicode-combine-fallback-assert.test \
 	unicode-later-combining.test
