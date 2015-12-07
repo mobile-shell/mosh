@@ -201,9 +201,9 @@ static void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)
 static Function func_Ctrl_NEL( CONTROL, "\x85", Ctrl_NEL );
 
 /* horizontal tab */
-static void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void HT_n( Framebuffer *fb, size_t count )
 {
-  int col = fb->ds.get_next_tab();
+  int col = fb->ds.get_next_tab( count );
   if ( col == -1 ) { /* no tabs, go to end of line */
     col = fb->ds.get_width() - 1;
   }
@@ -216,7 +216,26 @@ static void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused))
   fb->ds.next_print_will_wrap = wrap_state_save;
 }
 
+static void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  HT_n( fb, 1 );
+}
 static Function func_Ctrl_HT( CONTROL, "\x09", Ctrl_HT, false );
+
+static void CSI_CxT( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int param = dispatch->getparam( 0, 1 );
+  if ( dispatch->get_dispatch_chars()[ 0 ] == 'Z' ) {
+    param = -param;
+  }
+  if ( param == 0 ) {
+    return;
+  }
+  HT_n( fb, param );
+}
+
+static Function func_CSI_CHT( CSI, "I", CSI_CxT, false );
+static Function func_CSI_CBT( CSI, "Z", CSI_CxT, false );
 
 /* horizontal tab set */
 static void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )

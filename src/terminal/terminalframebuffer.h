@@ -286,7 +286,7 @@ namespace Terminal {
     void clear_tab( int col );
     void clear_default_tabs( void ) { default_tabs = false; }
     /* Default tabs can't be restored without resetting the draw state. */
-    int get_next_tab( void ) const;
+    int get_next_tab( int count ) const;
 
     void set_scrolling_region( int top, int bottom );
 

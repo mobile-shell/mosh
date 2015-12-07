@@ -214,14 +214,23 @@ void DrawState::clear_tab( int col )
   tabs[ col ] = false;
 }
 
-int DrawState::get_next_tab( void ) const
+int DrawState::get_next_tab( int count ) const
 {
-  for ( int i = cursor_col + 1; i < width; i++ ) {
-    if ( tabs[ i ] ) {
-      return i;
+  if ( count >= 0 ) {
+    for ( int i = cursor_col + 1; i < width; i++ ) {
+      if ( tabs[ i ] && --count == 0 ) {
+	return i;
+      }
     }
+    return -1;
+  } else {
+    for ( int i = cursor_col - 1; i > 0; i-- ) {
+      if ( tabs[ i ] && ++count == 0 ) {
+	return i;
+      }
+    }
+    return 0;
   }
-  return -1;
 }
 
 void DrawState::set_scrolling_region( int top, int bottom )

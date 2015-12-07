@@ -33,8 +33,7 @@ check_PROGRAMS = ocb-aes encrypt-decrypt base64
 TESTS = ocb-aes encrypt-decrypt base64 $(displaytests)
 XFAIL_TESTS = \
 	e2e-failure.test \
-	emulation-attributes-256color8.test \
-	emulation-back-tab.test
+	emulation-attributes-256color8.test
 
 base64_vector.cc: $(srcdir)/genbase64.pl
 	$(AM_V_GEN)echo '#include "base64_vector.h"' > base64_vector.cc || rm base64_vector.cc
