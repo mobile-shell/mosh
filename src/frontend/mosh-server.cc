@@ -745,12 +745,14 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
       if ( network_timeout_ms &&
 	   network_timeout_ms <= time_since_remote_state ) {
 	idle_shutdown = true;
-	fprintf( stderr, "Network idle for %" PRIu64 " seconds.\n", time_since_remote_state / 1000 );
+	fprintf( stderr, "Network idle for %llu seconds.\n", 
+		 static_cast<unsigned long long>( time_since_remote_state / 1000 ) );
       }
       if ( sel.signal( SIGUSR1 ) ) {
 	if ( !network_signaled_timeout_ms || network_signaled_timeout_ms <= time_since_remote_state ) {
 	  idle_shutdown = true;
-	  fprintf( stderr, "Network idle for %"PRIu64" seconds when SIGUSR1 received\n", time_since_remote_state / 1000 );
+	  fprintf( stderr, "Network idle for %llu seconds when SIGUSR1 received\n",
+		   static_cast<unsigned long long>( time_since_remote_state / 1000 ) );
 	}
       }
 
@@ -812,8 +814,8 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       if ( !network.get_remote_state_num()
            && time_since_remote_state >= timeout_if_no_client ) {
-        fprintf( stderr, "No connection within %" PRIu64 " seconds.\n",
-                 timeout_if_no_client / 1000 );
+        fprintf( stderr, "No connection within %llu seconds.\n",
+                 static_cast<unsigned long long>( timeout_if_no_client / 1000 ) );
         break;
       }
 
