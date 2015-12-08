@@ -10,8 +10,8 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
-AC_PROG_CC
-AC_PROG_CXX
+AC_PROG_CC([cc gcc clang])
+AC_PROG_CXX([c++ g++ clang++])
 AC_PROG_RANLIB
 AC_PATH_PROG([PROTOC], [protoc], [])
 AS_IF([test x"$PROTOC" = x],
