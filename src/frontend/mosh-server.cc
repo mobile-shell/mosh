@@ -663,12 +663,11 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  /* apply userstream to terminal */
 	  for ( size_t i = 0; i < us.size(); i++ ) {
 	    const Parser::Action *action = us.get_action( i );
-	    terminal_to_host += terminal.act( action );
 	    if ( typeid( *action ) == typeid( Parser::Resize ) ) {
-	      /* elide consecutive Resize actions */
-	      if ( i < us.size() - 1 &&
+	      /* apply only the last consecutive Resize action */
+	      while ( i < us.size() - 1 &&
 		   typeid( us.get_action( i + 1 ) ) == typeid( Parser::Resize ) ) {
-		continue;
+		i++;
 	      }
 	      /* tell child process of resize */
 	      const Parser::Resize *res = static_cast<const Parser::Resize *>( action );
@@ -684,6 +683,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 		return;
 	      }
 	    }
+	    terminal_to_host += terminal.act( action );
 	  }
 
 	  if ( !us.empty() ) {
