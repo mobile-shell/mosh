@@ -1,0 +1,118 @@
+#!/bin/sh
+
+#
+# This validates VT100, 16-color, and 256-color attributes against
+# tmux.  It is not run directly, but as subtests based on the
+# executable's name for vt100, 16color, 256color8, and 256color248.
+# This is because Mosh internally represents the first 8 values of the
+# 256color space as though they were the 16-color values they are
+# equivalent to.  tmux does not filter this out on its redisplay, so
+# compares on these values fail though they are visually identical.
+#
+
+fail()
+{
+    printf "$@" 2>&1
+    exit 99
+}
+
+
+
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test $0 baseline direct verify
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+sleepf()
+{
+    (sleep .1 || sleep 1) > /dev/null 2>&1
+}
+
+seq()
+{
+    if [ $# -lt 1 -o $# -gt 3 ]; then
+	echo "bad args" >&2
+    fi
+    first=$1
+    incr=1
+    last=0
+    case $# in
+	3)
+	    incr=$2
+	    last=$3
+	    ;;
+	2)
+	    last=$2
+	    ;;
+	1)
+	    ;;
+    esac
+    while :; do
+	printf '%d\n' $first
+	first=$(expr $first + $incr)
+	if [ $first -gt $last ]; then
+	    break
+	fi
+    done
+}
+
+baseline()
+{
+    # Strip our name to the last dash-separated word before the .test suffix.
+    testname=$(basename $1)
+    testname=${testname%%.test}
+    testname=${testname##*-}
+
+    printf '\033[H\033[J'
+
+
+    case $testname in
+	# Traditional ancient VT100 attributes.
+	vt100)
+	    for attr in 0 1 4 5 7; do
+		printf '\033[%dmE\033[m ' $attr
+	    done
+	    printf '\n'
+	    ;;
+	# 16-color attributes.
+	16color)
+	    for attr in $(seq 30 37) $(seq 39 47) 49; do
+		printf '\033[%dmE\033[m ' $attr
+	    done
+	    printf '\n'
+	    ;;
+	# First 8 256-color attributes.  Comparing mosh and tmux fails.
+	256color8)
+	for attr in $(seq 0 7); do
+	    printf '\033[38;5;%dmE\033[m ' $attr
+	    printf '\033[48;5;%dmM\033[m ' $attr
+	done
+	printf '\n'
+	;;
+	# Last 248 256-color attributes.
+	256color248)
+	for attr in $(seq 8 255); do
+	    printf '\033[38;5;%dmE\033[m ' $attr
+	    printf '\033[48;5;%dmM\033[m ' $attr
+	done
+	printf '\n'
+	;;
+	*)
+	    fail "unknown test name %s\n" $1
+	    ;;
+    esac
+} 
+
+case $1 in
+    baseline|direct)
+	baseline $0;;
+    *)
+	fail "unknown test argument %s\n" $1;;
+esac

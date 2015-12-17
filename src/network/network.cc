@@ -203,6 +203,20 @@ const std::vector< int > Connection::fds( void ) const
   return ret;
 }
 
+void Connection::set_MTU( int family )
+{
+  switch ( family ) {
+  case AF_INET:
+    MTU = DEFAULT_IPV4_MTU - IPV4_HEADER_LEN;
+    break;
+  case AF_INET6:
+    MTU = DEFAULT_IPV6_MTU - IPV6_HEADER_LEN;
+    break;
+  default:
+    throw NetworkException( "Unknown address family", 0 );
+  }
+}
+
 class AddrInfo {
 public:
   struct addrinfo *res;
@@ -319,6 +333,7 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
     }
 
     if ( bind( sock(), &local_addr.sa, local_addr_len ) == 0 ) {
+      set_MTU( local_addr.sa.sa_family );
       return true;
     } else if ( i == search_high ) { /* last port to search */
       int saved_errno = errno;
@@ -379,6 +394,8 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
   has_remote_addr = true;
 
   socks.push_back( Socket( remote_addr.sa.sa_family ) );
+
+  set_MTU( remote_addr.sa.sa_family );
 }
 
 void Connection::send( string s )
@@ -404,7 +421,7 @@ void Connection::send( string s )
     send_exception = NetworkException( "sendto", errno );
 
     if ( errno == EMSGSIZE ) {
-      MTU = 500; /* payload MTU of last resort */
+      MTU = DEFAULT_SEND_MTU; /* payload MTU of last resort */
     }
   }
 

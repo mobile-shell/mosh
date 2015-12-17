@@ -46,16 +46,17 @@ string Complete::act( const string &str )
 {
   for ( unsigned int i = 0; i < str.size(); i++ ) {
     /* parse octet into up to three actions */
-    list<Action *> actions( parser.input( str[ i ] ) );
+    parser.input( str[ i ], actions );
     
     /* apply actions to terminal and delete them */
-    for ( list<Action *>::iterator it = actions.begin();
+    for ( Actions::iterator it = actions.begin();
 	  it != actions.end();
 	  it++ ) {
       Action *act = *it;
       act->act_on_terminal( &terminal );
       delete act;
     }
+    actions.clear();
   }
 
   return terminal.read_octets_to_host();
@@ -86,11 +87,19 @@ string Complete::diff_from( const Complete &existing ) const
       new_res->MutableExtension( resize )->set_width( terminal.get_fb().ds.get_width() );
       new_res->MutableExtension( resize )->set_height( terminal.get_fb().ds.get_height() );
     }
-    Instruction *new_inst = output.add_instruction();
-    new_inst->MutableExtension( hostbytes )->set_hoststring( display.new_frame( true, existing.get_fb(), terminal.get_fb() ) );
+    string update = display.new_frame( true, existing.get_fb(), terminal.get_fb() );
+    if ( !update.empty() ) {
+      Instruction *new_inst = output.add_instruction();
+      new_inst->MutableExtension( hostbytes )->set_hoststring( update );
+    }
   }
   
   return output.SerializeAsString();
+}
+
+string Complete::init_diff( void ) const
+{
+  return diff_from( Complete( get_fb().ds.get_width(), get_fb().ds.get_height() ));
 }
 
 void Complete::apply_string( string diff )
@@ -173,22 +182,35 @@ int Complete::wait_time( uint64_t now ) const
 bool Complete::compare( const Complete &other ) const
 {
   bool ret = false;
-  for ( int x = 0; x < terminal.get_fb().ds.get_width(); x++ ) {
-    for ( int y = 0; y < terminal.get_fb().ds.get_height(); y++ ) {
-      if ( terminal.get_fb().get_cell( y, x )->compare( *other.terminal.get_fb().get_cell( y, x ) ) ) {
+  const Framebuffer &fb = terminal.get_fb();
+  const Framebuffer &other_fb = other.terminal.get_fb();
+  const int height = fb.ds.get_height();
+  const int other_height = other_fb.ds.get_height();
+  const int width = fb.ds.get_width();
+  const int other_width = other_fb.ds.get_width();
+
+  if ( height != other_height || width != other_width ) {
+    fprintf( stderr, "Framebuffer size (%dx%d, %dx%d) differs.\n", width, height, other_width, other_height );
+    return true;
+  }
+
+  for ( int y = 0; y < height; y++ ) {
+    for ( int x = 0; x < width; x++ ) {
+      if ( fb.get_cell( y, x )->compare( *other_fb.get_cell( y, x ) ) ) {
 	fprintf( stderr, "Cell (%d, %d) differs.\n", y, x );
 	ret = true;
       }
     }
   }
 
-  if ( (terminal.get_fb().ds.get_cursor_row() != other.terminal.get_fb().ds.get_cursor_row())
-       || (terminal.get_fb().ds.get_cursor_col() != other.terminal.get_fb().ds.get_cursor_col()) ) {
+  if ( (fb.ds.get_cursor_row() != other_fb.ds.get_cursor_row())
+       || (fb.ds.get_cursor_col() != other_fb.ds.get_cursor_col()) ) {
     fprintf( stderr, "Cursor mismatch: (%d, %d) vs. (%d, %d).\n",
-	     terminal.get_fb().ds.get_cursor_row(), terminal.get_fb().ds.get_cursor_col(),
-	     other.terminal.get_fb().ds.get_cursor_row(), other.terminal.get_fb().ds.get_cursor_col() );
+	     fb.ds.get_cursor_row(), fb.ds.get_cursor_col(),
+	     other_fb.ds.get_cursor_row(), other_fb.ds.get_cursor_col() );
     ret = true;
   }
+  /* XXX should compare other terminal state too (mouse mode, bell. etc.) */
 
   return ret;
 }

@@ -197,8 +197,18 @@ int main( int argc, char *argv[] )
        && (strcmp( argv[ 1 ], "new" ) == 0) ) {
     /* new option syntax */
     int opt;
-    while ( (opt = getopt( argc - 1, argv + 1, "i:p:c:svl:A" )) != -1 ) {
+    while ( (opt = getopt( argc - 1, argv + 1, "@:i:p:c:svl:A" )) != -1 ) {
       switch ( opt ) {
+	/*
+	 * This undocumented option does nothing but eat its argument.
+	 * Useful in scripting where you prepend something to a
+	 * mosh-server argv, and might end up with something like
+	 * "mosh-server new -v new -c 256", now you can say
+	 * "mosh-server new -v -@ new -c 256" to discard the second
+	 * "new".
+	 */
+      case '@':
+	break;
       case 'A':
 	with_agent_fwd = true;
         break;
@@ -655,6 +665,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       now = Network::timestamp();
       uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
+      string terminal_to_host;
 
       if ( sel.read( network_fd ) ) {
 	/* packet received from the network */
@@ -664,7 +675,6 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	if ( network.get_remote_state_num() != last_remote_num ) {
 	  last_remote_num = network.get_remote_state_num();
 
-	  string terminal_to_host;
 	  
 	  Network::UserStream us;
 	  us.apply_string( network.get_remote_diff() );
@@ -673,8 +683,13 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	    const Parser::Action *action = us.get_action( i );
 	    terminal_to_host += terminal.act( action );
 	    if ( typeid( *action ) == typeid( Parser::Resize ) ) {
+	      /* elide consecutive Resize actions */
+	      if ( i < us.size() - 1 &&
+		   typeid( us.get_action( i + 1 ) ) == typeid( Parser::Resize ) ) {
+		continue;
+	      }
 	      /* tell child process of resize */
-	      const Parser::Resize *res = static_cast<const Parser::Resize *>( us.get_action( i ) );
+	      const Parser::Resize *res = static_cast<const Parser::Resize *>( action );
 	      struct winsize window_size;
 	      if ( ioctl( host_fd, TIOCGWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCGWINSZ" );
@@ -699,11 +714,6 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	    network.set_current_state( terminal );
 	  }
 	  
-	  /* write any writeback octets back to the host */
-	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	    break;
-	  }
-
 	  #ifdef HAVE_UTEMPTER
 	  /* update utmp entry if we have become "connected" */
 	  if ( (!connected_utmp)
@@ -747,28 +757,30 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  network.oob()->shutdown();
 	  network.start_shutdown();
 	} else {
-	  string terminal_to_host = terminal.act( string( buf, bytes_read ) );
+	  terminal_to_host += terminal.act( string( buf, bytes_read ) );
 	
 	  /* update client with new state of terminal */
 	  network.set_current_state( terminal );
-
-	  /* write any writeback octets back to the host */
-	  if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	    break;
-	  }
 	}
+      }
+
+      /* write user input and terminal writeback to the host */
+      if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
+	break;
       }
 
       bool idle_shutdown = false;
       if ( network_timeout_ms &&
 	   network_timeout_ms <= time_since_remote_state ) {
 	idle_shutdown = true;
-	fprintf( stderr, "Network idle for %" PRIu64 " seconds.\n", time_since_remote_state / 1000 );
+	fprintf( stderr, "Network idle for %llu seconds.\n", 
+		 static_cast<unsigned long long>( time_since_remote_state / 1000 ) );
       }
       if ( sel.signal( SIGUSR1 ) ) {
 	if ( !network_signaled_timeout_ms || network_signaled_timeout_ms <= time_since_remote_state ) {
 	  idle_shutdown = true;
-	  fprintf( stderr, "Network idle for %"PRIu64" seconds when SIGUSR1 received\n", time_since_remote_state / 1000 );
+	  fprintf( stderr, "Network idle for %llu seconds when SIGUSR1 received\n",
+		   static_cast<unsigned long long>( time_since_remote_state / 1000 ) );
 	}
       }
 
@@ -832,8 +844,8 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       if ( !network.get_remote_state_num()
            && time_since_remote_state >= timeout_if_no_client ) {
-        fprintf( stderr, "No connection within %" PRIu64 " seconds.\n",
-                 timeout_if_no_client / 1000 );
+        fprintf( stderr, "No connection within %llu seconds.\n",
+                 static_cast<unsigned long long>( timeout_if_no_client / 1000 ) );
 	network.oob()->shutdown();
         break;
       }

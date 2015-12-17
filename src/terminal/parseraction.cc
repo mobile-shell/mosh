@@ -43,9 +43,9 @@ std::string Action::str( void )
   char thechar[ 10 ] = { 0 };
   if ( char_present ) {
     if ( iswprint( ch ) )
-      snprintf( thechar, 10, "(%lc)", (wint_t)ch );
+      snprintf( thechar, 10, "(%lc)", static_cast<wint_t>(ch) );
     else
-      snprintf( thechar, 10, "(0x%x)", (unsigned int)ch );
+      snprintf( thechar, 10, "(0x%x)", static_cast<unsigned int>(ch) );
   }
 
   return name() + std::string( thechar );

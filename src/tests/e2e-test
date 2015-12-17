@@ -71,7 +71,7 @@ tmux_check()
     version_minor=${version##*.}
     # need version 1.8 for capture-pane
     if [ $version_major -lt 1 ] ||
-	   [ $version_major -eq 1 -a $version_minor -lt 8 ]; then
+	[ $version_major -eq 1 -a $version_minor -lt 8 ]; then
 	error "tmux version %s too old\n" "$version"
 	return 1
     fi
@@ -88,6 +88,26 @@ ssh_localhost_check()
     return 0
 }
 
+# These two functions are wrappers for mosh-client/mosh-server to turn
+# on verbosity and log stderr.
+mosh_client()
+{
+    if [ -z "$MOSH_CLIENT" -o -z "$MOSH_E2E_TEST" ]; then
+	test_error "mosh_client: variables missing\n"
+    fi
+    exec 2> "${MOSH_E2E_TEST}.client.stderr"
+    exec "$MOSH_CLIENT" "$@"
+}
+
+mosh_server()
+{
+    if [ -z "$MOSH_SERVER" -o -z "$MOSH_E2E_TEST" ]; then
+	test_error "mosh_server: variables missing\n"
+    fi
+    exec 2> "${MOSH_E2E_TEST}.server.stderr"
+    exec "$MOSH_SERVER" new -v -@ "$@"
+}
+
 # main
 
 # Set up environment
@@ -100,6 +120,20 @@ else
 	exit 99
     fi
 fi
+
+# Wrappers.
+case "$(basename $0)" in
+    mosh-client)
+	mosh_client "$@"
+	exit
+	;;
+    mosh-server)
+	mosh_server "$@"
+	exit
+	;;
+    *)
+	;;
+esac
 
 if ! tmux_check; then
     test_skipped "tmux unavailable\n"
@@ -116,6 +150,7 @@ test_args=$@
 # XXX could use AM testsubdir macro instead
 test_dir=$(basename ${test_name}).d
 test_script="${test_name}"
+
 rm -rf "${test_dir}"
 mkdir "${test_dir}"
 
@@ -161,33 +196,48 @@ fi
 
 for run in $server_tests; do
     log "Running server test %s.\n" "$run"
-	# XXX need to quote special chars in server pathname here somehow
-	sut="../../scripts/mosh --client=../frontend/mosh-client --server=$PWD/../frontend/mosh-server --local --bind-server=127.0.0.1 127.0.0.1"
-	testarg=$run
-	if [ "$run" = "direct" ]; then
-	    sut=""
-	fi
-	# Actually execute code under test
-	# XXX tmux 1.8 requires shell command as a single arg; once we move to 2.0, undo these quotes
-	# XXX this ignores $TMPDIR, because it results in an overlong pathname on OS X
-	if ! ${tmux_stdin} tmux -S "/tmp/.tmux-mosh-test-$$" -C new-session "${srcdir}/print-exitstatus ${client_wrapper} ${sut} \"${srcdir}/e2e-test-server\" \"${PWD}/${test_dir}/${run}\" \"${PWD}/${test_script} ${testarg}\"" > "${test_dir}/${run}.tmux.log"; then
-	    test_error "tmux failure on test %s\n" "$run"
-	fi
-	# Check for mosh failures
-	if ! grep -q "%%% exitstatus: 0 %%%" "${test_dir}/${run}.tmux.log"; then
-	    test_error "mosh-client had non-zero exitstatus\n"
-	fi
+    # These three variables are for the benefit of the mosh-client and mosh-server wrappers.
+    export MOSH_CLIENT="$PWD/../frontend/mosh-client"
+    export MOSH_SERVER="$PWD/../frontend/mosh-server"
+    export MOSH_E2E_TEST="$PWD/${test_dir}/${run}"
+    # XXX need to quote special chars in server pathname here somehow
+    sut="../../scripts/mosh --client=${srcdir}/mosh-client --server=${srcdir}/mosh-server --local --bind-server=127.0.0.1 127.0.0.1"
+    testarg=$run
+    if [ "$run" = "direct" ]; then
+	sut=""
+    fi
+    # Actually execute code under test
+    # XXX tmux 1.8 requires shell command as a single arg; once we move to 2.0, undo these quotes
+    # XXX this ignores $TMPDIR, because it results in an overlong pathname on OS X
+    tmux_socket="/tmp/.tmux-mosh-test-$$"
+    ${tmux_stdin} tmux -S "${tmux_socket}" -C new-session "${srcdir}/print-exitstatus ${client_wrapper} ${sut} \"${srcdir}/e2e-test-server\" \"${PWD}/${test_dir}/${run}\" \"${PWD}/${test_script} ${testarg}\"" > "${test_dir}/${run}.tmux.log"
+    rv=$?
+    rm -f "${tmux_socket}"
+    if [ $rv -ne 0 ]; then
+	test_error "tmux failure on test %s\n" "$run"
+    fi
+    # Check for mosh failures
+    if ! grep -q "%%% exitstatus: 0 %%%" "${test_dir}/${run}.tmux.log"; then
+	test_error "mosh-client had non-zero exitstatus\n"
+    fi
 
-	# Check for server harness failures
-	if [ ! -s "${test_dir}/${run}.capture" ] \
-	      || [ ! -s "${test_dir}/${run}.exitstatus" ]; then
-	    test_error "server harness failure on test %s\n" "$run"
-	fi
-	read server_rv < "${test_dir}/${run}.exitstatus"
-	if [ "$server_rv" -ne 0 ]; then
-	    test_error "server harness exited with status %s\n" "$server_rv"
-	fi
-
+    # Check for server harness failures
+    if [ ! -s "${test_dir}/${run}.capture" ] \
+	|| [ ! -s "${test_dir}/${run}.exitstatus" ]; then
+	test_error "server harness failure on test %s\n" "$run"
+    fi
+    read server_rv < "${test_dir}/${run}.exitstatus"
+    if [ "$server_rv" -ne 0 ]; then
+	test_error "server harness exited with status %s\n" "$server_rv"
+    fi
+    # Check for "round-trip" failures
+    if grep -q "round-trip Instruction verification failed" "${test_dir}/${run}.server.stderr"; then
+	test_error "Round-trip Instruction verification failed on server during %s\n" "$run"
+    fi
+    # XXX We'd also like to check for "target state Instruction
+    # verification failed", a new check, but tmux's lack of BCE
+    # support forces mosh to clear lines with spaces and change a
+    # framebuffer in a way that causes this to fire spuriously.
 done
 
 for compare in $compare_tests; do

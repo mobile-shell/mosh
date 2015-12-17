@@ -30,64 +30,51 @@
     also delete it here.
 */
 
-#ifndef PARSER_HPP
-#define PARSER_HPP
+#ifndef SHARED_HPP
+#define SHARED_HPP
 
-/* Based on Paul Williams's parser,
-   http://www.vt100.net/emu/dec_ansi_parser */
+#include "config.h"
 
-#include <wchar.h>
-#include <string.h>
+#ifdef HAVE_TR1_MEMORY
+#include <tr1/memory>
+#endif
 
-#include "parsertransition.h"
-#include "parseraction.h"
-#include "parserstate.h"
-#include "parserstatefamily.h"
+namespace shared {
+#ifdef HAVE_STD_SHARED_PTR
+  using std::shared_ptr;
+  using std::make_shared;
+#else
+#ifdef HAVE_STD_TR1_SHARED_PTR
+  using std::tr1::shared_ptr;
 
-namespace Parser {
-  extern const StateFamily family;
-
-  class Parser {
-  private:
-    State const *state;
-
-  public:
-    Parser() : state( &family.s_Ground ) {}
-
-    Parser( const Parser &other );
-    Parser & operator=( const Parser & );
-    ~Parser() {}
-
-    void input( wchar_t ch, Actions &actions );
-
-    void reset_input( void )
-    {
-      state = &family.s_Ground;
-    }
-
-  };
-
-  static const size_t BUF_SIZE = 8;
-
-  class UTF8Parser {
-  private:
-    Parser parser;
-
-    char buf[ BUF_SIZE ];
-    size_t buf_len;
-
-  public:
-    UTF8Parser();
-
-    void input( char c, Actions &actions );
-
-    void reset_input( void )
-    {
-      parser.reset_input();
-      buf[0] = '\0';
-      buf_len = 0;
-    }
-  };
+  // make_shared emulation.
+  template<typename Tp, typename A1>
+    inline shared_ptr<Tp>
+    make_shared(const A1& a1)
+  {
+    return shared_ptr<Tp>(new Tp(a1));
+  }
+  template<typename Tp, typename A1, typename A2>
+    inline shared_ptr<Tp>
+    make_shared(const A1& a1, const A2& a2)
+  {
+    return shared_ptr<Tp>(new Tp(a1, a2));
+  }
+  template<typename Tp, typename A1, typename A2, typename A3>
+    inline shared_ptr<Tp>
+    make_shared(const A1& a1, const A2& a2, const A3& a3)
+  {
+    return shared_ptr<Tp>(new Tp(a1, a2, a3));
+  }
+  template<typename Tp, typename A1, typename A2, typename A3, typename A4>
+    inline shared_ptr<Tp>
+    make_shared(const A1& a1, const A2& a2, const A3& a3, const A4& a4)
+  {
+    return shared_ptr<Tp>(new Tp(a1, a2, a3, a4));
+  }
+#else
+#error Need a shared_ptr class.  Try Boost::TR1.
+#endif
+#endif
 }
-
 #endif

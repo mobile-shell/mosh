@@ -201,9 +201,9 @@ static void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)
 static Function func_Ctrl_NEL( CONTROL, "\x85", Ctrl_NEL );
 
 /* horizontal tab */
-static void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void HT_n( Framebuffer *fb, size_t count )
 {
-  int col = fb->ds.get_next_tab();
+  int col = fb->ds.get_next_tab( count );
   if ( col == -1 ) { /* no tabs, go to end of line */
     col = fb->ds.get_width() - 1;
   }
@@ -216,7 +216,26 @@ static void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused))
   fb->ds.next_print_will_wrap = wrap_state_save;
 }
 
+static void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  HT_n( fb, 1 );
+}
 static Function func_Ctrl_HT( CONTROL, "\x09", Ctrl_HT, false );
+
+static void CSI_CxT( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int param = dispatch->getparam( 0, 1 );
+  if ( dispatch->get_dispatch_chars()[ 0 ] == 'Z' ) {
+    param = -param;
+  }
+  if ( param == 0 ) {
+    return;
+  }
+  HT_n( fb, param );
+}
+
+static Function func_CSI_CHT( CSI, "I", CSI_CxT, false );
+static Function func_CSI_CBT( CSI, "Z", CSI_CxT, false );
 
 /* horizontal tab set */
 static void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
@@ -441,9 +460,7 @@ static void CSI_IL( Framebuffer *fb, Dispatcher *dispatch )
 {
   int lines = dispatch->getparam( 0, 1 );
 
-  for ( int i = 0; i < lines; i++ ) {
-    fb->insert_line( fb->ds.get_cursor_row() );
-  }
+  fb->insert_line( fb->ds.get_cursor_row(), lines );
 
   /* vt220 manual and Ecma-48 say to move to first column */
   /* but xterm and gnome-terminal don't */
@@ -457,9 +474,7 @@ static void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
 {
   int lines = dispatch->getparam( 0, 1 );
 
-  for ( int i = 0; i < lines; i++ ) {
-    fb->delete_line( fb->ds.get_cursor_row() );
-  }
+  fb->delete_line( fb->ds.get_cursor_row(), lines );
 
   /* same story -- xterm and gnome-terminal don't
      move to first column */
@@ -563,7 +578,7 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
     bool set_title = (cmd_num == 0 || cmd_num == 2);
     if ( set_icon || set_title ) {
       fb->set_title_initialized();
-      std::deque<wchar_t> newtitle( OSC_string.begin() + offset, OSC_string.end() );
+      Terminal::Framebuffer::title_type newtitle( OSC_string.begin() + offset, OSC_string.end() );
       if ( set_icon )  { fb->set_icon_name( newtitle ); }
       if ( set_title ) { fb->set_window_title( newtitle ); }
 

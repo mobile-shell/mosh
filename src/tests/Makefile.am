@@ -1,7 +1,9 @@
 EXTRA_DIST = \
 	hold-stdin print-exitstatus \
 	e2e-test e2e-test-server \
-	$(displaytests)
+	mosh-client mosh-server \
+	$(displaytests) \
+	emulation-attributes.test
 
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
 AM_LDFLAGS  = $(HARDEN_LDFLAGS)
@@ -9,11 +11,20 @@ AM_LDFLAGS  = $(HARDEN_LDFLAGS)
 displaytests = \
 	e2e-success.test \
 	e2e-failure.test \
+	emulation-ascii-iso-8859.test \
 	emulation-80th-column.test \
+	emulation-attributes-vt100.test \
+	emulation-attributes-16color.test \
+	emulation-attributes-256color8.test \
+	emulation-attributes-256color248.test \
 	emulation-back-tab.test \
+	emulation-cursor-motion.test \
 	emulation-multiline-scroll.test \
+	emulation-wrap-across-frames.test \
+	pty-deadlock.test \
 	server-network-timeout.test \
 	server-signal-timeout.test \
+	window-resize.test \
 	unicode-combine-fallback-assert.test \
 	unicode-later-combining.test \
 	window-resize.test
@@ -22,7 +33,7 @@ check_PROGRAMS = ocb-aes encrypt-decrypt base64
 TESTS = ocb-aes encrypt-decrypt base64 $(displaytests)
 XFAIL_TESTS = \
 	e2e-failure.test \
-	emulation-back-tab.test
+	emulation-attributes-256color8.test
 
 base64_vector.cc: $(srcdir)/genbase64.pl
 	$(AM_V_GEN)echo '#include "base64_vector.h"' > base64_vector.cc || rm base64_vector.cc

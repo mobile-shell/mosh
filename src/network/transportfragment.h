@@ -44,14 +44,11 @@ using std::string;
 using namespace TransportBuffers;
 
 namespace Network {
-  static const int HEADER_LEN = 66;
-
   class Fragment
   {
-  private:
+  public:
     static const size_t frag_header_len = sizeof( uint64_t ) + sizeof( uint16_t );
 
-  public:
     uint64_t id;
     uint16_t fragment_num;
     bool final;
@@ -94,7 +91,7 @@ namespace Network {
   private:
     uint64_t next_instruction_id;
     Instruction last_instruction;
-    int last_MTU;
+    size_t last_MTU;
 
   public:
     Fragmenter() : next_instruction_id( 0 ), last_instruction(), last_MTU( -1 )
@@ -102,7 +99,7 @@ namespace Network {
       last_instruction.set_old_num( -1 );
       last_instruction.set_new_num( -1 );
     }
-    vector<Fragment> make_fragments( const Instruction &inst, int MTU );
+    vector<Fragment> make_fragments( const Instruction &inst, size_t MTU );
     uint64_t last_ack_sent( void ) const { return last_instruction.ack_num(); }
   };
   

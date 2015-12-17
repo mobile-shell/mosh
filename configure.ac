@@ -40,12 +40,11 @@ AC_ARG_ENABLE([compile-warnings],
        PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
        ;;
      distcheck)
-       if test "$(uname -s)" = Linux; then
-         WARNING_CXXFLAGS="-Wall -Werror"
-       else
-         WARNING_CXXFLAGS="-Wall"
-       fi
+       WARNING_CXXFLAGS="-Wall -Werror"
        PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
+       if test "$(uname -s)" != Linux; then
+         PICKY_CXXFLAGS="${PICKY_CXXFLAGS} -Wno-error=unused-parameter"
+       fi
        ;;
      *)
        AC_MSG_ERROR([Unknown argument '$enableval' to --enable-compile-warnings])
@@ -216,6 +215,9 @@ AC_CHECK_HEADERS([termio.h])
 AC_CHECK_HEADERS([sys/uio.h])
 AC_CHECK_HEADERS([sys/un.h])
 AC_CHECK_HEADERS([sys/types.h])
+AC_LANG_PUSH(C++)
+AC_CHECK_HEADERS([tr1/memory])
+AC_LANG_POP(C++)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -377,6 +379,32 @@ public:
 [[T x; return x.Fun();]])],
   [AC_DEFINE([FD_ISSET_IS_CONST], [1],
      [Define if FD_ISSET() fd_set argument is const.])
+   AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])])
+AC_LANG_POP(C++)
+
+AC_MSG_CHECKING([whether std::shared_ptr is available])
+AC_LANG_PUSH(C++)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <memory>
+class T {
+public:
+  std::shared_ptr<int> Fun( void ) { return std::shared_ptr<int>( new int ( 0 ) ); } };]],
+[[T x; return !!x.Fun();]])],
+  [AC_DEFINE([HAVE_STD_SHARED_PTR], [1],
+     [Define if std::shared_ptr is available.])
+   AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])])
+AC_LANG_POP(C++)
+
+AC_MSG_CHECKING([whether std::tr1::shared_ptr is available])
+AC_LANG_PUSH(C++)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <tr1/memory>
+class T {
+public:
+  std::tr1::shared_ptr<int> Fun( void ) { return std::tr1::shared_ptr<int>( new int ( 0 ) ); } };]],
+[[T x; return !!x.Fun();]])],
+  [AC_DEFINE([HAVE_STD_TR1_SHARED_PTR], [1],
+     [Define if std::tr1::shared_ptr is available.])
    AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])])
 AC_LANG_POP(C++)

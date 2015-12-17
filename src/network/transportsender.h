@@ -144,7 +144,12 @@ namespace Network {
     /* Misc. getters and setters */
     /* Cannot modify current_state while shutdown in progress */
     MyState &get_current_state( void ) { assert( !shutdown_in_progress ); return current_state; }
-    void set_current_state( const MyState &x ) { assert( !shutdown_in_progress ); current_state = x; }
+    void set_current_state( const MyState &x )
+    {
+      assert( !shutdown_in_progress );
+      current_state = x;
+      current_state.reset_input();
+    }
     void set_verbose( void ) { verbose = true; }
 
     bool get_shutdown_in_progress( void ) const { return shutdown_in_progress; }

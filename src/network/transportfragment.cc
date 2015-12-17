@@ -154,8 +154,9 @@ bool Fragment::operator==( const Fragment &x ) const
     && ( initialized == x.initialized ) && ( contents == x.contents );
 }
 
-vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, int MTU )
+vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, size_t MTU )
 {
+  MTU -= Fragment::frag_header_len;
   if ( (inst.old_num() != last_instruction.old_num())
        || (inst.new_num() != last_instruction.new_num())
        || (inst.ack_num() != last_instruction.ack_num())
@@ -182,9 +183,9 @@ vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, int MTU )
     string this_fragment;
     bool final = false;
 
-    if ( int( payload.size() + HEADER_LEN ) > MTU ) {
-      this_fragment = string( payload.begin(), payload.begin() + MTU - HEADER_LEN );
-      payload = string( payload.begin() + MTU - HEADER_LEN, payload.end() );
+    if ( payload.size() > MTU ) {
+      this_fragment = string( payload.begin(), payload.begin() + MTU );
+      payload = string( payload.begin() + MTU, payload.end() );
     } else {
       this_fragment = payload;
       payload.clear();

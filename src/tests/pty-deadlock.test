@@ -1,0 +1,93 @@
+#!/bin/sh
+
+#
+# This is a regression test for a BSD pty bug in Mosh.  On
+# FreeBSD/OpenBSD/OS X, a pty master can block on read() after
+# select() has informed us that there is data available, if a ^S is
+# written to the pty master between the select() and the read().
+#
+# Unfortunately, everything attached to the pty gets stuck when this
+# happens.  If this tests fails, you will need to do some manual
+# cleanup with kill -9.
+#
+
+
+fail()
+{
+    printf "$@" 2>&1
+    exit 99
+}
+
+
+
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test $0 tmux baseline post
+    exit
+fi
+
+tmux_commands()
+{
+    # An interactive shell is waiting for us in the mosh session.
+    # Start test...
+    printf "send-keys 0x0d\n"
+    sleep 1
+    # Stop output...
+    printf "send-keys 0x13\n"
+    sleep 2
+    # Restart output...
+    printf "send-keys 0x11\n"
+    sleep 2
+    # And stop the test script, so it produces its exit messge.
+    printf "send-keys 0x0d\n"
+    # need to sleep extra long here, to let child commands complete,
+    # and not have tmux exit prematurely
+    sleep 5
+}
+
+tmux_stdin()
+{
+    tmux_commands | "$@"
+    exit
+}
+
+baseline()
+{
+    # Make a lot of noise on stdout to keep mosh busy, and exit
+    # with a distinctive message when we get a CR.  Exit after 10s in any case.
+    trap "exit 1" TERM
+    (sleep 10; kill $$) &
+    killpid=$!
+    read x
+    # very, very old school way to get non-blocking reads in shell
+    tty=$(stty -g)
+    trap "stty $tty" EXIT
+    stty -icanon min 0 time 0
+    while ! read x; do
+	printf 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz\n'
+    done
+    printf "=== normal exit ===\n"
+    # Kill the killer and exit normally.
+    kill $killpid
+}
+
+post()
+{
+    if grep -q '=== normal exit ===' $(basename $0).d/baseline.capture; then
+	exit 0
+    fi
+    exit 1
+}
+
+case $1 in
+    tmux)
+	shift;
+	tmux_stdin "$@";;
+    baseline)
+	baseline;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" $1;;
+esac

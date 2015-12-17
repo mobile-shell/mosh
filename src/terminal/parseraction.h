@@ -34,6 +34,7 @@
 #define PARSERACTION_HPP
 
 #include <string>
+#include <vector>
 
 namespace Terminal {
   class Emulator;
@@ -43,8 +44,8 @@ namespace Parser {
   class Action
   {
   public:
-    bool char_present;
     wchar_t ch;
+    bool char_present;
     mutable bool handled;
 
     std::string str( void );
@@ -53,14 +54,20 @@ namespace Parser {
 
     virtual void act_on_terminal( Terminal::Emulator * ) const {};
 
-    Action() : char_present( false ), ch( -1 ), handled( false ) {};
+    virtual bool ignore() const { return false; }
+
+    Action() : ch( -1 ), char_present( false ), handled( false ) {};
     virtual ~Action() {};
 
     virtual bool operator==( const Action &other ) const;
   };
 
+  typedef std::vector<Action *> Actions;
+
   class Ignore : public Action {
-  public: std::string name( void ) { return std::string( "Ignore" ); }
+  public:
+    std::string name( void ) { return std::string( "Ignore" ); }
+    bool ignore() const { return true; }
   };
   class Print : public Action {
   public:

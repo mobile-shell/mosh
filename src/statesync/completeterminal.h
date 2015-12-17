@@ -48,6 +48,11 @@ namespace Terminal {
     Terminal::Emulator terminal;
     Terminal::Display display;
 
+    // Only used locally by act(), but kept here as a performance optimization,
+    // to avoid construction/destruction.  It must always be empty
+    // outside calls to act() to keep horrible things from happening.
+    Parser::Actions actions;
+
     typedef std::list< std::pair<uint64_t, uint64_t> > input_history_type;
     input_history_type input_history;
     uint64_t echo_ack;
@@ -56,14 +61,13 @@ namespace Terminal {
 
   public:
     Complete( size_t width, size_t height ) : parser(), terminal( width, height ), display( false ),
-					      input_history(), echo_ack( 0 ) {}
+					      actions(), input_history(), echo_ack( 0 ) {}
     
     std::string act( const std::string &str );
     std::string act( const Parser::Action *act );
 
     const Framebuffer & get_fb( void ) const { return terminal.get_fb(); }
-    bool parser_grounded( void ) const { return parser.is_grounded(); }
-
+    void reset_input( void ) { parser.reset_input(); }
     uint64_t get_echo_ack( void ) const { return echo_ack; }
     bool set_echo_ack( uint64_t now );
     void register_input_frame( uint64_t n, uint64_t now );
@@ -72,6 +76,7 @@ namespace Terminal {
     /* interface for Network::Transport */
     void subtract( const Complete * ) const {}
     std::string diff_from( const Complete &existing ) const;
+    std::string init_diff( void ) const;
     void apply_string( std::string diff );
     bool operator==( const Complete &x ) const;
 
