@@ -148,7 +148,7 @@ static void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unuse
   for ( int y = 0; y < fb->ds.get_height(); y++ ) {
     for ( int x = 0; x < fb->ds.get_width(); x++ ) {
       fb->reset_cell( fb->get_mutable_cell( y, x ) );
-      fb->get_mutable_cell( y, x )->contents.push_back( L'E' );
+      fb->get_mutable_cell( y, x )->append( 'E' );
     }
   }
 }

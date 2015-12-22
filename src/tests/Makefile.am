@@ -21,6 +21,7 @@ displaytests = \
 	emulation-cursor-motion.test \
 	emulation-multiline-scroll.test \
 	emulation-wrap-across-frames.test \
+	prediction-unicode.test \
 	pty-deadlock.test \
 	server-network-timeout.test \
 	server-signal-timeout.test \

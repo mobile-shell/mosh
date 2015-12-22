@@ -90,6 +90,11 @@ state.  Alternately, this could use expect or something similar.
 between tmux and mosh.  It's expected to interact with its wrapped
 command line as `expect` might do.  This is not actually tested yet.
 
+### Flags
+
+`mosh-args`, `client-args` and `server-args` inject extra arguments
+into the invocations of the respective commands.
+
 ## Logging and error reporting
 
 Each execution action is run, and recorded in

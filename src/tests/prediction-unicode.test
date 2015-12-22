@@ -1,0 +1,150 @@
+#!/bin/sh
+
+#
+# This is a regression test for a bug seen where mosh-client's
+# prediction code would sometimes show "gück" when "glück" was typed.
+# mosh-client would output a predicted Unicode input character
+# first as an 8-bit character containing the lowest 8 bits of the
+# Unicode code point, then redraw it correctly with its UTF-8 sequence
+# when the prediction is validated.  For many accented Latin
+# characters, the 8-bit character is an illegal UTF-8 code sequence.
+# Most terminal emulators will output the Unicode replacement
+# character, which is only visible until validation.  urxvt, however,
+# draws no character and does not change the cursor location on an
+# illegal UTF-8 sequence, causing this bug to be visible as ongoing
+# display corruption.  A subset of wide characters (including CJK)
+# will show display corruption with all terminal emulators, because a
+# narrow replacement character will be drawn when a wide character
+# should have been.
+#
+# tmux draws a replacement character for invalid UTF-8, and we
+# depend on that in this test.
+#
+# Another similar failing case is typing "faĩl".  In this case the "ĩ"
+# would be predicted as ")" before being replaced by the
+# correct character.
+#
+fail()
+{
+    printf "$@" 2>&1
+    exit 99
+}
+
+
+
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test $0 tmux baseline mosh-args post
+    exit
+fi
+
+sleepf()
+{
+    (sleep .1 || sleep 1) > /dev/null 2>&1
+}
+
+seq()
+{
+    if [ $# -lt 1 -o $# -gt 3 ]; then
+	echo "bad args" >&2
+    fi
+    first=$1
+    incr=1
+    last=0
+    case $# in
+	3)
+	    incr=$2
+	    last=$3
+	    ;;
+	2)
+	    last=$2
+	    ;;
+	1)
+	    ;;
+    esac
+    while :; do
+	printf '%d\n' $first
+	first=$(expr $first + $incr)
+	if [ $first -gt $last ]; then
+	    break
+	fi
+    done
+}
+
+chr()
+{
+    printf "\\$(printf %03o $1)"
+}
+
+utf8cp()
+{
+    local c=$1
+    if [ $c -gt $((0x10ffff)) ]; then
+	fail "illegal Unicode code point %x\n" $c
+    elif [ $c -lt $((0x80)) ]; then
+	chr $c
+    elif [ $c -lt $((0x800)) ]; then
+	chr $(( (($c >>  6) & 0x1f) | 0xc0 ))
+	chr $(( ($c & 0x3f)         | 0x80 ))
+    elif [ $c -lt $((0x10000)) ]; then
+	chr $(( (($c >> 12) & 0x0f) | 0xe0 ))
+	chr $(( (($c >>  6) & 0x3f) | 0x80 ))
+	chr $(( ($c & 0x3f)         | 0x80 ))
+    elif [ $c -lt $((0x200000)) ]; then
+	chr $(( (($c >> 18) & 0x03) | 0xf0 ))
+	chr $(( (($c >> 12) & 0x3f) | 0x80 ))
+	chr $(( (($c >>  6) & 0x3f) | 0x80 ))
+	chr $(( ($c & 0x3f)         | 0x80 ))
+    fi
+}
+
+tmux_commands()
+{
+    for x in $(seq 1 5); do
+	for y in $(seq 1 5); do 
+	    for i in g l ü c k " " f a ĩ l " "; do
+		printf "send-keys '%s'\n" "$i"
+		sleepf
+	    done
+	done
+	printf "send-keys 0x0d\n"
+    done
+    printf "send-keys 0x04\n"
+    sleep 5
+} 
+
+tmux_stdin()
+{
+    tmux_commands | "$@"
+    exit
+}
+
+baseline()
+{
+    # Just receive and toss input in canonical mode.
+    cat > /dev/null
+}
+
+post()
+{
+    # Look for bad output: ')' or \374
+    if [ -n "$(env -u LC_ALL -u LC_CTYPE -u LANGUAGE LANG=C egrep "%output %0 (\)|$(printf \\374))" $(basename $0).d/baseline.tmux.log)" ]; then
+        exit 1
+    fi
+    exit 0
+}
+
+case $1 in
+    tmux)
+	shift;
+	tmux_stdin "$@";;
+    baseline)
+	baseline;;
+    mosh-args)
+	printf "%s\n" "--predict=always";;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" $1;;
+esac
