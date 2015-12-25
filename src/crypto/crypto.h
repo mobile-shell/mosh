@@ -58,6 +58,13 @@ namespace Crypto {
     ~CryptoException() throw () {}
   };
 
+  /*
+   * OCB (and other algorithms) require a source of nonce/sequence
+   * numbers that never repeats its output.  Enforce that with this
+   * function.
+   */
+  uint64_t unique( void );
+
   /* 16-byte-aligned buffer, with length. */
   class AlignedBuffer {
   private:

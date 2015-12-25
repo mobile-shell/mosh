@@ -67,21 +67,16 @@ const uint64_t DIRECTION_MASK = uint64_t(1) << 63;
 const uint64_t SEQUENCE_MASK = uint64_t(-1) ^ DIRECTION_MASK;
 
 /* Read in packet from coded string */
-Packet::Packet( string coded_packet, Session *session )
-  : seq( -1 ),
-    direction( TO_SERVER ),
+Packet::Packet( const Message & message )
+  : seq( message.nonce.val() & SEQUENCE_MASK ),
+    direction( (message.nonce.val() & DIRECTION_MASK) ? TO_CLIENT : TO_SERVER ),
     timestamp( -1 ),
     timestamp_reply( -1 ),
     payload()
 {
-  Message message = session->decrypt( coded_packet );
-
-  direction = (message.nonce.val() & DIRECTION_MASK) ? TO_CLIENT : TO_SERVER;
-  seq = message.nonce.val() & SEQUENCE_MASK;
-
   dos_assert( message.text.size() >= 2 * sizeof( uint16_t ) );
 
-  uint16_t *data = (uint16_t *)message.text.data();
+  const uint16_t *data = (uint16_t *)message.text.data();
   timestamp = be16toh( data[ 0 ] );
   timestamp_reply = be16toh( data[ 1 ] );
 
@@ -114,7 +109,7 @@ Packet Connection::new_packet( string &s_payload )
     saved_timestamp_received_at = 0;
   }
 
-  Packet p( next_seq++, direction, timestamp16(), outgoing_timestamp_reply, s_payload );
+  Packet p( direction, timestamp16(), outgoing_timestamp_reply, s_payload );
 
   return p;
 }
@@ -244,7 +239,6 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     key(),
     session( key ),
     direction( TO_CLIENT ),
-    next_seq( 0 ),
     saved_timestamp( -1 ),
     saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
@@ -365,7 +359,6 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
     key( key_str ),
     session( key ),
     direction( TO_SERVER ),
-    next_seq( 0 ),
     saved_timestamp( -1 ),
     saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
@@ -520,7 +513,7 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
     }
   }
 
-  Packet p( string( msg_payload, received_len ), &session );
+  Packet p( session.decrypt( string( msg_payload, received_len ) ) );
 
   dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
 

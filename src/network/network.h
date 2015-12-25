@@ -76,18 +76,18 @@ namespace Network {
 
   class Packet {
   public:
-    uint64_t seq;
+    const uint64_t seq;
     Direction direction;
     uint16_t timestamp, timestamp_reply;
     string payload;
     
-    Packet( uint64_t s_seq, Direction s_direction,
+    Packet( Direction s_direction,
 	    uint16_t s_timestamp, uint16_t s_timestamp_reply, string s_payload )
-      : seq( s_seq ), direction( s_direction ),
+      : seq( Crypto::unique() ), direction( s_direction ),
 	timestamp( s_timestamp ), timestamp_reply( s_timestamp_reply ), payload( s_payload )
     {}
     
-    Packet( string coded_packet, Session *session );
+    Packet( const Message & message );
     
     string tostring( Session *session );
   };
@@ -173,7 +173,6 @@ namespace Network {
     void setup( void );
 
     Direction direction;
-    uint64_t next_seq;
     uint16_t saved_timestamp;
     uint64_t saved_timestamp_received_at;
     uint64_t expected_receiver_seq;

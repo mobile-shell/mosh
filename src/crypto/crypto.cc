@@ -61,6 +61,16 @@ long int myatoi( const char *str )
   return ret;
 }
 
+uint64_t Crypto::unique( void )
+{
+  static uint64_t counter = 0;
+  uint64_t rv = counter++;
+  if ( counter == 0 ) {
+    throw CryptoException( "Counter wrapped", true );
+  }
+  return rv;
+}
+
 AlignedBuffer::AlignedBuffer( size_t len, const char *data )
   : m_len( len ), m_allocated( NULL ), m_data( NULL )
 {
