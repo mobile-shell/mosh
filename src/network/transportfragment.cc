@@ -72,7 +72,7 @@ string Fragment::tostring( void )
   return ret;
 }
 
-Fragment::Fragment( string &x )
+Fragment::Fragment( const string &x )
   : id( -1 ), fragment_num( -1 ), final( false ), initialized( true ),
     contents()
 {

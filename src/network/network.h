@@ -82,7 +82,7 @@ namespace Network {
     string payload;
     
     Packet( Direction s_direction,
-	    uint16_t s_timestamp, uint16_t s_timestamp_reply, string s_payload )
+	    uint16_t s_timestamp, uint16_t s_timestamp_reply, const string & s_payload )
       : seq( Crypto::unique() ), direction( s_direction ),
 	timestamp( s_timestamp ), timestamp_reply( s_timestamp_reply ), payload( s_payload )
     {}
@@ -190,7 +190,7 @@ namespace Network {
     bool have_send_exception;
     NetworkException send_exception;
 
-    Packet new_packet( string &s_payload );
+    Packet new_packet( const string &s_payload );
 
     void hop_port( void );
 
@@ -209,7 +209,7 @@ namespace Network {
     Connection( const char *desired_ip, const char *desired_port ); /* server */
     Connection( const char *key_str, const char *ip, const char *port ); /* client */
 
-    void send( string s );
+    void send( const string & s );
     string recv( void );
     const std::vector< int > fds( void ) const;
     int get_MTU( void ) const { return MTU; }

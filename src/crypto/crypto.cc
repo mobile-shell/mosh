@@ -184,14 +184,14 @@ Nonce::Nonce( uint64_t val )
   memcpy( bytes + 4, &val_net, 8 );
 }
 
-uint64_t Nonce::val( void )
+uint64_t Nonce::val( void ) const
 {
   uint64_t ret;
   memcpy( &ret, bytes + 4, 8 );
   return be64toh( ret );
 }
 
-Nonce::Nonce( char *s_bytes, size_t len )
+Nonce::Nonce( const char *s_bytes, size_t len )
 {
   if ( len != 8 ) {
     throw CryptoException( "Nonce representation must be 8 octets long." );
@@ -201,18 +201,18 @@ Nonce::Nonce( char *s_bytes, size_t len )
   memcpy( bytes + 4, s_bytes, 8 );
 }
 
-Message::Message( char *nonce_bytes, size_t nonce_len,
-		  char *text_bytes, size_t text_len )
+Message::Message( const char *nonce_bytes, size_t nonce_len,
+		  const char *text_bytes, size_t text_len )
   : nonce( nonce_bytes, nonce_len ),
-    text( (char *)text_bytes, text_len )
+    text( text_bytes, text_len )
 {}
 
-Message::Message( Nonce s_nonce, string s_text )
+Message::Message( const Nonce & s_nonce, const string & s_text )
   : nonce( s_nonce ),
     text( s_text )
 {}
 
-string Session::encrypt( Message plaintext )
+const string Session::encrypt( const Message & plaintext )
 {
   const size_t pt_len = plaintext.text.size();
   const int ciphertext_len = pt_len + 16;
@@ -262,13 +262,13 @@ string Session::encrypt( Message plaintext )
   return plaintext.nonce.cc_str() + text;
 }
 
-Message Session::decrypt( string ciphertext )
+const Message Session::decrypt( const string & ciphertext )
 {
   if ( ciphertext.size() < 24 ) {
     throw CryptoException( "Ciphertext must contain nonce and tag." );
   }
 
-  char *str = (char *)ciphertext.data();
+  const char *str = ciphertext.data();
 
   int body_len = ciphertext.size() - 8;
   int pt_len = body_len - 16;
@@ -297,7 +297,7 @@ Message Session::decrypt( string ciphertext )
     throw CryptoException( "Packet failed integrity check." );
   }
 
-  Message ret( nonce, string( plaintext_buffer.data(), pt_len ) );
+  const Message ret( nonce, string( plaintext_buffer.data(), pt_len ) );
 
   return ret;
 }

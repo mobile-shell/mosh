@@ -102,7 +102,7 @@ string Complete::init_diff( void ) const
   return diff_from( Complete( get_fb().ds.get_width(), get_fb().ds.get_height() ));
 }
 
-void Complete::apply_string( string diff )
+void Complete::apply_string( const string & diff )
 {
   HostBuffers::HostMessage input;
   fatal_assert( input.ParseFromString( diff ) );

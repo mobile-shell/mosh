@@ -105,7 +105,7 @@ string UserStream::diff_from( const UserStream &existing ) const
   return output.SerializeAsString();
 }
 
-void UserStream::apply_string( string diff )
+void UserStream::apply_string( const string &diff )
 {
   ClientBuffers::UserMessage input;
   fatal_assert( input.ParseFromString( diff ) );

@@ -170,7 +170,7 @@ DispatchRegistry & Terminal::get_global_dispatch_registry( void )
 }
 
 static void register_function( Function_Type type,
-			       std::string dispatch_chars,
+			       const std::string & dispatch_chars,
 			       Function f )
 {
   switch ( type ) {
@@ -186,7 +186,7 @@ static void register_function( Function_Type type,
   }
 }
 
-Function::Function( Function_Type type, std::string dispatch_chars,
+Function::Function( Function_Type type, const std::string & dispatch_chars,
 		    void (*s_function)( Framebuffer *, Dispatcher * ),
 		    bool s_clears_wrap_state )
   : function( s_function ), clears_wrap_state( s_clears_wrap_state )

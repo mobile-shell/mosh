@@ -96,7 +96,7 @@ string Packet::tostring( Session *session )
   return session->encrypt( Message( Nonce( direction_seq ), timestamps + payload ) );
 }
 
-Packet Connection::new_packet( string &s_payload )
+Packet Connection::new_packet( const string &s_payload )
 {
   uint16_t outgoing_timestamp_reply = -1;
 
@@ -391,7 +391,7 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
   set_MTU( remote_addr.sa.sa_family );
 }
 
-void Connection::send( string s )
+void Connection::send( const string & s )
 {
   if ( !has_remote_addr ) {
     return;
