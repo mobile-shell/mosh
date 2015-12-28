@@ -531,6 +531,13 @@ static int run_server( const char *desired_ip, const char *desired_port,
       warn_unattached( utmp_entry );
     }
 
+    /* Wait for parent to release us. */
+    char linebuf[81];
+    if (fgets(linebuf, sizeof linebuf, stdin) == NULL) {
+      perror( "parent signal" );
+      _exit( 1 );
+    }
+
     Crypto::reenable_dumping_core();
 
     if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
@@ -591,6 +598,8 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
   Addr saved_addr;
   socklen_t saved_addr_len = 0;
   #endif
+
+  bool child_released = false;
 
   while ( 1 ) {
     try {
@@ -713,6 +722,15 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	    connected_utmp = true;
 	  }
 	  #endif
+
+	  /* Tell child to start login session. */
+	  if ( !child_released ) {
+	    if ( swrite( host_fd, "\n", 1 ) < 0) {
+	      perror( "child release" );
+	      _exit( 1 );
+	    }
+	    child_released = true;
+	  }
 	}
       }
       
