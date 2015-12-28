@@ -149,7 +149,15 @@ public:
     }
 #endif
 
-    if ( ( ret == -1 ) && ( errno == EINTR ) ) {
+    if ( ret == 0 || ( ret == -1 && errno == EINTR ) ) {
+      /* Look for and report Cygwin select() bug. */
+      if ( ret == 0 ) {
+	for ( int fd = 0; fd <= max_fd; fd++ ) {
+	  if ( FD_ISSET( fd, &read_fds ) ) {
+	    fprintf( stderr, "select(): nfds = 0 but read fd %d is set\n", fd );
+	  }
+	}
+      }
       /* The user should process events as usual. */
       FD_ZERO( &read_fds );
       ret = 0;
