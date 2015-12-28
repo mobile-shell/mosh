@@ -448,11 +448,6 @@ bool STMClient::main( void )
 	  /* we only read one socket each run */
 	  network_ready_to_read = true;
 	}
-
-	if ( sel.error( *it ) ) {
-	  /* network problem */
-	  break;
-	}
       }
 
       if ( network_ready_to_read ) {
@@ -491,16 +486,6 @@ bool STMClient::main( void )
           overlays.get_notification_engine().set_notification_string( wstring( L"Signal received, shutting down..." ), true );
           network->start_shutdown();
         }
-      }
-
-      if ( sel.error( STDIN_FILENO ) ) {
-	/* user problem */
-	if ( !network->has_remote_addr() ) {
-	  break;
-	} else if ( !network->shutdown_in_progress() ) {
-	  overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ), true );
-	  network->start_shutdown();
-	}
       }
 
       /* quit if our shutdown has been acknowledged */

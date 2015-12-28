@@ -765,16 +765,6 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	}
       }
       
-      if ( sel.error( network_fd ) ) {
-	/* network problem */
-	break;
-      }
-
-      if ( (!network.shutdown_in_progress()) && sel.error( host_fd ) ) {
-	/* host problem */
-	network.start_shutdown();
-      }
-
       /* quit if our shutdown has been acknowledged */
       if ( network.shutdown_in_progress() && network.shutdown_acknowledged() ) {
 	break;

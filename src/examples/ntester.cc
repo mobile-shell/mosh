@@ -153,10 +153,6 @@ int main( int argc, char *argv[] )
 	    /* we only read one socket each run */
 	    network_ready_to_read = true;
 	  }
-
-	  if ( sel.error( *it ) ) {
-	    break;
-	  }
 	}
 
 	if ( network_ready_to_read ) {
