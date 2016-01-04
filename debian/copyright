@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: mosh
-Source: http://github.com/keithw/mosh
+Source: https://github.com/mobile-shell/mosh
 
 Files: *
 Copyright: 2012 Keith Winstein <mosh-devel@mit.edu>
