@@ -15,7 +15,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=-stackprotector
 -include /usr/share/dpkg/buildflags.mk
 
 %:
-	dh $@ --with autoreconf
+	dh $@ --parallel --with autoreconf
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
