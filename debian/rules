@@ -23,3 +23,7 @@ override_dh_auto_configure:
 		--enable-ufw \
 		--enable-completion \
 		--enable-compile-warnings=error
+
+override_dh_perl:
+	# mosh only uses Perl modules in perl-base.
+	dh_perl -d
