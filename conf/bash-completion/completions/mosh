@@ -1,9 +1,18 @@
+#!/bin/bash
+
 _mosh () {
-    local cur prev
+    local simple_flags="-a -b -4 -6 -p"
+    local flags="--client= --server= --predict= --family= --port= 
+    --bind-server= --ssh= --no-init --help --version"
 
-    _init_completion || return
-
-    _known_hosts_real -a "$cur"
+    local cur=$(_get_cword)
+    if [[ "$cur" == --* && "$COMP_CWORD" == 1 ]]; then
+        COMPREPLY=($(compgen -W "$flags" -- "$cur"))
+    elif [[ "$cur" == -* && "$COMP_CWORD" == 1 ]]; then
+        COMPREPLY=($(compgen -W "$simple_flags" -- "$cur"))
+    else
+        _known_hosts_real -a "$cur"
+    fi
 }
 
-complete -F _mosh mosh
+complete -o nospace -F _mosh mosh
