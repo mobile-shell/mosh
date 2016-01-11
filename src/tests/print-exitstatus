@@ -18,4 +18,5 @@ if ($? == 0) {
     $rc = ($? & 127) | 128;
 }
 print STDERR "%%% exitstatus: ${rc} %%%\n";
+sleep 1;
 exit $rc;
