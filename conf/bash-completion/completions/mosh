@@ -1,11 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-_mosh () {
+_mosh() {
+    local cur
+    _init_completion || return
+
     local simple_flags="-a -b -4 -6 -p"
     local flags="--client= --server= --predict= --family= --port= 
     --bind-server= --ssh= --no-init --help --version"
 
-    local cur=$(_get_cword)
     if [[ "$cur" == --* && "$COMP_CWORD" == 1 ]]; then
         COMPREPLY=($(compgen -W "$flags" -- "$cur"))
     elif [[ "$cur" == -* && "$COMP_CWORD" == 1 ]]; then
