@@ -85,13 +85,14 @@ namespace Terminal {
   };
 
   class Cell {
-  public:
+  private:
     typedef std::string content_type; /* can be std::string, std::vector<uint8_t>, or __gnu_cxx::__vstring */
     content_type contents;
     Renditions renditions;
     uint8_t width;
     bool fallback; /* first character is combining character */
 
+  public:
     Cell( color_type background_color );
     Cell(); /* default constructor required by C++11 STL */
 
@@ -107,7 +108,13 @@ namespace Terminal {
 
     bool operator!=( const Cell &x ) const { return !operator==( x ); }
 
+    /* Accessors for contents field */
     std::string debug_contents( void ) const;
+
+    bool empty( void ) const { return contents.empty(); }
+    /* 32 seems like a reasonable limit on combining characters */
+    bool full( void ) const { return contents.size() >= 32; }
+    void clear( void ) { contents.clear(); }
 
     bool is_blank( void ) const
     {
@@ -176,6 +183,15 @@ namespace Terminal {
       }
       output.append( contents );
     }
+
+    /* Other accessors */
+    const Renditions& get_renditions( void ) const { return renditions; }
+    Renditions& get_renditions( void ) { return renditions; }
+    void set_renditions( const Renditions& r ) { renditions = r; }
+    unsigned int get_width( void ) const { return width; }
+    void set_width( unsigned int w ) { width = w; }
+    bool get_fallback( void ) const { return fallback; }
+    void set_fallback( bool f ) { fallback = f; }
   };
 
   class Row {
@@ -299,7 +315,8 @@ namespace Terminal {
     void set_foreground_color( int x ) { renditions.set_foreground_color( x ); }
     void set_background_color( int x ) { renditions.set_background_color( x ); }
     void add_rendition( color_type x ) { renditions.set_rendition( x ); }
-    Renditions get_renditions( void ) const { return renditions; }
+    const Renditions& get_renditions( void ) const { return renditions; }
+    Renditions& get_renditions( void ) { return renditions; }
     int get_background_rendition( void ) const { return renditions.background_color; }
 
     void save_cursor( void );

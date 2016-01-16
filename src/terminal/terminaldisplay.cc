@@ -337,10 +337,10 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
   /* If we're forced to write the first column because of wrap, go ahead and do so. */
   if ( wrap ) {
     const Cell &cell = cells.at( 0 );
-    frame.update_rendition( cell.renditions );
+    frame.update_rendition( cell.get_renditions() );
     frame.append_cell( cell );
-    frame_x += cell.width;
-    frame.cursor_x += cell.width;
+    frame_x += cell.get_width();
+    frame.cursor_x += cell.get_width();
   }
 
   /* If rows are the same object, we don't need to do anything at all. */
@@ -361,16 +361,16 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
     if ( initialized
 	 && !clear_count
 	 && ( cell == old_cells.at( frame_x ) ) ) {
-      frame_x += cell.width;
+      frame_x += cell.get_width();
       continue;
     }
 
     /* Slurp up all the empty cells */
-    if ( cell.contents.empty() ) {
+    if ( cell.empty() ) {
       if ( !clear_count ) {
-	blank_renditions = cell.renditions;
+	blank_renditions = cell.get_renditions();
       }
-      if ( cell.renditions == blank_renditions ) {
+      if ( cell.get_renditions() == blank_renditions ) {
 	/* Remember run of blank cells */
 	clear_count++;
 	frame_x++;
@@ -394,8 +394,8 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
       clear_count = 0;
       // If the current character is *another* empty cell in a different rendition,
       // we restart counting and continue here
-      if ( cell.contents.empty() ) {
-	blank_renditions = cell.renditions;
+      if ( cell.empty() ) {
+	blank_renditions = cell.get_renditions();
 	clear_count = 1;
 	frame_x++;
 	continue;
@@ -406,10 +406,10 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
     /* Now draw a character cell. */
     /* Move to the right position. */
     frame.append_silent_move( frame_y, frame_x );
-    frame.update_rendition( cell.renditions );
+    frame.update_rendition( cell.get_renditions() );
     frame.append_cell( cell );
-    frame_x += cell.width;
-    frame.cursor_x += cell.width;
+    frame_x += cell.get_width();
+    frame.cursor_x += cell.get_width();
     if ( frame_x >= f.ds.get_width() ) {
       wrote_last_cell = true;
     }

@@ -270,7 +270,7 @@ void Framebuffer::apply_renditions_to_cell( Cell *cell )
   if (!cell) {
     cell = get_mutable_cell();
   }
-  cell->renditions = ds.get_renditions();
+  cell->set_renditions( ds.get_renditions() );
 }
 
 SavedCursor::SavedCursor()

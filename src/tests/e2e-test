@@ -96,7 +96,7 @@ mosh_client()
 	test_error "mosh_client: variables missing\n"
     fi
     exec 2> "${MOSH_E2E_TEST}.client.stderr"
-    exec "$MOSH_CLIENT" "$@"
+    exec "$MOSH_CLIENT" $MOSH_CLIENT_ARGS "$@"
 }
 
 mosh_server()
@@ -105,7 +105,7 @@ mosh_server()
 	test_error "mosh_server: variables missing\n"
     fi
     exec 2> "${MOSH_E2E_TEST}.server.stderr"
-    exec "$MOSH_SERVER" new -v -@ "$@"
+    exec "$MOSH_SERVER" new -v $MOSH_SERVER_ARGS -@ "$@"
 }
 
 # main
@@ -155,11 +155,7 @@ rm -rf "${test_dir}"
 mkdir "${test_dir}"
 
 
-if [ "x$AM_TESTS_REDIRECT" != "x" ]; then
-    RENDER_REDIRECT=">&9"
-    exec 2>&9
-fi
-trap 'rv=$?; if test $rv -ne 0; then dump_logs '"$test_dir $test_args $RENDER_REDIRECT"'; fi; exit $rv' EXIT
+trap 'rv=$?; if test $rv -ne 0; then dump_logs '"$test_dir $test_args"'; fi; exit $rv' EXIT
 
 # Set up tests to run.
 server_tests=
@@ -176,6 +172,12 @@ for i in $test_args; do
 	    client=1;;
 	post)
 	    post=1;;
+	mosh-args)
+	    mosh_args=$(${test_script} mosh-args);;
+	client-args)
+	    export MOSH_CLIENT_ARGS=$(${test_script} client-args);;
+	server-args)
+	    export MOSH_SERVER_ARGS=$(${test_script} server-args);;
 	*)
 	    error "unknown test type argument %s", $i
 	    exit 99
@@ -201,7 +203,7 @@ for run in $server_tests; do
     export MOSH_SERVER="$PWD/../frontend/mosh-server"
     export MOSH_E2E_TEST="$PWD/${test_dir}/${run}"
     # XXX need to quote special chars in server pathname here somehow
-    sut="../../scripts/mosh --client=${srcdir}/mosh-client --server=${srcdir}/mosh-server --local --bind-server=127.0.0.1 127.0.0.1"
+    sut="../../scripts/mosh --client=${srcdir}/mosh-client --server=${srcdir}/mosh-server --local --bind-server=127.0.0.1 ${mosh_args} 127.0.0.1"
     testarg=$run
     if [ "$run" = "direct" ]; then
 	sut=""

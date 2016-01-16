@@ -61,7 +61,7 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
 
   if ( unknown ) {
     if ( flag && ( col != fb.ds.get_width() - 1 ) ) {
-      fb.get_mutable_cell( row, col )->renditions.set_attribute(Renditions::underlined, true);
+      fb.get_mutable_cell( row, col )->get_renditions().set_attribute(Renditions::underlined, true);
     }
     return;
   }
@@ -69,7 +69,7 @@ void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, i
   if ( *fb.get_cell( row, col ) != replacement ) {
     *(fb.get_mutable_cell( row, col )) = replacement;
     if ( flag ) {
-      fb.get_mutable_cell( row, col )->renditions.set_attribute( Renditions::underlined, true );
+      fb.get_mutable_cell( row, col )->get_renditions().set_attribute( Renditions::underlined, true );
     }
   }
 }
@@ -206,9 +206,9 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 
   /* draw bar across top of screen */
   Cell notification_bar( 0 );
-  notification_bar.renditions.foreground_color = 37;
-  notification_bar.renditions.background_color = 44;
-  notification_bar.contents.push_back( 0x20 );
+  notification_bar.get_renditions().foreground_color = 37;
+  notification_bar.get_renditions().background_color = 44;
+  notification_bar.append( 0x20 );
 
   for ( int i = 0; i < fb.ds.get_width(); i++ ) {
     *(fb.get_mutable_cell( 0, i )) = notification_bar;
@@ -275,12 +275,12 @@ void NotificationEngine::apply( Framebuffer &fb ) const
     case 2: /* wide character */
       this_cell = fb.get_mutable_cell( 0, overlay_col );
       fb.reset_cell( this_cell );
-      this_cell->renditions.set_attribute(Renditions::bold, true);
-      this_cell->renditions.foreground_color = 37;
-      this_cell->renditions.background_color = 44;
+      this_cell->get_renditions().set_attribute(Renditions::bold, true);
+      this_cell->get_renditions().foreground_color = 37;
+      this_cell->get_renditions().background_color = 44;
       
-      this_cell->contents.push_back( ch );
-      this_cell->width = chwidth;
+      this_cell->append( ch );
+      this_cell->set_width( chwidth );
       combining_cell = this_cell;
 
       overlay_col += chwidth;
@@ -290,14 +290,14 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 	break;
       }
 
-      if ( combining_cell->contents.size() == 0 ) {
-	assert( combining_cell->width == 1 );
-	combining_cell->fallback = true;
+      if ( combining_cell->empty() ) {
+	assert( combining_cell->get_width() == 1 );
+	combining_cell->set_fallback( true );
 	overlay_col++;
       }
 
-      if ( combining_cell->contents.size() < 32 ) {
-	combining_cell->contents.push_back( ch );
+      if ( !combining_cell->full() ) {
+	combining_cell->append( ch );
       }
       break;
     case -1: /* unprintable character */
@@ -560,11 +560,11 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
 	/* match rest of row to the actual renditions */
 	{
-	  const Renditions &actual_renditions = fb.get_cell( i->row_num, j->col )->renditions;
+	  const Renditions &actual_renditions = fb.get_cell( i->row_num, j->col )->get_renditions();
 	  for ( overlay_cells_type::iterator k = j;
 		k != i->overlay_cells.end();
 		k++ ) {
-	    k->replacement.renditions = actual_renditions;
+	    k->replacement.get_renditions() = actual_renditions;
 	  }
 	}
 
@@ -777,21 +777,21 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	cell.active = true;
 	cell.tentative_until_epoch = prediction_epoch;
 	cell.expire( local_frame_sent + 1, now );
-	cell.replacement.renditions = fb.ds.get_renditions();
+	cell.replacement.get_renditions() = fb.ds.get_renditions();
 
 	/* heuristic: match renditions of character to the left */
 	if ( cursor().col > 0 ) {
 	  ConditionalOverlayCell &prev_cell = the_row.overlay_cells[ cursor().col - 1 ];
 	  const Cell *prev_cell_actual = fb.get_cell( cursor().row, cursor().col - 1 );
 	  if ( prev_cell.active && (!prev_cell.unknown) ) {
-	    cell.replacement.renditions = prev_cell.replacement.renditions;
+	    cell.replacement.get_renditions() = prev_cell.replacement.get_renditions();
 	  } else {
-	    cell.replacement.renditions = prev_cell_actual->renditions;
+	    cell.replacement.get_renditions() = prev_cell_actual->get_renditions();
 	  }
 	}
 
-	cell.replacement.contents.clear();
-	cell.replacement.contents.push_back( ch );
+	cell.replacement.clear();
+	cell.replacement.append( ch );
 	cell.original_contents.push_back( *fb.get_cell( cursor().row, cursor().col ) );
 
 	/*
@@ -876,7 +876,7 @@ void PredictionEngine::newline_carriage_return( const Framebuffer &fb )
       j->active = true;
       j->tentative_until_epoch = prediction_epoch;
       j->expire( local_frame_sent + 1, now );
-      j->replacement.contents.clear();
+      j->replacement.clear();
     }
   } else {
     cursor().row++;

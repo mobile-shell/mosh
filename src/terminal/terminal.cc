@@ -107,7 +107,7 @@ void Emulator::print( const Parser::Print *act )
 
     fb.reset_cell( this_cell );
     this_cell->append( ch );
-    this_cell->width = chwidth;
+    this_cell->set_width( chwidth );
     fb.apply_renditions_to_cell( this_cell );
 
     if ( chwidth == 2 ) { /* erase overlapped cell */
@@ -128,18 +128,17 @@ void Emulator::print( const Parser::Print *act )
 	break;
       }
 
-      if ( combining_cell->contents.size() == 0 ) {
+      if ( combining_cell->empty() ) {
 	/* cell starts with combining character */
 	/* ... but isn't necessarily the target for a new
 	   base character [e.g. start of line], if the
 	   combining character has been cleared with
 	   a sequence like ED ("J") or EL ("K") */
-	assert( combining_cell->width == 1 );
-	combining_cell->fallback = true;
+	assert( combining_cell->get_width() == 1 );
+	combining_cell->set_fallback( true );
 	fb.ds.move_col( 1, true, true );
       }
-      if ( combining_cell->contents.size() < 32 ) {
-	/* seems like a reasonable limit on combining characters */
+      if ( !combining_cell->full() ) {
 	combining_cell->append( ch );
       }
       act->handled = true;
