@@ -334,6 +334,12 @@ die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
   open(STDERR, ">&STDOUT") or die;
 
+  # Ask the server for its IP.  The user's shell may not be
+  # Posix-compatible so invoke sh explicitly.
+  my $ssh_connection = "sh -c " .
+    shell_quote ( '[ -n "$SSH_CONNECTION" ] && printf "\nMOSH SSH_CONNECTION %s\n" "$SSH_CONNECTION"' ) .
+    ";";
+
   my @server = ( 'new' );
 
   push @server, ( '-c', $colors );
@@ -359,12 +365,12 @@ if ( $pid == 0 ) { # child
     exec( $server, @server );
     die "Cannot exec $server: $!\n";
   }
-
   my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
-  exec @ssh, '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', "$server " . shell_quote( @server );
+  my @exec_argv = ( @ssh, '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', $ssh_connection . " $server " . shell_quote( @server ) );
+  exec @exec_argv;
   die "Cannot exec ssh: $!\n";
 } else { # parent
-  my ( $ip, $port, $key );
+  my ( $ip, $sship, $port, $key );
   my $bad_udp_port_warning = 0;
   LINE: while ( <$pipe> ) {
     chomp;
@@ -373,6 +379,13 @@ if ( $pid == 0 ) { # child
 	die "$0 error: detected attempt to redefine MOSH IP.\n";
       }
       ( $ip ) = m{^MOSH IP (\S+)\s*$} or die "Bad MOSH IP string: $_\n";
+    } elsif ( m{^MOSH SSH_CONNECTION } ) {
+      my @words = split;
+      if ( scalar @words == 6 ) {
+	$sship = $words[4];
+      } else {
+	die "Bad MOSH SSH_CONNECTION string: $_\n";
+      }
     } elsif ( m{^MOSH CONNECT } ) {
       if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) ([A-Za-z0-9/+]{22})\s*$} ) {
 	last LINE;
@@ -390,7 +403,12 @@ if ( $pid == 0 ) { # child
   close $pipe;
 
   if ( not defined $ip ) {
-    die "$0: Did not find remote IP address (is SSH ProxyCommand disabled?).\n";
+    if ( defined $sship ) {
+      warn "$0: Using remote IP address ${sship} from \$SSH_CONNECTION for hostname ${userhost}\n";
+      $ip = $sship;
+    } else {
+      die "$0: Did not find remote IP address (is SSH ProxyCommand disabled?).\n";
+    }
   }
 
   if ( not defined $key or not defined $port ) {
