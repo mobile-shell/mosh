@@ -17,8 +17,6 @@ error()
 
 dump_logs()
 {
-    local dir
-    local testname
     dir=$1
     shift
     testname=$(basename $dir .d)
@@ -60,7 +58,6 @@ test_exitstatus()
 # Tmux check.
 tmux_check()
 {
-    local version version_major version_minor
     version=$(tmux -V)
     if [ $? != 0 ]; then
 	error "tmux unavailable\n"

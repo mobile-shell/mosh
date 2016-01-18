@@ -65,6 +65,9 @@ AlignedBuffer::AlignedBuffer( size_t len, const char *data )
   : m_len( len ), m_allocated( NULL ), m_data( NULL )
 {
 #if defined(HAVE_POSIX_MEMALIGN)
+  if ( len == 0 ) {
+    len = 1;
+  }
   if ( ( 0 != posix_memalign( &m_allocated, 16, len ) )
       || ( m_allocated == NULL ) ) {
     throw std::bad_alloc();
