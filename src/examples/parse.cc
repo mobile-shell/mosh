@@ -158,8 +158,6 @@ static void emulate_terminal( int fd )
       if ( vt_parser( fd, &parser ) < 0 ) {
 	return;
       }
-    } else if ( sel.error( STDIN_FILENO ) || sel.error( fd ) ) {
-      return;
     } else {
       fprintf( stderr, "select mysteriously woken up\n" );
     }

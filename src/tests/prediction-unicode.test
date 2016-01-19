@@ -110,8 +110,10 @@ tmux_commands()
 	done
 	printf "send-keys 0x0d\n"
     done
+    printf "send-keys 0x0d\n"
+    sleep 1
     printf "send-keys 0x04\n"
-    sleep 5
+    sleep 10
 } 
 
 tmux_stdin()

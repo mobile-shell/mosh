@@ -15,7 +15,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=-stackprotector
 -include /usr/share/dpkg/buildflags.mk
 
 %:
-	dh $@ --with autoreconf
+	dh $@ --parallel --with autoreconf
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
@@ -23,3 +23,7 @@ override_dh_auto_configure:
 		--enable-ufw \
 		--enable-completion \
 		--enable-compile-warnings=error
+
+override_dh_perl:
+	# mosh only uses Perl modules in perl-base.
+	dh_perl -d

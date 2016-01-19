@@ -387,7 +387,7 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
   AddrInfo ai( ip, port, &hints );
-  fatal_assert( ai.res->ai_addrlen <= sizeof( remote_addr ) );
+  fatal_assert( static_cast<size_t>( ai.res->ai_addrlen ) <= sizeof( remote_addr ) );
   remote_addr_len = ai.res->ai_addrlen;
   memcpy( &remote_addr.sa, ai.res->ai_addr, remote_addr_len );
 

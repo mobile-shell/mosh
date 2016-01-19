@@ -31,6 +31,7 @@ tmux_commands()
 {
     # An interactive shell is waiting for us in the mosh session.
     # Start test...
+    sleep 2
     printf "send-keys 0x0d\n"
     sleep 1
     # Stop output...
@@ -41,9 +42,9 @@ tmux_commands()
     sleep 2
     # And stop the test script, so it produces its exit messge.
     printf "send-keys 0x0d\n"
-    # need to sleep extra long here, to let child commands complete,
-    # and not have tmux exit prematurely
-    sleep 5
+    # need to sleep extra long here, to let child commands complete
+    # and buffers drain, and not have tmux exit prematurely
+    sleep 10
 }
 
 tmux_stdin()
@@ -56,18 +57,21 @@ baseline()
 {
     # Make a lot of noise on stdout to keep mosh busy, and exit
     # with a distinctive message when we get a CR.  Exit after 10s in any case.
-    trap "exit 1" TERM
-    (sleep 10; kill $$) &
+    read x
+    while true; do
+	printf 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz\n'
+    done &
+    printpid=$!
+    (sleep 30; kill $$ $printpid) &
     killpid=$!
     read x
-    # very, very old school way to get non-blocking reads in shell
-    tty=$(stty -g)
-    trap "stty $tty" EXIT
-    stty -icanon min 0 time 0
-    while ! read x; do
-	printf 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz\n'
-    done
-    printf "=== normal exit ===\n"
+    kill $printpid
+    # Try and make sure the printer stops writing before the following printf
+    sleep 1
+    printf "\n=== normal exit ===\n"
+    # Let tty queues drain, so the exit message gets to mosh-client
+    # before we exit
+    sleep 4
     # Kill the killer and exit normally.
     kill $killpid
 }

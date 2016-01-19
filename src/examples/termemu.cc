@@ -311,8 +311,6 @@ static void emulate_terminal( int fd )
 	perror( "ioctl TIOCSWINSZ" );
 	return;
       }
-    } else if ( sel.error( STDIN_FILENO ) || sel.error( fd ) ) {
-      break;
     }
 
     Terminal::Framebuffer new_frame( complete.get_fb() );

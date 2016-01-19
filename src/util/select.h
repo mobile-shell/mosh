@@ -62,12 +62,10 @@ private:
        here to appease -Weffc++. */
     , all_fds( dummy_fd_set )
     , read_fds( dummy_fd_set )
-    , error_fds( dummy_fd_set )
     , empty_sigset( dummy_sigset )
   {
     FD_ZERO( &all_fds );
     FD_ZERO( &read_fds );
-    FD_ZERO( &error_fds );
 
     clear_got_signal();
     fatal_assert( 0 == sigemptyset( &empty_sigset ) );
@@ -120,7 +118,6 @@ public:
   int select( int timeout )
   {
     memcpy( &read_fds,  &all_fds, sizeof( read_fds  ) );
-    memcpy( &error_fds, &all_fds, sizeof( error_fds ) );
     clear_got_signal();
 
 #ifdef HAVE_PSELECT
@@ -133,7 +130,7 @@ public:
       tsp = &ts;
     }
 
-    int ret = ::pselect( max_fd + 1, &read_fds, NULL, &error_fds, tsp, &empty_sigset );
+    int ret = ::pselect( max_fd + 1, &read_fds, NULL, NULL, tsp, &empty_sigset );
 #else
     struct timeval tv;
     struct timeval *tvp = NULL;
@@ -147,15 +144,22 @@ public:
 
     int ret = sigprocmask( SIG_SETMASK, &empty_sigset, &old_sigset );
     if ( ret != -1 ) {
-      ret = ::select( max_fd + 1, &read_fds, NULL, &error_fds, tvp );
+      ret = ::select( max_fd + 1, &read_fds, NULL, NULL, tvp );
       sigprocmask( SIG_SETMASK, &old_sigset, NULL );
     }
 #endif
 
-    if ( ( ret == -1 ) && ( errno == EINTR ) ) {
+    if ( ret == 0 || ( ret == -1 && errno == EINTR ) ) {
+      /* Look for and report Cygwin select() bug. */
+      if ( ret == 0 ) {
+	for ( int fd = 0; fd <= max_fd; fd++ ) {
+	  if ( FD_ISSET( fd, &read_fds ) ) {
+	    fprintf( stderr, "select(): nfds = 0 but read fd %d is set\n", fd );
+	  }
+	}
+      }
       /* The user should process events as usual. */
       FD_ZERO( &read_fds );
-      FD_ZERO( &error_fds );
       ret = 0;
     }
 
@@ -171,15 +175,6 @@ public:
   {
     assert( FD_ISSET( fd, &all_fds ) );
     return FD_ISSET( fd, &read_fds );
-  }
-
-  bool error( int fd )
-#if FD_ISSET_IS_CONST
-    const
-#endif
-  {
-    assert( FD_ISSET( fd, &all_fds ) );
-    return FD_ISSET( fd, &error_fds );
   }
 
   /* This method consumes a signal notification. */
@@ -214,7 +209,7 @@ private:
      concurrent signal handlers. */
   int got_signal[ MAX_SIGNAL_NUMBER + 1 ];
 
-  fd_set all_fds, read_fds, error_fds;
+  fd_set all_fds, read_fds;
 
   sigset_t empty_sigset;
 

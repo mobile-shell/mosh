@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# This test checks for operation of the MOSH_SERVER_NETWORK_TIMEOUT variable.
+# This test checks for operation of the MOSH_SERVER_NETWORK_TMOUT variable.
 # It does this by
 # * setting the variable
 # * killing the client (and its network traffic)

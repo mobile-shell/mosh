@@ -1,2 +1,2 @@
 version=3
-https://github.com/keithw/mosh/tags .*/mosh-(\d[\d\.]+)\.tar\.gz
+https://github.com/mobile-shell/mosh/tags .*/mosh-(\d[\d\.]+)\.tar\.gz
