@@ -46,7 +46,7 @@ namespace Parser {
   public:
     wchar_t ch;
     bool char_present;
-    mutable bool handled;
+    bool handled;
 
     std::string str( void );
 
