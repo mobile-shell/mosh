@@ -39,8 +39,6 @@ using namespace std;
 string UserInput::input( const Parser::UserByte *act,
 			 bool application_mode_cursor_keys )
 {
-  act->handled = true;
-
   /* The user will always be in application mode. If stm is not in
      application mode, convert user's cursor control function to an
      ANSI cursor control sequence */

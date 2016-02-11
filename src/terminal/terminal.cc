@@ -118,13 +118,11 @@ void Emulator::print( const Parser::Print *act )
 
     fb.ds.move_col( chwidth, true, true );
 
-    act->handled = true;
     break;
   case 0: /* combining character */
     {
       Cell *combining_cell = fb.get_combining_cell(); /* can be null if we were resized */
       if ( combining_cell == NULL ) { /* character is now offscreen */
-	act->handled = true;
 	break;
       }
 
@@ -141,7 +139,6 @@ void Emulator::print( const Parser::Print *act )
       if ( !combining_cell->full() ) {
 	combining_cell->append( ch );
       }
-      act->handled = true;
     }
     break;
   case -1: /* unprintable character */

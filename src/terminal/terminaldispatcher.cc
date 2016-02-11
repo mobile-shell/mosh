@@ -54,7 +54,6 @@ void Dispatcher::newparamchar( const Parser::Param *act )
   if ( params.length() < 100 ) {
     /* enough for 16 five-char params plus 15 semicolons */
     params.push_back( act->ch );
-    act->handled = true;
   }
   parsed = false;
 }
@@ -65,16 +64,14 @@ void Dispatcher::collect( const Parser::Collect *act )
   if ( ( dispatch_chars.length() < 8 ) /* never should need more than 2 */
        && ( act->ch <= 255 ) ) {  /* ignore non-8-bit */    
     dispatch_chars.push_back( act->ch );
-    act->handled = true;
   }
 }
 
-void Dispatcher::clear( const Parser::Clear *act )
+void Dispatcher::clear( const Parser::Clear *act __attribute((unused)) )
 {
   params.clear();
   dispatch_chars.clear();
   parsed = false;
-  act->handled = true;
 }
 
 void Dispatcher::parse_params( void )
@@ -228,7 +225,6 @@ void Dispatcher::dispatch( Function_Type type, const Parser::Action *act, Frameb
     fb->ds.next_print_will_wrap = false;
     return;
   } else {
-    act->handled = true;
     if ( i->second.clears_wrap_state ) {
       fb->ds.next_print_will_wrap = false;
     }
@@ -241,14 +237,12 @@ void Dispatcher::OSC_put( const Parser::OSC_Put *act )
   assert( act->char_present );
   if ( OSC_string.size() < 256 ) { /* should be a long enough window title */
     OSC_string.push_back( act->ch );
-    act->handled = true;
   }
 }
 
-void Dispatcher::OSC_start( const Parser::OSC_Start *act )
+void Dispatcher::OSC_start( const Parser::OSC_Start *act __attribute((unused)) )
 {
   OSC_string.clear();
-  act->handled = true;
 }
 
 bool Dispatcher::operator==( const Dispatcher &x ) const

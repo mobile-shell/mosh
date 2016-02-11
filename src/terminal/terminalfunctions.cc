@@ -557,7 +557,7 @@ static void CSI_DECSTR( Framebuffer *fb, Dispatcher *dispatch __attribute((unuse
 static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );
 
 /* xterm uses an Operating System Command to set the window title */
-void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
+void Dispatcher::OSC_dispatch( const Parser::OSC_End *act __attribute((unused)), Framebuffer *fb )
 {
   if ( OSC_string.size() >= 1 ) {
     long cmd_num = -1;
@@ -581,8 +581,6 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
       Terminal::Framebuffer::title_type newtitle( OSC_string.begin() + offset, OSC_string.end() );
       if ( set_icon )  { fb->set_icon_name( newtitle ); }
       if ( set_title ) { fb->set_window_title( newtitle ); }
-
-      act->handled = true;
     }
   }
 }
