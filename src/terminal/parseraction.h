@@ -46,7 +46,6 @@ namespace Parser {
   public:
     wchar_t ch;
     bool char_present;
-    mutable bool handled;
 
     std::string str( void );
 
@@ -56,7 +55,7 @@ namespace Parser {
 
     virtual bool ignore() const { return false; }
 
-    Action() : ch( -1 ), char_present( false ), handled( false ) {};
+    Action() : ch( -1 ), char_present( false ) {};
     virtual ~Action() {};
 
     virtual bool operator==( const Action &other ) const;

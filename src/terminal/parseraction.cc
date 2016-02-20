@@ -110,12 +110,10 @@ void UserByte::act_on_terminal( Terminal::Emulator *emu ) const
 void Resize::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->resize( width, height );
-  handled = true;
 }
 
 bool Action::operator==( const Action &other ) const
 {
   return ( char_present == other.char_present )
-    && ( ch == other.ch )
-    && ( handled == other.handled );
+    && ( ch == other.ch );
 }
