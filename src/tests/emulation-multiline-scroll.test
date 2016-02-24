@@ -5,14 +5,9 @@
 # of performance code for Mosh, involving insert/delete line.
 # It does insert/delete line from 0 to 2 more than the window height
 # 24 in this test environment).
-fail()
-{
-    printf "$@" 2>&1
-    exit 99
-}
+#
 
-
-
+. $(dirname $0)/e2e-test-subrs
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
@@ -24,39 +19,6 @@ fi
 if [ $# -ne 1 ]; then
     fail "bad arguments %s\n" "$@"
 fi
-
-sleepf()
-{
-    (sleep .1 || sleep 1) > /dev/null 2>&1
-}
-
-seq()
-{
-    if [ $# -lt 1 -o $# -gt 3 ]; then
-	echo "bad args" >&2
-    fi
-    first=$1
-    incr=1
-    last=0
-    case $# in
-	3)
-	    incr=$2
-	    last=$3
-	    ;;
-	2)
-	    last=$2
-	    ;;
-	1)
-	    ;;
-    esac
-    while :; do
-	printf '%d\n' $first
-	first=$(expr $first + $incr)
-	if [ $first -gt $last ]; then
-	    break
-	fi
-    done
-}
 
 baseline()
 {

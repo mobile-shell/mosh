@@ -14,14 +14,7 @@
 
 TIMEOUT=10
 
-fail()
-{
-    printf "$@" 2>&1
-    exit 99
-}
-
-
-
+. $(dirname $0)/e2e-test-subrs
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
