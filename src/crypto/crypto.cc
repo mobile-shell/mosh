@@ -41,6 +41,7 @@
 #include "byteorder.h"
 #include "crypto.h"
 #include "base64.h"
+#include "fatal_assert.h"
 #include "prng.h"
 
 using namespace std;
@@ -171,9 +172,7 @@ Session::Session( Base64Key s_key )
 
 Session::~Session()
 {
-  if ( ae_clear( ctx ) != AE_SUCCESS ) {
-    throw CryptoException( "Could not clear AES-OCB context." );
-  }
+  fatal_assert( ae_clear( ctx ) == AE_SUCCESS );
 }
 
 Nonce::Nonce( uint64_t val )

@@ -639,9 +639,7 @@ uint64_t Connection::timeout( void ) const
 
 Connection::Socket::~Socket()
 {
-  if ( close( _fd ) < 0 ) {
-    throw NetworkException( "close", errno );
-  }
+  fatal_assert ( close( _fd ) == 0 );
 }
 
 Connection::Socket::Socket( const Socket & other )
