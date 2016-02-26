@@ -122,8 +122,13 @@ namespace Crypto {
     const string text;
     
     Message( const char *nonce_bytes, size_t nonce_len,
-	     const char *text_bytes, size_t text_len );
-    Message( const Nonce & s_nonce, const string & s_text );
+	     const char *text_bytes, size_t text_len )
+      : nonce( nonce_bytes, nonce_len ),
+      text( text_bytes, text_len ) {}
+
+    Message( const Nonce & s_nonce, const string & s_text )
+      : nonce( s_nonce ),
+      text( s_text ) {}
   };
   
   class Session {

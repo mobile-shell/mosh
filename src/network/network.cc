@@ -66,7 +66,7 @@ using namespace Crypto;
 const uint64_t DIRECTION_MASK = uint64_t(1) << 63;
 const uint64_t SEQUENCE_MASK = uint64_t(-1) ^ DIRECTION_MASK;
 
-/* Read in packet from coded string */
+/* Read in packet */
 Packet::Packet( const Message & message )
   : seq( message.nonce.val() & SEQUENCE_MASK ),
     direction( (message.nonce.val() & DIRECTION_MASK) ? TO_CLIENT : TO_SERVER ),
@@ -83,8 +83,8 @@ Packet::Packet( const Message & message )
   payload = string( message.text.begin() + 2 * sizeof( uint16_t ), message.text.end() );
 }
 
-/* Output coded string from packet */
-string Packet::tostring( Session *session )
+/* Output from packet */
+Message Packet::toMessage( void )
 {
   uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & SEQUENCE_MASK);
 
@@ -93,7 +93,7 @@ string Packet::tostring( Session *session )
 
   string timestamps = string( (char *)ts_net, 2 * sizeof( uint16_t ) );
 
-  return session->encrypt( Message( Nonce( direction_seq ), timestamps + payload ) );
+  return Message( Nonce( direction_seq ), timestamps + payload );
 }
 
 Packet Connection::new_packet( const string &s_payload )
@@ -399,7 +399,7 @@ void Connection::send( const string & s )
 
   Packet px = new_packet( s );
 
-  string p = px.tostring( &session );
+  string p = session.encrypt( px.toMessage() );
 
   ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
 			       &remote_addr.sa, remote_addr_len );

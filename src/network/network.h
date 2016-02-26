@@ -89,7 +89,7 @@ namespace Network {
     
     Packet( const Message & message );
     
-    string tostring( Session *session );
+    Message toMessage( void );
   };
 
   union Addr {
