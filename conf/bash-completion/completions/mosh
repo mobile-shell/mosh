@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 
-_mosh() {
+__mosh_init_completion()
+{
+    if declare -F _init_completions >/dev/null 2>&1; then
+        _init_completion
+    else
+        COMPREPLY=()
+        _get_comp_words_by_ref cur prev words cword
+    fi
+}
+
+_mosh () {
     local cur
-    _init_completion || return
+
+    __mosh_init_completion || return
 
     local simple_flags="-a -b -4 -6 -p"
     local flags="--client= --server= --predict= --family= --port= 
