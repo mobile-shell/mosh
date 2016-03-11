@@ -1,7 +1,17 @@
+__my_init_completion()
+{
+    if declare -F _init_completions >/dev/null 2>&1; then
+        _init_completion
+    else
+        COMPREPLY=()
+        _get_comp_words_by_ref cur prev words cword
+    fi
+}
+
 _mosh () {
     local cur prev
 
-    _init_completion || return
+    __my_init_completion || return
 
     _known_hosts_real -a "$cur"
 }
