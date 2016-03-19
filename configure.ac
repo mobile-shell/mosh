@@ -446,6 +446,13 @@ AC_CHECK_DECL([IUTF8],
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 
+# On Debian Sid 2016-03-16ish at least, "pkgconfig --libs protobuf"
+# gives us the bogus "-lprotobuf -pthread -lpthread"; remove
+# "-lpthread" which misconfigures compile, causing a segfault in
+# mosh-server.
+AS_IF([echo "$protobuf_LIBS" | grep -q -- -pthread],
+  [protobuf_LIBS="`echo $protobuf_LIBS | sed 's/-lpthread//g'`"])
+
 # Bash completion needs to ask where it goes if >= 2.0 is installed.
 AS_IF([test "$install_completion" != no],
   [PKG_CHECK_MODULES([BASH_COMPLETION], [bash-completion >= 2.0],
