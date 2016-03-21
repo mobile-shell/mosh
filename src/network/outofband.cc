@@ -321,3 +321,5 @@ string OutOfBandCommunicator::read(size_t len) {
   stream_buf = stream_buf.substr(len);
   return rv;
 }
+
+OutOfBandPlugin::~OutOfBandPlugin() { }
