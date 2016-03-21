@@ -125,6 +125,7 @@ namespace Network {
     virtual void close_sessions( void ) = 0;
     virtual void shutdown( void ) = 0;
     virtual void attach_oob(Network::OutOfBand *oob_ctl) = 0;
+    virtual ~OutOfBandPlugin() = 0;
 
     friend class OutOfBand;
   };
