@@ -1,3 +1,11 @@
+mosh (1.2.5-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * debian/mosh.maintscript: Fix /etc/bash_completion.d/mosh removal, thanks
+    to for the patch Jakub Wilk <jwilk@debian.org> (Closes: #803253)
+
+ -- Laurent Bigonville <bigon@debian.org>  Sun, 31 Jan 2016 16:19:09 +0100
+
 mosh (1.2.5-1) unstable; urgency=low
 
   * Version 1.2.5 released.
