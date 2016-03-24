@@ -22,4 +22,11 @@ override_dh_auto_configure:
 		--disable-silent-rules \
 		--enable-ufw \
 		--enable-completion \
-		--enable-compile-warnings=error
+		--enable-compile-warnings=error \
+		protobuf_CFLAGS="$$(pkg-config --cflags protobuf)" \
+		protobuf_LIBS="$$(pkg-config --libs protobuf | sed s/-lpthread//)"
+
+# This is needed because glibc-2.22 has a bad interaction with the -lpthread
+# build option that protobuf's pkg-config script specifies, causing
+# a segfault on startup. Workaround is to remove -lpthread manually.
+# (The -pthread flag remains.)

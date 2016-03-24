@@ -1,3 +1,10 @@
+mosh (1.2.5-2) unstable; urgency=medium
+
+  * debian/rules: Work around protobuf/glibc build problem
+    causing mosh-server segfault. (Closes: #817929) (John Hood)
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 23 Mar 2016 22:05:34 -0700
+
 mosh (1.2.5-1.1) unstable; urgency=medium
 
   * Non-maintainer upload.
