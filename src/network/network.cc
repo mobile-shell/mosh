@@ -513,7 +513,7 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
     }
   }
 
-  Packet p( session.decrypt( string( msg_payload, received_len ) ) );
+  Packet p( session.decrypt( msg_payload, received_len ) );
 
   dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
 

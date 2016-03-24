@@ -151,7 +151,10 @@ namespace Crypto {
     ~Session();
     
     const string encrypt( const Message & plaintext );
-    const Message decrypt( const string & ciphertext );
+    const Message decrypt( const char *str, size_t len );
+    const Message decrypt( const string & ciphertext ) {
+      return decrypt( ciphertext.data(), ciphertext.size() );
+    }
     
     Session( const Session & );
     Session & operator=( const Session & );

@@ -250,15 +250,13 @@ const string Session::encrypt( const Message & plaintext )
   return plaintext.nonce.cc_str() + text;
 }
 
-const Message Session::decrypt( const string & ciphertext )
+const Message Session::decrypt( const char *str, size_t len )
 {
-  if ( ciphertext.size() < 24 ) {
+  if ( len < 24 ) {
     throw CryptoException( "Ciphertext must contain nonce and tag." );
   }
 
-  const char *str = ciphertext.data();
-
-  int body_len = ciphertext.size() - 8;
+  int body_len = len - 8;
   int pt_len = body_len - 16;
 
   if ( pt_len < 0 ) { /* super-assertion that pt_len does not equal AE_INVALID */
