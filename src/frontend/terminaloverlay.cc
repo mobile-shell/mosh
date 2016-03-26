@@ -698,32 +698,45 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	  cursor().col--;
 	  cursor().expire( local_frame_sent + 1, now );
 
-	  for ( int i = cursor().col; i < fb.ds.get_width(); i++ ) {
-	    ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
-	    
+	  if ( predict_overwrite ) {
+	    ConditionalOverlayCell &cell = the_row.overlay_cells[ cursor().col ];
 	    cell.reset_with_orig();
 	    cell.active = true;
 	    cell.tentative_until_epoch = prediction_epoch;
 	    cell.expire( local_frame_sent + 1, now );
-	    cell.original_contents.push_back( *fb.get_cell( cursor().row, i ) );
-	  
-	    if ( i + 2 < fb.ds.get_width() ) {
-	      ConditionalOverlayCell &next_cell = the_row.overlay_cells[ i + 1 ];
-	      const Cell *next_cell_actual = fb.get_cell( cursor().row, i + 1 );
+	    const Cell orig_cell = *fb.get_cell();
+	    cell.original_contents.push_back( orig_cell );
+	    cell.replacement = orig_cell;
+	    cell.replacement.contents.clear();
+	    cell.replacement.contents.push_back(' ');
+	  } else {
+	    for ( int i = cursor().col; i < fb.ds.get_width(); i++ ) {
+	      ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
 
-	      if ( next_cell.active ) {
-		if ( next_cell.unknown ) {
-		  cell.unknown = true;
+	      cell.reset_with_orig();
+	      cell.active = true;
+	      cell.tentative_until_epoch = prediction_epoch;
+	      cell.expire( local_frame_sent + 1, now );
+	      cell.original_contents.push_back( *fb.get_cell( cursor().row, i ) );
+	  
+	      if ( i + 2 < fb.ds.get_width() ) {
+		ConditionalOverlayCell &next_cell = the_row.overlay_cells[ i + 1 ];
+		const Cell *next_cell_actual = fb.get_cell( cursor().row, i + 1 );
+
+		if ( next_cell.active ) {
+		  if ( next_cell.unknown ) {
+		    cell.unknown = true;
+		  } else {
+		    cell.unknown = false;
+		    cell.replacement = next_cell.replacement;
+		  }
 		} else {
 		  cell.unknown = false;
-		  cell.replacement = next_cell.replacement;
+		  cell.replacement = *next_cell_actual;
 		}
 	      } else {
-		cell.unknown = false;
-		cell.replacement = *next_cell_actual;
+		cell.unknown = true;
 	      }
-	    } else {
-	      cell.unknown = true;
 	    }
 	  }
 	}
@@ -746,7 +759,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	}
 
 	/* do the insert */
-	for ( int i = fb.ds.get_width() - 1; i > cursor().col; i-- ) {
+	int rightmost_column = predict_overwrite ? cursor().col + 1 : fb.ds.get_width() - 1;
+	for ( int i = rightmost_column; i > cursor().col; i-- ) {
 	  ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
 	  cell.reset_with_orig();
 	  cell.active = true;
