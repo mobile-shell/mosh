@@ -66,30 +66,25 @@ using namespace Crypto;
 const uint64_t DIRECTION_MASK = uint64_t(1) << 63;
 const uint64_t SEQUENCE_MASK = uint64_t(-1) ^ DIRECTION_MASK;
 
-/* Read in packet from coded string */
-Packet::Packet( string coded_packet, Session *session )
-  : seq( -1 ),
-    direction( TO_SERVER ),
+/* Read in packet */
+Packet::Packet( const Message & message )
+  : seq( message.nonce.val() & SEQUENCE_MASK ),
+    direction( (message.nonce.val() & DIRECTION_MASK) ? TO_CLIENT : TO_SERVER ),
     timestamp( -1 ),
     timestamp_reply( -1 ),
     payload()
 {
-  Message message = session->decrypt( coded_packet );
-
-  direction = (message.nonce.val() & DIRECTION_MASK) ? TO_CLIENT : TO_SERVER;
-  seq = message.nonce.val() & SEQUENCE_MASK;
-
   dos_assert( message.text.size() >= 2 * sizeof( uint16_t ) );
 
-  uint16_t *data = (uint16_t *)message.text.data();
+  const uint16_t *data = (uint16_t *)message.text.data();
   timestamp = be16toh( data[ 0 ] );
   timestamp_reply = be16toh( data[ 1 ] );
 
   payload = string( message.text.begin() + 2 * sizeof( uint16_t ), message.text.end() );
 }
 
-/* Output coded string from packet */
-string Packet::tostring( Session *session )
+/* Output from packet */
+Message Packet::toMessage( void )
 {
   uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & SEQUENCE_MASK);
 
@@ -98,10 +93,10 @@ string Packet::tostring( Session *session )
 
   string timestamps = string( (char *)ts_net, 2 * sizeof( uint16_t ) );
 
-  return session->encrypt( Message( Nonce( direction_seq ), timestamps + payload ) );
+  return Message( Nonce( direction_seq ), timestamps + payload );
 }
 
-Packet Connection::new_packet( string &s_payload )
+Packet Connection::new_packet( const string &s_payload )
 {
   uint16_t outgoing_timestamp_reply = -1;
 
@@ -114,7 +109,7 @@ Packet Connection::new_packet( string &s_payload )
     saved_timestamp_received_at = 0;
   }
 
-  Packet p( next_seq++, direction, timestamp16(), outgoing_timestamp_reply, s_payload );
+  Packet p( direction, timestamp16(), outgoing_timestamp_reply, s_payload );
 
   return p;
 }
@@ -244,7 +239,6 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     key(),
     session( key ),
     direction( TO_CLIENT ),
-    next_seq( 0 ),
     saved_timestamp( -1 ),
     saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
@@ -365,7 +359,6 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
     key( key_str ),
     session( key ),
     direction( TO_SERVER ),
-    next_seq( 0 ),
     saved_timestamp( -1 ),
     saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ),
@@ -398,7 +391,7 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
   set_MTU( remote_addr.sa.sa_family );
 }
 
-void Connection::send( string s )
+void Connection::send( const string & s )
 {
   if ( !has_remote_addr ) {
     return;
@@ -406,7 +399,7 @@ void Connection::send( string s )
 
   Packet px = new_packet( s );
 
-  string p = px.tostring( &session );
+  string p = session.encrypt( px.toMessage() );
 
   ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
 			       &remote_addr.sa, remote_addr_len );
@@ -520,7 +513,7 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
     }
   }
 
-  Packet p( string( msg_payload, received_len ), &session );
+  Packet p( session.decrypt( msg_payload, received_len ) );
 
   dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
 
@@ -646,9 +639,7 @@ uint64_t Connection::timeout( void ) const
 
 Connection::Socket::~Socket()
 {
-  if ( close( _fd ) < 0 ) {
-    throw NetworkException( "close", errno );
-  }
+  fatal_assert ( close( _fd ) == 0 );
 }
 
 Connection::Socket::Socket( const Socket & other )

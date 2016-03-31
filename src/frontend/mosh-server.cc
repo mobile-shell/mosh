@@ -554,6 +554,13 @@ static int run_server( const char *desired_ip, const char *desired_port,
       warn_unattached( utmp_entry );
     }
 
+    /* Wait for parent to release us. */
+    char linebuf[81];
+    if (fgets(linebuf, sizeof linebuf, stdin) == NULL) {
+      perror( "parent signal" );
+      _exit( 1 );
+    }
+
     Crypto::reenable_dumping_core();
 
     if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
@@ -616,6 +623,8 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
   #endif
 
   agent.attach_oob(network.oob());
+
+  bool child_released = false;
 
   while ( 1 ) {
     try {
@@ -681,12 +690,11 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  /* apply userstream to terminal */
 	  for ( size_t i = 0; i < us.size(); i++ ) {
 	    const Parser::Action *action = us.get_action( i );
-	    terminal_to_host += terminal.act( action );
 	    if ( typeid( *action ) == typeid( Parser::Resize ) ) {
-	      /* elide consecutive Resize actions */
-	      if ( i < us.size() - 1 &&
+	      /* apply only the last consecutive Resize action */
+	      while ( i < us.size() - 1 &&
 		   typeid( us.get_action( i + 1 ) ) == typeid( Parser::Resize ) ) {
-		continue;
+		i++;
 	      }
 	      /* tell child process of resize */
 	      const Parser::Resize *res = static_cast<const Parser::Resize *>( action );
@@ -702,6 +710,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 		return;
 	      }
 	    }
+	    terminal_to_host += terminal.act( action );
 	  }
 
 	  if ( !us.empty() ) {
@@ -740,6 +749,15 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	    connected_utmp = true;
 	  }
 	  #endif
+
+	  /* Tell child to start login session. */
+	  if ( !child_released ) {
+	    if ( swrite( host_fd, "\n", 1 ) < 0) {
+	      perror( "child release" );
+	      _exit( 1 );
+	    }
+	    child_released = true;
+	  }
 	}
       }
       

@@ -57,8 +57,8 @@ namespace Network {
     Parser::UserByte userbyte;
     Parser::Resize resize;
 
-    UserEvent( Parser::UserByte s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 ) {}
-    UserEvent( Parser::Resize s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ) {}
+    UserEvent( const Parser::UserByte & s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 ) {}
+    UserEvent( const Parser::Resize & s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ) {}
 
     UserEvent() /* default constructor required by C++11 STL */
       : type( UserByteType ),
@@ -79,8 +79,8 @@ namespace Network {
   public:
     UserStream() : actions() {}
     
-    void push_back( Parser::UserByte s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
-    void push_back( Parser::Resize s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
+    void push_back( const Parser::UserByte & s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
+    void push_back( const Parser::Resize & s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
     
     bool empty( void ) const { return actions.empty(); }
     size_t size( void ) const { return actions.size(); }
@@ -90,7 +90,7 @@ namespace Network {
     void subtract( const UserStream *prefix );
     string diff_from( const UserStream &existing ) const;
     string init_diff( void ) const { assert( false ); return string(); };
-    void apply_string( string diff );
+    void apply_string( const string &diff );
     bool operator==( const UserStream &x ) const { return actions == x.actions; }
 
     bool compare( const UserStream & ) { return false; }

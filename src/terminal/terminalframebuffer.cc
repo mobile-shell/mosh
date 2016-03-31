@@ -600,7 +600,7 @@ std::string Cell::debug_contents( void ) const
 	  i < contents.end();
 	  i++ ) {
 
-      sprintf( buf, "%s0x%02x", lazycomma, static_cast<uint8_t>(*i) );
+      snprintf( buf, sizeof buf, "%s0x%02x", lazycomma, static_cast<uint8_t>(*i) );
       chars.append( buf );
       lazycomma = ", ";
     }

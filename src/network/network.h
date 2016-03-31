@@ -76,20 +76,20 @@ namespace Network {
 
   class Packet {
   public:
-    uint64_t seq;
+    const uint64_t seq;
     Direction direction;
     uint16_t timestamp, timestamp_reply;
     string payload;
     
-    Packet( uint64_t s_seq, Direction s_direction,
-	    uint16_t s_timestamp, uint16_t s_timestamp_reply, string s_payload )
-      : seq( s_seq ), direction( s_direction ),
+    Packet( Direction s_direction,
+	    uint16_t s_timestamp, uint16_t s_timestamp_reply, const string & s_payload )
+      : seq( Crypto::unique() ), direction( s_direction ),
 	timestamp( s_timestamp ), timestamp_reply( s_timestamp_reply ), payload( s_payload )
     {}
     
-    Packet( string coded_packet, Session *session );
+    Packet( const Message & message );
     
-    string tostring( Session *session );
+    Message toMessage( void );
   };
 
   union Addr {
@@ -173,7 +173,6 @@ namespace Network {
     void setup( void );
 
     Direction direction;
-    uint64_t next_seq;
     uint16_t saved_timestamp;
     uint64_t saved_timestamp_received_at;
     uint64_t expected_receiver_seq;
@@ -191,7 +190,7 @@ namespace Network {
     bool have_send_exception;
     NetworkException send_exception;
 
-    Packet new_packet( string &s_payload );
+    Packet new_packet( const string &s_payload );
 
     void hop_port( void );
 
@@ -210,7 +209,7 @@ namespace Network {
     Connection( const char *desired_ip, const char *desired_port ); /* server */
     Connection( const char *key_str, const char *ip, const char *port ); /* client */
 
-    void send( string s );
+    void send( const string & s );
     string recv( void );
     const std::vector< int > fds( void ) const;
     int get_MTU( void ) const { return MTU; }

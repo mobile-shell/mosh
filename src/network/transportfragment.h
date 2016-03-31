@@ -61,12 +61,12 @@ namespace Network {
       : id( -1 ), fragment_num( -1 ), final( false ), initialized( false ), contents()
     {}
 
-    Fragment( uint64_t s_id, uint16_t s_fragment_num, bool s_final, string s_contents )
+    Fragment( uint64_t s_id, uint16_t s_fragment_num, bool s_final, const string & s_contents )
       : id( s_id ), fragment_num( s_fragment_num ), final( s_final ), initialized( true ),
 	contents( s_contents )
     {}
 
-    Fragment( string &x );
+    Fragment( const string &x );
 
     string tostring( void );
 

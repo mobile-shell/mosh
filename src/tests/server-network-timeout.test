@@ -14,14 +14,7 @@
 
 TIMEOUT=10
 
-fail()
-{
-    printf "$@" 2>&1
-    exit 99
-}
-
-
-
+. $(dirname $0)/e2e-test-subrs
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
@@ -48,7 +41,7 @@ client()
     case $retval in
 	0|1)
 	    fail "mosh-client had a normal exit\n";; # test condition failed
-	137)
+	9|137|265)
 	    # Aha, signal 9.  Wait.
 	    sleep $(( $TIMEOUT + 12 ))
 	    exit 0

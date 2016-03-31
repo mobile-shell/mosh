@@ -1,3 +1,18 @@
+mosh (1.2.5-2) unstable; urgency=medium
+
+  * debian/rules: Work around protobuf/glibc build problem
+    causing mosh-server segfault. (Closes: #817929) (John Hood)
+
+ -- Keith Winstein <keithw@mit.edu>  Wed, 23 Mar 2016 22:05:34 -0700
+
+mosh (1.2.5-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * debian/mosh.maintscript: Fix /etc/bash_completion.d/mosh removal, thanks
+    to for the patch Jakub Wilk <jwilk@debian.org> (Closes: #803253)
+
+ -- Laurent Bigonville <bigon@debian.org>  Sun, 31 Jan 2016 16:19:09 +0100
+
 mosh (1.2.5-1) unstable; urgency=low
 
   * Version 1.2.5 released.

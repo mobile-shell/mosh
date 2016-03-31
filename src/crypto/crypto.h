@@ -58,6 +58,13 @@ namespace Crypto {
     ~CryptoException() throw () {}
   };
 
+  /*
+   * OCB (and other algorithms) require a source of nonce/sequence
+   * numbers that never repeats its output.  Enforce that with this
+   * function.
+   */
+  uint64_t unique( void );
+
   /* 16-byte-aligned buffer, with length. */
   class AlignedBuffer {
   private:
@@ -102,21 +109,26 @@ namespace Crypto {
 
   public:
     Nonce( uint64_t val );
-    Nonce( char *s_bytes, size_t len );
+    Nonce( const char *s_bytes, size_t len );
     
     string cc_str( void ) const { return string( bytes + 4, 8 ); }
     const char *data( void ) const { return bytes; }
-    uint64_t val( void );
+    uint64_t val( void ) const;
   };
   
   class Message {
   public:
-    Nonce nonce;
-    string text;
+    const Nonce nonce;
+    const string text;
     
-    Message( char *nonce_bytes, size_t nonce_len,
-	     char *text_bytes, size_t text_len );
-    Message( Nonce s_nonce, string s_text );
+    Message( const char *nonce_bytes, size_t nonce_len,
+	     const char *text_bytes, size_t text_len )
+      : nonce( nonce_bytes, nonce_len ),
+      text( text_bytes, text_len ) {}
+
+    Message( const Nonce & s_nonce, const string & s_text )
+      : nonce( s_nonce ),
+      text( s_text ) {}
   };
   
   class Session {
@@ -138,8 +150,11 @@ namespace Crypto {
     Session( Base64Key s_key );
     ~Session();
     
-    string encrypt( Message plaintext );
-    Message decrypt( string ciphertext );
+    const string encrypt( const Message & plaintext );
+    const Message decrypt( const char *str, size_t len );
+    const Message decrypt( const string & ciphertext ) {
+      return decrypt( ciphertext.data(), ciphertext.size() );
+    }
     
     Session( const Session & );
     Session & operator=( const Session & );

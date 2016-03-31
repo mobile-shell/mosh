@@ -10,8 +10,8 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
-AC_PROG_CC
-AC_PROG_CXX
+AC_PROG_CC([cc gcc clang])
+AC_PROG_CXX([c++ g++ clang++])
 AC_PROG_RANLIB
 AC_PATH_PROG([PROTOC], [protoc], [])
 AS_IF([test x"$PROTOC" = x],
@@ -460,6 +460,13 @@ fi
 
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
+
+# On Debian Sid 2016-03-16ish at least, "pkgconfig --libs protobuf"
+# gives us the bogus "-lprotobuf -pthread -lpthread"; remove
+# "-lpthread" which misconfigures compile, causing a segfault in
+# mosh-server.
+AS_IF([echo "$protobuf_LIBS" | grep -q -- -pthread],
+  [protobuf_LIBS="`echo $protobuf_LIBS | sed 's/-lpthread//g'`"])
 
 # Bash completion needs to ask where it goes if >= 2.0 is installed.
 AS_IF([test "$install_completion" != no],

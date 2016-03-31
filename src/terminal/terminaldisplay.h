@@ -49,9 +49,9 @@ namespace Terminal {
 
     FrameState( const Framebuffer &s_last );
 
-    void append( const char c ) { str.append( 1, c ); }
-    void append( const size_t s, const char c ) { str.append( s, c ); }
-    void append( const wchar_t wc ) { Cell::append_to_str( str, wc ); }
+    void append( char c ) { str.append( 1, c ); }
+    void append( size_t s, char c ) { str.append( s, c ); }
+    void append( wchar_t wc ) { Cell::append_to_str( str, wc ); }
     void append( const char * s ) { str.append( s ); }
     void append_string( const std::string &append ) { str.append(append); }
 

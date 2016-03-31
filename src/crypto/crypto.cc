@@ -41,6 +41,7 @@
 #include "byteorder.h"
 #include "crypto.h"
 #include "base64.h"
+#include "fatal_assert.h"
 #include "prng.h"
 
 using namespace std;
@@ -61,11 +62,22 @@ long int myatoi( const char *str )
   return ret;
 }
 
+uint64_t Crypto::unique( void )
+{
+  static uint64_t counter = 0;
+  uint64_t rv = counter++;
+  if ( counter == 0 ) {
+    throw CryptoException( "Counter wrapped", true );
+  }
+  return rv;
+}
+
 AlignedBuffer::AlignedBuffer( size_t len, const char *data )
   : m_len( len ), m_allocated( NULL ), m_data( NULL )
 {
+  size_t alloc_len = len ? len : 1;
 #if defined(HAVE_POSIX_MEMALIGN)
-  if ( ( 0 != posix_memalign( &m_allocated, 16, len ) )
+  if ( ( 0 != posix_memalign( &m_allocated, 16, alloc_len ) )
       || ( m_allocated == NULL ) ) {
     throw std::bad_alloc();
   }
@@ -74,7 +86,7 @@ AlignedBuffer::AlignedBuffer( size_t len, const char *data )
 #else
   /* malloc() a region 15 bytes larger than we need, and find
      the aligned offset within. */
-  m_allocated = malloc( 15 + len );
+  m_allocated = malloc( 15 + alloc_len );
   if ( m_allocated == NULL ) {
     throw std::bad_alloc();
   }
@@ -158,9 +170,7 @@ Session::Session( Base64Key s_key )
 
 Session::~Session()
 {
-  if ( ae_clear( ctx ) != AE_SUCCESS ) {
-    throw CryptoException( "Could not clear AES-OCB context." );
-  }
+  fatal_assert( ae_clear( ctx ) == AE_SUCCESS );
 }
 
 Nonce::Nonce( uint64_t val )
@@ -171,14 +181,14 @@ Nonce::Nonce( uint64_t val )
   memcpy( bytes + 4, &val_net, 8 );
 }
 
-uint64_t Nonce::val( void )
+uint64_t Nonce::val( void ) const
 {
   uint64_t ret;
   memcpy( &ret, bytes + 4, 8 );
   return be64toh( ret );
 }
 
-Nonce::Nonce( char *s_bytes, size_t len )
+Nonce::Nonce( const char *s_bytes, size_t len )
 {
   if ( len != 8 ) {
     throw CryptoException( "Nonce representation must be 8 octets long." );
@@ -188,18 +198,7 @@ Nonce::Nonce( char *s_bytes, size_t len )
   memcpy( bytes + 4, s_bytes, 8 );
 }
 
-Message::Message( char *nonce_bytes, size_t nonce_len,
-		  char *text_bytes, size_t text_len )
-  : nonce( nonce_bytes, nonce_len ),
-    text( (char *)text_bytes, text_len )
-{}
-
-Message::Message( Nonce s_nonce, string s_text )
-  : nonce( s_nonce ),
-    text( s_text )
-{}
-
-string Session::encrypt( Message plaintext )
+const string Session::encrypt( const Message & plaintext )
 {
   const size_t pt_len = plaintext.text.size();
   const int ciphertext_len = pt_len + 16;
@@ -249,15 +248,13 @@ string Session::encrypt( Message plaintext )
   return plaintext.nonce.cc_str() + text;
 }
 
-Message Session::decrypt( string ciphertext )
+const Message Session::decrypt( const char *str, size_t len )
 {
-  if ( ciphertext.size() < 24 ) {
+  if ( len < 24 ) {
     throw CryptoException( "Ciphertext must contain nonce and tag." );
   }
 
-  char *str = (char *)ciphertext.data();
-
-  int body_len = ciphertext.size() - 8;
+  int body_len = len - 8;
   int pt_len = body_len - 16;
 
   if ( pt_len < 0 ) { /* super-assertion that pt_len does not equal AE_INVALID */
@@ -284,7 +281,7 @@ Message Session::decrypt( string ciphertext )
     throw CryptoException( "Packet failed integrity check." );
   }
 
-  Message ret( nonce, string( plaintext_buffer.data(), pt_len ) );
+  const Message ret( nonce, string( plaintext_buffer.data(), pt_len ) );
 
   return ret;
 }

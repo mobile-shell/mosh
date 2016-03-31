@@ -42,7 +42,7 @@ namespace Network {
     uint64_t num;
     State state;
     
-    TimestampedState( uint64_t s_timestamp, uint64_t s_num, State &s_state )
+    TimestampedState( uint64_t s_timestamp, uint64_t s_num, const State &s_state )
       : timestamp( s_timestamp ), num( s_num ), state( s_state )
     {}
 

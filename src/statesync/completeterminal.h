@@ -77,7 +77,7 @@ namespace Terminal {
     void subtract( const Complete * ) const {}
     std::string diff_from( const Complete &existing ) const;
     std::string init_diff( void ) const;
-    void apply_string( std::string diff );
+    void apply_string( const std::string & diff );
     bool operator==( const Complete &x ) const;
 
     bool compare( const Complete &other ) const;
