@@ -75,11 +75,9 @@ uint64_t Crypto::unique( void )
 AlignedBuffer::AlignedBuffer( size_t len, const char *data )
   : m_len( len ), m_allocated( NULL ), m_data( NULL )
 {
+  size_t alloc_len = len ? len : 1;
 #if defined(HAVE_POSIX_MEMALIGN)
-  if ( len == 0 ) {
-    len = 1;
-  }
-  if ( ( 0 != posix_memalign( &m_allocated, 16, len ) )
+  if ( ( 0 != posix_memalign( &m_allocated, 16, alloc_len ) )
       || ( m_allocated == NULL ) ) {
     throw std::bad_alloc();
   }
@@ -88,7 +86,7 @@ AlignedBuffer::AlignedBuffer( size_t len, const char *data )
 #else
   /* malloc() a region 15 bytes larger than we need, and find
      the aligned offset within. */
-  m_allocated = malloc( 15 + len );
+  m_allocated = malloc( 15 + alloc_len );
   if ( m_allocated == NULL ) {
     throw std::bad_alloc();
   }
