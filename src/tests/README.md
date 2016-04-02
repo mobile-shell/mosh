@@ -159,3 +159,9 @@ extension unavailable in BSD implementations
 It's fairly simple to test each of these scripts independently, but
 the entire chain is a bit prone to behaving oddly in hard-to-debug
 ways.  `set -x` is your friend here.
+
+The test scripts are a bit fragile about timeouts.  They will
+generally run correctly on an unloaded machine without the `make -j`
+flag.  Using `make -j` is obviously very convenient for development,
+and it works fine on faster machines, but I don't recommend it for
+automated testing.
