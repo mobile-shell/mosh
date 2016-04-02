@@ -431,7 +431,7 @@ if ( $pid == 0 ) { # child
   $ENV{ 'MOSH_KEY' } = $key;
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
   $ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
-  exec {$client} ("$client @cmdline |", $ip, $port);
+  exec {$client} ("$client", "-# @cmdline |", $ip, $port);
 }
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }

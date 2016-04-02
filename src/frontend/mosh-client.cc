@@ -75,7 +75,7 @@ static void usage( const char *argv0 ) {
   fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
   fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
 
-  fprintf( stderr, "Usage: %s IP PORT\n       %s -c\n", argv0, argv0 );
+  fprintf( stderr, "Usage: %s [-# 'ARGS'] IP PORT\n       %s -c\n", argv0, argv0 );
 }
 
 static void print_colorcount( void )
@@ -107,8 +107,11 @@ int main( int argc, char *argv[] )
 
   /* Get arguments */
   int opt;
-  while ( (opt = getopt( argc, argv, "c" )) != -1 ) {
+  while ( (opt = getopt( argc, argv, "#:c" )) != -1 ) {
     switch ( opt ) {
+    case '#':
+      // Ignore the original arguments to mosh wrapper
+      break;
     case 'c':
       print_colorcount();
       exit( 0 );
