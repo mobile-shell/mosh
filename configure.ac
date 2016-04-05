@@ -93,7 +93,7 @@ AS_IF([test x"$hardening" != x"no"], [
   # This one will likely succeed, even on platforms where it does nothing.
   check_cc_cxx_flag([-D_FORTIFY_SOURCE=2], [HARDEN_CFLAGS="$HARDEN_CFLAGS -D_FORTIFY_SOURCE=2"])
 
-  check_cc_cxx_flag([-fstack-protector-all],
+  check_link_flag([-fstack-protector-all],
    [HARDEN_CFLAGS="$HARDEN_CFLAGS -fstack-protector-all"
     check_cc_cxx_flag([-Wstack-protector], [HARDEN_CFLAGS="$HARDEN_CFLAGS -Wstack-protector"],
       [], [-fstack-protector-all])
