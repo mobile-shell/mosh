@@ -82,6 +82,10 @@ apply the locale-related environment variables from the client and try
 again.
 
 .SH OPTIONS
+Options named \fB \-\-experimental-*\fP are subject to change or
+removal in future versions of Mosh; their design or function is not
+yet final.
+
 .TP
 .B \fIcommand\fP
 Command to run on remote host. By default, \fBmosh\fP executes a login shell.
@@ -201,6 +205,33 @@ this disables alternate screen mode.
 Invoke \fBmosh-server\fP locally, without using \fBssh\fP.  This
 option requires the \fBhost\fP argument to be a local, numeric
 IPv4/IPv6 address.  This option is useful for testing.
+
+.TP
+.B \-\-experimental\-remote\-ip={proxy|local|remote}
+Select the method used to discover the IP address that the
+\fBmosh-client\fP connects to.
+
+The default is \fBproxy\fP, which uses SSH's
+.B \-\-ssh\-proxy\-command
+option to generate and report the exact address that \fBssh\fP uses to
+connect to the remote host.  This option is generally the most
+compatible with hosts and other options configured in \fBssh\fP
+configuration files.  However, this may not work for some
+configurations, or for environments where a \fBssh\fP bastion host
+forwards to a remote machine.  It only works with \fBOpenSSH\fP.
+
+With \fBremote\fP, the server's
+.B SSH_CONNECTION
+environment variable will be used.  This is useful for environments
+where \fBssh\fP forwarding is used, or the
+.B \-\-ssh\-proxy\-command
+option is used for other purposes.
+
+With \fBlocal\fP, Mosh resolves the hostname given on its command
+line, and uses that address for both \fBssh\fP and Mosh connections.
+This option ignores any configuration in
+.B ssh_config
+for the same hostname.
 
 .SH ESCAPE SEQUENCES
 

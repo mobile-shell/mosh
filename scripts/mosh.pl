@@ -58,6 +58,8 @@ my $predict = undef;
 
 my $bind_ip = undef;
 
+my $use_remote_ip = 'proxy';
+
 my $family = 'all';
 my $port_request = undef;
 
@@ -101,6 +103,10 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 
         --local              run mosh-server locally without using ssh
 
+        --experimental-remote-ip=(local|remote|proxy)  select the method for
+                             discovering the remote IP address to use for mosh
+                             (default: "proxy")
+
         --help               this message
         --version            version and copyright information
 
@@ -141,7 +147,8 @@ GetOptions( 'client=s' => \$client,
 	    'help' => \$help,
 	    'version' => \$version,
 	    'fake-proxy!' => \my $fake_proxy,
-	    'bind-server=s' => \$bind_ip) or die $usage;
+	    'bind-server=s' => \$bind_ip,
+	    'experimental-remote-ip=s' => \$use_remote_ip) or die $usage;
 
 die $usage if ( defined $help );
 die $version_message if ( defined $version );
@@ -154,6 +161,21 @@ if ( defined $predict ) {
 } else {
   $predict = 'adaptive';
   predict_check( $predict, 0 );
+}
+
+if ( not grep { $_ eq $use_remote_ip } qw { local remote proxy } ) {
+  die "Unknown parameter $use_remote_ip";
+}
+
+$family = lc( $family );
+# Handle IPv4-only Perl installs.
+if (!$have_ipv6) {
+  # Report failure if IPv6 needed and not available.
+  if (defined($family) && $family eq "inet6") {
+    die "$0: IPv6 sockets not available in this Perl install\n";
+  }
+  # Force IPv4.
+  $family = "inet";
 }
 
 if ( defined $port_request ) {
@@ -204,65 +226,11 @@ if ( ! defined $fake_proxy ) {
   }
 } else {
   my ( $host, $port ) = @ARGV;
-  my $err;
-  my @res;
-  my $af;
 
-  $family = lc( $family );
-  # Handle IPv4-only Perl installs.
-  if (!$have_ipv6) {
-      # Report failure if IPv6 needed and not available.
-      if (defined($family) && $family eq "inet6") {
-	  die "$0: IPv6 sockets not available in this Perl install\n";
-      }
-      # Force IPv4.
-      $family = "inet";
-  }
-
-  # If the user selected a specific family, parse it.
-  if ( defined( $family ) && ( $family ne "auto" && $family ne "all" )) {
-      # Choose an address family, or cause pain.
-      my $afstr = 'AF_' . uc( $family );
-      $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
-  }
-
-  # First try the address as a numeric.
-  my %hints = ( flags => AI_NUMERICHOST,
-		socktype => SOCK_STREAM,
-		protocol => IPPROTO_TCP );
-  if ( defined( $af )) {
-    $hints{family} = $af;
-  }
-  ( $err, @res ) = getaddrinfo( $host, $port, \%hints );
-  if ( $err ) {
-    # Get canonical name for this host.
-    $hints{flags} = AI_CANONNAME;
-    ( $err, @res ) = getaddrinfo( $host, $port, \%hints );
-    die "$0: could not get canonical name for $host: ${err}\n" if $err;
-    # Then get final resolution of the canonical name.
-    $hints{flags} = undef;
-    my @newres;
-    ( $err, @newres ) = getaddrinfo( $res[0]{canonname}, $port, \%hints );
-    die "$0: could not resolve canonical name ${res[0]{canonname}} for ${host}: ${err}\n" if $err;
-    @res = @newres;
-  }
-
-  # If v4 or v6 was specified, reduce the host list.
-  if ( defined( $af )) {
-    @res = grep {$_->{family} == $af} @res;
-  } elsif ( $family ne 'all' ) {
-    # If v4/v6/all were not specified, verify that this host only has one address family available.
-    for my $ai ( @res ) {
-      if ( !defined( $af )) {
-	$af = $ai->{family};
-      } else {
-	die "$0: host has both IPv4 and IPv6 addresses, use --family to specify behavior\n"
-	    if $af != $ai->{family};
-      }
-    }
-  }
+  my @res = resolvename( $host, $port, $family );
 
   # Now try and connect to something.
+  my $err;
   my $sock;
   my $addr_string;
   my $service;
@@ -329,17 +297,52 @@ if ( (not defined $colors)
 
 $ENV{ 'MOSH_CLIENT_PID' } = $$; # We don't support this, but it's useful for test and debug.
 
+# If we are using a locally-resolved address, we have to get it before we fork,
+# so both parent and child get it.
+my $ip;
+if ( $use_remote_ip eq 'local' ) {
+  # "parse" the host from what the user gave us
+  my $host = $userhost;
+  $host =~ s/.*@//;
+  if ( !defined $host ) {
+    die( "could not find hostname in $userhost" );
+  }
+  # get list of addresses
+  my @res = resolvename( $host, 22, $family );
+  # Use only the first address as the Mosh IP
+  my $hostaddr = $res[0];
+  if ( !defined $hostaddr ) {
+    die( "could not find address for $host" );
+  }
+  my ( $err, $addr_string, $service ) = getnameinfo( $hostaddr->{addr}, NI_NUMERICHOST );
+  if ( $err ) {
+    die( "could not use address for $host" );
+  }
+  $ip = $addr_string;
+  $userhost =~ s/${host}/${ip}/;
+}
+
 my $pid = open(my $pipe, "-|");
 die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
   open(STDERR, ">&STDOUT") or die;
 
-  # Ask the server for its IP.  The user's shell may not be
-  # Posix-compatible so invoke sh explicitly.
-  my $ssh_connection = "sh -c " .
-    shell_quote ( '[ -n "$SSH_CONNECTION" ] && printf "\nMOSH SSH_CONNECTION %s\n" "$SSH_CONNECTION"' ) .
-    ";";
+  my @sshopts = ( '-n', '-tt' );
 
+  my $ssh_connection = "";
+  if ( $use_remote_ip eq 'remote' ) {
+    # Ask the server for its IP.  The user's shell may not be
+    # Posix-compatible so invoke sh explicitly.
+    $ssh_connection = "sh -c " .
+      shell_quote ( '[ -n "$SSH_CONNECTION" ] && printf "\nMOSH SSH_CONNECTION %s\n" "$SSH_CONNECTION"' ) .
+      " ; ";
+    # Only with 'remote', we may need to tell SSH which protocol to use.
+    if ( $family eq 'inet' ) {
+      push @sshopts, '-4';
+    } elsif ( $family eq 'inet6' ) {
+      push @sshopts, '-6';
+    }
+  }
   my @server = ( 'new' );
 
   push @server, ( '-c', $colors );
@@ -365,12 +368,15 @@ if ( $pid == 0 ) { # child
     exec( $server, @server );
     die "Cannot exec $server: $!\n";
   }
-  my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
-  my @exec_argv = ( @ssh, '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p", '-n', '-tt', $userhost, '--', $ssh_connection . " $server " . shell_quote( @server ) );
+  if ( $use_remote_ip eq 'proxy' ) {
+    my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
+    push @sshopts, ( '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p" );
+  }
+  my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . "$server " . shell_quote( @server ) );
   exec @exec_argv;
   die "Cannot exec ssh: $!\n";
 } else { # parent
-  my ( $ip, $sship, $port, $key );
+  my ( $sship, $port, $key );
   my $bad_udp_port_warning = 0;
   LINE: while ( <$pipe> ) {
     chomp;
@@ -439,4 +445,55 @@ sub locale_vars {
   }
 
   return @assignments;
+}
+
+sub resolvename {
+  my ( $host, $port, $family ) = @_;
+  my $err;
+  my @res;
+  my $af;
+
+  # If the user selected a specific family, parse it.
+  if ( defined( $family ) && ( $family ne "auto" && $family ne "all" )) {
+      # Choose an address family, or cause pain.
+      my $afstr = 'AF_' . uc( $family );
+      $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
+  }
+
+  # First try the address as a numeric.
+  my %hints = ( flags => AI_NUMERICHOST,
+		socktype => SOCK_STREAM,
+		protocol => IPPROTO_TCP );
+  if ( defined( $af )) {
+    $hints{family} = $af;
+  }
+  ( $err, @res ) = getaddrinfo( $host, $port, \%hints );
+  if ( $err ) {
+    # Get canonical name for this host.
+    $hints{flags} = AI_CANONNAME;
+    ( $err, @res ) = getaddrinfo( $host, $port, \%hints );
+    die "$0: could not get canonical name for $host: ${err}\n" if $err;
+    # Then get final resolution of the canonical name.
+    $hints{flags} = undef;
+    my @newres;
+    ( $err, @newres ) = getaddrinfo( $res[0]{canonname}, $port, \%hints );
+    die "$0: could not resolve canonical name ${res[0]{canonname}} for ${host}: ${err}\n" if $err;
+    @res = @newres;
+  }
+
+  # If v4 or v6 was specified, reduce the host list.
+  if ( defined( $af )) {
+    @res = grep {$_->{family} == $af} @res;
+  } elsif ( $family ne 'all' ) {
+    # If v4/v6/all were not specified, verify that this host only has one address family available.
+    for my $ai ( @res ) {
+      if ( !defined( $af )) {
+	$af = $ai->{family};
+      } else {
+	die "$0: host has both IPv4 and IPv6 addresses, use --family to specify behavior\n"
+	    if $af != $ai->{family};
+      }
+    }
+  }
+  return @res;
 }
