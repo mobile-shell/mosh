@@ -80,6 +80,15 @@
 #include "ae.h"
 #include <stdlib.h>
 #include <string.h>
+#if defined(HAVE_STRINGS_H)
+#include <strings.h>
+#endif
+#if defined(HAVE_ENDIAN_H)
+#include <endian.h>
+#elif defined(HAVE_SYS_ENDIAN_H)
+#include <sys/types.h>
+#include <sys/endian.h>
+#endif
 
 /* Define standard sized integers                                          */
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
@@ -110,6 +119,8 @@
 
 #if _MSC_VER
 	#define bswap64(x) _byteswap_uint64(x)
+#elif HAVE_DECL_BSWAP64
+	/* nothing */
 #elif HAVE_DECL___BUILTIN_BSWAP64
 	#define bswap64(x) __builtin_bswap64(x)           /* GCC 4.3+ */
 #else
@@ -130,6 +141,8 @@
 	static inline unsigned ntz(unsigned x) {_BitScanForward(&x,x);return x;}
 #elif HAVE_DECL___BUILTIN_CTZ
 	#define ntz(x)     __builtin_ctz((unsigned)(x))   /* GCC 3.4+ */
+#elif HAVE_DECL_FFS
+	#define ntz(x)     (ffs(x) - 1)
 #else
 	#if (L_TABLE_SZ <= 9) && (L_TABLE_SZ_IS_ENOUGH)   /* < 2^13 byte texts */
 	static inline unsigned ntz(unsigned x) {
