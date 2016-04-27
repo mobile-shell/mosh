@@ -106,6 +106,7 @@ How it works
   To function, Mosh requires UDP datagrams to be passed between client
   and server. By default, `mosh` uses a port number between 60000 and
   61000, but the user can select a particular port with the -p option.
+  Please note that the -p option has no effect on the port used by SSH.
 
 Advice to distributors
 ----------------------
