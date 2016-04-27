@@ -90,6 +90,7 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
         --family=all         try all network types [default]
 -p PORT[:PORT2]
         --port=PORT[:PORT2]  server-side UDP port or range
+                                (No effect on server-side SSH port)
         --bind-server={ssh|any|IP}  ask the server to reply from an IP address
                                        (default: "ssh")
 
