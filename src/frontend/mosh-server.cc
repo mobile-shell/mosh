@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
+#include <strings.h>
 #include <sstream>
 #include <termios.h>
 #include <unistd.h>
