@@ -369,6 +369,9 @@ if ( $pid == 0 ) { # child
     die "Cannot exec $server: $!\n";
   }
   if ( $use_remote_ip eq 'proxy' ) {
+    # Non-standard shells and broken shrc files cause the ssh
+    # proxy to break mysteriously.
+    $ENV{ 'SHELL' } = '/bin/sh';
     my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
     push @sshopts, ( '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p" );
   }
