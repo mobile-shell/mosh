@@ -302,11 +302,7 @@ $ENV{ 'MOSH_CLIENT_PID' } = $$; # We don't support this, but it's useful for tes
 my $ip;
 if ( $use_remote_ip eq 'local' ) {
   # "parse" the host from what the user gave us
-  my $host = $userhost;
-  $host =~ s/.*@//;
-  if ( !defined $host ) {
-    die( "could not find hostname in $userhost" );
-  }
+  my ($user, $host) = $userhost =~ /^((?:.*@)?)(.*)$/;
   # get list of addresses
   my @res = resolvename( $host, 22, $family );
   # Use only the first address as the Mosh IP
@@ -319,7 +315,7 @@ if ( $use_remote_ip eq 'local' ) {
     die( "could not use address for $host" );
   }
   $ip = $addr_string;
-  $userhost =~ s/${host}/${ip}/;
+  $userhost = "$user$ip";
 }
 
 my $pid = open(my $pipe, "-|");
