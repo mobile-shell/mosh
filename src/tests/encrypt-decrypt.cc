@@ -54,7 +54,7 @@ const size_t NUM_SESSIONS         = 64;
 
 bool verbose = false;
 
-#define NONCE_FMT "%016"PRIx64
+#define NONCE_FMT "%016" PRIx64
 
 static std::string random_payload( void ) {
   const size_t len = prng.uint32() % MESSAGE_SIZE_MAX;
