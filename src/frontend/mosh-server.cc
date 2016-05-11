@@ -213,6 +213,7 @@ int main( int argc, char *argv[] )
 	desired_port = optarg;
 	break;
       case 's':
+	desired_ip = NULL;
 	desired_ip_str = get_SSH_IP();
 	if ( !desired_ip_str.empty() ) {
 	  desired_ip = desired_ip_str.c_str();
