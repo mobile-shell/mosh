@@ -84,7 +84,8 @@ private:
 
 public:
   STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode )
-    : ip( s_ip ), port( s_port ), key( s_key ),
+    : ip( s_ip ? s_ip : "" ), port( s_port ? s_port : "" ),
+    key( s_key ? s_key : "" ),
     escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
     escape_requires_lf( false ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(),
