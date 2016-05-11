@@ -206,7 +206,7 @@ AC_CHECK_HEADERS([utmpx.h])
 AC_CHECK_HEADERS([termio.h])
 AC_CHECK_HEADERS([sys/uio.h])
 AC_LANG_PUSH(C++)
-AC_CHECK_HEADERS([tr1/memory])
+AC_CHECK_HEADERS([memory tr1/memory])
 AC_LANG_POP(C++)
 
 # Checks for typedefs, structures, and compiler characteristics.

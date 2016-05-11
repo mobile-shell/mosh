@@ -35,6 +35,10 @@
 
 #include "config.h"
 
+#ifdef HAVE_MEMORY
+#include <memory>
+#endif
+
 #ifdef HAVE_TR1_MEMORY
 #include <tr1/memory>
 #endif
