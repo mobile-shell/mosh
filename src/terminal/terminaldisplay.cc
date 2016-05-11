@@ -475,28 +475,27 @@ void FrameState::append_silent_move( int y, int x )
 
 void FrameState::append_move( int y, int x )
 {
-  do {
-    // If cursor pos is unknown, of course we can't optimize
-    if ( cursor_x != -1 && cursor_y != -1 ) {
-      // Can we use CR and/or LF?  They're cheap and easier to trace.
-      if ( x == 0 && y - cursor_y >= 0 && y - cursor_y < 5 ) {
-	if ( cursor_x != 0 ) {
-	  append( '\r' );
-	}
-	append( y - cursor_y, '\n' );
-	continue;
+  // Only optimize if cursor pos is known
+  if ( cursor_x != -1 && cursor_y != -1 ) {
+    // Can we use CR and/or LF?  They're cheap and easier to trace.
+    if ( x == 0 && y - cursor_y >= 0 && y - cursor_y < 5 ) {
+      if ( cursor_x != 0 ) {
+	append( '\r' );
       }
-      // Backspaces are good too.
-      if ( y == cursor_y && x - cursor_x < 0 && x - cursor_x > -5 ) {
-	append( cursor_x - x, '\b' );
-	continue;
-      }
-      // More optimizations are possible.
+      append( y - cursor_y, '\n' );
+      goto positioned;
     }
-    char tmp[ 64 ];
-    snprintf( tmp, 64, "\033[%d;%dH", y + 1, x + 1 );
-    append( tmp );
-  } while( 0 );
+    // Backspaces are good too.
+    if ( y == cursor_y && x - cursor_x < 0 && x - cursor_x > -5 ) {
+      append( cursor_x - x, '\b' );
+      goto positioned;
+    }
+    // More optimizations are possible.
+  }
+  char tmp[ 64 ];
+  snprintf( tmp, 64, "\033[%d;%dH", y + 1, x + 1 );
+  append( tmp );
+ positioned:
   cursor_x = x;
   cursor_y = y;
 }
