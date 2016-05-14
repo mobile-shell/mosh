@@ -30,6 +30,9 @@
     also delete it here.
 */
 
+#ifndef TRANSPORT_SENDER_IMPL_HPP
+#define TRANSPORT_SENDER_IMPL_HPP
+
 #include <algorithm>
 #include <list>
 #include <stdio.h>
@@ -405,3 +408,5 @@ void TransportSender<MyState>::attempt_prospective_resend_optimization( string &
     proposed_diff = resend_diff;
   }
 }
+
+#endif
