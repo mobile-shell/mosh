@@ -1,3 +1,54 @@
+2016-05-?? Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 1.2.6 released.
+
+	* New features:
+		* Add Travis CI builds for Linux and Mac.  (Anders Kaseorg, others)
+		* Add a --local option to run without ssh.  (John Hood)
+		* Mosh now returns exitstatus reflecting connection success.
+		  (John Hood)
+		* Add a end-to-end test suite and many tests.  (John Hood)
+		* Implement timeouts and signals to help address orphaned sessions.
+		  (John Hood)
+		* Major rework of Mosh's display differencing/rendering
+		  code with much improved performance for slow machines.  (John Hood)
+		* Implement ANSI back/forward tab (CSI CBT, CSI CHT).
+		  (John Hood)
+		* Do not start user shell until network session starts.
+		  (John Hood)
+		* Add options for more flexible specification of IPv4/IPv6
+		  hostname resolution.  (John Hood)
+		* Improved bash completion.  (Steve Dignam, HIGUCHI Yuta)
+		* Add options for different methods of resolving the remote host
+		  address, allowing operation without SshProxyCommand.  (John Hood)
+
+	* Platform support:
+		* Add configurable support for Apple Common Crypto and
+		  Nettle, in place of OpenSSL.  Implement base64 locally.
+		  (John Hood)
+		* Workaround Cygwin select() bug.  (John Hood)
+		* Updates to Debian packaging.  (Anders Kaseorg, Keith Winstein)
+		* Workaround a glibc-2.22 issue causing segfaults on Debian Sid.
+		  (John Hood with help from many others)
+		* Prefer c++ to g++, for systems like FreeBSD where g++ is not usable.
+		  (John Hood)
+		* Fixes for Illumos Hipster 20151003.  (John Hood)
+		* Disable -Werror for protobuf code, to resolve a new gcc6 warning.
+		  (John Hood)
+		* Link test for -fstack-protector-all on an embedded platform.
+		  (Baruch Siach)
+		* Resolve issue with bswap64() on FreeBSD-CURRENT with libc++-3.8.0.
+		  (John Hood)
+		* Fix issue with RECVTOS error message on client on FreeBSD.
+		  (John Hood)
+
+	* Bug fixes:
+		* Remove an assertion causing aborts on Unicode fallback found by
+		  fuzzing with afl.  (Keith Winstein)
+		* Fix a server hang with XON/XOFF on BSD systems.  (John Hood)
+		* Fix a typeahead-prediction bug that caused display corruption on
+		  urxvt.  (John Hood)
+
 2015-07-12 Keith Winstein <mosh-devel@mit.edu>
 
        * Version 1.2.5 released.
