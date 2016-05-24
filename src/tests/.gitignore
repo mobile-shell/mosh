@@ -1,3 +1,5 @@
+/base64
+/base64_vector.cc
 /ocb-aes
 /encrypt-decrypt
 /*.d/
