@@ -30,12 +30,15 @@
 #   this exception statement from all source files in the program, then
 #   also delete it here.
 
+use 5.14.0;
+
 use warnings;
 use strict;
 use Getopt::Long;
 use IO::Socket;
 use Text::ParseWords;
-use Socket qw( :addrinfo IPPROTO_IP IPPROTO_IPV6 IPPROTO_TCP IPPROTO_UDP );
+use Socket qw( getaddrinfo getnameinfo AI_CANONNAME AI_NUMERICHOST NI_NUMERICHOST
+ IPPROTO_IP IPPROTO_IPV6 IPPROTO_TCP IPPROTO_UDP );
 use Errno qw(EINTR);
 use POSIX qw(_exit);
 
@@ -473,7 +476,7 @@ sub resolvename {
     ( $err, @res ) = getaddrinfo( $host, $port, \%hints );
     die "$0: could not get canonical name for $host: ${err}\n" if $err;
     # Then get final resolution of the canonical name.
-    $hints{flags} = undef;
+    delete $hints{flags};
     my @newres;
     ( $err, @newres ) = getaddrinfo( $res[0]{canonname}, $port, \%hints );
     die "$0: could not resolve canonical name ${res[0]{canonname}} for ${host}: ${err}\n" if $err;
