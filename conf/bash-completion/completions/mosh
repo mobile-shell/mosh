@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+# Bash completions for Mosh, the mobile shell.         -*- shell-script -*-
 
 __mosh_init_completion()
 {
