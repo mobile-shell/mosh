@@ -135,7 +135,11 @@ int main( int argc, char *argv[] )
     verbose = true;
   }
 
-  test_base64();
-
+  try {
+    test_base64();
+  } catch ( const std::exception &e ) {
+    fprintf( stderr, "Error: %s\r\n", e.what() );
+    return 1;
+  }
   return 0;
 }

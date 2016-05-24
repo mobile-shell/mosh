@@ -15,7 +15,7 @@ sleepf()
     (sleep .1 || sleep 1) > /dev/null 2>&1
 }
 
-seq()
+seq_function()
 {
     if [ $# -lt 1 -o $# -gt 3 ]; then
 	echo "bad args" >&2
@@ -36,12 +36,19 @@ seq()
     esac
     while :; do
 	printf '%d\n' $first
-	first=$(expr $first + $incr)
+	first=$(( first + incr ))
 	if [ $first -gt $last ]; then
 	    break
 	fi
     done
 }
+
+if ! seq 1 > /dev/null 2>&1; then
+    seq()
+    {
+	seq_function "$@"
+    }
+fi
 
 chr()
 {

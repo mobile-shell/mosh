@@ -544,8 +544,12 @@ int main( int argc, char *argv[] )
     verbose = true;
   }
 
-  test_all_vectors();
-  test_iterative();
-
+  try {
+    test_all_vectors();
+    test_iterative();
+  } catch ( const std::exception &e ) {
+    fprintf( stderr, "Error: %s\r\n", e.what() );
+    return 1;
+  }
   return 0;
 }

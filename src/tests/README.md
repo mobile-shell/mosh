@@ -8,7 +8,14 @@ support code.
 
 ## encrypt-decrypt
 
-This is a simple functional test of mosh's implementation of encrypted messages.
+This is a simple functional test of mosh's implementation of encrypted
+messages.
+
+## base64
+
+This tests Mosh's homegrown base64 functionality.  The associated
+`genbase64.pl` script is used to independently generate validated test
+vectors.
 
 ## e2e-test
 
@@ -18,11 +25,12 @@ tmux's `capture-pane` command to get a dump of the terminal screen
 that mosh-client has drawn, neatly getting around Mosh's somewhat
 non-deterministic display redraw.
 
-There are three essential parts to the framework:
+There are four essential parts to the framework:
 
 * your test script
 * `e2e-test`
 * `e2e-test-server`
+* `e2e-test-subrs`
 
 The test script has two roles: when invoked without argments, it is a
 wrapper script for the overall test, and when invoked with an
@@ -125,12 +133,12 @@ and to provide examples for further development.
 with the same stimulus (simply clearing the screen), and expects to
 see identical results.
 
-`e2e-failure` is similar `e2e-success`, but expects to see different
-results from `baseline` and `variant`.  Since it uses the same
-stimulus for the two execution action, it fails.  A more realistic
-test might be to have `variant` execute some escape sequence that is
-absent from `baseline`; this would verify that the escape sequence
-actually does something.
+`e2e-failure` is similar to `e2e-success`, but expects to see
+different results from `baseline` and `variant`.  Since it uses the
+same stimulus for the two execution action, it fails.  A more
+realistic test might be to have `variant` execute some escape sequence
+that is absent from `baseline`; this would verify that the escape
+sequence actually does something.
 
 `emulation-back-tab` tests an escape sequence that mosh does not
 support.  It expects the test to produce the output that would be
@@ -159,3 +167,9 @@ extension unavailable in BSD implementations
 It's fairly simple to test each of these scripts independently, but
 the entire chain is a bit prone to behaving oddly in hard-to-debug
 ways.  `set -x` is your friend here.
+
+The test scripts are a bit fragile about timeouts.  They will
+generally run correctly on an unloaded machine without the `make -j`
+flag.  Using `make -j` is obviously very convenient for development,
+and it works fine on faster machines, but I don't recommend it for
+automated testing.

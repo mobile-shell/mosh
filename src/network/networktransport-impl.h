@@ -30,11 +30,12 @@
     also delete it here.
 */
 
-#include <iostream>
+#ifndef NETWORK_TRANSPORT_IMPL_HPP
+#define NETWORK_TRANSPORT_IMPL_HPP
 
 #include "networktransport.h"
 
-#include "transportsender.cc"
+#include "transportsender-impl.h"
 
 using namespace Network;
 using namespace std;
@@ -207,3 +208,5 @@ string Transport<MyState, RemoteState>::get_remote_diff( void )
 
   return ret;
 }
+
+#endif

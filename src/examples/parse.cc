@@ -42,7 +42,6 @@
 #include <wchar.h>
 #include <assert.h>
 #include <wctype.h>
-#include <iostream>
 #include <typeinfo>
 #include <termios.h>
 

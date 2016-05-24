@@ -93,7 +93,7 @@ AS_IF([test x"$hardening" != x"no"], [
   # This one will likely succeed, even on platforms where it does nothing.
   check_cc_cxx_flag([-D_FORTIFY_SOURCE=2], [HARDEN_CFLAGS="$HARDEN_CFLAGS -D_FORTIFY_SOURCE=2"])
 
-  check_cc_cxx_flag([-fstack-protector-all],
+  check_link_flag([-fstack-protector-all],
    [HARDEN_CFLAGS="$HARDEN_CFLAGS -fstack-protector-all"
     check_cc_cxx_flag([-Wstack-protector], [HARDEN_CFLAGS="$HARDEN_CFLAGS -Wstack-protector"],
       [], [-fstack-protector-all])
@@ -216,7 +216,7 @@ AC_CHECK_HEADERS([sys/uio.h])
 AC_CHECK_HEADERS([sys/un.h])
 AC_CHECK_HEADERS([sys/types.h])
 AC_LANG_PUSH(C++)
-AC_CHECK_HEADERS([tr1/memory])
+AC_CHECK_HEADERS([memory tr1/memory])
 AC_LANG_POP(C++)
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -409,14 +409,18 @@ public:
   [AC_MSG_RESULT([no])])
 AC_LANG_POP(C++)
 
-AC_CHECK_DECLS([__builtin_bswap64, __builtin_ctz])
-
 AC_CHECK_DECL([mach_absolute_time],
   [AC_DEFINE([HAVE_MACH_ABSOLUTE_TIME], [1],
      [Define if mach_absolute_time is available.])],
   , [[#include <mach/mach_time.h>]])
 
-AC_CHECK_DECLS([be64toh, betoh64], [], [],
+
+AC_CHECK_DECLS([__builtin_ctz])
+
+AC_CHECK_DECLS([ffs], [], [],
+  [[#include <strings.h>]])
+
+AC_CHECK_DECLS([be64toh, betoh64, bswap64, __builtin_bswap64], [], [],
   [[#if defined(HAVE_ENDIAN_H)
 #include <endian.h>
 #elif defined(HAVE_SYS_ENDIAN_H)

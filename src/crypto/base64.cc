@@ -106,8 +106,9 @@ void base64_encode( const uint8_t *raw, const size_t raw_len,
   }
   
   /* last byte of input, last 4 of output */
-  b64[0] = table[*raw >> 2];
-  b64[1] = table[(*raw << 4) & 0x3f];
+  uint8_t lastchar = *raw;
+  b64[0] = table[(lastchar >> 2) & 0x3f];
+  b64[1] = table[(lastchar << 4) & 0x3f];
   b64[2] = '=';
   b64[3] = '=';
 }

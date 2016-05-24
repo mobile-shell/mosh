@@ -42,7 +42,6 @@
 #include <wchar.h>
 #include <assert.h>
 #include <wctype.h>
-#include <iostream>
 #include <typeinfo>
 #include <sys/ioctl.h>
 #include <sys/stat.h>

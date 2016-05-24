@@ -61,7 +61,7 @@
 #include "timestamp.h"
 #include "agent.h"
 
-#include "networktransport.cc"
+#include "networktransport-impl.h"
 
 void STMClient::resume( void )
 {
