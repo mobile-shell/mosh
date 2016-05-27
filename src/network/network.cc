@@ -261,8 +261,8 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
      try INADDR_ANY. If a port request is given, we bind only to that port. */
 
   /* convert port numbers */
-  int desired_port_low = 0;
-  int desired_port_high = 0;
+  int desired_port_low = -1;
+  int desired_port_high = -1;
 
   if ( desired_port && !parse_portrange( desired_port, desired_port_low, desired_port_high ) ) {
     throw NetworkException("Invalid port range", 0);
@@ -307,10 +307,10 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
 
   int search_low = PORT_RANGE_LOW, search_high = PORT_RANGE_HIGH;
 
-  if ( port_low != 0 ) { /* low port preference */
+  if ( port_low != -1 ) { /* low port preference */
     search_low = port_low;
   }
-  if ( port_high != 0 ) { /* high port preference */
+  if ( port_high != -1 ) { /* high port preference */
     search_high = port_high;
   }
 
@@ -688,7 +688,6 @@ bool Connection::parse_portrange( const char * desired_port, int & desired_port_
     desired_port_high = desired_port_low;
     return true;
   }
-
   /* port range; parse high port */
   const char * cp = end + 1;
   errno = 0;
@@ -707,6 +706,12 @@ bool Connection::parse_portrange( const char * desired_port, int & desired_port_
     fprintf( stderr, "Low port %d greater than high port %d\n", desired_port_low, desired_port_high );
     return false;
   }
+
+  if ( desired_port_low == 0 ) {
+    fprintf( stderr, "Low port 0 incompatible with port ranges\n" );
+    return false;
+  }
+
 
   return true;
 }

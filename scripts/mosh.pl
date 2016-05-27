@@ -187,12 +187,15 @@ if ( defined $port_request ) {
   if ( $port_request =~ m{^(\d+)(:(\d+))?$} ) {
     my ( $low, $clause, $high ) = ( $1, $2, $3 );
     # good port or port-range
-    if ( $low <= 0 or $low > 65535 ) {
-      die "$0: Server-side (low) port ($low) must be within valid range [1..65535].\n";
+    if ( $low < 0 or $low > 65535 ) {
+      die "$0: Server-side (low) port ($low) must be within valid range [0..65535].\n";
     }
     if ( defined $high ) {
       if ( $high <= 0 or $high > 65535 ) {
 	die "$0: Server-side high port ($high) must be within valid range [1..65535].\n";
+      }
+      if ( $low == 0 ) {
+	die "$0: Server-side port ranges may not be used with starting port 0 ($port_request).\n";
       }
       if ( $low > $high ) {
 	die "$0: Server-side port range ($port_request): low port greater than high port.\n";

@@ -183,8 +183,11 @@ Synonym for \-\-family=inet6
 Use a particular server-side UDP port or port range,
 for example, if this is the
 only port that is forwarded through a firewall to the
-server. Otherwise, \fBmosh\fP will choose a port between 60000 and
+server. With \fB\-p 0\fP, the server will let the operating system pick an
+available UDP port. Otherwise, \fBmosh\fP will choose a port between 60000 and
 61000.
+
+
 
 .TP
 .B \-\-bind\-server={ssh|any|\fIIP\fP}
