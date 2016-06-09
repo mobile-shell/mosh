@@ -242,7 +242,7 @@ if ( ! defined $fake_proxy ) {
 				  PeerHost => $addr_string,
 				  PeerPort => $port,
 				  Proto => 'tcp' )) {
-      print STDERR 'MOSH IP ', $sock->peerhost, "\n";
+      print STDERR 'MOSH IP ', $addr_string, "\n";
       last;
     } else {
       $err = $@;
