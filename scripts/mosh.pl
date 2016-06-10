@@ -63,7 +63,7 @@ my $bind_ip = undef;
 
 my $use_remote_ip = 'proxy';
 
-my $family = 'all';
+my $family = 'prefer-inet';
 my $port_request = undef;
 
 my @ssh = ('ssh');
@@ -91,8 +91,10 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 
 -4      --family=inet        use IPv4 only
 -6      --family=inet6       use IPv6 only
-        --family=auto        autodetect network type for single-family hosts
-        --family=all         try all network types [default]
+        --family=auto        autodetect network type for single-family hosts only
+        --family=all         try all network types
+        --family=prefer-inet use all network types, but try IPv4 first [default]
+        --family=prefer-inet6 use all network types, but try IPv6 first
 -p PORT[:PORT2]
         --port=PORT[:PORT2]  server-side UDP port or range
         --bind-server={ssh|any|IP}  ask the server to reply from an IP address
@@ -453,7 +455,7 @@ sub resolvename {
   my $af;
 
   # If the user selected a specific family, parse it.
-  if ( defined( $family ) && ( $family ne "auto" && $family ne "all" )) {
+  if ( defined( $family ) && ( $family eq 'inet' || $family eq 'inet6' )) {
       # Choose an address family, or cause pain.
       my $afstr = 'AF_' . uc( $family );
       $af = eval { IO::Socket->$afstr } or die "$0: Invalid family $family\n";
@@ -480,9 +482,14 @@ sub resolvename {
     @res = @newres;
   }
 
-  # If v4 or v6 was specified, reduce the host list.
   if ( defined( $af )) {
+    # If v4 or v6 was specified, reduce the host list.
     @res = grep {$_->{family} == $af} @res;
+  } elsif ( $family =~ /^prefer-/ ) {
+    # If prefer-* was specified, reorder the host list to put that family first.
+    my $prefer_afstr = 'AF_' . uc( ($family =~ /prefer-(.*)/)[0] );
+    my $prefer_af = eval { IO::Socket->$prefer_afstr } or die "$0: Invalid preferred family $family\n";
+    @res = (grep({$_->{family} == $prefer_af} @res), grep({$_->{family} != $prefer_af} @res));
   } elsif ( $family ne 'all' ) {
     # If v4/v6/all were not specified, verify that this host only has one address family available.
     for my $ai ( @res ) {
