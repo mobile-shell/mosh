@@ -420,7 +420,7 @@ if ( $pid == 0 ) { # child
     if ( $bad_udp_port_warning ) {
       die "$0: Server does not support UDP port range option.\n";
     }
-    die "$0: Did not find mosh server startup message.\n";
+    die "$0: Did not find mosh server startup message. (Did you installed mosh on your server?)\n";
   }
 
   # Now start real mosh client
