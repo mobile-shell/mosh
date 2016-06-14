@@ -94,6 +94,123 @@
 #include <sys/endian.h>
 #endif
 
+/*
+ * cheat for now and use USE_OPENSSL_AES as a proxy for the presence
+ * of OpenSSL
+ */
+#if defined(USE_OPENSSL_AES) && defined(HAVE_OPENSSL_OCB)
+/*
+ * This shims the Krovetz/Rogaway OCB API (which Mosh uses) on top of
+ * OpenSSL's API.  This shim does not implement all the possible uses
+ * of the Krovetz/Rogaway API; it only implements the simple cases
+ * that Mosh uses (a single call to ae_encrypt() with both plaintext
+ * and associated data, and ae_encrypt() calls on the resulting
+ * messages), and a few more.
+ *
+ * It fails some of the test cases in the test program at the bottom
+ * of this file (but passes all of Mosh's test cases).
+ */
+#include <openssl/evp.h>
+
+/*
+ * This assumes that the caller's copy of the key remains available
+ * through encryption/decryption.
+ */
+struct _ae_ctx {
+	unsigned char *key;
+	EVP_CIPHER_CTX *ocb_ctx;
+};
+
+int     ae_clear     (ae_ctx *ctx)
+{
+	EVP_CIPHER_CTX_free(ctx->ocb_ctx);
+	memset(ctx, '\0', sizeof *ctx);
+	return AE_SUCCESS;
+}
+int     ae_ctx_sizeof(void)
+{
+	return sizeof(_ae_ctx);
+}
+
+int ae_init(ae_ctx *ctx, const void *key_param, int key_len, int nonce_len, int tag_len)
+{
+	if (nonce_len != 12 || key_len != OCB_KEY_LEN || tag_len != OCB_TAG_LEN)
+		return AE_NOT_SUPPORTED;
+	ctx->ocb_ctx = EVP_CIPHER_CTX_new();
+	ctx->key = (unsigned char *)key_param;
+	return AE_SUCCESS;
+}
+
+int ae_encrypt(ae_ctx     *  ctx,
+               const void *  nonce_param,
+               const void *pt_param,
+               int         pt_len,
+               const void *ad_param,
+               int         ad_len,
+               void       *ct_param,
+               void       *tag,
+               int         final)
+{
+	const unsigned char *nonce = (const unsigned char *)nonce_param;
+	const unsigned char *pt = (const unsigned char *)pt_param;
+	const unsigned char *ad = (const unsigned char *)ad_param;
+	unsigned char *ct = (unsigned char *)ct_param;
+	if (nonce) {
+		EVP_EncryptInit_ex(
+			ctx->ocb_ctx, EVP_aes_128_ocb(), NULL, ctx->key, nonce);
+	}
+	if (ad_len) {
+		int ad_ct_len;
+		EVP_EncryptUpdate(ctx->ocb_ctx, NULL, &ad_ct_len, ad, ad_len);
+	}
+	int ct_len = 0;
+	if (pt_len) {
+		EVP_EncryptUpdate(ctx->ocb_ctx, ct, &ct_len, pt, pt_len);
+	}
+	int ct_len_2 = 0;
+	if (final == AE_FINALIZE) {
+		EVP_EncryptFinal_ex(ctx->ocb_ctx, ct + ct_len, &ct_len_2);
+		EVP_CIPHER_CTX_ctrl(
+			ctx->ocb_ctx, EVP_CTRL_AEAD_GET_TAG, OCB_TAG_LEN, ct + ct_len + ct_len_2);
+	}
+	return ct_len + ct_len_2 + OCB_TAG_LEN;
+}
+
+int ae_decrypt(ae_ctx     *ctx,
+               const void *nonce_param,
+               const void *ct_param,
+               int         ct_len,
+               const void *ad_param,
+               int         ad_len,
+               void       *pt_param,
+               const void *tag,
+               int         final)
+{
+	const unsigned char *nonce = (const unsigned char *)nonce_param;
+	unsigned char *pt = (unsigned char *)pt_param;
+	unsigned char *ad = (unsigned char *)ad_param;
+	const unsigned char *ct = (const unsigned char *)ct_param;
+	if (nonce) {
+		EVP_DecryptInit_ex(ctx->ocb_ctx, EVP_aes_128_ocb(), NULL, ctx->key, nonce);
+		EVP_CIPHER_CTX_ctrl(
+			ctx->ocb_ctx, EVP_CTRL_AEAD_SET_TAG, 16, (void *)(ct + ct_len - OCB_TAG_LEN));
+	}
+	if (ad_len) {
+		int ad_pt_len;
+		EVP_DecryptUpdate(ctx->ocb_ctx, NULL, &ad_pt_len, ad, ad_len);
+	}
+	int pt_len;
+	EVP_DecryptUpdate(ctx->ocb_ctx, pt, &pt_len, ct, ct_len - OCB_TAG_LEN);
+	int pt_len_2 = 0;
+	int rv = 1;
+	if (final == AE_FINALIZE) {
+		rv = EVP_DecryptFinal_ex(ctx->ocb_ctx, pt + pt_len, &pt_len_2);
+	}
+	return rv ? pt_len + pt_len_2 : AE_INVALID;
+}
+
+#else
+
 /* Define standard sized integers                                          */
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
 	typedef unsigned __int8  uint8_t;
@@ -1402,6 +1519,8 @@ int ae_decrypt(ae_ctx     *ctx,
     return ct_len;
  }
 
+#endif
+
 /* ----------------------------------------------------------------------- */
 /* Simple test program                                                     */
 /* ----------------------------------------------------------------------- */
@@ -1410,6 +1529,10 @@ int ae_decrypt(ae_ctx     *ctx,
 
 #include <stdio.h>
 #include <time.h>
+
+#ifndef BPI
+#define BPI 4
+#endif
 
 #if __GNUC__
 	#define ALIGN(n) __attribute__ ((aligned(n)))

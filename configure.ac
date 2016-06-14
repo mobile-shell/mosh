@@ -346,6 +346,43 @@ case "${with_crypto_library}" in
     ;;
 esac
 
+AC_ARG_WITH(
+  [external-ocb],
+  [AS_HELP_STRING([--with-external-ocb], [Use the OCB implementation from the selected crypto library @<:@no@:>@])],
+  [with_external_ocb="$withval"],
+  [with_external_ocb="no"])
+
+  AS_IF([test x"$with_external_ocb" != xno],
+    [
+      # push LDFLAGS/CFLAGS
+      old_LIBS="$LIBS"
+      old_CFLAGS="$CFLAGS"
+      # modify
+      LIBS="$LIBS $CRYPTO_LIBS"
+      CFLAGS="$CFLAGS $CRYPTO_CFLAGS"
+      # check for OCB
+      case "${with_crypto_library}" in
+	openssl)
+	AC_CHECK_DECL([EVP_aes_128_ocb],
+	  [AC_DEFINE([HAVE_OPENSSL_OCB], [1],
+	     [Define if the OCB AE algorithm is available in OpenSSL.])],
+	  [AS_IF([test x"$with_external_ocb" = xcheck],
+	    [AC_MSG_WARN([Unable to find OCB in OpenSSL.])],
+	    [AC_MSG_ERROR([--with-external-ocb was given but OCB implementation was not found in OpenSSL.])])],
+	  [[#include <openssl/evp.h>]])
+	;;
+	*)
+	  AS_IF([test x"$with_external_ocb" = xcheck],
+	   [AC_MSG_WARN([OCB unavailable in selected crypto library.])],
+	   [AC_MSG_ERROR([--with-external-ocb was given but OCB unavailable in selected crypto library.])])
+	;;
+      esac
+      # restore old LDFLAGS/CPPFLAGS
+      LIBS="$old_LIBS"
+      CFLAGS="$old_CFLAGS"
+    ],[])
+
+
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
      [Define if libutil.h necessary for forkpty().])],
