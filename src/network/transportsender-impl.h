@@ -226,7 +226,7 @@ void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t 
   sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
   if ( sent_states.size() > 32 ) { /* limit on state queue */
     typename sent_states_type::iterator last = sent_states.end();
-    for ( int i = 0; i < 16; i++ ) { last--; }
+    for ( int i = 0; i < 16; i++ ) { --last; }
     sent_states.erase( last ); /* erase state from middle of queue */
   }
 }
@@ -272,7 +272,7 @@ void TransportSender<MyState>::update_assumed_receiver_state( void )
   assumed_receiver_state = sent_states.begin();
 
   typename list< TimestampedState<MyState> >::iterator i = sent_states.begin();
-  i++;
+  ++i;
 
   while ( i != sent_states.end() ) {
     assert( now >= i->timestamp );
@@ -283,7 +283,7 @@ void TransportSender<MyState>::update_assumed_receiver_state( void )
       return;
     }
 
-    i++;
+    ++i;
   }
 }
 
@@ -296,7 +296,7 @@ void TransportSender<MyState>::rationalize_states( void )
 
   for ( typename list< TimestampedState<MyState> >::reverse_iterator i = sent_states.rbegin();
 	i != sent_states.rend();
-	i++ ) {
+    ++i ) {
     i->state.subtract( known_receiver_state );
   }
 }
@@ -334,7 +334,7 @@ void TransportSender<MyState>::send_in_fragments( const string & diff, uint64_t 
 							  - Crypto::Session::ADDED_BYTES );
   for ( vector<Fragment>::iterator i = fragments.begin();
         i != fragments.end();
-        i++ ) {
+        ++i ) {
     connection->send( i->tostring() );
 
     if ( verbose ) {

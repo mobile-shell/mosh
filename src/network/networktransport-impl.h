@@ -89,7 +89,7 @@ void Transport<MyState, RemoteState>::recv( void )
     /* first, make sure we don't already have the new state */
     for ( typename list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
 	  i != received_states.end();
-	  i++ ) {
+      ++i ) {
       if ( inst.new_num() == i->num ) {
 	return;
       }
@@ -103,7 +103,7 @@ void Transport<MyState, RemoteState>::recv( void )
 	found = true;
 	break;
       }
-      reference_state++;
+      ++reference_state;
     }
     
     if ( !found ) {
@@ -143,7 +143,7 @@ void Transport<MyState, RemoteState>::recv( void )
     /* Insert new state in sorted place */
     for ( typename list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
 	  i != received_states.end();
-	  i++ ) {
+      ++i ) {
       if ( i->num > new_state.num ) {
 	received_states.insert( i, new_state );
 	if ( verbose ) {
@@ -174,7 +174,7 @@ void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwawa
   typename list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
   while ( i != received_states.end() ) {
     typename list< TimestampedState<RemoteState> >::iterator inext = i;
-    inext++;
+    ++inext;
     if ( i->num < throwaway_num ) {
       received_states.erase( i );
     }
@@ -195,7 +195,7 @@ string Transport<MyState, RemoteState>::get_remote_diff( void )
 
   for ( typename list< TimestampedState<RemoteState> >::reverse_iterator i = received_states.rbegin();
 	i != received_states.rend();
-	i++ ) {
+    ++i ) {
     i->state.subtract( oldest_receiver_state );
   }  
 
