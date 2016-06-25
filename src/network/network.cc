@@ -76,7 +76,7 @@ Packet::Packet( const Message & message )
 {
   dos_assert( message.text.size() >= 2 * sizeof( uint16_t ) );
 
-  const uint16_t *data = (uint16_t *)message.text.data();
+  const uint16_t *data = reinterpret_cast<const uint16_t *>( message.text.data() );
   timestamp = be16toh( data[ 0 ] );
   timestamp_reply = be16toh( data[ 1 ] );
 
