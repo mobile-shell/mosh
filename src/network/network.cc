@@ -195,7 +195,7 @@ const std::vector< int > Connection::fds( void ) const
 
   for ( std::deque< Socket >::const_iterator it = socks.begin();
 	it != socks.end();
-	it++ ) {
+    ++it ) {
     ret.push_back( it->fd() );
   }
 
@@ -441,7 +441,7 @@ string Connection::recv( void )
   assert( !socks.empty() );
   for ( std::deque< Socket >::const_iterator it = socks.begin();
 	it != socks.end();
-	it++ ) {
+    ++it ) {
     bool islast = (it + 1) == socks.end();
     string payload;
     try {
