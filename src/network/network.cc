@@ -191,6 +191,7 @@ void Connection::setup( void )
 const std::vector< int > Connection::fds( void ) const
 {
   std::vector< int > ret;
+  ret.reserve(socks.size());
 
   for ( std::deque< Socket >::const_iterator it = socks.begin();
 	it != socks.end();
