@@ -87,7 +87,7 @@ namespace Network {
 	timestamp( s_timestamp ), timestamp_reply( s_timestamp_reply ), payload( s_payload )
     {}
     
-    Packet( const Message & message );
+    explicit Packet( const Message & message );
     
     Message toMessage( void );
   };
@@ -151,7 +151,7 @@ namespace Network {
 
     public:
       int fd( void ) const { return _fd; }
-      Socket( int family );
+      explicit Socket( int family );
       ~Socket();
 
       Socket( const Socket & other );
