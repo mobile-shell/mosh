@@ -81,7 +81,7 @@ AlignedBuffer::AlignedBuffer( size_t len, const char *data )
       || ( m_allocated == NULL ) ) {
     throw std::bad_alloc();
   }
-  m_data = (char *) m_allocated;
+  m_data = static_cast<char *>(m_allocated);
 
 #else
   /* malloc() a region 15 bytes larger than we need, and find
@@ -99,7 +99,7 @@ AlignedBuffer::AlignedBuffer( size_t len, const char *data )
   assert( iptr >= (uintptr_t) m_allocated );
   assert( iptr <= ( 15 + (uintptr_t) m_allocated ) );
 
-  m_data = (char *) iptr;
+  m_data = static_cast<char *>(iptr);
 
 #endif /* !defined(HAVE_POSIX_MEMALIGN) */
 
