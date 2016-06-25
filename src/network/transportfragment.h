@@ -66,7 +66,7 @@ namespace Network {
 	contents( s_contents )
     {}
 
-    Fragment( const string &x );
+    explicit Fragment( const string &x );
 
     string tostring( void );
 
