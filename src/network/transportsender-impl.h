@@ -111,16 +111,16 @@ void TransportSender<MyState>::calculate_timers( void )
 
     next_send_time = max( mindelay_clock + SEND_MINDELAY,
 			  last_sended_state_timestamp + send_interval() );
-  } else if ( !(current_state == assumed_receiver_state->state)
-	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
-    if ( mindelay_clock != uint64_t( -1 ) ) {
-      next_send_time = max( last_sended_state_timestamp + send_interval(), mindelay_clock + SEND_MINDELAY );
-    } else {
-      next_send_time = last_sended_state_timestamp + send_interval();
-    }
-  } else if ( !(current_state == sent_states.front().state )
-	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
-    next_send_time = last_sended_state_timestamp + connection->timeout() + ACK_DELAY;
+    } else if ( (last_heard + ACTIVE_RETRY_TIMEOUT) > now ) {
+      if ( current_state != assumed_receiver_state->state) {
+        if ( mindelay_clock != uint64_t( -1 ) ) {
+          next_send_time = max( last_sended_state_timestamp + send_interval(), mindelay_clock + SEND_MINDELAY );
+        } else {
+          next_send_time = last_sended_state_timestamp + send_interval();
+        }
+      } else if ( current_state != sent_states.front().state ) {
+        next_send_time = last_sended_state_timestamp + connection->timeout() + ACK_DELAY;
+      }
   } else {
     next_send_time = uint64_t(-1);
   }
