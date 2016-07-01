@@ -85,10 +85,8 @@ unsigned int TransportSender<MyState>::send_interval( void ) const
 
 /* Housekeeping routine to calculate next send and ack times */
 template <class MyState>
-void TransportSender<MyState>::calculate_timers( void )
+void TransportSender<MyState>::calculate_timers( uint64_t now )
 {
-  uint64_t now = timestamp();
-
   /* Update assumed receiver state */
   update_assumed_receiver_state();
 
@@ -130,14 +128,14 @@ void TransportSender<MyState>::calculate_timers( void )
 template <class MyState>
 int TransportSender<MyState>::wait_time( void )
 {
-  calculate_timers();
+  uint64_t now = timestamp();
+
+  calculate_timers(now);
 
   uint64_t next_wakeup = next_ack_time;
   if ( next_send_time < next_wakeup ) {
     next_wakeup = next_send_time;
   }
-
-  uint64_t now = timestamp();
 
   if ( !connection->get_has_remote_addr() ) {
     return INT_MAX;
@@ -154,13 +152,13 @@ int TransportSender<MyState>::wait_time( void )
 template <class MyState>
 void TransportSender<MyState>::tick( void )
 {
-  calculate_timers(); /* updates assumed receiver state and rationalizes */
+  uint64_t now = timestamp();
+
+  calculate_timers(now); /* updates assumed receiver state and rationalizes */
 
   if ( !connection->get_has_remote_addr() ) {
     return;
   }
-
-  uint64_t now = timestamp();
 
   if ( (now < next_ack_time)
        && (now < next_send_time) ) {
@@ -168,7 +166,7 @@ void TransportSender<MyState>::tick( void )
   }
 
   /* Determine if a new diff or empty ack needs to be sent */
-    
+
   string diff = current_state.diff_from( assumed_receiver_state->state );
 
   attempt_prospective_resend_optimization( diff );
