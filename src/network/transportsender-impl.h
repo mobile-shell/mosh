@@ -225,7 +225,7 @@ void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t 
   sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
   if ( sent_states.size() > 32 ) { /* limit on state queue */
     typename sent_states_type::iterator last = sent_states.end();
-    for ( int i = 0; i < 16; i++ ) { last--; }
+    std::advance(last, -16);
     sent_states.erase( last ); /* erase state from middle of queue */
   }
 }
