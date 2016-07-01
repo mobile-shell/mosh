@@ -97,6 +97,9 @@ void TransportSender<MyState>::calculate_timers( void )
 
   if ( pending_data_ack && (next_ack_time > now + ACK_DELAY) ) {
     next_ack_time = now + ACK_DELAY;
+  } else if ( shutdown_in_progress || (ack_num == uint64_t(-1)) ) {
+    /* speed up shutdown sequence */
+    next_ack_time = sent_states.back().timestamp + send_interval();
   }
 
   if ( !(current_state == sent_states.back().state) ) {
@@ -117,11 +120,6 @@ void TransportSender<MyState>::calculate_timers( void )
     next_send_time = sent_states.back().timestamp + connection->timeout() + ACK_DELAY;
   } else {
     next_send_time = uint64_t(-1);
-  }
-
-  /* speed up shutdown sequence */
-  if ( shutdown_in_progress || (ack_num == uint64_t(-1)) ) {
-    next_ack_time = sent_states.back().timestamp + send_interval();
   }
 }
 
