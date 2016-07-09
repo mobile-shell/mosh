@@ -89,7 +89,7 @@ namespace Network {
     /* interface for Network::Transport */
     void subtract( const UserStream *prefix );
     string diff_from( const UserStream &existing ) const;
-    string init_diff( void ) const { assert( false ); return string(); };
+    string init_diff( void ) const { assert( false ); return string(); }
     void apply_string( const string &diff );
     bool operator==( const UserStream &x ) const { return actions == x.actions; }
 
