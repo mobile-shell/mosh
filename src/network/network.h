@@ -120,11 +120,13 @@ namespace Network {
      * IPv4 MTU. Don't use full Ethernet-derived MTU,
      * mobile networks have high tunneling overhead.
      *
-     * About 95% of IPv4 TCP MSS I see are >= 1360.
-     * An IP MTU is 20 bytes larger.
-     * We let smaller MTUs fragment.
+     * As of July 2016, VPN traffic over Amtrak Acela wifi seems to be
+     * dropped if tunnelled packets are 1320 bytes or larger.  Use a
+     * 1280-byte IPv4 MTU for now.
+     *
+     * We may have to implement ICMP-less PMTUD (RFC 4821) eventually.
      */
-    static const int DEFAULT_IPV4_MTU = 1380;
+    static const int DEFAULT_IPV4_MTU = 1280;
     /* IPv6 MTU. Use the guaranteed minimum to avoid fragmentation. */
     static const int DEFAULT_IPV6_MTU = 1280;
 
