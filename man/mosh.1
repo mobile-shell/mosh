@@ -152,23 +152,32 @@ Only use IPv4 for the SSH connection and Mosh session.
 .TP
 .B \-\-family=inet6
 Only use IPv6 for the SSH connection and Mosh session.  This and the
-following two dual-stack modes require Perl's IO::Socket::IP or
-IO::Socket::INET6 modules.
-
-.TP
-.B \-\-family=all
-Choose an address from all available IPv4 or IPv6 address, even for
-dual-stack hosts.  This is the most convenient option, but requires
-dual-stack connectivity when roaming with dual-stack servers.  This is
-the default.
+following modes require Perl's IO::Socket::IP or IO::Socket::INET6
+modules.
 
 .TP
 .B \-\-family=auto
 Autodetect IPv4 or IPv6 for hosts that only have addresses
 in a single family.  Hosts with both IPv4 and IPv6 addresses will
 raise an error, and require re-invocation of \fBmosh\fP with another
-.B \-\-family
-option.
+\fB\-\-family\fP option.
+
+.TP
+.B \-\-family=all
+Choose an address from all available IPv4 or IPv6 address, even for
+dual-stack hosts.  This is the most convenient option, but requires
+dual-stack connectivity, and Mosh 1.2.5 or later on the server, when
+roaming with dual-stack servers.
+
+.TP
+.B \-\-family=prefer-inet
+Similar to \fB\-\-family=all\fP, but attempt connects to the IPv4
+addresses first.  This is the default.
+
+.TP
+.B \-\-family=prefer-inet6
+Similar to \fB\-\-family=all\fP, but attempt connects to the IPv6
+addresses first.
 
 .TP
 .B \-4
