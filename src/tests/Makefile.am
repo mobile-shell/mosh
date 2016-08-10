@@ -31,8 +31,8 @@ displaytests = \
 	unicode-later-combining.test \
 	window-resize.test
 
-check_PROGRAMS = ocb-aes encrypt-decrypt base64
-TESTS = ocb-aes encrypt-decrypt base64 $(displaytests)
+check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr
+TESTS = ocb-aes encrypt-decrypt base64 nonce-incr $(displaytests)
 XFAIL_TESTS = \
 	e2e-failure.test \
 	emulation-attributes-256color8.test
@@ -52,6 +52,10 @@ encrypt_decrypt_LDADD = ../crypto/libmoshcrypto.a ../util/libmoshutil.a $(CRYPTO
 base64_SOURCES = base64.cc base64_vector.cc base64_vector.h genbase64.pl
 base64_CPPFLAGS = $(ocb_aes_CPPFLAGS)
 base64_LDADD = $(ocb_aes_LDADD)
+
+nonce_incr_SOURCES = nonce-incr.cc
+nonce_incr_CPPFLAGS = -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../util $(CRYPTO_CFLAGS)
+nonce_incr_LDADD = ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a ../util/libmoshutil.a $(CRYPTO_LIBS)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check
