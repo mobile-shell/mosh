@@ -147,12 +147,12 @@ More info
 
   * `mosh-devel@mit.edu` mailing list:
 
-    <http://mailman.mit.edu/mailman/listinfo/mosh-devel>
+    <https://mailman.mit.edu/mailman/listinfo/mosh-devel>
 
   * `mosh-users@mit.edu` mailing list:
 
-    <http://mailman.mit.edu/mailman/listinfo/mosh-users>
+    <https://mailman.mit.edu/mailman/listinfo/mosh-users>
 
-  * `#mosh` channel on [Freenode IRC](http://freenode.net/)
+  * `#mosh` channel on [Freenode IRC](https://freenode.net/)
 
-    http://webchat.freenode.net/?channels=mosh
+    https://webchat.freenode.net/?channels=mosh
