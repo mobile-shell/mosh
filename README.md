@@ -59,7 +59,7 @@ Other features
 Getting Mosh
 ------------
 
-  [The Mosh web site](http://mosh.org/#getting) has information about
+  [The Mosh web site](https://mosh.org/#getting) has information about
   packages for many operating systems, as well as instructions for building
   from source.
 
@@ -84,8 +84,8 @@ Usage
   select alternate locations. More options are documented in the mosh(1) manual
   page.
 
-  There are [more examples](http://mosh.org/#usage) and a
-  [FAQ](http://mosh.org/#faq) on the Mosh web site.
+  There are [more examples](https://mosh.org/#usage) and a
+  [FAQ](https://mosh.org/#faq) on the Mosh web site.
 
 How it works
 ------------
@@ -143,7 +143,7 @@ More info
 
   * Mosh Web site:
 
-    <http://mosh.org>
+    <https://mosh.org>
 
   * `mosh-devel@mit.edu` mailing list:
 

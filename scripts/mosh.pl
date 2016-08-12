@@ -116,7 +116,7 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
         --version            version and copyright information
 
 Please report bugs to mosh-devel\@mit.edu.
-Mosh home page: http://mosh.org\n};
+Mosh home page: https://mosh.org\n};
 
 my $version_message = '@PACKAGE_STRING@ [build @VERSION@]' . qq{
 Copyright 2012 Keith Winstein <mosh-devel\@mit.edu>
