@@ -5,7 +5,7 @@ Summary:	Mobile shell that supports roaming and intelligent local echo
 
 License:	GPLv3+
 Group:		Applications/Internet
-URL:		http://mosh.mit.edu/
+URL:		http://mosh.org/
 Source0:	https://github.com/downloads/keithw/mosh/mosh-%{version}.tar.gz
 
 BuildRequires:	protobuf-compiler
