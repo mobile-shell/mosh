@@ -406,7 +406,15 @@ static int run_server( const char *desired_ip, const char *desired_port,
     network->set_verbose();
   }
 
-  printf( "\nMOSH CONNECT %s %s\n", network->port().c_str(), network->get_key().c_str() );
+  /*
+   * If mosh-server is run on a pty, then typeahead may echo and break mosh.pl's
+   * detection of the MOSH CONNECT message.  Print it on a new line to bodge
+   * around that.
+   */
+  if ( isatty( STDIN_FILENO ) ) {
+    puts( "\r\n" );
+  }
+  printf( "MOSH CONNECT %s %s\n", network->port().c_str(), network->get_key().c_str() );
 
   /* don't let signals kill us */
   struct sigaction sa;
