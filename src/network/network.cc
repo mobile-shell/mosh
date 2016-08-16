@@ -157,24 +157,22 @@ Connection::Socket::Socket( int family )
 
   /* Disable path MTU discovery */
 #ifdef HAVE_IP_MTU_DISCOVER
-  char flag = IP_PMTUDISC_DONT;
-  socklen_t optlen = sizeof( flag );
-  if ( setsockopt( _fd, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
+  int flag = IP_PMTUDISC_DONT;
+  if ( setsockopt( _fd, IPPROTO_IP, IP_MTU_DISCOVER, &flag, sizeof flag ) < 0 ) {
     throw NetworkException( "setsockopt", errno );
   }
 #endif
 
   //  int dscp = 0x92; /* OS X does not have IPTOS_DSCP_AF42 constant */
   int dscp = 0x02; /* ECN-capable transport only */
-  if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, sizeof (dscp)) < 0 ) {
+  if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, sizeof dscp ) < 0 ) {
     //    perror( "setsockopt( IP_TOS )" );
   }
 
   /* request explicit congestion notification on received datagrams */
 #ifdef HAVE_IP_RECVTOS
   int tosflag = true;
-  socklen_t tosoptlen = sizeof( tosflag );
-  if ( setsockopt( _fd, IPPROTO_IP, IP_RECVTOS, &tosflag, tosoptlen ) < 0 ) {
+  if ( setsockopt( _fd, IPPROTO_IP, IP_RECVTOS, &tosflag, sizeof tosflag ) < 0 ) {
     /* FreeBSD disallows this option on IPv6 sockets. */
     if ( family == IPPROTO_IP ) {
       perror( "setsockopt( IP_RECVTOS )" );
@@ -474,18 +472,18 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
   char msg_control[ Session::RECEIVE_MTU ];
 
   /* receive source address */
-  header.msg_name = &packet_remote_addr.sa;
-  header.msg_namelen = sizeof( packet_remote_addr );
+  header.msg_name = &packet_remote_addr;
+  header.msg_namelen = sizeof packet_remote_addr;
 
   /* receive payload */
   msg_iovec.iov_base = msg_payload;
-  msg_iovec.iov_len = Session::RECEIVE_MTU;
+  msg_iovec.iov_len = sizeof msg_payload;
   header.msg_iov = &msg_iovec;
   header.msg_iovlen = 1;
 
   /* receive explicit congestion notification */
   header.msg_control = msg_control;
-  header.msg_controllen = Session::RECEIVE_MTU;
+  header.msg_controllen = sizeof msg_control;
 
   /* receive flags */
   header.msg_flags = 0;
