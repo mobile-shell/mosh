@@ -30,4 +30,7 @@ script:
   - make distcheck VERBOSE=1
 
 notifications:
-  irc: "chat.freenode.net#mosh"
+  irc:
+    channels:
+      - "chat.freenode.net#mosh"
+    skip_join: true
