@@ -2,6 +2,7 @@
 /base64_vector.cc
 /ocb-aes
 /encrypt-decrypt
+/nonce-incr
 /*.d/
 *.log
 *.trs
