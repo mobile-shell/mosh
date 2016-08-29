@@ -115,7 +115,7 @@ AC_SUBST([HARDEN_CFLAGS])
 AC_SUBST([HARDEN_LDFLAGS])
 
 # Also check for a few non-hardening-related flags.
-MISC_CXXFLAGS=""
+MISC_CXXFLAGS="-std=c++11"
 AC_LANG_PUSH(C++)
 AX_CHECK_COMPILE_FLAG([-fno-default-inline],
   [MISC_CXXFLAGS="$MISC_CXXFLAGS -fno-default-inline"], [], [-Werror])
