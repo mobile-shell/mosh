@@ -194,8 +194,7 @@ namespace Terminal {
     void set_fallback( bool f ) { fallback = f; }
   };
 
-  class Row {
-  public:
+  struct Row {
     typedef std::vector<Cell> cells_type;
     cells_type cells;
     bool wrap; /* if last cell, wrap to next line */
