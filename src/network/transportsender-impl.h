@@ -93,13 +93,13 @@ void TransportSender<MyState>::calculate_timers( uint64_t now )
   /* Cut out common prefix of all states */
   rationalize_states();
 
-  uint64_t last_sended_state_timestamp = sent_states.back().timestamp;
+  uint64_t last_sent_state_timestamp = sent_states.back().timestamp;
 
   if ( pending_data_ack && (next_ack_time > now + ACK_DELAY) ) {
     next_ack_time = now + ACK_DELAY;
   } else if ( shutdown_in_progress || (ack_num == uint64_t(-1)) ) {
     /* speed up shutdown sequence */
-    next_ack_time = last_sended_state_timestamp + send_interval();
+    next_ack_time = last_sent_state_timestamp + send_interval();
   }
 
   if ( !(current_state == sent_states.back().state) ) {
@@ -108,16 +108,16 @@ void TransportSender<MyState>::calculate_timers( uint64_t now )
     }
 
     next_send_time = max( mindelay_clock + SEND_MINDELAY,
-			  last_sended_state_timestamp + send_interval() );
+              last_sent_state_timestamp + send_interval() );
   } else if ( (last_heard + ACTIVE_RETRY_TIMEOUT) > now ) {
     if ( !(current_state == assumed_receiver_state->state) ) {
       if ( mindelay_clock != uint64_t( -1 ) ) {
-        next_send_time = max( last_sended_state_timestamp + send_interval(), mindelay_clock + SEND_MINDELAY );
+        next_send_time = max( last_sent_state_timestamp + send_interval(), mindelay_clock + SEND_MINDELAY );
       } else {
-        next_send_time = last_sended_state_timestamp + send_interval();
+        next_send_time = last_sent_state_timestamp + send_interval();
       }
     } else if ( !(current_state == sent_states.front().state) ) {
-      next_send_time = last_sended_state_timestamp + connection->timeout() + ACK_DELAY;
+      next_send_time = last_sent_state_timestamp + connection->timeout() + ACK_DELAY;
     }
   } else {
     next_send_time = uint64_t(-1);
