@@ -223,16 +223,13 @@ namespace Terminal {
     uint64_t get_gen() const;
   };
 
-  class SavedCursor {
-  public:
-    int cursor_col, cursor_row;
-    Renditions renditions;
+  struct SavedCursor {
+    int cursor_col{0}, cursor_row{0};
+    Renditions renditions{0};
     /* not implemented: character set shift state */
-    bool auto_wrap_mode;
-    bool origin_mode;
+    bool auto_wrap_mode{true};
+    bool origin_mode{false};
     /* not implemented: state of selective erase */
-
-    SavedCursor();
   };
 
   class DrawState {

@@ -273,13 +273,6 @@ void Framebuffer::apply_renditions_to_cell( Cell *cell )
   cell->set_renditions( ds.get_renditions() );
 }
 
-SavedCursor::SavedCursor()
-  : cursor_col( 0 ), cursor_row( 0 ),
-    renditions( 0 ),
-    auto_wrap_mode( true ),
-    origin_mode( false )
-{}
-
 void DrawState::save_cursor( void )
 {
   save.cursor_col = cursor_col;
