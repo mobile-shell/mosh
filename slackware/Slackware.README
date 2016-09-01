@@ -1,0 +1,10 @@
+REQIURES:
+python-dateutil
+python-gflags
+protobuf
+perl-IO-Tty
+
+https://slackbuilds.org/repository/14.2/network/mosh/
+https://slackbuilds.org/slackbuilds/14.2/network/mosh/mosh.SlackBuild
+
+All of the requirements above have slackbuilds availble on https://slackbuilds.org
