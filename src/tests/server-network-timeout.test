@@ -68,7 +68,7 @@ baseline()
 	fail "mosh client is unexpectedly missing\n"
     fi
     # Set up for good return and cleanup on being killed
-    trap "echo got killed >&2; sleep 1; exit 0" SIGHUP SIGTERM
+    trap "echo got killed >&2; sleep 1; exit 0" HUP TERM
     sleep 1
     
     # Kill the client, to stop network traffic.
