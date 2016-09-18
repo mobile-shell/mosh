@@ -33,6 +33,7 @@
 #include "config.h"
 #include "version.h"
 
+#include <err.h>
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
@@ -562,6 +563,15 @@ static int run_server( const char *desired_ip, const char *desired_port,
     }
   } else {
     /* parent */
+
+    /* Drop unnecessary privileges */
+#ifdef HAVE_PLEDGE
+    /* OpenBSD pledge() syscall */
+    if ( pledge( "stdio inet ioctl tty", NULL )) {
+      perror( "pledge() failed" );
+      exit( 1 );
+    }
+#endif
 
 #ifdef HAVE_UTEMPTER
     /* make utmp entry */

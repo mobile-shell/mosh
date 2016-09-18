@@ -32,6 +32,7 @@
 
 #include "config.h"
 
+#include <err.h>
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
@@ -406,6 +407,15 @@ bool STMClient::main( void )
 {
   /* initialize signal handling and structures */
   main_init();
+
+  /* Drop unnecessary privileges */
+#ifdef HAVE_PLEDGE
+  /* OpenBSD pledge() syscall */
+  if ( pledge( "stdio inet ioctl tty", NULL )) {
+    perror( "pledge() failed" );
+    exit( 1 );
+  }
+#endif
 
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
