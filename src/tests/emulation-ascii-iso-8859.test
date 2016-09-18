@@ -23,6 +23,9 @@ baseline()
 
     # ASCII, then ISO-8859-1.
     for char in $(seq 32 126) $(seq 160 255) ; do
+	if [ $(( char % 16 )) -eq 0 ]; then
+	    printf '\n'
+	fi
 	printf '%02x ' $char
 	utf8cp $char
 	printf ' '
