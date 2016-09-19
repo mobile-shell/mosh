@@ -22,6 +22,7 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""
+DISTCHECK_CXXFLAGS=""
 AC_ARG_ENABLE([compile-warnings],
   [AS_HELP_STRING([--enable-compile-warnings@<:@=no/yes/maximum/error/distcheck@:>@],
      [Turn on compiler warnings])],
@@ -42,9 +43,12 @@ AC_ARG_ENABLE([compile-warnings],
      distcheck)
        WARNING_CXXFLAGS="-Wall -Werror"
        PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
-       if test "$(uname -s)" != Linux; then
-         PICKY_CXXFLAGS="${PICKY_CXXFLAGS} -Wno-error=unused-parameter"
-       fi
+       AC_LANG_PUSH(C++)
+       AX_CHECK_COMPILE_FLAG([-Wno-error=unused-parameter],
+         [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=unused-parameter"], [], [-Werror])
+       AX_CHECK_COMPILE_FLAG([-Wno-error=c++11-extensions],
+         [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=c++11-extensions"], [], [-Werror])
+       AC_LANG_POP(C++)
        ;;
      *)
        AC_MSG_ERROR([Unknown argument '$enableval' to --enable-compile-warnings])
