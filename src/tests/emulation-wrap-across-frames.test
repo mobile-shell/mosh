@@ -28,9 +28,9 @@ baseline()
 
     for x in $(seq 1 10); do
 	printf "abcdXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX1234"
-	sleep .1
+	sleepf
 	printf "ABCDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx5678"
-	sleep .1
+	sleepf
     done
     printf '\n'
 } 

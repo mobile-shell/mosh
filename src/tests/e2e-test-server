@@ -24,8 +24,21 @@ fi
 # run harnessed command
 eval "$@"
 testret=$?
-# Wait a bit for tmux screen to become up to date.
+# Wait for tmux client screen to become up to date.
 sleep 1
+printf "@@@ server complete @@@" >&2
+i=0
+while [ $i -lt 60 ]; do
+    if grep -q "@@@ server complete @@@" $testname.tmux.log; then
+	break
+    fi
+    i=$((i+1))
+    sleep 1
+done
+if [ $i -ge 60 ]; then
+    printf "wait for tmux client update failed, erroring test\n" >&2
+    exit 99
+fi
 # capture screen
 if ! tmux capture-pane -et $TMUX_PANE; then
     printf "tmux capture-pane failed, erroring test\n" >&2

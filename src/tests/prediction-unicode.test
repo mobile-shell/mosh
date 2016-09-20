@@ -37,7 +37,7 @@ tmux_commands()
 {
     for x in $(seq 1 5); do
 	for y in $(seq 1 5); do 
-	    for i in g l ü c k " " f a ĩ l " "; do
+	    for i in "gl" ü "ck fa" ĩ "l "; do
 		printf "send-keys '%s'\n" "$i"
 		sleepf
 	    done
@@ -47,7 +47,13 @@ tmux_commands()
     printf "send-keys 0x0d\n"
     sleep 1
     printf "send-keys 0x04\n"
-    sleep 10
+    # Unreliable on Cygwin under load, it seems.
+    sleep 1
+    printf "send-keys 0x04\n"
+    # This will get killed by SIGPIPE.
+    while sleep 1; do
+	printf "show-options\n"
+    done
 } 
 
 tmux_stdin()

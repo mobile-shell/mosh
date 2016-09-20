@@ -54,25 +54,3 @@ chr()
 {
     printf "\\$(printf %03o $1)"
 }
-
-utf8cp()
-{
-    if [ $1 -gt $((0x10ffff)) ]; then
-	fail "illegal Unicode code point %x\n" $1
-    elif [ $1 -lt $((0x80)) ]; then
-	chr $1
-    elif [ $1 -lt $((0x800)) ]; then
-	chr $(( (($1 >>  6) & 0x1f) | 0xc0 ))
-	chr $(( ($1 & 0x3f)         | 0x80 ))
-    elif [ $1 -lt $((0x10000)) ]; then
-	chr $(( (($1 >> 12) & 0x0f) | 0xe0 ))
-	chr $(( (($1 >>  6) & 0x3f) | 0x80 ))
-	chr $(( ($1 & 0x3f)         | 0x80 ))
-    elif [ $1 -lt $((0x200000)) ]; then
-	chr $(( (($1 >> 18) & 0x03) | 0xf0 ))
-	chr $(( (($1 >> 12) & 0x3f) | 0x80 ))
-	chr $(( (($1 >>  6) & 0x3f) | 0x80 ))
-	chr $(( ($1 & 0x3f)         | 0x80 ))
-    fi
-}
-
