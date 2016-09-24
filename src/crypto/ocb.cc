@@ -55,6 +55,7 @@
 /* This implementation has built-in support for multiple AES APIs. Set any
 /  one of the following to non-zero to specify which to use.               */
 #if 0
+#define USE_LIBGCRYPT_AES    0
 #define USE_APPLE_COMMON_CRYPTO_AES       0
 #define USE_NETTLE_AES       0
 #define USE_OPENSSL_AES      1  /* http://openssl.org                      */
@@ -612,6 +613,112 @@ static inline void AES_ecb_encrypt_blks(block *blks, unsigned nblks, AES_KEY *ke
 }
 static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
 	nettle_aes_decrypt(key, nblks * AES_BLOCK_SIZE, (unsigned char*)blks, (unsigned char*)blks);
+}
+
+#define BPI 4  /* Number of blocks in buffer per ECB call */
+
+/*-------------------*/
+#elif USE_LIBGCRYPT_AES
+/*-------------------*/
+
+#include <fatal_assert.h>
+#define GCRYPT_NO_MPI_MACROS 1
+#define GCRYPT_NO_DEPRECATED 1
+#include <gcrypt.h>
+
+typedef struct {
+	gcry_cipher_hd_t handle;
+	size_t keylen;
+} AES_KEY;
+
+#if (OCB_KEY_LEN == 0)
+#define ROUNDS(ctx) ((ctx)->rounds)
+#else
+#define ROUNDS(ctx) (6+OCB_KEY_LEN/4)
+#endif
+
+const static int do_debug = 0;
+
+static void ae_gcrypt_fail(const char *function, int line, gcry_error_t rv)
+{
+	if (do_debug && rv) {
+		fprintf (stderr, "%s:%d: Failure: %s/%s\n",
+			 function,
+			 line,
+			 gcry_strsource (rv),
+			 gcry_strerror (rv));
+	}
+	fatal_assert(rv == 0);
+}
+
+static bool AES_gcrypt_initialized = false;
+static void AES_gcrypt_init() {
+	if (AES_gcrypt_initialized) {
+		return;
+	}
+	/* Version check should be the very first call because it
+	   makes sure that important subsystems are initialized. */
+	if (!gcry_check_version (GCRYPT_VERSION))
+	{
+		fputs ("libgcrypt version mismatch\n", stderr);
+		exit (2);
+	}
+
+	/* Allocate a pool of 16k secure memory.  This make the secure memory
+	   available and also drops privileges where needed.  */
+	gcry_control (GCRYCTL_INIT_SECMEM, 16384, 0);
+
+	/* Tell Libgcrypt that initialization has completed. */
+	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+
+	AES_gcrypt_initialized = true;
+}
+
+static inline void AES_set_encrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	AES_gcrypt_init();
+	/* Use AES. */
+	gcry_error_t rv = gcry_cipher_open(&key->handle, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	key->keylen = gcry_cipher_get_algo_blklen(GCRY_CIPHER_AES);
+	fatal_assert(key->keylen == bits/8);
+	rv = gcry_cipher_setkey(key->handle, handle, bits/8);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+}
+static inline void AES_set_decrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	return AES_set_encrypt_key(handle, bits, key);
+}
+static inline void AES_encrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	size_t srclen = key->keylen;
+	if (src == dst) {
+		src = NULL;
+		srclen = 0;
+	}
+	gcry_error_t rv = gcry_cipher_encrypt(key->handle, dst, key->keylen, src, srclen);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+}
+#if 0
+/* unused */
+static inline void AES_decrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	size_t srclen = key->keylen;
+	if (src == dst) {
+		src = NULL;
+		srclen = 0;
+	}
+	gcry_error_t rv = gcry_cipher_decrypt(key->handle, dst, key->keylen, src, srclen);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+}
+#endif
+static inline void AES_ecb_encrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	gcry_error_t rv = gcry_cipher_encrypt(key->handle, (unsigned char *)blks, nblks * key->keylen,
+					      NULL, 0);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+}
+static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	gcry_error_t rv = gcry_cipher_decrypt(key->handle, (unsigned char *)blks, nblks * key->keylen,
+					      NULL, 0);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
 }
 
 #define BPI 4  /* Number of blocks in buffer per ECB call */

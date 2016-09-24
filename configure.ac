@@ -309,10 +309,10 @@ AC_CHECK_HEADERS([CommonCrypto/CommonCrypto.h],
 dnl Allow user to select over the default.
 AC_ARG_WITH(
   [crypto-library],
-  [AS_HELP_STRING([--with-crypto-library=library], [build with the given crypto library, TYPE=openssl|nettle|apple-common-crypto @<:@default=openssl@:>@])],
+  [AS_HELP_STRING([--with-crypto-library=library], [build with the given crypto library, TYPE=openssl|nettle|apple-common-crypto|libgcrypt @<:@default=openssl@:>@])],
   [
     case "${withval}" in
-      openssl|nettle|apple-common-crypto) ;;
+      openssl|nettle|apple-common-crypto|libgcrypt) ;;
       *) AC_MSG_ERROR([bad value ${withval} for --with-crypto-library]) ;;
     esac
   ],
@@ -344,6 +344,16 @@ case "${with_crypto_library}" in
       [AC_MSG_ERROR([Apple Common Crypto header not found])])
     AC_DEFINE([USE_APPLE_COMMON_CRYPTO_AES], [1], [Use Apple Common Crypto library])
     ;;
+  libgcrypt)
+    AC_CHECK_PROG([LIBGCRYPT_CONFIG], [libgcrypt-config], [yes], [no],,)
+    AS_IF([test x"$LIBGCRYPT_CONFIG" = x],
+      [AC_MSG_ERROR([cannot find libgcrypt-config])])
+    CRYPTO_LIBS=`libgcrypt-config --libs`
+    CRYPTO_CFLAGS=`libgcrypt-config --cflags`
+    AC_DEFINE([USE_LIBGCRYPT_AES], [1], [Use gcrypt library])
+    ;;
+  *)
+    AC_MSG_ERROR([Unknown crypto library])
 esac
 
 AC_ARG_WITH(
