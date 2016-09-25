@@ -381,6 +381,15 @@ AC_ARG_WITH(
 	    [AC_MSG_ERROR([--with-external-ocb was given but OCB implementation was not found in OpenSSL.])])],
 	  [[#include <openssl/evp.h>]])
 	;;
+	libgcrypt)
+	AC_CHECK_DECL([GCRY_CIPHER_MODE_OCB],
+	  [AC_DEFINE([HAVE_LIBGCRYPT_OCB], [1],
+	     [Define if the OCB AE algorithm is available in libgcrypt.])],
+	  [AS_IF([test x"$with_external_ocb" = xcheck],
+	    [AC_MSG_WARN([Unable to find OCB in libgcrypt.])],
+	    [AC_MSG_ERROR([--with-external-ocb was given but OCB implementation was not found in libgcrypt.])])],
+	  [[#include <gcrypt.h>]])
+	;;
 	*)
 	  AS_IF([test x"$with_external_ocb" = xcheck],
 	   [AC_MSG_WARN([OCB unavailable in selected crypto library.])],
