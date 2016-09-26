@@ -45,6 +45,10 @@
 /* Set the AES key length to use and length of authentication tag to produce.
 /  Setting either to 0 requires the value be set at runtime via ae_init().
 /  Some optimizations occur for each when set to a fixed value.            */
+/*
+ * These values were adjustable in the original Rogaway/Krovetz code,
+ * but not in Mosh.
+ */
 #define OCB_KEY_LEN         16  /* 0, 16, 24 or 32. 0 means set in ae_init */
 #define OCB_TAG_LEN         16  /* 0 to 16. 0 means set in ae_init         */
 
