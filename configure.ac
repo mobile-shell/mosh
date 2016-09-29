@@ -180,6 +180,8 @@ AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 AC_SEARCH_LIBS([socket], [socket])
 AC_SEARCH_LIBS([inet_addr], [nsl])
 
+AC_SEARCH_LIBS([clock_gettime], [rt])
+
 # Checks for header files.
 AC_CHECK_HEADERS(m4_normalize([
   fcntl.h
@@ -255,8 +257,6 @@ AC_CHECK_FUNCS(m4_normalize([
   getnameinfo
   pledge
   ]))
-
-AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
 # Start by trying to find the needed tinfo parts by pkg-config
 PKG_CHECK_MODULES([TINFO], [tinfo],
@@ -403,6 +403,15 @@ public:
    AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])])
 AC_LANG_POP(C++)
+
+AC_MSG_CHECKING([whether clock_gettime() is supported])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <time.h>
+struct timespec ts;
+]], [[return clock_gettime(CLOCK_MONOTONIC, &ts);]])],
+  [AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+     [Define if clock_gettime() is available.])
+   AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])])
 
 AC_CHECK_DECL([mach_absolute_time],
   [AC_DEFINE([HAVE_MACH_ABSOLUTE_TIME], [1],
