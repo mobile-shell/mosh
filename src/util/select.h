@@ -63,6 +63,7 @@ private:
     , all_fds( dummy_fd_set )
     , read_fds( dummy_fd_set )
     , empty_sigset( dummy_sigset )
+    , consecutive_polls( 0 )
   {
     FD_ZERO( &all_fds );
     FD_ZERO( &read_fds );
@@ -119,6 +120,19 @@ public:
   {
     memcpy( &read_fds,  &all_fds, sizeof( read_fds  ) );
     clear_got_signal();
+
+    /* Rate-limit and warn about polls. */
+    if ( timeout == 0 && ++consecutive_polls >= MAX_POLLS ) {
+      if ( consecutive_polls == MAX_POLLS ) {
+	fprintf( stderr, "%s: got %d polls, rate limiting.\n", __func__, MAX_POLLS );
+      }
+      timeout = 1;
+    } else if ( timeout != 0 && consecutive_polls ) {
+      if ( consecutive_polls >= MAX_POLLS ) {
+	fprintf( stderr, "%s: got %d consecutive polls\n", __func__, consecutive_polls );
+      }
+      consecutive_polls = 0;
+    }
 
 #ifdef HAVE_PSELECT
     struct timespec ts;
@@ -200,6 +214,9 @@ public:
 
 private:
   static const int MAX_SIGNAL_NUMBER = 64;
+  /* Number of 0-timeout selects after which we begin to think
+   * something's wrong. */
+  static const int MAX_POLLS = 10;
 
   static void handle_signal( int signum );
 
@@ -215,6 +232,7 @@ private:
 
   static fd_set dummy_fd_set;
   static sigset_t dummy_sigset;
+  int consecutive_polls;
 };
 
 #endif
