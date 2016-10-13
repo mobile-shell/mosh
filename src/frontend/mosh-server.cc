@@ -33,6 +33,7 @@
 #include "config.h"
 #include "version.h"
 
+#include <err.h>
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
@@ -396,8 +397,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ||
        window_size.ws_col == 0 ||
        window_size.ws_row == 0 ) {
-    fprintf( stderr, "Server started without pseudo-terminal. Opening 80x24 terminal.\n" );
-
     /* Fill in sensible defaults. */
     /* They will be overwritten by client on first connection. */
     memset( &window_size, 0, sizeof( window_size ) );
@@ -416,8 +415,15 @@ static int run_server( const char *desired_ip, const char *desired_port,
     network->set_verbose();
   }
 
-  printf( "\nMOSH CONNECT %s %s\n", network->port().c_str(), network->get_key().c_str() );
-  fflush( stdout );
+  /*
+   * If mosh-server is run on a pty, then typeahead may echo and break mosh.pl's
+   * detection of the MOSH CONNECT message.  Print it on a new line to bodge
+   * around that.
+   */
+  if ( isatty( STDIN_FILENO ) ) {
+    puts( "\r\n" );
+  }
+  printf( "MOSH CONNECT %s %s\n", network->port().c_str(), network->get_key().c_str() );
 
   /* don't let signals kill us */
   struct sigaction sa;
@@ -429,18 +435,31 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
 
   /* detach from terminal */
+  fflush( stdout );
+  fflush( stderr );
   pid_t the_pid = fork();
   if ( the_pid < 0 ) {
     perror( "fork" );
   } else if ( the_pid > 0 ) {
+    fprintf( stderr, "\nmosh-server (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
+    fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
+    fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
+
+    fprintf( stderr, "[mosh-server detached, pid = %d]\n", static_cast<int>(the_pid) );
+#ifndef HAVE_IUTF8
+    fprintf( stderr, "\nWarning: termios IUTF8 flag not defined.\nCharacter-erase of multibyte character sequence\nprobably does not work properly on this platform.\n" );
+#endif /* HAVE_IUTF8 */
+
+    fflush( stdout );
+    fflush( stderr );
+    if ( isatty( STDOUT_FILENO ) ) {
+      tcdrain( STDOUT_FILENO );
+    }
+    if ( isatty( STDERR_FILENO ) ) {
+      tcdrain( STDERR_FILENO );
+    }
     _exit( 0 );
   }
-
-  fprintf( stderr, "\nmosh-server (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
-  fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
-  fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
-
-  fprintf( stderr, "[mosh-server detached, pid = %d]\n", (int)getpid() );
 
   /* initialize agent listener if requested */
   Agent::ProxyAgent agent( true, ! with_agent_fwd );
@@ -450,10 +469,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
   }
 
   int master;
-
-#ifndef HAVE_IUTF8
-  fprintf( stderr, "\nWarning: termios IUTF8 flag not defined.\nCharacter-erase of multibyte character sequence\nprobably does not work properly on this platform.\n" );
-#endif /* HAVE_IUTF8 */
 
   /* close file descriptors */
   if ( !verbose ) {
@@ -571,6 +586,15 @@ static int run_server( const char *desired_ip, const char *desired_port,
     }
   } else {
     /* parent */
+
+    /* Drop unnecessary privileges */
+#ifdef HAVE_PLEDGE
+    /* OpenBSD pledge() syscall */
+    if ( pledge( "stdio inet ioctl tty", NULL )) {
+      perror( "pledge() failed" );
+      exit( 1 );
+    }
+#endif
 
 #ifdef HAVE_UTEMPTER
     /* make utmp entry */

@@ -22,6 +22,7 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""
+DISTCHECK_CXXFLAGS=""
 AC_ARG_ENABLE([compile-warnings],
   [AS_HELP_STRING([--enable-compile-warnings@<:@=no/yes/maximum/error/distcheck@:>@],
      [Turn on compiler warnings])],
@@ -42,9 +43,12 @@ AC_ARG_ENABLE([compile-warnings],
      distcheck)
        WARNING_CXXFLAGS="-Wall -Werror"
        PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
-       if test "$(uname -s)" != Linux; then
-         PICKY_CXXFLAGS="${PICKY_CXXFLAGS} -Wno-error=unused-parameter"
-       fi
+       AC_LANG_PUSH(C++)
+       AX_CHECK_COMPILE_FLAG([-Wno-error=unused-parameter],
+         [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=unused-parameter"], [], [-Werror])
+       AX_CHECK_COMPILE_FLAG([-Wno-error=c++11-extensions],
+         [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=c++11-extensions"], [], [-Werror])
+       AC_LANG_POP(C++)
        ;;
      *)
        AC_MSG_ERROR([Unknown argument '$enableval' to --enable-compile-warnings])
@@ -183,6 +187,8 @@ AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 AC_SEARCH_LIBS([socket], [socket])
 AC_SEARCH_LIBS([inet_addr], [nsl])
 
+AC_SEARCH_LIBS([clock_gettime], [rt])
+
 # Checks for header files.
 AC_CHECK_HEADERS(m4_normalize([
   errno.h
@@ -259,9 +265,8 @@ AC_CHECK_FUNCS(m4_normalize([
   pselect
   getaddrinfo
   getnameinfo
+  pledge
   ]))
-
-AC_SEARCH_LIBS([clock_gettime], [rt], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if clock_gettime is available.])])
 
 # Start by trying to find the needed tinfo parts by pkg-config
 PKG_CHECK_MODULES([TINFO], [tinfo],
@@ -288,7 +293,7 @@ if test "x$ax_cv_have_TINFO" = xno ; then
     old_LDFLAGS="$LDFLAGS"
     old_CPPFLAGS="$CPPFLAGS"
     LDFLAGS="$LDFLAGS $CURSES_LDFLAGS"
-    CPPFLAGS="$LDFLAGS $CURSES_CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $CURSES_CPPFLAGS"
 
     AX_WITH_CURSES
     # restore old LDFLAGS/CPPFLAGS
@@ -408,6 +413,15 @@ public:
    AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])])
 AC_LANG_POP(C++)
+
+AC_MSG_CHECKING([whether clock_gettime() is supported])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <time.h>
+struct timespec ts;
+]], [[return clock_gettime(CLOCK_MONOTONIC, &ts);]])],
+  [AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+     [Define if clock_gettime() is available.])
+   AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])])
 
 AC_CHECK_DECL([mach_absolute_time],
   [AC_DEFINE([HAVE_MACH_ABSOLUTE_TIME], [1],

@@ -390,7 +390,7 @@ static inline void AES_set_encrypt_key(unsigned char *handle, const int bits, AE
 {
 	CCCryptorStatus rv = CCCryptorCreateFromData(
 		kCCEncrypt,
-		kCCAlgorithmAES,
+		kCCAlgorithmAES128,
 		kCCOptionECBMode,
 		handle,
 		bits / 8,
@@ -406,7 +406,7 @@ static inline void AES_set_decrypt_key(unsigned char *handle, const int bits, AE
 {
 	CCCryptorStatus rv = CCCryptorCreateFromData(
 		kCCDecrypt,
-		kCCAlgorithmAES,
+		kCCAlgorithmAES128,
 		kCCOptionECBMode,
 		handle,
 		bits / 8,

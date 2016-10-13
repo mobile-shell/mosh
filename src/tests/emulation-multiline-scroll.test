@@ -32,7 +32,7 @@ baseline()
 	    # delays so that each iteration percolates to the client
 	    # by itself.  On the other hand, that makes the test take
 	    # a long time.  Compromise on .1 second.
-	    (sleep .1 || sleep 1) > /dev/null 2>&1
+	    sleepf
 	done
     done
 }

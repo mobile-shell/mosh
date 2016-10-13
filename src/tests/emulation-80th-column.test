@@ -24,6 +24,8 @@ fi
 baseline()
 {
     # We need to control CR and LF individually for this test.
+    TERMIO=$(stty -g)
+    trap "stty $TERMIO" EXIT
     stty raw
     printf '\033[H\033[J'
     for lines in $(seq 1 25); do

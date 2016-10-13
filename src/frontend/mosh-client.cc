@@ -196,7 +196,7 @@ int main( int argc, char *argv[] )
     success = false;
   }
 
-  printf( "\n[mosh is exiting.]\n" );
+  printf( "[mosh is exiting.]\n" );
 
   free( key );
 

@@ -25,18 +25,19 @@ tmux_commands()
     # Start test...
     sleep 2
     printf "send-keys 0x0d\n"
-    sleep 1
+    sleep 5
     # Stop output...
     printf "send-keys 0x13\n"
-    sleep 2
+    sleep 10
     # Restart output...
     printf "send-keys 0x11\n"
-    sleep 2
+    sleep 10
     # And stop the test script, so it produces its exit messge.
     printf "send-keys 0x0d\n"
-    # need to sleep extra long here, to let child commands complete
-    # and buffers drain, and not have tmux exit prematurely
-    sleep 10
+    # This will get killed by SIGPIPE.
+    while sleep 1; do
+	printf "show-options\n"
+    done
 }
 
 tmux_stdin()
@@ -49,12 +50,15 @@ baseline()
 {
     # Make a lot of noise on stdout to keep mosh busy, and exit
     # with a distinctive message when we get a CR.  Exit after 10s in any case.
+    blat=$(for i in $(seq 1 100); do
+	       printf 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz\n'
+	   done)
     read x
     while true; do
-	printf 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz\n'
+	printf "$blat"
     done &
     printpid=$!
-    (sleep 30; kill $$ $printpid) &
+    (sleep 120; kill $$ $printpid) &
     killpid=$!
     read x
     kill $printpid

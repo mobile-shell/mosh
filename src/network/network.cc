@@ -157,24 +157,22 @@ Connection::Socket::Socket( int family )
 
   /* Disable path MTU discovery */
 #ifdef HAVE_IP_MTU_DISCOVER
-  char flag = IP_PMTUDISC_DONT;
-  socklen_t optlen = sizeof( flag );
-  if ( setsockopt( _fd, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
+  int flag = IP_PMTUDISC_DONT;
+  if ( setsockopt( _fd, IPPROTO_IP, IP_MTU_DISCOVER, &flag, sizeof flag ) < 0 ) {
     throw NetworkException( "setsockopt", errno );
   }
 #endif
 
   //  int dscp = 0x92; /* OS X does not have IPTOS_DSCP_AF42 constant */
   int dscp = 0x02; /* ECN-capable transport only */
-  if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, sizeof (dscp)) < 0 ) {
+  if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, sizeof dscp ) < 0 ) {
     //    perror( "setsockopt( IP_TOS )" );
   }
 
   /* request explicit congestion notification on received datagrams */
 #ifdef HAVE_IP_RECVTOS
   int tosflag = true;
-  socklen_t tosoptlen = sizeof( tosflag );
-  if ( setsockopt( _fd, IPPROTO_IP, IP_RECVTOS, &tosflag, tosoptlen ) < 0 ) {
+  if ( setsockopt( _fd, IPPROTO_IP, IP_RECVTOS, &tosflag, sizeof tosflag ) < 0 ) {
     /* FreeBSD disallows this option on IPv6 sockets. */
     if ( family == IPPROTO_IP ) {
       perror( "setsockopt( IP_RECVTOS )" );
@@ -263,8 +261,8 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
      try INADDR_ANY. If a port request is given, we bind only to that port. */
 
   /* convert port numbers */
-  int desired_port_low = 0;
-  int desired_port_high = 0;
+  int desired_port_low = -1;
+  int desired_port_high = -1;
 
   if ( desired_port && !parse_portrange( desired_port, desired_port_low, desired_port_high ) ) {
     throw NetworkException("Invalid port range", 0);
@@ -309,10 +307,10 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
 
   int search_low = PORT_RANGE_LOW, search_high = PORT_RANGE_HIGH;
 
-  if ( port_low != 0 ) { /* low port preference */
+  if ( port_low != -1 ) { /* low port preference */
     search_low = port_low;
   }
-  if ( port_high != 0 ) { /* high port preference */
+  if ( port_high != -1 ) { /* high port preference */
     search_high = port_high;
   }
 
@@ -474,18 +472,18 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
   char msg_control[ Session::RECEIVE_MTU ];
 
   /* receive source address */
-  header.msg_name = &packet_remote_addr.sa;
-  header.msg_namelen = sizeof( packet_remote_addr );
+  header.msg_name = &packet_remote_addr;
+  header.msg_namelen = sizeof packet_remote_addr;
 
   /* receive payload */
   msg_iovec.iov_base = msg_payload;
-  msg_iovec.iov_len = Session::RECEIVE_MTU;
+  msg_iovec.iov_len = sizeof msg_payload;
   header.msg_iov = &msg_iovec;
   header.msg_iovlen = 1;
 
   /* receive explicit congestion notification */
   header.msg_control = msg_control;
-  header.msg_controllen = Session::RECEIVE_MTU;
+  header.msg_controllen = sizeof msg_control;
 
   /* receive flags */
   header.msg_flags = 0;
@@ -690,7 +688,6 @@ bool Connection::parse_portrange( const char * desired_port, int & desired_port_
     desired_port_high = desired_port_low;
     return true;
   }
-
   /* port range; parse high port */
   const char * cp = end + 1;
   errno = 0;
@@ -709,6 +706,12 @@ bool Connection::parse_portrange( const char * desired_port, int & desired_port_
     fprintf( stderr, "Low port %d greater than high port %d\n", desired_port_low, desired_port_high );
     return false;
   }
+
+  if ( desired_port_low == 0 ) {
+    fprintf( stderr, "Low port 0 incompatible with port ranges\n" );
+    return false;
+  }
+
 
   return true;
 }

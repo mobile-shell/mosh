@@ -35,6 +35,10 @@ client()
 	    fail "unexpected test name %s\n" "$myname"
     esac
     shift
+    # Print this early, because the server is expected to die before
+    # the normal time this is sent by e2e-test-server.
+    printf "@@@ server complete @@@\n" >&2
+    # Run mosh SUT.
     eval "$@"
     # The client may be murdered.  We need to expect that...
     retval=$?
@@ -67,8 +71,9 @@ baseline()
     if ! kill -0 $MOSH_CLIENT_PID; then
 	fail "mosh client is unexpectedly missing\n"
     fi
+
     # Set up for good return and cleanup on being killed
-    trap "echo got killed >&2; sleep 1; exit 0" SIGHUP SIGTERM
+    trap "echo got killed >&2; sleep 1; exit 0" HUP TERM
     sleep 1
     
     # Kill the client, to stop network traffic.
@@ -91,6 +96,7 @@ baseline()
     # If we're still alive and the server is too, the test failed.
     # XXX the server is getting killed and we're getting here anyway.
     # Exit with error only if server is still around.
+    sleep 1
     ! kill -0 $MOSH_SERVER_PID
     exit
 }

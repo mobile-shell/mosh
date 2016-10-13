@@ -17,6 +17,17 @@ if ($? == 0) {
 } else {
     $rc = ($? & 127) | 128;
 }
-print STDERR "%%% exitstatus: ${rc} %%%\n";
-sleep 1;
+print STDERR "@@@ exitstatus: ${rc} @@@\n";
+# Now look for it in log file.
+my $grepfilename = $ENV{'MOSH_E2E_TEST'} . ".tmux.log";
+for my $i (1..600) {
+    open(my $grepfile, "<", $grepfilename) or die;
+    while (<$grepfile>) {
+	chomp;
+	/@@@ exitstatus: .* @@@/ && goto gotit;
+    }
+    close($grepfile);
+    sleep .1;
+}
+ gotit:
 exit $rc;

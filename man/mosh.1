@@ -120,6 +120,12 @@ Enable ssh authentication agent forwarding. If you use this, please be
 aware of the security implications.
 
 .TP
+.B \-\-ssh-pty\fP
+.B \-\-no-ssh-pty\fP
+Enable or disable ssh's use of a pty when connecting to a remote host.
+The default is enabled.
+
+.TP
 .B \-\-predict=\fIWHEN\fP
 Controls use of speculative local echo. WHEN defaults to `adaptive'
 (show predictions on slower links and to smooth out network glitches)
@@ -134,12 +140,12 @@ of the terminal has been confirmed by the server, without any
 intervening control character keystrokes.
 
 .TP
-.B \-A
-Synonym for \-\-forward-agent
-
-.TP
 .B \-a
 Synonym for \-\-predict=always
+
+.TP
+.B \-A
+Synonym for \-\-forward-agent
 
 .TP
 .B \-n
@@ -192,8 +198,11 @@ Synonym for \-\-family=inet6
 Use a particular server-side UDP port or port range,
 for example, if this is the
 only port that is forwarded through a firewall to the
-server. Otherwise, \fBmosh\fP will choose a port between 60000 and
+server. With \fB\-p 0\fP, the server will let the operating system pick an
+available UDP port. Otherwise, \fBmosh\fP will choose a port between 60000 and
 61000.
+
+
 
 .TP
 .B \-\-bind\-server={ssh|any|\fIIP\fP}
