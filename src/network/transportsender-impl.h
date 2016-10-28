@@ -187,11 +187,16 @@ void TransportSender<MyState>::tick( void )
     }
   }
 
-  if ( diff.empty() && (now >= next_ack_time) ) {
-    send_empty_ack();
-    mindelay_clock = uint64_t( -1 );
-  } else if ( !diff.empty() && ( (now >= next_send_time)
-			  || (now >= next_ack_time) ) ) {
+  if ( diff.empty() ) {
+    if ( (now >= next_ack_time) ) {
+      send_empty_ack();
+      mindelay_clock = uint64_t( -1 );
+    }
+    if ( (now >= next_send_time) ) {
+      next_send_time = uint64_t( -1 );
+      mindelay_clock = uint64_t( -1 );
+    }
+  } else if ( (now >= next_send_time) || (now >= next_ack_time) ) {
     /* Send diffs or ack */
     send_to_receiver( diff );
     mindelay_clock = uint64_t( -1 );
