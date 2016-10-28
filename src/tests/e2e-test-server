@@ -24,6 +24,11 @@ fi
 # run harnessed command
 eval "$@"
 testret=$?
+# Capture mosh-server runtime if possible.
+runtime=$(ps -o time= $PPID)
+if [ $? -ne 0 ]; then # Cygwin...
+    runtime=-
+fi
 # Wait for tmux client screen to become up to date.
 sleep 1
 printf "@@@ server complete @@@" >&2
@@ -48,6 +53,8 @@ if ! tmux save-buffer $testname.capture; then
     printf "tmux save-buffer failed, erroring test\n" >&2
     exit 99
 fi
+# Dump runtime into tmux log.
+printf "@@@ runtime %s @@@\n" "$runtime"
 # return useful exitstatus from harnessed command
 if [ $testret -ne 0 ]; then
     exit 1
