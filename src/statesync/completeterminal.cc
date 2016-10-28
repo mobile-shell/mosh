@@ -142,7 +142,7 @@ bool Complete::set_echo_ack( uint64_t now )
   for ( input_history_type::const_iterator i = input_history.begin();
         i != input_history.end();
         i++ ) {
-    if ( i->second < now - ECHO_TIMEOUT ) {
+    if ( i->second <= now - ECHO_TIMEOUT ) {
       newest_echo_ack = i->first;
     }
   }
