@@ -66,6 +66,7 @@ private:
   std::wstring connecting_notification;
   bool repaint_requested, lf_entered, quit_sequence_started;
   bool clean_shutdown;
+  unsigned int verbose;
 
   void main_init( void );
   void process_network_input( void );
@@ -83,7 +84,7 @@ private:
   void resume( void ); /* restore state after SIGCONT */
 
 public:
-  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode )
+  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, unsigned int s_verbose )
     : ip( s_ip ? s_ip : "" ), port( s_port ? s_port : "" ),
     key( s_key ? s_key : "" ),
     escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
@@ -99,7 +100,8 @@ public:
       repaint_requested( false ),
       lf_entered( false ),
       quit_sequence_started( false ),
-      clean_shutdown( false )
+      clean_shutdown( false ),
+      verbose( s_verbose )
   {
     if ( predict_mode ) {
       if ( !strcmp( predict_mode, "always" ) ) {

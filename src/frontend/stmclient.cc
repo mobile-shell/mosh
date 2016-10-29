@@ -255,6 +255,10 @@ void STMClient::main_init( void )
 
   /* tell server the size of the terminal */
   network->get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
+
+  /* be noisy as necessary */
+  network->set_verbose( verbose );
+  Select::set_verbose( verbose );
 }
 
 void STMClient::output_new_frame( void )

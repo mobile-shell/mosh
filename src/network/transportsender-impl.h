@@ -56,7 +56,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     fragmenter(),
     next_ack_time( timestamp() ),
     next_send_time( timestamp() ),
-    verbose( false ),
+    verbose( 0 ),
     shutdown_in_progress( false ),
     shutdown_tries( 0 ),
     shutdown_start( -1 ),

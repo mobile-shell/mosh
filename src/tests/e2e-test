@@ -102,7 +102,7 @@ mosh_server()
 	test_error "mosh_server: variables missing\n"
     fi
     exec 2> "${MOSH_E2E_TEST}.server.stderr"
-    exec "$MOSH_SERVER" new -v $MOSH_SERVER_ARGS -@ "$@"
+    exec "$MOSH_SERVER" new -vv $MOSH_SERVER_ARGS -@ "$@"
 }
 
 # main

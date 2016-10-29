@@ -99,6 +99,7 @@ int mosh_main( int argc, char *argv[] )
 int main( int argc, char *argv[] )
 #endif
 {
+  unsigned int verbose = 0;
   /* For security, make sure we don't dump core */
   Crypto::disable_dumping_core();
 
@@ -107,7 +108,7 @@ int main( int argc, char *argv[] )
 
   /* Get arguments */
   int opt;
-  while ( (opt = getopt( argc, argv, "#:c" )) != -1 ) {
+  while ( (opt = getopt( argc, argv, "#:cv" )) != -1 ) {
     switch ( opt ) {
     case '#':
       // Ignore the original arguments to mosh wrapper
@@ -115,6 +116,9 @@ int main( int argc, char *argv[] )
     case 'c':
       print_colorcount();
       exit( 0 );
+      break;
+    case 'v':
+      verbose++;
       break;
     default:
       usage( argv[ 0 ] );
@@ -168,7 +172,7 @@ int main( int argc, char *argv[] )
 
   bool success = false;
   try {
-    STMClient client( ip, desired_port, key, predict_mode );
+    STMClient client( ip, desired_port, key, predict_mode, verbose );
     client.init();
 
     try {
