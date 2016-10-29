@@ -25,7 +25,7 @@ fi
 eval "$@"
 testret=$?
 # Capture mosh-server runtime if possible.
-runtime=$(ps -o time= $PPID)
+runtime=$(ps -o time= $PPID 2>/dev/null)
 if [ $? -ne 0 ]; then # Cygwin...
     runtime=-
 fi
