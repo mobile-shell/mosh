@@ -102,7 +102,7 @@ static void serve( int host_fd,
 
 static int run_server( const char *desired_ip, const char *desired_port,
 		       const string &command_path, char *command_argv[],
-		       const int colors, bool verbose, bool with_motd );
+		       const int colors, unsigned int verbose, bool with_motd );
 
 using namespace std;
 
@@ -171,7 +171,7 @@ int main( int argc, char *argv[] )
   string command_path;
   char **command_argv = NULL;
   int colors = 0;
-  bool verbose = false; /* don't close stdin/stdout/stderr */
+  unsigned int verbose = 0; /* don't close stdin/stdout/stderr */
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
   list<string> locale_vars;
 
@@ -231,7 +231,7 @@ int main( int argc, char *argv[] )
 	}
 	break;
       case 'v':
-	verbose = true;
+	verbose++;
 	break;
       case 'l':
 	locale_vars.push_back( string( optarg ) );
@@ -355,7 +355,7 @@ int main( int argc, char *argv[] )
 
 static int run_server( const char *desired_ip, const char *desired_port,
 		       const string &command_path, char *command_argv[],
-		       const int colors, bool verbose, bool with_motd ) {
+		       const int colors, unsigned int verbose, bool with_motd ) {
   /* get network idle timeout */
   long network_timeout = 0;
   char *timeout_envar = getenv( "MOSH_SERVER_NETWORK_TMOUT" );
@@ -403,9 +403,8 @@ static int run_server( const char *desired_ip, const char *desired_port,
   Network::UserStream blank;
   ServerConnection *network = new ServerConnection( terminal, blank, desired_ip, desired_port );
 
-  if ( verbose ) {
-    network->set_verbose();
-  }
+  network->set_verbose( verbose );
+  Select::set_verbose( verbose );
 
   /*
    * If mosh-server is run on a pty, then typeahead may echo and break mosh.pl's
@@ -456,7 +455,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
   int master;
 
   /* close file descriptors */
-  if ( !verbose ) {
+  if ( verbose == 0 ) {
     /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
     int nullfd;
 

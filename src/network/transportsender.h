@@ -91,7 +91,7 @@ namespace Network {
 
     void calculate_timers( void );
 
-    bool verbose;
+    unsigned int verbose;
     bool shutdown_in_progress;
     int shutdown_tries;
     uint64_t shutdown_start;
@@ -144,7 +144,7 @@ namespace Network {
       current_state = x;
       current_state.reset_input();
     }
-    void set_verbose( void ) { verbose = true; }
+    void set_verbose( unsigned int s_verbose ) { verbose = s_verbose; }
 
     bool get_shutdown_in_progress( void ) const { return shutdown_in_progress; }
     bool get_shutdown_acknowledged( void ) const { return sent_states.front().num == uint64_t(-1); }

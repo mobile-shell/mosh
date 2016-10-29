@@ -56,7 +56,7 @@ TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &in
     fragmenter(),
     next_ack_time( timestamp() ),
     next_send_time( timestamp() ),
-    verbose( false ),
+    verbose( 0 ),
     shutdown_in_progress( false ),
     shutdown_tries( 0 ),
     shutdown_start( -1 ),
@@ -187,11 +187,16 @@ void TransportSender<MyState>::tick( void )
     }
   }
 
-  if ( diff.empty() && (now >= next_ack_time) ) {
-    send_empty_ack();
-    mindelay_clock = uint64_t( -1 );
-  } else if ( !diff.empty() && ( (now >= next_send_time)
-			  || (now >= next_ack_time) ) ) {
+  if ( diff.empty() ) {
+    if ( (now >= next_ack_time) ) {
+      send_empty_ack();
+      mindelay_clock = uint64_t( -1 );
+    }
+    if ( (now >= next_send_time) ) {
+      next_send_time = uint64_t( -1 );
+      mindelay_clock = uint64_t( -1 );
+    }
+  } else if ( (now >= next_send_time) || (now >= next_ack_time) ) {
     /* Send diffs or ack */
     send_to_receiver( diff );
     mindelay_clock = uint64_t( -1 );
