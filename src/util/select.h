@@ -122,13 +122,16 @@ public:
     clear_got_signal();
 
     /* Rate-limit and warn about polls. */
+    if ( verbose > 1 && timeout == 0 ) {
+      fprintf( stderr, "%s: got poll (timeout 0)\n", __func__ );
+    }
     if ( timeout == 0 && ++consecutive_polls >= MAX_POLLS ) {
-      if ( consecutive_polls == MAX_POLLS ) {
+      if ( verbose > 1 && consecutive_polls == MAX_POLLS ) {
 	fprintf( stderr, "%s: got %d polls, rate limiting.\n", __func__, MAX_POLLS );
       }
       timeout = 1;
     } else if ( timeout != 0 && consecutive_polls ) {
-      if ( consecutive_polls >= MAX_POLLS ) {
+      if ( verbose > 1 && consecutive_polls >= MAX_POLLS ) {
 	fprintf( stderr, "%s: got %d consecutive polls\n", __func__, consecutive_polls );
       }
       consecutive_polls = 0;
@@ -212,6 +215,8 @@ public:
     return rv;
   }
 
+  static void set_verbose( unsigned int s_verbose ) { verbose = s_verbose; }
+
 private:
   static const int MAX_SIGNAL_NUMBER = 64;
   /* Number of 0-timeout selects after which we begin to think
@@ -233,6 +238,7 @@ private:
   static fd_set dummy_fd_set;
   static sigset_t dummy_sigset;
   int consecutive_polls;
+  static unsigned int verbose;
 };
 
 #endif
