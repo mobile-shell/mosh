@@ -36,7 +36,7 @@ post()
     runtime=$(sed -E -n 's/.*@@@ runtime: (.*) @@@.*/\1/p' "$(basename $0).d/baseline.tmux.log")
 
     # If this system can't actually report runtime, bail.
-    if [ "$runtime" -eq "-" ]; then
+    if [ -z "$runtime" -o "$runtime" -eq "-" ]; then
 	exit 0
     fi
 
