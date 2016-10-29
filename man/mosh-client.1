@@ -20,6 +20,7 @@ mosh-client \- client-side helper for mosh
 .SH SYNOPSIS
 MOSH_KEY=KEY
 .B mosh-client 
+[\-v]
 IP PORT
 .br
 .B mosh-client 
@@ -48,6 +49,11 @@ directly.
 
 With the \-c option, \fBmosh-client\fP instead prints the number of colors
 of the terminal given by the TERM environment variable.
+
+The \-v option will print some debugging information on standard
+error.  More instances of this flag will result in more debugging
+information.  If standard error is not redirected from the terminal,
+the display will be corrupted and quickly become unusable.
 
 .SH ENVIRONMENT VARIABLES
 
