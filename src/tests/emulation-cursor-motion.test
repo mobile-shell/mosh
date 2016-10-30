@@ -5,11 +5,12 @@
 # motions in Mosh.
 #
 
-. $(dirname $0)/e2e-test-subrs
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
-    e2e-test $0 baseline direct verify
+    e2e-test "$0" baseline direct verify
     exit
 fi
 
@@ -22,8 +23,8 @@ baseline()
 {
     printf '\033[H\033[J'
 
-    while read x y text; do
-	printf '\033[%d;%dH%s' $y $x $text
+    while read -r x y text; do
+	printf '\033[%d;%dH%s' "$y" "$x" "$text"
 	sleepf
     done <<EOF
 1 1 A
@@ -53,5 +54,5 @@ case $1 in
     baseline|direct)
 	baseline;;
     *)
-	fail "unknown test argument %s\n" $1;;
+	fail "unknown test argument %s\n" "$1";;
 esac

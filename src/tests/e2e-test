@@ -19,11 +19,11 @@ dump_logs()
 {
     dir=$1
     shift
-    testname=$(basename $dir .d)
+    testname=$(basename "$dir" .d)
     for logfile in $dir/*.tmux.log; do
-	printf "travis_fold:start:%s-%s\n" $testname $(basename $logfile)
-	cat $logfile
-	printf "travis_fold:end:%s-%s\n" $testname $(basename $logfile)
+	printf "travis_fold:start:%s-%s\n" "$testname" "$(basename "$logfile")"
+	cat "$logfile"
+	printf "travis_fold:end:%s-%s\n" "$testname" "$(basename "$logfile")"
     done
 }
 
@@ -51,7 +51,7 @@ test_exitstatus()
     status=$1
     shift
     error "$@"
-    exit $status
+    exit "$status"
 }
 
 
@@ -67,8 +67,8 @@ tmux_check()
     version_major=${version%%.*}
     version_minor=${version##*.}
     # need version 1.8 for capture-pane
-    if [ $version_major -lt 1 ] ||
-	[ $version_major -eq 1 -a $version_minor -lt 8 ]; then
+    if [ "$version_major" -lt 1 ] ||
+	{ [ "$version_major" -eq 1 ] && [ "$version_minor" -lt 8 ]; }; then
 	error "tmux version %s too old\n" "$version"
 	return 1
     fi
@@ -89,7 +89,7 @@ ssh_localhost_check()
 # on verbosity and log stderr.
 mosh_client()
 {
-    if [ -z "$MOSH_CLIENT" -o -z "$MOSH_E2E_TEST" ]; then
+    if [ -z "$MOSH_CLIENT" ] || [ -z "$MOSH_E2E_TEST" ]; then
 	test_error "mosh_client: variables missing\n"
     fi
     exec 2> "${MOSH_E2E_TEST}.client.stderr"
@@ -98,7 +98,7 @@ mosh_client()
 
 mosh_server()
 {
-    if [ -z "$MOSH_SERVER" -o -z "$MOSH_E2E_TEST" ]; then
+    if [ -z "$MOSH_SERVER" ] || [ -z "$MOSH_E2E_TEST" ]; then
 	test_error "mosh_server: variables missing\n"
     fi
     exec 2> "${MOSH_E2E_TEST}.server.stderr"
@@ -109,9 +109,9 @@ mosh_server()
 
 # Set up environment
 if [ -z "$srcdir" ]; then
-    : ${srcdir:=$PWD}
+    srcdir=$PWD
 else
-    srcdir="$(cd $srcdir && pwd)"
+    srcdir="$(cd "$srcdir" && pwd)"
     if [ $? -ne 0 ]; then
 	error "can't cd to srcdir: %s\n" "$srcdir"
 	exit 99
@@ -119,7 +119,7 @@ else
 fi
 
 # Wrappers.
-case "$(basename $0)" in
+case "$(basename "$0")" in
     mosh-client)
 	mosh_client "$@"
 	exit
@@ -145,14 +145,21 @@ test_name=$1
 shift
 test_args=$@
 # XXX could use AM testsubdir macro instead
-test_dir=$(basename ${test_name}).d
+test_dir=$(basename "${test_name}").d
 test_script="${test_name}"
 
 rm -rf "${test_dir}"
 mkdir "${test_dir}"
 
 
-trap 'rv=$?; if test $rv -ne 0; then dump_logs '"$test_dir $test_args"'; fi; exit $rv' EXIT
+on_exit() {
+    rv=$?
+    if test $rv -ne 0; then
+	dump_logs "$test_dir" $test_args
+    fi
+    exit $rv
+}
+trap on_exit EXIT
 
 # Set up tests to run.
 server_tests=
@@ -170,13 +177,15 @@ for i in $test_args; do
 	post)
 	    post=1;;
 	mosh-args)
-	    mosh_args=$(${test_script} mosh-args);;
+	    mosh_args=$("${test_script}" mosh-args);;
 	client-args)
-	    export MOSH_CLIENT_ARGS=$(${test_script} client-args);;
+	    MOSH_CLIENT_ARGS=$("${test_script}" client-args)
+	    export MOSH_CLIENT_ARGS;;
 	server-args)
-	    export MOSH_SERVER_ARGS=$(${test_script} server-args);;
+	    MOSH_SERVER_ARGS=$("${test_script}" server-args)
+	    export MOSH_SERVER_ARGS;;
 	*)
-	    error "unknown test type argument %s", $i
+	    error "unknown test type argument %s", "$i"
 	    exit 99
 	    ;;
     esac
@@ -225,7 +234,7 @@ for run in $server_tests; do
 	|| [ ! -s "${test_dir}/${run}.exitstatus" ]; then
 	test_error "server harness failure on test %s\n" "$run"
     fi
-    read server_rv < "${test_dir}/${run}.exitstatus"
+    read -r server_rv < "${test_dir}/${run}.exitstatus"
     if [ "$server_rv" -ne 0 ]; then
 	test_error "server harness exited with status %s\n" "$server_rv"
     fi
