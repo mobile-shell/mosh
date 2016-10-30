@@ -17,7 +17,7 @@ sleepf()
 
 seq_function()
 {
-    if [ $# -lt 1 -o $# -gt 3 ]; then
+    if [ $# -lt 1 ] || [ $# -gt 3 ]; then
 	echo "bad args" >&2
     fi
     first=$1
@@ -35,9 +35,9 @@ seq_function()
 	    ;;
     esac
     while :; do
-	printf '%d\n' $first
+	printf '%d\n' "$first"
 	first=$(( first + incr ))
-	if [ $first -gt $last ]; then
+	if [ "$first" -gt "$last" ]; then
 	    break
 	fi
     done
@@ -52,5 +52,5 @@ fi
 
 chr()
 {
-    printf "\\$(printf %03o $1)"
+    printf '%b' "\\0$(printf %03o "$1")"
 }

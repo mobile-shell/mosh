@@ -88,11 +88,11 @@ done
 # Build fat binaries
 # XXX will break with spaces in pathname
 for prog in local/bin/mosh-client local/bin/mosh-server; do
-    archprogs=
+    archprogs=()
     for arch in $BUILT_ARCHS; do
-	archprogs="$archprogs ${PREFIX}_${arch}/$prog"
+	archprogs+=("${PREFIX}_${arch}/$prog")
     done
-    lipo -create $archprogs -output "${PREFIX}/$prog"
+    lipo -create "${archprogs[@]}" -output "${PREFIX}/$prog"
 done
 
 perl -wlpi -e 's{#!/usr/bin/env perl}{#!/usr/bin/perl}' "$PREFIX/local/bin/mosh"
