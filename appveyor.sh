@@ -38,8 +38,8 @@ if [ -z "$APPVEYOR_BUILD_FOLDER" ]; then
 fi
 
 # Make really, really sure we're in the build dir
-cd $APPVEYOR_BUILD_FOLDER || exit 2
-if [ "$(pwd)" = "$HOME" -o "$PWD" = "$HOME" ]; then
+cd "$APPVEYOR_BUILD_FOLDER" || exit 2
+if [ "$(pwd)" = "$HOME" ] || [ "$PWD" = "$HOME" ]; then
     echo "$0: in home directory" >&2
     exit 2
 fi

@@ -4,11 +4,12 @@
 # This test is for issue 539 on github.
 #
 
-. $(dirname $0)/e2e-test-subrs
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
-    e2e-test $0 baseline post
+    e2e-test "$0" baseline post
     exit
 fi
 
@@ -29,17 +30,17 @@ baseline()
 post()
 {
     # Basic previously-failing case.
-    if grep -q 'hello, wurldo' $(basename $0).d/baseline.capture; then
+    if grep -q 'hello, wurldo' "$(basename "$0").d/baseline.capture"; then
 	exit 1
     fi
-    if ! grep -q 'hello, world' $(basename $0).d/baseline.capture; then
+    if ! grep -q 'hello, world' "$(basename "$0").d/baseline.capture"; then
 	exit 99
     fi
     # New test cases for new code.
-    if ! grep -q 'oello, wurld' $(basename $0).d/baseline.capture ||
-	    ! grep -q '9ello, wurld' $(basename $0).d/baseline.capture ||
-	    ! grep -q 'hello, wurld    t' $(basename $0).d/baseline.capture ||
-	    ! grep -E -q '^ {79}#$' $(basename $0).d/baseline.capture; then
+    if ! grep -q 'oello, wurld' "$(basename "$0").d/baseline.capture" ||
+	    ! grep -q '9ello, wurld' "$(basename "$0").d/baseline.capture" ||
+	    ! grep -q 'hello, wurld    t' "$(basename "$0").d/baseline.capture" ||
+	    ! grep -E -q '^ {79}#$' "$(basename "$0").d/baseline.capture"; then
 	exit 1
     fi
     exit 0
@@ -51,5 +52,5 @@ case $1 in
     post)
 	post;;
     *)
-	fail "unknown test argument %s\n" $1;;
+	fail "unknown test argument %s\n" "$1";;
 esac

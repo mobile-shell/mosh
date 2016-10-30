@@ -25,11 +25,12 @@
 # correct character.
 #
 
-. $(dirname $0)/e2e-test-subrs
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
-    e2e-test $0 tmux baseline mosh-args post
+    e2e-test "$0" tmux baseline mosh-args post
     exit
 fi
 
@@ -71,7 +72,7 @@ baseline()
 post()
 {
     # Look for bad output: ')' or \374
-    if [ -n "$(env -u LC_ALL -u LC_CTYPE -u LANGUAGE LANG=C egrep "%output %0 (\)|$(printf \\374))" $(basename $0).d/baseline.tmux.log)" ]; then
+    if [ -n "$(env -u LC_ALL -u LC_CTYPE -u LANGUAGE LANG=C egrep "%output %0 (\)|$(printf \\374))" "$(basename "$0").d/baseline.tmux.log")" ]; then
         exit 1
     fi
     exit 0
@@ -88,5 +89,5 @@ case $1 in
     post)
 	post;;
     *)
-	fail "unknown test argument %s\n" $1;;
+	fail "unknown test argument %s\n" "$1";;
 esac

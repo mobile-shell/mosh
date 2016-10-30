@@ -1,10 +1,11 @@
 #!/bin/sh
 
-. $(dirname $0)/e2e-test-subrs
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
-    e2e-test $0 baseline direct variant verify same
+    e2e-test "$0" baseline direct variant verify same
     exit
 fi
 
@@ -22,5 +23,5 @@ case $1 in
     baseline|direct|variant)
 	baseline;;
     *)
-	fail "unknown test argument %s\n" $1;;
+	fail "unknown test argument %s\n" "$1";;
 esac
