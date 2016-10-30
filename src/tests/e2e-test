@@ -185,7 +185,7 @@ for i in $test_args; do
 	    MOSH_SERVER_ARGS=$("${test_script}" server-args)
 	    export MOSH_SERVER_ARGS;;
 	*)
-	    error "unknown test type argument %s", "$i"
+	    error 'unknown test type argument %s\n' "$i"
 	    exit 99
 	    ;;
     esac
