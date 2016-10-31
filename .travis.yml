@@ -29,7 +29,7 @@ before_install:
 script:
   - ./autogen.sh
   - ./configure --enable-compile-warnings=error --enable-examples
-  - make distcheck VERBOSE=1
+  - make distcheck VERBOSE=1 V=1
 
 notifications:
   irc:
