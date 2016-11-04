@@ -30,7 +30,7 @@ addons:
     - perl
 
 before_install:
-  # Get full repo and describe this
+  # Get full repo for `git describe`
   - git fetch --tags --unshallow
   # OS X dependencies.  The package_deps step takes 15 minutes or so
   # and is fairly quiet, so wrap it in travis_wait to keep it from
@@ -78,7 +78,7 @@ script:
       (
         set -e
         cd macosx
-        env MACOSX_DEPLOYMENT_TARGET=10.10 ./build.sh
+        env ZERO_AR_DATE=1 MACOSX_DEPLOYMENT_TARGET=10.10 ./build.sh
         ln ${TRAVIS_TAG}.pkg mosh.pkg
         shasum -a 256 mosh.pkg
       )
