@@ -700,13 +700,13 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	      struct winsize window_size;
 	      if ( ioctl( host_fd, TIOCGWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCGWINSZ" );
-		return;
+		network.start_shutdown();
 	      }
 	      window_size.ws_col = res->width;
 	      window_size.ws_row = res->height;
 	      if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCSWINSZ" );
-		return;
+		network.start_shutdown();
 	      }
 	    }
 	    terminal_to_host += terminal.act( action );
@@ -782,7 +782,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       /* write user input and terminal writeback to the host */
       if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	break;
+	network.start_shutdown();
       }
 
       bool idle_shutdown = false;
