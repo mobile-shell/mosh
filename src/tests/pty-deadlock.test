@@ -36,8 +36,8 @@ tmux_commands()
     # And stop the test script, so it produces its exit messge.
     printf "send-keys 0x0d\n"
     # This will get killed by SIGPIPE.
-    while sleep 1; do
-	printf "show-options\n"
+    while printf "show-options\n"; do
+	sleep 1
     done
 }
 
