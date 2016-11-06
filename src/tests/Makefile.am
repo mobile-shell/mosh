@@ -24,6 +24,8 @@ displaytests = \
 	emulation-wrap-across-frames.test \
 	prediction-unicode.test \
 	pty-deadlock.test \
+	repeat.test \
+	repeat-with-input.test \
 	server-network-timeout.test \
 	server-signal-timeout.test \
 	window-resize.test \
