@@ -480,7 +480,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
   }
 
   char utmp_entry[ 64 ] = { 0 };
-  snprintf( utmp_entry, 64, "mosh [%d]", getpid() );
+  snprintf( utmp_entry, 64, "mosh [%ld]", static_cast<long int>( getpid() ) );
 
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, NULL, &window_size );
