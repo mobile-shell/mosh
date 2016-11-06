@@ -37,7 +37,6 @@
 #include <typeinfo>
 
 #include "terminal.h"
-#include "swrite.h"
 
 using namespace Terminal;
 
