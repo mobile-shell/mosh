@@ -313,21 +313,21 @@ void Framebuffer::insert_line( int before_row, int count )
     return;
   }
 
-  int max_scroll = ds.get_scrolling_region_bottom_row() + 1 - before_row;
-  if ( count > max_scroll ) {
-    count = max_scroll;
+  int scroll = ds.get_scrolling_region_bottom_row() + 1 - before_row;
+  if ( count < scroll ) {
+    scroll = count;
   }
 
-  if ( count == 0 ) {
+  if ( scroll == 0 ) {
     return;
   }
 
   // delete old rows
-  rows_type::iterator start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  rows.erase( start, start + count );
+  rows_type::iterator start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - scroll;
+  rows.erase( start, start + scroll );
   // insert new rows
   start = rows.begin() + before_row;
-  rows.insert( start, count, newrow());
+  rows.insert( start, scroll, newrow());
 }
 
 void Framebuffer::delete_line( int row, int count )
@@ -337,21 +337,21 @@ void Framebuffer::delete_line( int row, int count )
     return;
   }
 
-  int max_scroll = ds.get_scrolling_region_bottom_row() + 1 - row;
-  if ( count > max_scroll ) {
-    count = max_scroll;
+  int scroll = ds.get_scrolling_region_bottom_row() + 1 - row;
+  if ( count < scroll ) {
+    scroll = count;
   }
 
-  if ( count == 0 ) {
+  if ( scroll == 0 ) {
     return;
   }
 
   // delete old rows
   rows_type::iterator start = rows.begin() + row;
-  rows.erase( start, start + count );
+  rows.erase( start, start + scroll );
   // insert a block of dummy rows
-  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  rows.insert( start, count, newrow());
+  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - scroll;
+  rows.insert( start, scroll, newrow());
 }
 
 Row::Row( const size_t s_width, const color_type background_color )
