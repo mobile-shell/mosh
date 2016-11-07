@@ -514,9 +514,7 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
     uint8_t *ecn_octet_p = (uint8_t *)CMSG_DATA( ecn_hdr );
     assert( ecn_octet_p );
 
-    if ( (*ecn_octet_p & 0x03) == 0x03 ) {
-      congestion_experienced = true;
-    }
+    congestion_experienced = (*ecn_octet_p & 0x03) == 0x03;
   }
 
   Packet p( session.decrypt( msg_payload, received_len ) );
