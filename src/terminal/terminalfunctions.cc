@@ -584,8 +584,8 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End *act __attribute((unused)),
       cmd_num = OSC_string[ 0 ] - L'0';
       offset = 2;
     }
-    bool set_icon = (cmd_num == 0 || cmd_num == 1);
-    bool set_title = (cmd_num == 0 || cmd_num == 2);
+    bool set_icon = cmd_num == 0 || cmd_num == 1;
+    bool set_title = cmd_num == 0 || cmd_num == 2;
     if ( set_icon || set_title ) {
       fb->set_title_initialized();
       int title_length = min(OSC_string.size(), (size_t)256);

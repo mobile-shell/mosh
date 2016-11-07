@@ -79,15 +79,15 @@ Transition State::input( wchar_t ch ) const
 
 static bool C0_prime( wchar_t ch )
 {
-  return ( (ch <= 0x17)
-	   || (ch == 0x19)
-	   || ( (0x1C <= ch) && (ch <= 0x1F) ) );
+  return (ch <= 0x17)
+    || (ch == 0x19)
+    || ( (0x1C <= ch) && (ch <= 0x1F) );
 }
 
 static bool GLGR ( wchar_t ch )
 {
-  return ( ( (0x20 <= ch) && (ch <= 0x7F) ) /* GL area */
-	   || ( (0xA0 <= ch) && (ch <= 0xFF) ) ); /* GR area */
+  return ( (0x20 <= ch) && (ch <= 0x7F) ) /* GL area */
+    || ( (0xA0 <= ch) && (ch <= 0xFF) ); /* GR area */
 }
 
 Transition Ground::input_state_rule( wchar_t ch ) const

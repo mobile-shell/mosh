@@ -124,7 +124,7 @@ bool FragmentAssembly::add_fragment( Fragment &frag )
   }
 
   /* see if we're done */
-  return ( fragments_arrived == fragments_total );
+  return fragments_arrived == fragments_total;
 }
 
 Instruction FragmentAssembly::get_assembly( void )

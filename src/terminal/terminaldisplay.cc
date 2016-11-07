@@ -227,7 +227,8 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	/* Common case:  if we're already on the bottom line and we're scrolling the whole
 	 * screen, just do a CR and LFs.
 	 */
-	if ( (scroll_height + lines_scrolled == f.ds.get_height() ) && frame.cursor_y + 1 == f.ds.get_height() ) {
+	if ( scroll_height + lines_scrolled == f.ds.get_height()
+	     && frame.cursor_y + 1 == f.ds.get_height() ) {
 	  frame.append( '\r' );
 	  frame.append( lines_scrolled, '\n' );
 	  frame.cursor_x = 0;

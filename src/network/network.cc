@@ -504,12 +504,12 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
 
   struct cmsghdr *ecn_hdr = CMSG_FIRSTHDR( &header );
   if ( ecn_hdr
-       && (ecn_hdr->cmsg_level == IPPROTO_IP)
-       && ((ecn_hdr->cmsg_type == IP_TOS)
+       && ecn_hdr->cmsg_level == IPPROTO_IP
+       && ( ecn_hdr->cmsg_type == IP_TOS
 #ifdef IP_RECVTOS
-	   || (ecn_hdr->cmsg_type == IP_RECVTOS)
+	    || ecn_hdr->cmsg_type == IP_RECVTOS
 #endif
-	   )) {
+	    ) ) {
     /* got one */
     uint8_t *ecn_octet_p = (uint8_t *)CMSG_DATA( ecn_hdr );
     assert( ecn_octet_p );
