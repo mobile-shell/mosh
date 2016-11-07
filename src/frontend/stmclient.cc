@@ -314,82 +314,82 @@ bool STMClient::process_user_input( int fd )
 
   NetworkType &net = *network;
 
-  if ( !net.shutdown_in_progress() ) {
-    overlays.get_prediction_engine().set_local_frame_sent( net.get_sent_state_last() );
+  if ( net.shutdown_in_progress() ) {
+    return true;
+  }
+  overlays.get_prediction_engine().set_local_frame_sent( net.get_sent_state_last() );
 
-    /* Don't predict for bulk data. */
-    bool paste = bytes_read > 100;
-    if ( paste ) {
-      overlays.get_prediction_engine().reset();
+  /* Don't predict for bulk data. */
+  bool paste = bytes_read > 100;
+  if ( paste ) {
+    overlays.get_prediction_engine().reset();
+  }
+
+  for ( int i = 0; i < bytes_read; i++ ) {
+    char the_byte = buf[ i ];
+
+    if ( !paste ) {
+      overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
     }
 
-    for ( int i = 0; i < bytes_read; i++ ) {
-      char the_byte = buf[ i ];
+    if ( quit_sequence_started ) {
+      if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
+	if ( net.has_remote_addr() && (!net.shutdown_in_progress()) ) {
+	  overlays.get_notification_engine().set_notification_string( wstring( L"Exiting on user request..." ), true );
+	  net.start_shutdown();
+	  return true;
+	}
+	return false;
+      } else if ( the_byte == 0x1a ) { /* Suspend sequence is escape_key Ctrl-Z */
+	/* Restore terminal and terminal-driver state */
+	swrite( STDOUT_FILENO, display.close().c_str() );
 
-      if ( !paste ) {
-	overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
-      }
-
-      if ( quit_sequence_started ) {
-	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
-	  if ( net.has_remote_addr() && (!net.shutdown_in_progress()) ) {
-	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting on user request..." ), true );
-	    net.start_shutdown();
-	    return true;
-	  } else {
-	    return false;
-	  }
-	} else if ( the_byte == 0x1a ) { /* Suspend sequence is escape_key Ctrl-Z */
-	  /* Restore terminal and terminal-driver state */
-	  swrite( STDOUT_FILENO, display.close().c_str() );
-
-	  if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
-	    perror( "tcsetattr" );
-	    exit( 1 );
-	  }
-
-	  fputs( "\n\033[37;44m[mosh is suspended.]\033[m\n", stdout );
-
-	  fflush( NULL );
-
-	  /* actually suspend */
-	  kill( 0, SIGSTOP );
-
-	  resume();
-	} else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
-	  /* Emulation sequence to type escape_key is escape_key +
-	     escape_pass_key (that is escape key without Ctrl) */
-	  net.get_current_state().push_back( Parser::UserByte( escape_key ) );
-	} else {
-	  /* Escape key followed by anything other than . and ^ gets sent literally */
-	  net.get_current_state().push_back( Parser::UserByte( escape_key ) );
-	  net.get_current_state().push_back( Parser::UserByte( the_byte ) );
+	if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
+	  perror( "tcsetattr" );
+	  exit( 1 );
 	}
 
-	quit_sequence_started = false;
+	fputs( "\n\033[37;44m[mosh is suspended.]\033[m\n", stdout );
 
-	if ( overlays.get_notification_engine().get_notification_string() == escape_key_help ) {
-	  overlays.get_notification_engine().set_notification_string( L"" );
-	}
+	fflush( NULL );
 
-	continue;
+	/* actually suspend */
+	kill( 0, SIGSTOP );
+
+	resume();
+      } else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
+	/* Emulation sequence to type escape_key is escape_key +
+	   escape_pass_key (that is escape key without Ctrl) */
+	net.get_current_state().push_back( Parser::UserByte( escape_key ) );
+      } else {
+	/* Escape key followed by anything other than . and ^ gets sent literally */
+	net.get_current_state().push_back( Parser::UserByte( escape_key ) );
+	net.get_current_state().push_back( Parser::UserByte( the_byte ) );	  
       }
 
-      quit_sequence_started = (escape_key > 0) && (the_byte == escape_key) && (lf_entered || (! escape_requires_lf));
-      if ( quit_sequence_started ) {
-	lf_entered = false;
-	overlays.get_notification_engine().set_notification_string( escape_key_help, true, false );
-	continue;
+      quit_sequence_started = false;
+
+      if ( overlays.get_notification_engine().get_notification_string() == escape_key_help ) {
+	overlays.get_notification_engine().set_notification_string( L"" );
       }
 
-      lf_entered = ( (the_byte == 0x0A) || (the_byte == 0x0D) ); /* LineFeed, Ctrl-J, '\n' or CarriageReturn, Ctrl-M, '\r' */
-
-      if ( the_byte == 0x0C ) { /* Ctrl-L */
-	repaint_requested = true;
-      }
-
-      net.get_current_state().push_back( Parser::UserByte( the_byte ) );
+      continue;
     }
+
+    quit_sequence_started = (escape_key > 0) && (the_byte == escape_key) && (lf_entered || (! escape_requires_lf));
+    if ( quit_sequence_started ) {
+      lf_entered = false;
+      overlays.get_notification_engine().set_notification_string( escape_key_help, true, false );
+      continue;
+    }
+
+    lf_entered = ( (the_byte == 0x0A) || (the_byte == 0x0D) ); /* LineFeed, Ctrl-J, '\n' or CarriageReturn, Ctrl-M, '\r' */
+
+    if ( the_byte == 0x0C ) { /* Ctrl-L */
+      repaint_requested = true;
+    }
+
+    net.get_current_state().push_back( Parser::UserByte( the_byte ) );		
   }
 
   return true;

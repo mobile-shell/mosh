@@ -90,32 +90,30 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
   const Cell &current = *( fb.get_cell( row, col ) );
 
   /* see if it hasn't been updated yet */
-  if ( late_ack >= expiration_frame ) {
-    if ( unknown ) {
-      return CorrectNoCredit;
-    }
-
-    if ( replacement.is_blank() ) { /* too easy for this to trigger falsely */
-      return CorrectNoCredit;
-    }
-
-    if ( current.contents_match( replacement ) ) {
-      vector<Cell>::const_iterator it = original_contents.begin();
-      for ( ; it != original_contents.end(); it++ ) {
-        if ( it->contents_match( replacement ) )
-          break;
-      }
-      if ( it == original_contents.end() ) {
-	return Correct;
-      } else {
-	return CorrectNoCredit;
-      }
-    } else {
-      return IncorrectOrExpired;
-    }
+  if ( late_ack < expiration_frame ) {
+    return Pending;
   }
 
-  return Pending;
+  if ( unknown ) {
+    return CorrectNoCredit;
+  }
+
+  if ( replacement.is_blank() ) { /* too easy for this to trigger falsely */
+    return CorrectNoCredit;
+  }
+
+  if ( current.contents_match( replacement ) ) {
+    vector<Cell>::const_iterator it = original_contents.begin();
+    for ( ; it != original_contents.end(); it++ ) {
+      if ( it->contents_match( replacement ) )
+	break;
+    }
+    if ( it == original_contents.end() ) {
+      return Correct;
+    }
+    return CorrectNoCredit;
+  }
+  return IncorrectOrExpired;
 }
 
 Validity ConditionalCursorMove::get_validity( const Framebuffer &fb,
