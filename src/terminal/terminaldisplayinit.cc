@@ -62,7 +62,7 @@
 
 using namespace Terminal;
 
-bool Display::ti_flag( const char *capname )
+static bool ti_flag( const char *capname )
 {
   int val = tigetflag( const_cast<char *>( capname ) );
   if ( val == -1 ) {
@@ -71,16 +71,7 @@ bool Display::ti_flag( const char *capname )
   return val;
 }
 
-int Display::ti_num( const char *capname )
-{
-  int val = tigetnum( const_cast<char *>( capname ) );
-  if ( val == -2 ) {
-    throw std::invalid_argument( std::string( "Invalid terminfo numeric capability " ) + capname );
-  }
-  return val;
-}
-
-const char *Display::ti_str( const char *capname )
+static const char *ti_str( const char *capname )
 {
   const char *val = tigetstr( const_cast<char *>( capname ) );
   if ( val == (const char *)-1 ) {
