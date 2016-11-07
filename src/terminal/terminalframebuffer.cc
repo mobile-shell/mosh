@@ -229,14 +229,13 @@ int DrawState::get_next_tab( int count ) const
       }
     }
     return -1;
-  } else {
-    for ( int i = cursor_col - 1; i > 0; i-- ) {
-      if ( tabs[ i ] && ++count == 0 ) {
-	return i;
-      }
-    }
-    return 0;
   }
+  for ( int i = cursor_col - 1; i > 0; i-- ) {
+    if ( tabs[ i ] && ++count == 0 ) {
+      return i;
+    }
+  }
+  return 0;
 }
 
 void DrawState::set_scrolling_region( int top, int bottom )
@@ -597,23 +596,22 @@ std::string Cell::debug_contents( void ) const
 {
   if ( contents.empty() ) {
     return "'_' ()";
-  } else {
-    std::string chars( 1, '\'' );
-    print_grapheme( chars );
-    chars.append( "' [" );
-    const char *lazycomma = "";
-    char buf[64];
-    for ( content_type::const_iterator i = contents.begin();
-	  i < contents.end();
-	  i++ ) {
-
-      snprintf( buf, sizeof buf, "%s0x%02x", lazycomma, static_cast<uint8_t>(*i) );
-      chars.append( buf );
-      lazycomma = ", ";
-    }
-    chars.append( "]" );
-    return chars;
   }
+  std::string chars( 1, '\'' );
+  print_grapheme( chars );
+  chars.append( "' [" );
+  const char *lazycomma = "";
+  char buf[64];
+  for ( content_type::const_iterator i = contents.begin();
+	i < contents.end();
+	i++ ) {
+
+    snprintf( buf, sizeof buf, "%s0x%02x", lazycomma, static_cast<uint8_t>(*i) );
+    chars.append( buf );
+    lazycomma = ", ";
+  }
+  chars.append( "]" );
+  return chars;
 }
 
 bool Cell::compare( const Cell &other ) const

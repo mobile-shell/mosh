@@ -226,12 +226,11 @@ void Dispatcher::dispatch( Function_Type type, const Parser::Action *act, Frameb
     /* unknown function */
     fb->ds.next_print_will_wrap = false;
     return;
-  } else {
-    if ( i->second.clears_wrap_state ) {
-      fb->ds.next_print_will_wrap = false;
-    }
-    return i->second.function( fb, this );
   }
+  if ( i->second.clears_wrap_state ) {
+    fb->ds.next_print_will_wrap = false;
+  }
+  i->second.function( fb, this );
 }
 
 void Dispatcher::OSC_put( const Parser::OSC_Put *act )

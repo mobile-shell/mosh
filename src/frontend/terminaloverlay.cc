@@ -137,9 +137,8 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb,
     if ( (fb.ds.get_cursor_col() == col)
 	 && (fb.ds.get_cursor_row() == row) ) {
       return Correct;
-    } else {
-      return IncorrectOrExpired;
     }
+    return IncorrectOrExpired;
   }
 
   return Pending;
