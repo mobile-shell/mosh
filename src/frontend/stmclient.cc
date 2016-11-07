@@ -217,11 +217,9 @@ void STMClient::shutdown( void )
 	     "Please verify that UDP port %s is not firewalled and can reach the server.\n\n"
 	     "(By default, mosh uses a UDP port between 60000 and 61000. The -p option\n"
 	     "selects a specific UDP port number.)\n", ip.c_str(), port.c_str(), port.c_str() );
-  } else if ( network ) {
-    if ( !clean_shutdown ) {
-      fputs( "\n\nmosh did not shut down cleanly. Please note that the\n"
-	     "mosh-server process may still be running on the server.\n", stderr );
-    }
+  } else if ( network && !clean_shutdown ) {
+    fputs( "\n\nmosh did not shut down cleanly. Please note that the\n"
+	   "mosh-server process may still be running on the server.\n", stderr );
   }
 }
 
@@ -481,21 +479,17 @@ bool STMClient::main( void )
 	process_network_input();
       }
     
-      if ( sel.read( STDIN_FILENO ) ) {
-	/* input from the user needs to be fed to the network */
-	if ( !process_user_input( STDIN_FILENO ) ) {
-	  if ( !network->has_remote_addr() ) {
-	    break;
-	  } else if ( !network->shutdown_in_progress() ) {
-	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ), true );
-	    network->start_shutdown();
-	  }
+      if ( sel.read( STDIN_FILENO ) && !process_user_input( STDIN_FILENO ) ) { /* input from the user needs to be fed to the network */
+	if ( !network->has_remote_addr() ) {
+	  break;
+	} else if ( !network->shutdown_in_progress() ) {
+	  overlays.get_notification_engine().set_notification_string( wstring( L"Exiting..." ), true );
+	  network->start_shutdown();
 	}
       }
 
-      if ( sel.signal( SIGWINCH ) ) {
-        /* resize */
-        if ( !process_resize() ) { return false; }
+      if ( sel.signal( SIGWINCH ) && !process_resize() ) { /* resize */
+	return false;
       }
 
       if ( sel.signal( SIGCONT ) ) {

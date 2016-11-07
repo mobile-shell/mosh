@@ -826,12 +826,11 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	fprintf( stderr, "Network idle for %llu seconds.\n", 
 		 static_cast<unsigned long long>( time_since_remote_state / 1000 ) );
       }
-      if ( sel.signal( SIGUSR1 ) ) {
-	if ( !network_signaled_timeout_ms || network_signaled_timeout_ms <= time_since_remote_state ) {
-	  idle_shutdown = true;
-	  fprintf( stderr, "Network idle for %llu seconds when SIGUSR1 received\n",
-		   static_cast<unsigned long long>( time_since_remote_state / 1000 ) );
-	}
+      if ( sel.signal( SIGUSR1 )
+	   && ( !network_signaled_timeout_ms || network_signaled_timeout_ms <= time_since_remote_state ) ) {
+	idle_shutdown = true;
+	fprintf( stderr, "Network idle for %llu seconds when SIGUSR1 received\n",
+		 static_cast<unsigned long long>( time_since_remote_state / 1000 ) );
       }
 
       if ( sel.any_signal() || idle_shutdown ) {
@@ -860,24 +859,21 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       #ifdef HAVE_UTEMPTER
       /* update utmp if has been more than 30 seconds since heard from client */
-      if ( connected_utmp ) {
-	if ( time_since_remote_state > 30000 ) {
-	  utempter_remove_record( host_fd );
+      if ( connected_utmp 
+	   && time_since_remote_state > 30000 ) {
+	utempter_remove_record( host_fd );
 
-	  char tmp[ 64 ];
-	  snprintf( tmp, 64, "mosh [%d]", getpid() );
-	  utempter_add_record( host_fd, tmp );
+	char tmp[ 64 ];
+	snprintf( tmp, 64, "mosh [%d]", getpid() );
+	utempter_add_record( host_fd, tmp );
 
-	  connected_utmp = false;
-	}
+	connected_utmp = false;
       }
       #endif
 
-      if ( terminal.set_echo_ack( now ) ) {
+      if ( terminal.set_echo_ack( now ) && !network.shutdown_in_progress() ) {
 	/* update client with new echo ack */
-	if ( !network.shutdown_in_progress() ) {
-	  network.set_current_state( terminal );
-	}
+	network.set_current_state( terminal );
       }
 
       if ( !network.get_remote_state_num()

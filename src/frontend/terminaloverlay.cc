@@ -552,11 +552,10 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	}
 
 	/* When predictions come in quickly, slowly take away the glitch trigger. */
-	if ( (now - j->prediction_time) < GLITCH_THRESHOLD ) {
-	  if ( (glitch_trigger > 0) && (now - GLITCH_REPAIR_MININTERVAL >= last_quick_confirmation) ) {
-	    glitch_trigger--;
-	    last_quick_confirmation = now;
-	  }
+	if ( now - j->prediction_time < GLITCH_THRESHOLD 
+	     && ( glitch_trigger > 0 && now - GLITCH_REPAIR_MININTERVAL >= last_quick_confirmation ) ) {
+	  glitch_trigger--;
+	  last_quick_confirmation = now;
 	}
 
 	/* match rest of row to the actual renditions */
@@ -594,24 +593,23 @@ void PredictionEngine::cull( const Framebuffer &fb )
   }
 
   /* go through cursor predictions */
-  if ( !cursors.empty() ) {
-    if ( cursor().get_validity( fb,
+  if ( !cursors.empty() 
+       && cursor().get_validity( fb,
 				local_frame_acked, local_frame_late_acked ) == IncorrectOrExpired ) {
-      /*
+    /*
       fprintf( stderr, "Sadly, we're predicting (%d,%d) vs. (%d,%d) [tau: %ld, expiration_time=%ld, now=%ld]\n",
-	       cursor().row, cursor().col,
-	       fb.ds.get_cursor_row(),
-	       fb.ds.get_cursor_col(),
-	       cursor().tentative_until_epoch,
-	       cursor().expiration_time,
-	       now );
-      */
-      if ( display_preference == Experimental ) {
-	cursors.clear();
-      } else {
-	reset();
-	return;
-      }
+      cursor().row, cursor().col,
+      fb.ds.get_cursor_row(),
+      fb.ds.get_cursor_col(),
+      cursor().tentative_until_epoch,
+      cursor().expiration_time,
+      now );
+    */
+    if ( display_preference == Experimental ) {
+      cursors.clear();
+    } else {
+      reset();
+      return;
     }
   }
 
@@ -635,17 +633,16 @@ ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_
 
   if ( it != overlays.end() ) {
     return *it;
-  } else {
-    /* make row */
-    ConditionalOverlayRow r( row_num );
-    r.overlay_cells.reserve( num_cols );
-    for ( int i = 0; i < num_cols; i++ ) {
-      r.overlay_cells.push_back( ConditionalOverlayCell( 0, i, prediction_epoch ) );
-      assert( r.overlay_cells[ i ].col == i );
-    }
-    overlays.push_back( r );
-    return overlays.back();
   }
+  /* make row */
+  ConditionalOverlayRow r( row_num );
+  r.overlay_cells.reserve( num_cols );
+  for ( int i = 0; i < num_cols; i++ ) {
+    r.overlay_cells.push_back( ConditionalOverlayCell( 0, i, prediction_epoch ) );
+    assert( r.overlay_cells[ i ].col == i );
+  }
+  overlays.push_back( r );
+  return overlays.back();
 }
 
 void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )

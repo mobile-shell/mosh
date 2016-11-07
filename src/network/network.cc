@@ -173,11 +173,9 @@ Connection::Socket::Socket( int family )
   /* request explicit congestion notification on received datagrams */
 #ifdef HAVE_IP_RECVTOS
   int tosflag = true;
-  if ( setsockopt( _fd, IPPROTO_IP, IP_RECVTOS, &tosflag, sizeof tosflag ) < 0 ) {
-    /* FreeBSD disallows this option on IPv6 sockets. */
-    if ( family == IPPROTO_IP ) {
-      perror( "setsockopt( IP_RECVTOS )" );
-    }
+  if ( setsockopt( _fd, IPPROTO_IP, IP_RECVTOS, &tosflag, sizeof tosflag ) < 0
+       && family == IPPROTO_IP ) { /* FreeBSD disallows this option on IPv6 sockets. */
+    perror( "setsockopt( IP_RECVTOS )" );
   }
 #endif
 }
