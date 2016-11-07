@@ -250,8 +250,9 @@ int main( int argc, char *argv[] )
 	locale_vars.push_back( string( optarg ) );
 	break;
       default:
-	print_usage( stderr, argv[ 0 ] );
 	/* don't die on unknown options */
+	print_usage( stderr, argv[ 0 ] );
+	break;
       }
     }
   } else if ( argc == 1 ) {
@@ -658,7 +659,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
   bool child_released = false;
 
-  while ( 1 ) {
+  while ( true ) {
     try {
       static const uint64_t timeout_if_no_client = 60000;
       int timeout = INT_MAX;
