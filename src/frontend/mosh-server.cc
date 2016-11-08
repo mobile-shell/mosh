@@ -106,6 +106,13 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
 using namespace std;
 
+static void print_version( FILE *file )
+{
+  fprintf( file, "mosh-server (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
+  fprintf( file, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
+  fprintf( file, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n" );
+}
+
 static void print_usage( FILE *stream, const char *argv0 )
 {
   fprintf( stream, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
@@ -176,9 +183,13 @@ int main( int argc, char *argv[] )
   list<string> locale_vars;
 
   /* strip off command */
-  for ( int i = 0; i < argc; i++ ) {
+  for ( int i = 1; i < argc; i++ ) {
     if ( 0 == strcmp( argv[ i ], "--help" ) || 0 == strcmp( argv[ i ], "-h" ) ) {
       print_usage( stdout, argv[ 0 ] );
+      exit( 0 );
+    }
+    if ( 0 == strcmp( argv[ i ], "--version" ) ) {
+      print_version( stdout );
       exit( 0 );
     }
     if ( 0 == strcmp( argv[ i ], "--" ) ) { /* -- is mandatory */

@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.61])
 AC_INIT([mosh], [1.2.6], [mosh-devel@mit.edu])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign std-options -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
 AC_CONFIG_MACRO_DIR([m4])

@@ -166,8 +166,14 @@ GetOptions( 'client=s' => \$client,
 	    'bind-server=s' => \$bind_ip,
 	    'experimental-remote-ip=s' => \$use_remote_ip) or die $usage;
 
-die $usage if ( defined $help );
-die $version_message if ( defined $version );
+if ( defined $help ) {
+    print $usage;
+    exit;
+}
+if ( defined $version ) {
+    print $version_message;
+    exit;
+}
 
 if ( defined $predict ) {
   predict_check( $predict, 0 );
