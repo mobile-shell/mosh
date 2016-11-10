@@ -30,18 +30,24 @@
 #   this exception statement from all source files in the program, then
 #   also delete it here.
 
-use 5.14.0;
+use 5.10.0;
 
 use warnings;
 use strict;
 use Getopt::Long;
 use IO::Socket;
 use Text::ParseWords;
-use Socket qw( getaddrinfo getnameinfo AI_CANONNAME AI_NUMERICHOST NI_NUMERICHOST
- IPPROTO_IP IPPROTO_IPV6 IPPROTO_TCP IPPROTO_UDP );
+use Socket qw( IPPROTO_IP IPPROTO_IPV6 IPPROTO_TCP IPPROTO_UDP );
 use Errno qw(EINTR);
 use POSIX qw(_exit);
 
+BEGIN {
+  my @gai_reqs = qw( getaddrinfo getnameinfo AI_CANONNAME AI_NUMERICHOST NI_NUMERICHOST );
+  eval { Socket->import( @gai_reqs ); 1; }
+    || eval { require Socket::GetAddrInfo; Socket::GetAddrInfo->import( ':newapi', @gai_reqs ); 1; }
+    || eval { Socket::GetAddrInfo->import( '0.22', @gai_reqs ); 1; }
+    || die "$0 error: requires Perl 5.14 or Socket::GetAddrInfo.\n";
+}
 
 my $have_ipv6 = eval {
   require IO::Socket::IP;
