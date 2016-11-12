@@ -72,10 +72,14 @@ baseline()
 post()
 {
     # Look for bad output: ')' or \374
-    if [ -n "$(env -u LC_ALL -u LC_CTYPE -u LANGUAGE LANG=C egrep "%output %0 (\)|$(printf \\374))" "$(basename "$0").d/baseline.tmux.log")" ]; then
-        exit 1
-    fi
-    exit 0
+    (
+	unset LC_ALL
+	unset LC_CTYPE
+	unset LANGUAGE
+	! env LANG=C egrep -q "%output %0 (\)|$(printf \\374))" "$(basename "$0").d/baseline.tmux.log"
+	# Implicit exitcode return.
+    )
+    return $?
 }
 
 case $1 in
