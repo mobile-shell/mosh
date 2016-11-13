@@ -70,7 +70,12 @@ int main( int argc, char *argv[] )
   pid_t child = forkpty( &master, NULL, NULL, &winsize );
   if ( child == -1 ) {
     perror( "forkpty" );
-    return 1;
+    /* The Debian and Ubuntu build systems fail to set up a working
+     * /dev/ptmx (https://bugs.debian.org/817236).  There is not much
+     * we can do about that except skip the test.  In the future when
+     * this is fixed, we should turn this into an failure.
+     */
+    return 77;
   } else if ( child == 0 ) {
     if ( execvp( argv[1], argv + 1 ) < 0 ) {
       perror( "execve" );
