@@ -39,13 +39,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <unistd.h>
 
 #if HAVE_PTY_H
 #include <pty.h>
 #elif HAVE_UTIL_H
 #include <util.h>
-#elif HAVE_LIBUTIL_H
+#endif
+
+#if FORKPTY_IN_LIBUTIL
 #include <libutil.h>
 #endif
 
