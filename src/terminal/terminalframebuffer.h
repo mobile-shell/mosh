@@ -89,9 +89,9 @@ namespace Terminal {
     typedef std::string content_type; /* can be std::string, std::vector<uint8_t>, or __gnu_cxx::__vstring */
     content_type contents;
     Renditions renditions;
-    uint8_t width;
-    bool fallback; /* first character is combining character */
-    bool wrap;
+    unsigned int width : 2;
+    unsigned int fallback : 1; /* first character is combining character */
+    unsigned int wrap : 1;
 
   public:
     Cell( color_type background_color );
