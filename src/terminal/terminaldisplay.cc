@@ -348,12 +348,14 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
     return false;
   }
 
+  const bool wrap_this = row.get_wrap();
+  const int row_width = f.ds.get_width();
   int clear_count = 0;
   bool wrote_last_cell = false;
   Renditions blank_renditions = initial_rendition();
 
   /* iterate for every cell */
-  while ( frame_x < f.ds.get_width() ) {
+  while ( frame_x < row_width ) {
 
     const Cell &cell = cells.at( frame_x );
 
@@ -405,12 +407,23 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
 
     /* Now draw a character cell. */
     /* Move to the right position. */
+    const int cell_width = cell.get_width();
+    /* If we are about to print the last character in a wrapping row,
+       trash the cursor position to force explicit positioning.  We do
+       this because our input terminal state may have the cursor on
+       the autowrap column ("column 81"), but our output terminal
+       states always snap the cursor to the true last column ("column
+       80"), and we want to be able to apply the diff to either, for
+       verification. */
+    if ( wrap_this && frame_x + cell_width >= row_width ) {
+      frame.cursor_x = frame.cursor_y = -1;
+    }
     frame.append_silent_move( frame_y, frame_x );
     frame.update_rendition( cell.get_renditions() );
     frame.append_cell( cell );
-    frame_x += cell.get_width();
-    frame.cursor_x += cell.get_width();
-    if ( frame_x >= f.ds.get_width() ) {
+    frame_x += cell_width;
+    frame.cursor_x += cell_width;
+    if ( frame_x >= row_width ) {
       wrote_last_cell = true;
     }
   }
@@ -423,7 +436,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
     frame.append_silent_move( frame_y, frame_x - clear_count );
     frame.update_rendition( blank_renditions );
 
-    bool can_use_erase = !row.get_wrap() && ( has_bce || ( frame.current_rendition == initial_rendition() ) );
+    bool can_use_erase = !wrap_this && ( has_bce || ( frame.current_rendition == initial_rendition() ) );
     if ( can_use_erase ) {
       frame.append( "\033[K" );
     } else {
@@ -438,7 +451,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
     /* To hint that a word-select should group the end of one line
        with the beginning of the next, we let the real cursor
        actually wrap around in cases where it wrapped around for us. */
-    if ( row.get_wrap() ) {
+    if ( wrap_this ) {
       /* Update our cursor, and ask for wrap on the next row. */
       frame.cursor_x = 0;
       frame.cursor_y++;

@@ -42,13 +42,15 @@ Cell::Cell( color_type background_color )
   : contents(),
     renditions( background_color ),
     width( 1 ),
-    fallback( false )
+    fallback( false ),
+    wrap( false )
 {}
 Cell::Cell() /* default constructor required by C++11 STL */
   : contents(),
     renditions( 0 ),
     width( 1 ),
-    fallback( false )
+    fallback( false ),
+    wrap( false )
 {
   assert( false );
 }
@@ -59,6 +61,7 @@ void Cell::reset( color_type background_color )
   renditions = Renditions( background_color );
   width = 1;
   fallback = false;
+  wrap = false;
 }
 
 void DrawState::reinitialize_tabs( unsigned int start )
@@ -350,11 +353,11 @@ void Framebuffer::delete_line( int row, int count )
 }
 
 Row::Row( const size_t s_width, const color_type background_color )
-  : cells( s_width, Cell( background_color ) ), wrap( false ), gen( get_gen() )
+  : cells( s_width, Cell( background_color ) ), gen( get_gen() )
 {}
 
 Row::Row() /* default constructor required by C++11 STL */
-  : cells( 1, Cell() ), wrap( false ), gen( get_gen() )
+  : cells( 1, Cell() ), gen( get_gen() )
 {
   assert( false );
 }
@@ -648,6 +651,12 @@ bool Cell::compare( const Cell &other ) const
   if ( !(renditions == other.renditions) ) {
     ret = true;
     fprintf( stderr, "renditions differ\n" );
+  }
+
+  if ( wrap != other.wrap ) {
+    ret = true;
+    fprintf( stderr, "wrap: %d vs. %d\n",
+	     wrap, other.wrap );
   }
 
   return ret;

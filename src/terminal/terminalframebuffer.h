@@ -91,6 +91,7 @@ namespace Terminal {
     Renditions renditions;
     uint8_t width;
     bool fallback; /* first character is combining character */
+    bool wrap;
 
   public:
     Cell( color_type background_color );
@@ -103,7 +104,8 @@ namespace Terminal {
       return ( (contents == x.contents)
 	       && (fallback == x.fallback)
 	       && (width == x.width)
-	       && (renditions == x.renditions) );
+	       && (renditions == x.renditions)
+	       && (wrap == x.wrap) );
     }
 
     bool operator!=( const Cell &x ) const { return !operator==( x ); }
@@ -192,13 +194,14 @@ namespace Terminal {
     void set_width( unsigned int w ) { width = w; }
     bool get_fallback( void ) const { return fallback; }
     void set_fallback( bool f ) { fallback = f; }
+    bool get_wrap( void ) const { return wrap; }
+    void set_wrap( bool f ) { wrap = f; }
   };
 
   class Row {
   public:
     typedef std::vector<Cell> cells_type;
     cells_type cells;
-    bool wrap; /* if last cell, wrap to next line */
     // gen is a generation counter.  It can be used to quickly rule
     // out the possibility of two rows being identical; this is useful
     // in scrolling.
@@ -214,11 +217,11 @@ namespace Terminal {
 
     bool operator==( const Row &x ) const
     {
-      return ( gen == x.gen && cells == x.cells && wrap == x.wrap );
+      return ( gen == x.gen && cells == x.cells );
     }
 
-    bool get_wrap( void ) const { return wrap; }
-    void set_wrap( bool w ) { wrap = w; }
+    bool get_wrap( void ) const { return cells.back().get_wrap(); }
+    void set_wrap( bool w ) { cells.back().set_wrap( w ); }
 
     uint64_t get_gen() const;
   };
