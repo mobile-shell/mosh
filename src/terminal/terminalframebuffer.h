@@ -89,7 +89,7 @@ namespace Terminal {
     typedef std::string content_type; /* can be std::string, std::vector<uint8_t>, or __gnu_cxx::__vstring */
     content_type contents;
     Renditions renditions;
-    unsigned int width : 2;
+    unsigned int wide : 1; /* 0 = narrow, 1 = wide */
     unsigned int fallback : 1; /* first character is combining character */
     unsigned int wrap : 1;
 
@@ -103,7 +103,7 @@ namespace Terminal {
     {
       return ( (contents == x.contents)
 	       && (fallback == x.fallback)
-	       && (width == x.width)
+	       && (wide == x.wide)
 	       && (renditions == x.renditions)
 	       && (wrap == x.wrap) );
     }
@@ -190,8 +190,9 @@ namespace Terminal {
     const Renditions& get_renditions( void ) const { return renditions; }
     Renditions& get_renditions( void ) { return renditions; }
     void set_renditions( const Renditions& r ) { renditions = r; }
-    unsigned int get_width( void ) const { return width; }
-    void set_width( unsigned int w ) { width = w; }
+    bool get_wide( void ) const { return wide; }
+    void set_wide( bool w ) { wide = w; }
+    unsigned int get_width( void ) const { return wide + 1; }
     bool get_fallback( void ) const { return fallback; }
     void set_fallback( bool f ) { fallback = f; }
     bool get_wrap( void ) const { return wrap; }

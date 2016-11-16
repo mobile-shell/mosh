@@ -41,14 +41,14 @@ using namespace Terminal;
 Cell::Cell( color_type background_color )
   : contents(),
     renditions( background_color ),
-    width( 1 ),
+    wide( false ),
     fallback( false ),
     wrap( false )
 {}
 Cell::Cell() /* default constructor required by C++11 STL */
   : contents(),
     renditions( 0 ),
-    width( 1 ),
+    wide( false ),
     fallback( false ),
     wrap( false )
 {
@@ -59,7 +59,7 @@ void Cell::reset( color_type background_color )
 {
   contents.clear();
   renditions = Renditions( background_color );
-  width = 1;
+  wide = false;
   fallback = false;
   wrap = false;
 }
@@ -642,10 +642,10 @@ bool Cell::compare( const Cell &other ) const
 	     fallback, other.fallback );
   }
 
-  if ( width != other.width ) {
+  if ( wide != other.wide ) {
     ret = true;
     fprintf( stderr, "width: %d vs. %d\n",
-	     width, other.width );
+	     wide, other.wide );
   }
 
   if ( !(renditions == other.renditions) ) {
