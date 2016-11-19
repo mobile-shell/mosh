@@ -323,10 +323,13 @@ dnl Checks for chosen crypto library
 case "${with_crypto_library}" in
   openssl)
     PKG_CHECK_MODULES([CRYPTO], [openssl],
-      [],
-      [AC_MSG_ERROR([OpenSSL crypto library not found])])
-    AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])
-    ;;
+      [AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])],
+      [AX_CHECK_LIBRARY([CRYPTO], [openssl/aes.h], [crypto],
+        [AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])
+          AC_SUBST([CRYPTO_CFLAGS], ["$CRYPTO_CPPFLAGS"])
+          AC_SUBST([CRYPTO_LIBS], ["$CRYPTO_LDFLAGS -lcrypto"])],
+        [AC_MSG_ERROR([OpenSSL crypto library not found])])])
+        ;;
   nettle)
     PKG_CHECK_MODULES([CRYPTO], [nettle],
       [],
