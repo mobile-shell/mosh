@@ -488,29 +488,30 @@ void FrameState::append_silent_move( int y, int x )
 
 void FrameState::append_move( int y, int x )
 {
+  const int last_x = cursor_x;
+  const int last_y = cursor_y;
+  cursor_x = x;
+  cursor_y = y;
   // Only optimize if cursor pos is known
-  if ( cursor_x != -1 && cursor_y != -1 ) {
+  if ( last_x != -1 && last_y != -1 ) {
     // Can we use CR and/or LF?  They're cheap and easier to trace.
-    if ( x == 0 && y - cursor_y >= 0 && y - cursor_y < 5 ) {
-      if ( cursor_x != 0 ) {
+    if ( x == 0 && y - last_y >= 0 && y - last_y < 5 ) {
+      if ( last_x != 0 ) {
 	append( '\r' );
       }
-      append( y - cursor_y, '\n' );
-      goto positioned;
+      append( y - last_y, '\n' );
+      return;
     }
     // Backspaces are good too.
-    if ( y == cursor_y && x - cursor_x < 0 && x - cursor_x > -5 ) {
-      append( cursor_x - x, '\b' );
-      goto positioned;
+    if ( y == last_y && x - last_x < 0 && x - last_x > -5 ) {
+      append( last_x - x, '\b' );
+      return;
     }
     // More optimizations are possible.
   }
   char tmp[ 64 ];
   snprintf( tmp, 64, "\033[%d;%dH", y + 1, x + 1 );
   append( tmp );
- positioned:
-  cursor_x = x;
-  cursor_y = y;
 }
 
 void FrameState::update_rendition(const Renditions &r, bool force) {
