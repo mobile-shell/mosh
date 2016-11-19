@@ -66,6 +66,13 @@ int main( int argc, char *argv[] )
   memset( &winsize, 0, sizeof( winsize ) );
   winsize.ws_col = 80;
   winsize.ws_row = 24;
+
+  int saved_stderr = dup(STDERR_FILENO);
+  if ( saved_stderr < 0 ) {
+    perror( "dup" );
+    return 1;
+  }
+
   int master;
   pid_t child = forkpty( &master, NULL, NULL, &winsize );
   if ( child == -1 ) {
@@ -77,6 +84,14 @@ int main( int argc, char *argv[] )
      */
     return 77;
   } else if ( child == 0 ) {
+    if ( dup2( saved_stderr, STDERR_FILENO ) < 0 ) {
+      perror( "dup2" );
+      exit( 1 );
+    }
+    if ( close( saved_stderr ) < 0 ) {
+      perror( "close" );
+      exit( 1 );
+    }
     if ( execvp( argv[1], argv + 1 ) < 0 ) {
       perror( "execve" );
       exit( 1 );
