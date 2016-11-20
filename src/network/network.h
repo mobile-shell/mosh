@@ -187,10 +187,8 @@ namespace Network {
     double SRTT;
     double RTTVAR;
 
-    /* Exception from send(), to be delivered if the frontend asks for it,
-       without altering control flow. */
-    bool have_send_exception;
-    NetworkException send_exception;
+    /* Error from send()/sendto(). */
+    string send_error;
 
     Packet new_packet( const string &s_payload );
 
@@ -226,9 +224,9 @@ namespace Network {
     const Addr &get_remote_addr( void ) const { return remote_addr; }
     socklen_t get_remote_addr_len( void ) const { return remote_addr_len; }
 
-    const NetworkException *get_send_exception( void ) const
+    string &get_send_error( void )
     {
-      return have_send_exception ? &send_exception : NULL;
+      return send_error;
     }
 
     void set_last_roundtrip_success( uint64_t s_success ) { last_roundtrip_success = s_success; }

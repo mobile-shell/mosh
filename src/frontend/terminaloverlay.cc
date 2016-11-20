@@ -168,7 +168,7 @@ NotificationEngine::NotificationEngine()
     last_acked_state( timestamp() ),
     escape_key_string(),
     message(),
-    message_is_network_exception( false ),
+    message_is_network_error( false ),
     message_expiration( -1 ),
     show_quit_keystroke( true )
 {}

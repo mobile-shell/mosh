@@ -249,8 +249,7 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     RTT_hit( false ),
     SRTT( 1000 ),
     RTTVAR( 500 ),
-    have_send_exception( false ),
-    send_exception()
+    send_error()
 {
   setup();
 
@@ -369,8 +368,7 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
     RTT_hit( false ),
     SRTT( 1000 ),
     RTTVAR( 500 ),
-    have_send_exception( false ),
-    send_exception()
+    send_error()
 {
   setup();
 
@@ -405,14 +403,10 @@ void Connection::send( const string & s )
   ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
 			       &remote_addr.sa, remote_addr_len );
 
-  if ( bytes_sent == static_cast<ssize_t>( p.size() ) ) {
-    have_send_exception = false;
-  } else {
-    /* Notify the frontend on sendto() failure, but don't alter control flow.
-       sendto() success is not very meaningful because packets can be lost in
-       flight anyway. */
-    have_send_exception = true;
-    send_exception = NetworkException( "sendto", errno );
+  if ( bytes_sent != static_cast<ssize_t>( p.size() ) ) {
+    /* Make sendto() failure available to the frontend. */
+    send_error = "sendto: ";
+    send_error += strerror( errno );
 
     if ( errno == EMSGSIZE ) {
       MTU = DEFAULT_SEND_MTU; /* payload MTU of last resort */

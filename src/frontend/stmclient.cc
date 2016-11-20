@@ -539,15 +539,16 @@ bool STMClient::main( void )
 
       network->tick();
 
-      const Network::NetworkException *exn = network->get_send_exception();
-      if ( exn ) {
-        overlays.get_notification_engine().set_network_exception( *exn );
+      string & send_error = network->get_send_error();
+      if ( !send_error.empty() ) {
+        overlays.get_notification_engine().set_network_error( send_error );
+	send_error.clear();
       } else {
-        overlays.get_notification_engine().clear_network_exception();
+        overlays.get_notification_engine().clear_network_error();
       }
     } catch ( const Network::NetworkException &e ) {
       if ( !network->shutdown_in_progress() ) {
-        overlays.get_notification_engine().set_network_exception( e );
+        overlays.get_notification_engine().set_network_error( e.what() );
       }
 
       struct timespec req;

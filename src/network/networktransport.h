@@ -119,7 +119,7 @@ namespace Network {
     const Addr &get_remote_addr( void ) const { return connection.get_remote_addr(); }
     socklen_t get_remote_addr_len( void ) const { return connection.get_remote_addr_len(); }
 
-    const NetworkException *get_send_exception( void ) const { return connection.get_send_exception(); }
+    std::string &get_send_error( void ) { return connection.get_send_error(); }
   };
 }
 
