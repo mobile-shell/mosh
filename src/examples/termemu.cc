@@ -124,7 +124,7 @@ int main( int argc, char *argv[] )
       /* get shell name */
       my_argv[ 0 ] = getenv( "SHELL" );
       if ( my_argv[ 0 ] == NULL || *my_argv[ 0 ] == '\0' ) {
-	struct passwd *pw = getpwuid( geteuid() );
+	struct passwd *pw = getpwuid( getuid() );
 	if ( pw == NULL ) {
 	  perror( "getpwuid" );
 	  exit( 1 );
