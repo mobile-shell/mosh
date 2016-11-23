@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.61])
 AC_INIT([mosh], [1.2.6], [mosh-devel@mit.edu])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign std-options -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
 AC_CONFIG_MACRO_DIR([m4])
@@ -48,6 +48,8 @@ AC_ARG_ENABLE([compile-warnings],
          [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=unused-parameter"], [], [-Werror])
        AX_CHECK_COMPILE_FLAG([-Wno-error=c++11-extensions],
          [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=c++11-extensions"], [], [-Werror])
+       AX_CHECK_COMPILE_FLAG([-Wno-error=deprecated-declarations],
+         [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=deprecated-declarations"], [], [-Werror])
        AC_LANG_POP(C++)
        ;;
      *)
@@ -331,10 +333,13 @@ dnl Checks for chosen crypto library
 case "${with_crypto_library}" in
   openssl)
     PKG_CHECK_MODULES([CRYPTO], [openssl],
-      [],
-      [AC_MSG_ERROR([OpenSSL crypto library not found])])
-    AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])
-    ;;
+      [AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])],
+      [AX_CHECK_LIBRARY([CRYPTO], [openssl/aes.h], [crypto],
+        [AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])
+          AC_SUBST([CRYPTO_CFLAGS], ["$CRYPTO_CPPFLAGS"])
+          AC_SUBST([CRYPTO_LIBS], ["$CRYPTO_LDFLAGS -lcrypto"])],
+        [AC_MSG_ERROR([OpenSSL crypto library not found])])])
+        ;;
   nettle)
     PKG_CHECK_MODULES([CRYPTO], [nettle],
       [],

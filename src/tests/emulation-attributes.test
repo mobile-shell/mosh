@@ -10,11 +10,12 @@
 # compares on these values fail though they are visually identical.
 #
 
-. $(dirname $0)/e2e-test-subrs
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
-    e2e-test $0 baseline direct verify
+    e2e-test "$0" baseline direct verify
     exit
 fi
 
@@ -26,7 +27,7 @@ fi
 baseline()
 {
     # Strip our name to the last dash-separated word before the .test suffix.
-    testname=$(basename $1)
+    testname=$(basename "$1")
     testname=${testname%%.test}
     testname=${testname##*-}
 
@@ -44,35 +45,35 @@ baseline()
 	# 16-color attributes.
 	16color)
 	    for attr in $(seq 30 37) $(seq 39 47) 49; do
-		printf '\033[%dmE\033[m ' $attr
+		printf '\033[%dmE\033[m ' "$attr"
 	    done
 	    printf '\n'
 	    ;;
 	# First 8 256-color attributes.  Comparing mosh and tmux fails.
 	256color8)
 	for attr in $(seq 0 7); do
-	    printf '\033[38;5;%dmE\033[m ' $attr
-	    printf '\033[48;5;%dmM\033[m ' $attr
+	    printf '\033[38;5;%dmE\033[m ' "$attr"
+	    printf '\033[48;5;%dmM\033[m ' "$attr"
 	done
 	printf '\n'
 	;;
 	# Last 248 256-color attributes.
 	256color248)
 	for attr in $(seq 8 255); do
-	    printf '\033[38;5;%dmE\033[m ' $attr
-	    printf '\033[48;5;%dmM\033[m ' $attr
+	    printf '\033[38;5;%dmE\033[m ' "$attr"
+	    printf '\033[48;5;%dmM\033[m ' "$attr"
 	done
 	printf '\n'
 	;;
 	*)
-	    fail "unknown test name %s\n" $1
+	    fail "unknown test name %s\n" "$1"
 	    ;;
     esac
 } 
 
 case $1 in
     baseline|direct)
-	baseline $0;;
+	baseline "$0";;
     *)
-	fail "unknown test argument %s\n" $1;;
+	fail "unknown test argument %s\n" "$1";;
 esac

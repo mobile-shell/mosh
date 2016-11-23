@@ -200,9 +200,8 @@ for example, if this is the
 only port that is forwarded through a firewall to the
 server. With \fB\-p 0\fP, the server will let the operating system pick an
 available UDP port. Otherwise, \fBmosh\fP will choose a port between 60000 and
-61000.
-
-
+61000. Please note that this option does not affect the server-side
+port used by SSH.
 
 .TP
 .B \-\-bind\-server={ssh|any|\fIIP\fP}

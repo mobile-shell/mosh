@@ -7,7 +7,7 @@
 		* Add a --local option to run without ssh.  (John Hood)
 		* Mosh now returns exitstatus reflecting connection success.
 		  (John Hood)
-		* Add a end-to-end test suite and many tests.  (John Hood)
+		* Add an end-to-end test suite and many tests.  (John Hood)
 		* Implement timeouts and signals to help address orphaned sessions.
 		  (John Hood)
 		* Major rework of Mosh's display differencing/rendering

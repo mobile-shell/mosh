@@ -104,10 +104,17 @@ static void serve( int host_fd,
 
 static int run_server( const char *desired_ip, const char *desired_port,
 		const string &command_path, char *command_argv[],
-		const int colors, bool verbose, bool with_motd,
+		const int colors, unsigned int verbose, bool with_motd,
 		bool with_agent_fwd );
 
 using namespace std;
+
+static void print_version( FILE *file )
+{
+  fprintf( file, "mosh-server (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
+  fprintf( file, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
+  fprintf( file, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n" );
+}
 
 static void print_usage( FILE *stream, const char *argv0 )
 {
@@ -175,14 +182,18 @@ int main( int argc, char *argv[] )
   char **command_argv = NULL;
   int colors = 0;
   bool with_agent_fwd = false;
-  bool verbose = false; /* don't close stdin/stdout/stderr */
+  unsigned int verbose = 0; /* don't close stdin/stdout/stderr */
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
   list<string> locale_vars;
 
   /* strip off command */
-  for ( int i = 0; i < argc; i++ ) {
+  for ( int i = 1; i < argc; i++ ) {
     if ( 0 == strcmp( argv[ i ], "--help" ) || 0 == strcmp( argv[ i ], "-h" ) ) {
       print_usage( stdout, argv[ 0 ] );
+      exit( 0 );
+    }
+    if ( 0 == strcmp( argv[ i ], "--version" ) ) {
+      print_version( stdout );
       exit( 0 );
     }
     if ( 0 == strcmp( argv[ i ], "--" ) ) { /* -- is mandatory */
@@ -238,7 +249,7 @@ int main( int argc, char *argv[] )
 	}
 	break;
       case 'v':
-	verbose = true;
+	verbose++;
 	break;
       case 'l':
 	locale_vars.push_back( string( optarg ) );
@@ -362,7 +373,7 @@ int main( int argc, char *argv[] )
 
 static int run_server( const char *desired_ip, const char *desired_port,
 		       const string &command_path, char *command_argv[],
-		       const int colors, bool verbose, bool with_motd,
+		       const int colors, unsigned int verbose, bool with_motd,
 		       bool with_agent_fwd ) {
   /* get network idle timeout */
   long network_timeout = 0;
@@ -411,9 +422,8 @@ static int run_server( const char *desired_ip, const char *desired_port,
   Network::UserStream blank;
   ServerConnection *network = new ServerConnection( terminal, blank, desired_ip, desired_port );
 
-  if ( verbose ) {
-    network->set_verbose();
-  }
+  network->set_verbose( verbose );
+  Select::set_verbose( verbose );
 
   /*
    * If mosh-server is run on a pty, then typeahead may echo and break mosh.pl's
@@ -471,7 +481,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
   int master;
 
   /* close file descriptors */
-  if ( !verbose ) {
+  if ( verbose == 0 ) {
     /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
     int nullfd;
 
@@ -495,7 +505,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
   }
 
   char utmp_entry[ 64 ] = { 0 };
-  snprintf( utmp_entry, 64, "mosh [%d]", getpid() );
+  snprintf( utmp_entry, 64, "mosh [%ld]", static_cast<long int>( getpid() ) );
 
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, NULL, &window_size );
@@ -727,13 +737,13 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	      struct winsize window_size;
 	      if ( ioctl( host_fd, TIOCGWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCGWINSZ" );
-		return;
+		network.start_shutdown();
 	      }
 	      window_size.ws_col = res->width;
 	      window_size.ws_row = res->height;
 	      if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCSWINSZ" );
-		return;
+		network.start_shutdown();
 	      }
 	    }
 	    terminal_to_host += terminal.act( action );
@@ -810,7 +820,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       /* write user input and terminal writeback to the host */
       if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	break;
+	network.start_shutdown();
       }
 
       bool idle_shutdown = false;

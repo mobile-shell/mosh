@@ -61,15 +61,16 @@ Transition State::anywhere_rule( wchar_t ch ) const
 
 Transition State::input( wchar_t ch ) const
 {
-  Transition ret = anywhere_rule( ch );
-  if ( !ret.next_state ) {
-    if ( ch >= 0xA0 ) {
-      ret = this->input_state_rule( 0x41 );
-    } else {
-      ret = this->input_state_rule( ch );
-    }
+  /* Check for immediate transitions. */
+  Transition anywhere = anywhere_rule( ch );
+  if ( anywhere.next_state ) {
+    anywhere.action->char_present = true;
+    anywhere.action->ch = ch;
+    return anywhere;
   }
-
+  /* Normal X.364 state machine. */
+  /* Parse high Unicode codepoints like 'A'. */
+  Transition ret = this->input_state_rule( ch >= 0xA0 ? 0x41 : ch );
   ret.action->char_present = true;
   ret.action->ch = ch;
   return ret;

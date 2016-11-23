@@ -11,11 +11,12 @@
 # cleanup with kill -9.
 #
 
-. $(dirname $0)/e2e-test-subrs
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
-    e2e-test $0 tmux baseline post
+    e2e-test "$0" tmux baseline post
     exit
 fi
 
@@ -35,8 +36,8 @@ tmux_commands()
     # And stop the test script, so it produces its exit messge.
     printf "send-keys 0x0d\n"
     # This will get killed by SIGPIPE.
-    while sleep 1; do
-	printf "show-options\n"
+    while printf "show-options\n"; do
+	sleep 1
     done
 }
 
@@ -53,14 +54,14 @@ baseline()
     blat=$(for i in $(seq 1 100); do
 	       printf 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz\n'
 	   done)
-    read x
+    read -r x
     while true; do
-	printf "$blat"
+	printf '%s' "$blat"
     done &
     printpid=$!
     (sleep 120; kill $$ $printpid) &
     killpid=$!
-    read x
+    read -r x
     kill $printpid
     # Try and make sure the printer stops writing before the following printf
     sleep 1
@@ -74,7 +75,7 @@ baseline()
 
 post()
 {
-    if grep -q '=== normal exit ===' $(basename $0).d/baseline.capture; then
+    if grep -q '=== normal exit ===' "$(basename "$0").d/baseline.capture"; then
 	exit 0
     fi
     exit 1
@@ -89,5 +90,5 @@ case $1 in
     post)
 	post;;
     *)
-	fail "unknown test argument %s\n" $1;;
+	fail "unknown test argument %s\n" "$1";;
 esac

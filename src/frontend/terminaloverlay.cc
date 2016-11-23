@@ -168,7 +168,7 @@ NotificationEngine::NotificationEngine()
     last_acked_state( timestamp() ),
     escape_key_string(),
     message(),
-    message_is_network_exception( false ),
+    message_is_network_error( false ),
     message_expiration( -1 ),
     show_quit_keystroke( true )
 {}
@@ -280,7 +280,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
       this_cell->get_renditions().background_color = 44;
       
       this_cell->append( ch );
-      this_cell->set_width( chwidth );
+      this_cell->set_wide( chwidth == 2 );
       combining_cell = this_cell;
 
       overlay_col += chwidth;
@@ -291,7 +291,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
       }
 
       if ( combining_cell->empty() ) {
-	assert( combining_cell->get_width() == 1 );
+	assert( !combining_cell->get_wide() );
 	combining_cell->set_fallback( true );
 	overlay_col++;
       }

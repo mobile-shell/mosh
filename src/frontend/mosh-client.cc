@@ -70,12 +70,18 @@
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
 
-static void usage( const char *argv0 ) {
-  fprintf( stderr, "mosh-client (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
-  fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
-  fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
+static void print_version( FILE *file )
+{
+  fprintf( file, "mosh-client (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
+  fprintf( file, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
+  fprintf( file, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n" );
+}
 
-  fprintf( stderr, "Usage: %s [-# 'ARGS'] IP PORT\n       %s -c\n", argv0, argv0 );
+static void print_usage( FILE *file, const char *argv0 )
+{
+  print_version( file );
+  fprintf( file, "\n" );
+  fprintf( file, "Usage: %s [-# 'ARGS'] IP PORT\n       %s -c\n", argv0, argv0 );
 }
 
 static void print_colorcount( void )
@@ -99,6 +105,7 @@ int mosh_main( int argc, char *argv[] )
 int main( int argc, char *argv[] )
 #endif
 {
+  unsigned int verbose = 0;
   /* For security, make sure we don't dump core */
   Crypto::disable_dumping_core();
 
@@ -108,8 +115,19 @@ int main( int argc, char *argv[] )
   bool forward_agent = false;
 
   /* Get arguments */
+  for ( int i = 1; i < argc; i++ ) {
+    if ( 0 == strcmp( argv[ i ], "--help" ) ) {
+      print_usage( stdout, argv[ 0 ] );
+      exit( 0 );
+    }
+    if ( 0 == strcmp( argv[ i ], "--version" ) ) {
+      print_version( stdout );
+      exit( 0 );
+    }
+  }
+
   int opt;
-  while ( (opt = getopt( argc, argv, "#:cA" )) != -1 ) {
+  while ( (opt = getopt( argc, argv, "#:cvA" )) != -1 ) {
     switch ( opt ) {
     case '#':
       break;
@@ -120,8 +138,11 @@ int main( int argc, char *argv[] )
       print_colorcount();
       exit( 0 );
       break;
+    case 'v':
+      verbose++;
+      break;
     default:
-      usage( argv[ 0 ] );
+      print_usage( stderr, argv[ 0 ] );
       exit( 1 );
       break;
     }
@@ -130,7 +151,7 @@ int main( int argc, char *argv[] )
   char *ip, *desired_port;
 
   if ( argc - optind != 2 ) {
-    usage( argv[ 0 ] );
+    print_usage( stderr, argv[ 0 ] );
     exit( 1 );
   }
 
@@ -141,7 +162,7 @@ int main( int argc, char *argv[] )
   if ( desired_port
        && ( strspn( desired_port, "0123456789" ) != strlen( desired_port ) ) ) {
     fprintf( stderr, "%s: Bad UDP port (%s)\n\n", argv[ 0 ], desired_port );
-    usage( argv[ 0 ] );
+    print_usage( stderr, argv[ 0 ] );
     exit( 1 );
   }
 
@@ -172,7 +193,7 @@ int main( int argc, char *argv[] )
 
   bool success = false;
   try {
-    STMClient client( ip, desired_port, key, predict_mode, forward_agent );
+    STMClient client( ip, desired_port, key, predict_mode, verbose, forward_agent );
     client.init();
 
     try {

@@ -256,6 +256,10 @@ void STMClient::main_init( void )
 
   /* tell server the size of the terminal */
   network->get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
+
+  /* be noisy as necessary */
+  network->set_verbose( verbose );
+  Select::set_verbose( verbose );
 }
 
 void STMClient::output_new_frame( void )
@@ -551,15 +555,16 @@ bool STMClient::main( void )
 
       network->oob()->post_tick();
 
-      const Network::NetworkException *exn = network->get_send_exception();
-      if ( exn ) {
-        overlays.get_notification_engine().set_network_exception( *exn );
+      string & send_error = network->get_send_error();
+      if ( !send_error.empty() ) {
+        overlays.get_notification_engine().set_network_error( send_error );
+	send_error.clear();
       } else {
-        overlays.get_notification_engine().clear_network_exception();
+        overlays.get_notification_engine().clear_network_error();
       }
     } catch ( const Network::NetworkException &e ) {
       if ( !network->shutdown_in_progress() ) {
-        overlays.get_notification_engine().set_network_exception( e );
+        overlays.get_notification_engine().set_network_error( e.what() );
       }
 
       struct timespec req;

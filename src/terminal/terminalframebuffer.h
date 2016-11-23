@@ -89,8 +89,9 @@ namespace Terminal {
     typedef std::string content_type; /* can be std::string, std::vector<uint8_t>, or __gnu_cxx::__vstring */
     content_type contents;
     Renditions renditions;
-    uint8_t width;
-    bool fallback; /* first character is combining character */
+    unsigned int wide : 1; /* 0 = narrow, 1 = wide */
+    unsigned int fallback : 1; /* first character is combining character */
+    unsigned int wrap : 1;
 
   public:
     Cell( color_type background_color );
@@ -102,8 +103,9 @@ namespace Terminal {
     {
       return ( (contents == x.contents)
 	       && (fallback == x.fallback)
-	       && (width == x.width)
-	       && (renditions == x.renditions) );
+	       && (wide == x.wide)
+	       && (renditions == x.renditions)
+	       && (wrap == x.wrap) );
     }
 
     bool operator!=( const Cell &x ) const { return !operator==( x ); }
@@ -188,17 +190,19 @@ namespace Terminal {
     const Renditions& get_renditions( void ) const { return renditions; }
     Renditions& get_renditions( void ) { return renditions; }
     void set_renditions( const Renditions& r ) { renditions = r; }
-    unsigned int get_width( void ) const { return width; }
-    void set_width( unsigned int w ) { width = w; }
+    bool get_wide( void ) const { return wide; }
+    void set_wide( bool w ) { wide = w; }
+    unsigned int get_width( void ) const { return wide + 1; }
     bool get_fallback( void ) const { return fallback; }
     void set_fallback( bool f ) { fallback = f; }
+    bool get_wrap( void ) const { return wrap; }
+    void set_wrap( bool f ) { wrap = f; }
   };
 
   class Row {
   public:
     typedef std::vector<Cell> cells_type;
     cells_type cells;
-    bool wrap; /* if last cell, wrap to next line */
     // gen is a generation counter.  It can be used to quickly rule
     // out the possibility of two rows being identical; this is useful
     // in scrolling.
@@ -214,11 +218,11 @@ namespace Terminal {
 
     bool operator==( const Row &x ) const
     {
-      return ( gen == x.gen && cells == x.cells && wrap == x.wrap );
+      return ( gen == x.gen && cells == x.cells );
     }
 
-    bool get_wrap( void ) const { return wrap; }
-    void set_wrap( bool w ) { wrap = w; }
+    bool get_wrap( void ) const { return cells.back().get_wrap(); }
+    void set_wrap( bool w ) { cells.back().set_wrap( w ); }
 
     uint64_t get_gen() const;
   };

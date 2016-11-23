@@ -3,6 +3,7 @@ EXTRA_DIST = \
 	e2e-test e2e-test-server \
 	e2e-test-subrs \
 	mosh-client mosh-server \
+	local.test \
 	$(displaytests) \
 	emulation-attributes.test
 
@@ -22,8 +23,11 @@ displaytests = \
 	emulation-cursor-motion.test \
 	emulation-multiline-scroll.test \
 	emulation-wrap-across-frames.test \
+	network-no-diff.test \
 	prediction-unicode.test \
 	pty-deadlock.test \
+	repeat.test \
+	repeat-with-input.test \
 	server-network-timeout.test \
 	server-signal-timeout.test \
 	window-resize.test \
@@ -31,8 +35,8 @@ displaytests = \
 	unicode-later-combining.test \
 	window-resize.test
 
-check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr
-TESTS = ocb-aes encrypt-decrypt base64 nonce-incr $(displaytests)
+check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty
+TESTS = ocb-aes encrypt-decrypt base64 nonce-incr local.test $(displaytests)
 XFAIL_TESTS = \
 	e2e-failure.test \
 	emulation-attributes-256color8.test
@@ -56,6 +60,10 @@ base64_LDADD = $(ocb_aes_LDADD)
 nonce_incr_SOURCES = nonce-incr.cc
 nonce_incr_CPPFLAGS = -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../util $(CRYPTO_CFLAGS)
 nonce_incr_LDADD = ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a ../util/libmoshutil.a $(CRYPTO_LIBS)
+
+inpty_SOURCES = inpty.cc
+inpty_CPPFLAGS = -I$(srcdir)/../util
+inpty_LDADD = ../util/libmoshutil.a $(LIBUTIL)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

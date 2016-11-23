@@ -32,7 +32,7 @@ There are four essential parts to the framework:
 * `e2e-test-server`
 * `e2e-test-subrs`
 
-The test script has two roles: when invoked without argments, it is a
+The test script has two roles: when invoked without arguments, it is a
 wrapper script for the overall test, and when invoked with an
 argument, it performs a testing-related action.  In wrapper mode, it
 invokes e2e-test with action arguments, which are used to invoke the

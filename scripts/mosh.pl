@@ -30,18 +30,24 @@
 #   this exception statement from all source files in the program, then
 #   also delete it here.
 
-use 5.14.0;
+use 5.10.0;
 
 use warnings;
 use strict;
 use Getopt::Long;
 use IO::Socket;
 use Text::ParseWords;
-use Socket qw( getaddrinfo getnameinfo AI_CANONNAME AI_NUMERICHOST NI_NUMERICHOST
- IPPROTO_IP IPPROTO_IPV6 IPPROTO_TCP IPPROTO_UDP );
+use Socket qw( IPPROTO_IP IPPROTO_IPV6 IPPROTO_TCP IPPROTO_UDP );
 use Errno qw(EINTR);
 use POSIX qw(_exit);
 
+BEGIN {
+  my @gai_reqs = qw( getaddrinfo getnameinfo AI_CANONNAME AI_NUMERICHOST NI_NUMERICHOST );
+  eval { Socket->import( @gai_reqs ); 1; }
+    || eval { require Socket::GetAddrInfo; Socket::GetAddrInfo->import( ':newapi', @gai_reqs ); 1; }
+    || eval { Socket::GetAddrInfo->import( '0.22', @gai_reqs ); 1; }
+    || die "$0 error: requires Perl 5.14 or Socket::GetAddrInfo.\n";
+}
 
 my $have_ipv6 = eval {
   require IO::Socket::IP;
@@ -101,6 +107,7 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
         --family=prefer-inet6 use all network types, but try IPv6 first
 -p PORT[:PORT2]
         --port=PORT[:PORT2]  server-side UDP port or range
+                                (No effect on server-side SSH port)
         --bind-server={ssh|any|IP}  ask the server to reply from an IP address
                                        (default: "ssh")
 
@@ -166,8 +173,14 @@ GetOptions( 'client=s' => \$client,
 	    'bind-server=s' => \$bind_ip,
 	    'experimental-remote-ip=s' => \$use_remote_ip) or die $usage;
 
-die $usage if ( defined $help );
-die $version_message if ( defined $version );
+if ( defined $help ) {
+    print $usage;
+    exit;
+}
+if ( defined $version ) {
+    print $version_message;
+    exit;
+}
 
 if ( defined $predict ) {
   predict_check( $predict, 0 );
@@ -443,7 +456,7 @@ if ( $pid == 0 ) { # child
     if ( $bad_udp_port_warning ) {
       die "$0: Server does not support UDP port range option.\n";
     }
-    die "$0: Did not find mosh server startup message.\n";
+    die "$0: Did not find mosh server startup message. (Have you installed mosh on your server?)\n";
   }
 
   # Now start real mosh client

@@ -6,11 +6,12 @@
 # resize them.  But it works!
 #
 
-. $(dirname $0)/e2e-test-subrs
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
-    e2e-test $0 tmux baseline
+    e2e-test "$0" tmux baseline
     exit
 fi
 
@@ -20,16 +21,16 @@ tmux_resize_commands()
     shrink=$2
     grow=$3
     # Split the window into two panes.
-    printf "split-window -${hv}\n"
+    printf "split-window -%s\n" "${hv}"
     # Shrink the pane we created
     for i in $(seq 1 10); do
 	sleepf
-	printf "resize-pane -${shrink}\n"
+	printf "resize-pane -%s\n" "${shrink}"
     done
     # And grow it
     for i in $(seq 1 10); do
 	sleepf
-	printf "resize-pane -${grow}\n"
+	printf "resize-pane -%s\n" "${grow}"
     done
     sleep 1
     # Remove the pane we created.
@@ -78,5 +79,5 @@ case $1 in
     baseline)
 	baseline;;
     *)
-	fail "unknown test argument %s\n" $1;;
+	fail "unknown test argument %s\n" "$1";;
 esac

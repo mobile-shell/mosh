@@ -37,7 +37,6 @@
 #include <typeinfo>
 
 #include "terminal.h"
-#include "swrite.h"
 
 using namespace Terminal;
 
@@ -107,7 +106,7 @@ void Emulator::print( const Parser::Print *act )
 
     fb.reset_cell( this_cell );
     this_cell->append( ch );
-    this_cell->set_width( chwidth );
+    this_cell->set_wide( chwidth == 2 ); /* chwidth had better be 1 or 2 here */
     fb.apply_renditions_to_cell( this_cell );
 
     if ( chwidth == 2 ) { /* erase overlapped cell */
@@ -132,7 +131,7 @@ void Emulator::print( const Parser::Print *act )
 	   base character [e.g. start of line], if the
 	   combining character has been cleared with
 	   a sequence like ED ("J") or EL ("K") */
-	assert( combining_cell->get_width() == 1 );
+	assert( !combining_cell->get_wide() );
 	combining_cell->set_fallback( true );
 	fb.ds.move_col( 1, true, true );
       }

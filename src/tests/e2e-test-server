@@ -13,9 +13,14 @@ if [ $# -lt 2 ]; then
 fi
 testname=$1
 shift
-rm -f $testname.capture $testname.exitstatus
+rm -f "$testname.capture" "$testname.exitstatus"
 trap ":" TERM HUP QUIT # If the session closes on us, let the test we're running drive.
-trap 'rv=$?; echo $rv > $testname.exitstatus; exit $rv' EXIT
+on_exit() {
+    rv=$?
+    echo $rv > "$testname.exitstatus"
+    exit $rv
+}
+trap on_exit EXIT
 # check for tmux
 if [ -z "$TMUX_PANE" ]; then
     printf "not running under tmux\n" >&2
@@ -24,12 +29,17 @@ fi
 # run harnessed command
 eval "$@"
 testret=$?
+# Capture mosh-server runtime if possible.
+runtime=$(ps -o time= $PPID 2>/dev/null)
+if [ $? -ne 0 ]; then # Cygwin...
+    runtime=-
+fi
 # Wait for tmux client screen to become up to date.
 sleep 1
 printf "@@@ server complete @@@" >&2
 i=0
 while [ $i -lt 60 ]; do
-    if grep -q "@@@ server complete @@@" $testname.tmux.log; then
+    if grep -q "@@@ server complete @@@" "$testname.tmux.log"; then
 	break
     fi
     i=$((i+1))
@@ -40,14 +50,16 @@ if [ $i -ge 60 ]; then
     exit 99
 fi
 # capture screen
-if ! tmux capture-pane -et $TMUX_PANE; then
+if ! tmux capture-pane -et "$TMUX_PANE"; then
     printf "tmux capture-pane failed, erroring test\n" >&2
     exit 99
 fi
-if ! tmux save-buffer $testname.capture; then
+if ! tmux save-buffer "$testname.capture"; then
     printf "tmux save-buffer failed, erroring test\n" >&2
     exit 99
 fi
+# Dump runtime into tmux log.
+printf "@@@ runtime %s @@@\n" "$runtime"
 # return useful exitstatus from harnessed command
 if [ $testret -ne 0 ]; then
     exit 1

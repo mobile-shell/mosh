@@ -36,6 +36,8 @@ fd_set Select::dummy_fd_set;
 
 sigset_t Select::dummy_sigset;
 
+unsigned int Select::verbose = 0;
+
 void Select::handle_signal( int signum )
 {
   fatal_assert( signum >= 0 );

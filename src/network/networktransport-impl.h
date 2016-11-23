@@ -49,7 +49,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     receiver_quench_timer( 0 ),
     last_receiver_state( initial_remote ),
     fragments(),
-    verbose( false )
+    verbose( 0 )
 {
   /* server */
 }
@@ -63,7 +63,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     receiver_quench_timer( 0 ),
     last_receiver_state( initial_remote ),
     fragments(),
-    verbose( false )
+    verbose( 0 )
 {
   /* client */
 }

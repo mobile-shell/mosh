@@ -14,11 +14,12 @@
 
 TIMEOUT=10
 
-. $(dirname $0)/e2e-test-subrs
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
-    e2e-test $0 client baseline
+    e2e-test "$0" client baseline
     exit
 fi
 
@@ -47,7 +48,7 @@ client()
 	    fail "mosh-client had a normal exit\n";; # test condition failed
 	9|137|265)
 	    # Aha, signal 9.  Wait.
-	    sleep $(( $TIMEOUT + 12 ))
+	    sleep $(( TIMEOUT + 12 ))
 	    exit 0
 	    ;;
 	*)
@@ -59,7 +60,7 @@ client()
 baseline()
 {
     # check for our wonderful variable
-    if [ -z "$MOSH_SERVER_NETWORK_TMOUT" -a -z "$MOSH_SERVER_SIGNAL_TMOUT" ]; then
+    if [ -z "$MOSH_SERVER_NETWORK_TMOUT" ] && [ -z "$MOSH_SERVER_SIGNAL_TMOUT" ]; then
 	env
 	fail "Variable unset\n"
     fi
@@ -68,7 +69,7 @@ baseline()
 	env
 	fail "Client pid unavailable\n"
     fi
-    if ! kill -0 $MOSH_CLIENT_PID; then
+    if ! kill -0 "$MOSH_CLIENT_PID"; then
 	fail "mosh client is unexpectedly missing\n"
     fi
 
@@ -77,17 +78,17 @@ baseline()
     sleep 1
     
     # Kill the client, to stop network traffic.
-    kill -KILL $MOSH_CLIENT_PID
+    kill -KILL "$MOSH_CLIENT_PID"
     case "$myname" in
 	server-network-timeout)
 	    # Just wait.  This is the hardest part.
-	    sleep $(( $TIMEOUT + 7 ))
+	    sleep $(( TIMEOUT + 7 ))
 	    ;;
 	server-signal-timeout)
 	    # Wait for the timeout to expire.
-	    sleep $(( $TIMEOUT + 2 ))
+	    sleep $(( TIMEOUT + 2 ))
 	    # Tell the server to go away.
-	    kill -USR1 $MOSH_SERVER_PID
+	    kill -USR1 "$MOSH_SERVER_PID"
 	    sleep 5
 	    ;;
 	*)
@@ -97,11 +98,11 @@ baseline()
     # XXX the server is getting killed and we're getting here anyway.
     # Exit with error only if server is still around.
     sleep 1
-    ! kill -0 $MOSH_SERVER_PID
+    ! kill -0 "$MOSH_SERVER_PID"
     exit
 }
 
-myname="$(basename $0 .test)"
+myname="$(basename "$0" .test)"
 
 case $1 in
     baseline|variant)
@@ -109,5 +110,5 @@ case $1 in
     client)
 	client "$@";;
     *)
-	fail "unknown test argument %s\n" $1;;
+	fail "unknown test argument %s\n" "$1";;
 esac
