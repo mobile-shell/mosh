@@ -52,8 +52,8 @@ tmux_commands()
     sleep 1
     printf "send-keys 0x04\n"
     # This will get killed by SIGPIPE.
-    while printf "show-options\n"; do
-	sleep 1
+    while printf "show-options\n" && sleep 1; do
+	:
     done
 } 
 

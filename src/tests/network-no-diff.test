@@ -23,10 +23,8 @@ baseline()
 {
     # Generate updates that don't change the screen
     i=0
-    while [ $i -lt 10 ]; do
-	printf 'x\b'
+    while [ $i -lt 10 ] && printf 'x\b' && sleep 1; do
 	i=$((i + 1))
-	sleep 1
     done
 }
 

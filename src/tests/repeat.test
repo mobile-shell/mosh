@@ -51,8 +51,8 @@ server()
 # Constantly send keyboard input.
 tmux_commands()
 {
-    while printf "send-keys 0x0d\n"; do
-	sleepf
+    while printf "send-keys 0x0d\n" && sleepf; do
+	:
     done
 }
 
