@@ -82,7 +82,7 @@ script:
         shasum -a 256 "${TRAVIS_TAG}.pkg" "${TRAVIS_TAG}-build-report.tbz"
       )
     fi
-# Deploy the OS X package to a GitHub release.
+# Deploy the OS X package and distribution tarball to a GitHub release.
 deploy:
   provider: releases
   api_key:
@@ -91,6 +91,7 @@ deploy:
   skip_cleanup: true
   # Using a shell variable in deploy.file is undocumented but seems to work.
   file:
+    - ${TRAVIS_TAG}.tar.gz
     - macosx/${TRAVIS_TAG}.pkg
     - macosx/${TRAVIS_TAG}-build-report.tbz
   on:
