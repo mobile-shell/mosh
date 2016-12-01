@@ -13,9 +13,9 @@ language: cpp
 sudo: required
 dist: trusty
 
-# Currently we're using the Travis Xcode 7.1/OS X 10.10 image to
+# Currently we're using the Travis Xcode 6.4/OS X 10.10 image to
 # get i386/x86_64 fat binaries.
-osx_image: xcode7.1
+osx_image: xcode6.4
 
 # Linux dependencies
 addons:
