@@ -36,17 +36,14 @@ before_install:
   # and is fairly quiet, so wrap it in travis_wait to keep it from
   # being killed.
   - |
-    (
-      set -e
-      if test osx = "${TRAVIS_OS_NAME}"; then
-        macosx/brew-deps.sh install
+    if test osx = "${TRAVIS_OS_NAME}"; then
+      macosx/brew-deps.sh install &&
         if test -n "${TRAVIS_TAG}"; then
           travis_wait 30 macosx/brew-deps.sh package_deps
         else
           macosx/brew-deps.sh deps
         fi
-      fi
-    )
+    fi
 
 # Use before_script to report the build configuration.
 before_script:
@@ -55,17 +52,15 @@ before_script:
   - env
   - git describe --long
   - |
-    (
-      set -e
-      if test osx = "${TRAVIS_OS_NAME}" && test -n "${TRAVIS_TAG}"; then
-        rm -rf macosx/build-report "macosx/${TRAVIS_TAG}-build-report.tbz"
-        mkdir macosx/build-report
-        cd macosx/build-report
-        ../brew-deps.sh describe
-        ../osx-xcode.sh describe
-        tar -cjf "../${TRAVIS_TAG}-build-report.tbz" .
-      fi
-    )
+    if test osx = "${TRAVIS_OS_NAME}" && test -n "${TRAVIS_TAG}"; then
+      rm -rf macosx/build-report "macosx/${TRAVIS_TAG}-build-report.tbz" &&
+        mkdir macosx/build-report &&
+        cd macosx/build-report &&
+        ../brew-deps.sh describe &&
+        ../osx-xcode.sh describe &&
+        tar -cjf "../${TRAVIS_TAG}-build-report.tbz" . &&
+        cd -
+    fi
 
 # 'make distcheck', and OS X package build on tag builds.
 script:
@@ -75,12 +70,10 @@ script:
   # Build OS X package for tags.
   - |
     if test osx = "${TRAVIS_OS_NAME}" && test -n "${TRAVIS_TAG}"; then
-      (
-        set -e
-        cd macosx
-        env ZERO_AR_DATE=1 MACOSX_DEPLOYMENT_TARGET=10.10 ./build.sh
-        shasum -a 256 "${TRAVIS_TAG}.pkg" "${TRAVIS_TAG}-build-report.tbz"
-      )
+      cd macosx &&
+        env ZERO_AR_DATE=1 MACOSX_DEPLOYMENT_TARGET=10.10 ./build.sh &&
+        shasum -a 256 "${TRAVIS_TAG}.pkg" "${TRAVIS_TAG}-build-report.tbz" &&
+        cd -
     fi
 # Deploy the OS X package and distribution tarball to a GitHub release.
 deploy:
