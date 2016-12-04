@@ -136,7 +136,6 @@ static bool old_ack(uint64_t newest_echo_ack, const pair<uint64_t, uint64_t> p)
 
 bool Complete::set_echo_ack( uint64_t now )
 {
-  bool ret = false;
   uint64_t newest_echo_ack = 0;
 
   for ( input_history_type::const_iterator i = input_history.begin();
@@ -149,13 +148,13 @@ bool Complete::set_echo_ack( uint64_t now )
 
   input_history.remove_if( bind1st( ptr_fun( old_ack ), newest_echo_ack ) );
 
-  if ( echo_ack != newest_echo_ack ) {
-    ret = true;
+  if ( echo_ack == newest_echo_ack ) {
+    return false;
   }
 
   echo_ack = newest_echo_ack;
 
-  return ret;
+  return true;
 }
 
 void Complete::register_input_frame( uint64_t n, uint64_t now )

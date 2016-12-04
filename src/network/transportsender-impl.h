@@ -274,9 +274,8 @@ void TransportSender<MyState>::update_assumed_receiver_state( void )
 
   /* start from what is known and give benefit of the doubt to unacknowledged states
      transmitted recently enough ago */
-  assumed_receiver_state = sent_states.begin();
-
   typename list< TimestampedState<MyState> >::iterator i = sent_states.begin();
+  assumed_receiver_state = i;
   i++;
 
   while ( i != sent_states.end() ) {
