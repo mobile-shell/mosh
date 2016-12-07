@@ -271,8 +271,9 @@
 	static block gen_offset(uint64_t KtopStr[3], unsigned bot) {
 		const union { unsigned x; unsigned char endian; } little = { 1 };
 		const int64x2_t k64 = {-64,-64};
-		uint64x2_t hi = *(uint64x2_t *)(KtopStr+0);   /* hi = A B */
-		uint64x2_t lo = *(uint64x2_t *)(KtopStr+1);   /* hi = B C */
+		uint64x2_t hi, lo;
+		memcpy(&hi, KtopStr, sizeof(hi));
+		memcpy(&lo, KtopStr+1, sizeof(lo));
 		int64x2_t ls = vdupq_n_s64(bot);
 		int64x2_t rs = vqaddq_s64(k64,ls);
 		block rval = (block)veorq_u64(vshlq_u64(hi,ls),vshlq_u64(lo,rs));
