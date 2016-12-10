@@ -256,6 +256,10 @@ for run in $server_tests; do
 	if egrep -q "(polls, rate limiting|consecutive polls)" "${test_dir}/${run}.server.stderr"; then
 	    test_error "select() with zero timeout called too often on server during %s\n" "$run"
 	fi
+	# Check for assert()
+	if egrep -q "assertion.*failed" "${test_dir}/${run}.server.stderr"; then
+	    test_error "assertion during %s\n" "$run"
+	fi
     fi
     # XXX We'd also like to check for "target state Instruction
     # verification failed", a new check, but tmux's lack of BCE

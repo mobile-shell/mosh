@@ -289,7 +289,7 @@ int main( int argc, char *argv[] )
     /* get shell name */
     const char *shell = getenv( "SHELL" );
     if ( shell == NULL ) {
-      struct passwd *pw = getpwuid( geteuid() );
+      struct passwd *pw = getpwuid( getuid() );
       if ( pw == NULL ) {
 	perror( "getpwuid" );
 	exit( 1 );
@@ -946,7 +946,7 @@ static void chdir_homedir( void )
 {
   const char *home = getenv( "HOME" );
   if ( home == NULL ) {
-    struct passwd *pw = getpwuid( geteuid() );
+    struct passwd *pw = getpwuid( getuid() );
     if ( pw == NULL ) {
       perror( "getpwuid" );
       return; /* non-fatal */
@@ -981,7 +981,7 @@ static void warn_unattached( const string & ignore_entry )
 {
 #ifdef HAVE_UTMPX_H
   /* get username */
-  const struct passwd *pw = getpwuid( geteuid() );
+  const struct passwd *pw = getpwuid( getuid() );
   if ( pw == NULL ) {
     perror( "getpwuid" );
     /* non-fatal */

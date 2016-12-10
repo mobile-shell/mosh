@@ -36,8 +36,8 @@ tmux_commands()
     # And stop the test script, so it produces its exit messge.
     printf "send-keys 0x0d\n"
     # This will get killed by SIGPIPE.
-    while printf "show-options\n"; do
-	sleep 1
+    while printf "show-options\n" && sleep 1; do
+	:
     done
 }
 
@@ -55,8 +55,8 @@ baseline()
 	       printf 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz\n'
 	   done)
     read -r x
-    while true; do
-	printf '%s' "$blat"
+    while printf '%s' "$blat"; do
+	:
     done &
     printpid=$!
     (sleep 120; kill $$ $printpid) &
