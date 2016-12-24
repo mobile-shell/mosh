@@ -37,12 +37,15 @@
 #include <errno.h>
 
 #if HAVE_CLOCK_GETTIME
- #include <time.h>
-#elif HAVE_MACH_ABSOLUTE_TIME
- #include <mach/mach_time.h>
-#elif HAVE_GETTIMEOFDAY
- #include <sys/time.h>
- #include <stdio.h>
+#include <time.h>
+#endif
+#if HAVE_MACH_ABSOLUTE_TIME
+#include <mach/error.h>
+#include <mach/mach_time.h>
+#endif
+#if HAVE_GETTIMEOFDAY
+#include <sys/time.h>
+#include <stdio.h>
 #endif
 
 static uint64_t millis_cache = -1;
@@ -58,32 +61,44 @@ uint64_t frozen_timestamp( void )
 
 void freeze_timestamp( void )
 {
+  // Try all our clock sources till we get something.  This could
+  // break if a source only sometimes works in a given process.
 #if HAVE_CLOCK_GETTIME
+  // Preferred clock source-- portable, monotonic, (should be)
+  // adjusted after system sleep
   struct timespec tp;
 
-  if ( clock_gettime( CLOCK_MONOTONIC, &tp ) < 0 ) {
-    /* did not succeed */
-  } else {
+  // Check for presence, for OS X SDK >= 10.12 and runtime < 10.12
+  if ( &clock_gettime != NULL && clock_gettime( CLOCK_MONOTONIC, &tp ) == 0 ) {
     uint64_t millis = tp.tv_nsec / 1000000;
     millis += uint64_t( tp.tv_sec ) * 1000;
 
     millis_cache = millis;
     return;
   }
-#elif HAVE_MACH_ABSOLUTE_TIME
+#endif
+#if HAVE_MACH_ABSOLUTE_TIME
+  // Monotonic, not adjusted after system sleep.  OS X 10.12 has
+  // mach_continuous_time(), but also has clock_gettime().
   static mach_timebase_info_data_t s_timebase_info;
-  static double absolute_to_millis;
+  static double absolute_to_millis = 0.0;
 
-  if (s_timebase_info.denom == 0) {
-    mach_timebase_info(&s_timebase_info);
-    absolute_to_millis = 1e-6 * s_timebase_info.numer / s_timebase_info.denom;
+  if (absolute_to_millis == 0.0) {
+    if (ERR_SUCCESS == mach_timebase_info(&s_timebase_info)) {
+      absolute_to_millis = 1e-6 * s_timebase_info.numer / s_timebase_info.denom;
+    } else
+      absolute_to_millis = -1.0;
   }
 
   // NB: mach_absolute_time() returns "absolute time units"
   // We need to apply a conversion to get milliseconds.
-  millis_cache = mach_absolute_time() * absolute_to_millis;
-  return;								    
-#elif HAVE_GETTIMEOFDAY
+  if (absolute_to_millis > 0.0) {
+    millis_cache = mach_absolute_time() * absolute_to_millis;
+    return;
+  }
+#endif
+#if HAVE_GETTIMEOFDAY
+  // Not monotonic.
   // NOTE: If time steps backwards, timeouts may be confused.
   struct timeval tv;
   if ( gettimeofday(&tv, NULL) ) {
@@ -96,6 +111,6 @@ void freeze_timestamp( void )
     return;
   }
 #else
-# error "Don't know how to get a timestamp on this platform"
+# error "gettimeofday() unavailable-- required as timer of last resort"
 #endif
 }
