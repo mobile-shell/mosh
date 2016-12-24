@@ -79,7 +79,7 @@ script:
 deploy:
   provider: releases
   api_key:
-    secure: O+EmNHUQpqvrWNb1LYv5CXF9o35Mybi+Y48jr+nV3oJ+dLlwgmP71tDzARY0rEY18xT4DL9RBbl5Y74A4nZxvSMSih+VBUf+lgBhkAFkU5W1sRTaJdQVtJw6NcaeuDR/TvVMpJAPxLtHOZnmqplkQVDn4fpkweGaW0Suk7eSlibF3fd0dhoZ8sfDgWQpUW61C08ENBC9/ru01BqDcNuWA9EoS2aLRVCHKR5C02D2EFONlHTxu32X9qm5IcVrk+Zi5mmqyHk74A4a7QRJCDixKyt53LGXYpQh9flePmzSqZDKO5q3PSmWohoUzGLkKBcZit/mSd5aUeIzd7gk/YHNxGfZpGvLzjVDWpjdTXxALTcpVA64VFqLbb3P7N+zYQ7S9ZucwAz8XQ+wArqszQrLtU3vtz+AsO6dLRxAg0lLjNe084Gv0hFAn8u8HGNqBBZ177sTKoEmL3w0wdwSuxhk1aGIFnlKrzjFY57HvJlxSNupAeXqtU9/DNwLyzsnFc1qN4UKJ/hXdb5mtwug+DZy7E0RpJ/jJemfy7RjIAAZCowCLRFBxfRkY3HRaHeaF31mAogkc8FLXFjx2sR95t7GvK1AvJvHdmXs4OxjvgEVl9OI+mWQ9xMqcmjKwx5KuuAcBt8sLK7MJE6iRBwYBQ7eUQrJcYxRMN+w0vhznvLZwv8=
+    secure: noQsHb/ycLHcyS7VwgpPfsH1KNaKd1YyjGwAobxIPTbeyP6fPk8hHiTW3rvgOyXTh4bs0SuZ5iMBsTYPJ1sgDSsICLZvIoZeD7F9tdkvlJCKKKNq4y+vJVS6kHOajD9nLV+pcexIB74QazBDnXscKNsrulk5rcD3rj75P1QKYXs=
   # Save build artifacts.
   skip_cleanup: true
   # Using a shell variable in deploy.file is undocumented but seems to work.
@@ -87,7 +87,7 @@ deploy:
     - macosx/${TRAVIS_TAG}.pkg
     - macosx/${TRAVIS_TAG}-osx-build-report.tbz
   on:
-    repo: cgull/mosh
+    repo: mobile-shell/mosh
     tags: true
     condition: ${TRAVIS_OS_NAME} = osx
 
