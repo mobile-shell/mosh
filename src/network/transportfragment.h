@@ -36,12 +36,15 @@
 #include <stdint.h>
 #include <vector>
 #include <string>
+#include <map>
 
 #include "transportinstruction.pb.h"
+#include "network.h"
 
 namespace Network {
   using std::vector;
   using std::string;
+  using std::map;
   using namespace TransportBuffers;
 
   class Fragment
@@ -79,11 +82,27 @@ namespace Network {
     vector<Fragment> fragments;
     uint64_t current_id;
     int fragments_arrived, fragments_total;
+  public:
+    uint64_t last_received;
+
+    FragmentAssembly( uint64_t id ) : fragments(), current_id( id ), fragments_arrived( 0 ), fragments_total( -1 ), last_received( 0 ) {}
+    string get_assembly( const Fragment &inst );
+  private:
+    bool add_fragment( const Fragment &inst );
+  };
+
+  class Defragmenter
+  {
+    /* Maximum count of partly reassembled packets. */
+    static const int maxReassembly = 5;
+    typedef map<uint64_t, FragmentAssembly> Packets;
+    Packets packets;
 
   public:
-    FragmentAssembly() : fragments(), current_id( -1 ), fragments_arrived( 0 ), fragments_total( -1 ) {}
-    bool add_fragment( Fragment &inst );
-    Instruction get_assembly( void );
+    Defragmenter() : packets() {}
+    string get_assembly( const Fragment &inst );
+  private:
+    Packets::iterator get_packet( const Fragment &inst );
   };
 
   class Fragmenter
