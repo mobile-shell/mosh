@@ -68,8 +68,12 @@ void freeze_timestamp( void )
   // adjusted after system sleep
   struct timespec tp;
 
-  // Check for presence, for OS X SDK >= 10.12 and runtime < 10.12
-  if ( &clock_gettime != NULL && clock_gettime( CLOCK_MONOTONIC, &tp ) == 0 ) {
+  if (
+#if defined(__APPLE__) && defined(__MACH__)
+      // Check for presence, for OS X SDK >= 10.12 and runtime < 10.12
+      &clock_gettime != NULL &&
+#endif
+      clock_gettime( CLOCK_MONOTONIC, &tp ) == 0 ) {
     uint64_t millis = tp.tv_nsec / 1000000;
     millis += uint64_t( tp.tv_sec ) * 1000;
 
