@@ -1,4 +1,4 @@
-2016-11-28 Keith Winstein <mosh-devel@mit.edu>
+2016-12-29 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.3.0 released.
 
@@ -14,7 +14,7 @@
 		* Added nonce-incrementing test.  (Keith Winstein)
 		* Add build-source-package.sh for Debian.  (Keith Winstein)
 		* Fix CPPFLAGS handling possibly causing curses detection
-	failure.  (John Hood)
+		  failure.  (John Hood)
 		* Add an Appveyor/Cygwin CI build.
 		* Improve warning-flags detection for 'make distcheck'.  (John Hood)
 		* Improve robustness of regression tests.  (John Hood)
@@ -30,6 +30,11 @@
 		 'std-options' checks.  (Anders Kaseorg)
 		* Add a simple smoke test not requiring tmux, to help
 		  validate builds on older platforms including RHEL 5. (Anders Kaseorg)
+		* Use '-f' instead of '-n' when invoking ssh for better reliability.
+		  (John Hood)
+		* Check for presence of clock_gettime() for OS X, where
+		  the symbol may not be resolved on older OS X versions.  (John
+		  Hood)
 		* Other minor platform compatibility fixes for Mosh
 		  sources and tests.  (John Hood)
 
