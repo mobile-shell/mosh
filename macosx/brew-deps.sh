@@ -42,15 +42,15 @@ deps()
 # Runtime dependencies are required to support the targeted OS X
 # version, static libraries, and fat binaries for the package build.
 #
-# This reinstalls protobuf with --universal --bottle to get a fat
-# library that will run on any machine.  (This takes about 15 minutes
-# on current Travis infrastructure.)
+# This reinstalls protobuf with --universal --build-bottle to get a
+# fat library that will run on any machine.  (This takes about 15
+# minutes on current Travis infrastructure.)
 #
 package_deps()
 {
     deps
     brew rm protobuf
-    brew install protobuf --universal --bottle
+    brew install protobuf --universal --build-bottle
 }
 
 #
