@@ -1,3 +1,63 @@
+2016-12-29 Keith Winstein <mosh-devel@mit.edu>
+
+mosh (1.3.0-rc1) unstable; urgency=low
+
+	* Version 1.3.0 released.
+
+  * New features:
+    * Change website URLs from http://mosh.mit.edu to
+      https://mosh.org.  (Keith Winstein)
+    * Add --no-ssh-pty option for Dropbear compatibility and
+      other issues.
+    * Switch to semantic versioning, making this version 1.3.0
+      instead of 1.2.7.
+
+  * Platform support:
+    * Added nonce-incrementing test.  (Keith Winstein)
+    * Add build-source-package.sh for Debian.  (Keith Winstein)
+    * Fix CPPFLAGS handling possibly causing curses detection
+      failure.  (John Hood)
+    * Add an Appveyor/Cygwin CI build.
+    * Improve warning-flags detection for 'make distcheck'.  (John Hood)
+    * Improve robustness of regression tests.  (John Hood)
+    * Support OpenBSD pledge() sandboxing.  (John Hood)
+    * Use backward-compatible name for AES in
+      AppleCommonCrypto, fixing builds with older OS X SDKs.  (John Hood)
+    * Detect clock_gettime() and CLOCK_MONOTONIC carefully,
+      fixing OS X 10.12 + Xcode 7.3 builds.  (John Hood)
+    * Support older versions of Perl, back to 5.10, fixing
+      RHEL 5 builds. (Anders Kaseorg)
+    * Add a Travis OS X CI and release build.  (John Hood)
+    * Add --help and --version, enabling Automake's
+     'std-options' checks.  (Anders Kaseorg)
+    * Add a simple smoke test not requiring tmux, to help
+      validate builds on older platforms including RHEL 5. (Anders Kaseorg)
+    * Use '-f' instead of '-n' when invoking ssh for better reliability.
+      (John Hood)
+    * Check for presence of clock_gettime() for OS X, where
+      the symbol may not be resolved on older OS X versions.  (John
+      Hood)
+    * Other minor platform compatibility fixes for Mosh
+      sources and tests.  (John Hood)
+
+  * Bug fixes:
+    * Work around a pty buffering issue causing failed
+      connections on FreeBSD 11, or with Dropbear.  (John Hood)
+    * Restore '-p 0' option for OS-selected UDP port bindings.  (John Hood)
+    * Shell hygiene fixes, including better quoting of
+      pathnames.  (Anders Kaseorg)
+    * Fix typos in project docs.  (Jakub Wilk)
+    * Fix excess newlines on mosh client startup/shutdown.  (John Hood)
+    * Exit gracefully, closing session, on pty write or ioctl failure.  (John Hood)
+    * Fix two bugs that caused mosh-server to consume
+      excessive CPU in certain circumstances.  (John Hood)
+    * Fix bug that caused text copied from mosh-client to
+      paste as long lines joined by spaces.  (John Hood)
+    * Documentation improvements. (chenxiaoqino, Ashish Gupta)
+    * Use getuid(), not geteuid(), for correct getpw* lookups.  (John Hood)
+
+ -- Keith Winstein <keithw@mit.edu>  Thu, 29 Dec 2016 15:18:30 -0500
+
 mosh (1.2.6-1) unstable; urgency=low
 
   * Version 1.2.6 released.
