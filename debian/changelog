@@ -32,8 +32,6 @@ mosh (1.3.0-rc1) unstable; urgency=low
      'std-options' checks.  (Anders Kaseorg)
     * Add a simple smoke test not requiring tmux, to help
       validate builds on older platforms including RHEL 5. (Anders Kaseorg)
-    * Use '-f' instead of '-n' when invoking ssh for better reliability.
-      (John Hood)
     * Check for presence of clock_gettime() for OS X, where
       the symbol may not be resolved on older OS X versions.  (John
       Hood)
