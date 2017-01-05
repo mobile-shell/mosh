@@ -346,7 +346,7 @@ die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
   open(STDERR, ">&STDOUT") or die;
 
-  my @sshopts = ( '-f' );
+  my @sshopts = ( '-n' );
   if ($ssh_pty) {
       push @sshopts, '-tt';
   }
