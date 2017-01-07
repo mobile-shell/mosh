@@ -1,8 +1,6 @@
-2016-12-29 Keith Winstein <mosh-devel@mit.edu>
+mosh (1.3.0~rc2-1) unstable; urgency=medium
 
-mosh (1.3.0-rc2) unstable; urgency=low
-
-	* Version 1.3.0 released.
+  * Version 1.3.0 released.
 
   * New features:
     * Change website URLs from http://mosh.mit.edu to
