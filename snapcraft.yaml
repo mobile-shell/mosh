@@ -7,11 +7,17 @@ description: |
   editing of user keystrokes.
 
 grade: devel
-confinement: devmode
+confinement: classic
 
 apps:
   mosh:
     command: mosh
+  mosh-client:
+    command: mosh-client
+    aliases: [mosh-client]
+  mosh-server:
+    command: mosh-server
+    aliases: [mosh-server]
 
 parts:
   mosh:
