@@ -1,0 +1,29 @@
+name: mosh
+version: master
+summary: the mobile shell
+description: |
+  Mosh is a remote terminal application that supports intermittent
+  connectivity, allows roaming, and provides speculative local echo and line
+  editing of user keystrokes.
+
+grade: devel
+confinement: devmode
+
+apps:
+  mosh:
+    command: mosh
+
+parts:
+  mosh:
+    source: .
+    plugin: autotools
+    build-packages:
+      - g++
+      - pkg-config
+      - perl
+      - protobuf-compiler
+      - libprotobuf-dev
+      - libncurses5-dev
+      - zlib1g-dev
+      - libutempter-dev
+      - libssl-dev
