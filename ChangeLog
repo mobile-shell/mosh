@@ -34,6 +34,8 @@
 		  the symbol may not be resolved on older OS X versions.  (John
 		  Hood)
 		* Fix a memory alignment issue in OCB with ARM/Neon. (Carlos Cabanero)
+		* Mosh now runs correctly on Bash for Windows with Windows 10
+		  Insider builds 15002 and higher. (No change in Mosh)
 		* Other minor platform compatibility fixes for Mosh
 		  sources and tests.  (John Hood)
 
