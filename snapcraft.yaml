@@ -28,8 +28,9 @@ parts:
       - pkg-config
       - perl
       - protobuf-compiler
-      - libprotobuf-dev
+    stage-packages:
       - libncurses5-dev
-      - zlib1g-dev
-      - libutempter-dev
+      - libprotobuf-dev
       - libssl-dev
+      - libutempter-dev
+      - zlib1g-dev
