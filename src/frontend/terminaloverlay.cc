@@ -38,6 +38,16 @@
 
 #include "terminaloverlay.h"
 
+#if defined(__has_cpp_attribute)
+#if __has_cpp_attribute(gnu::fallthrough)
+#define FALLTHROUGH [[gnu::fallthrough]]
+#endif
+#endif
+
+#ifndef FALLTHROUGH
+#define FALLTHROUGH
+#endif
+
 using namespace Overlay;
 using std::max;
 using std::mem_fun_ref;
@@ -568,7 +578,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	  }
 	}
 
-	/* no break */
+	FALLTHROUGH;
       case CorrectNoCredit:
 	j->reset();
 
