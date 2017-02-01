@@ -568,7 +568,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
 	  }
 	}
 
-	/* no break */
+	/* fallthrough */
       case CorrectNoCredit:
 	j->reset();
 
