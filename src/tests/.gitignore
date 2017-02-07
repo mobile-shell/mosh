@@ -3,6 +3,7 @@
 /ocb-aes
 /encrypt-decrypt
 /nonce-incr
+/inpty
 /*.d/
 *.log
 *.trs
