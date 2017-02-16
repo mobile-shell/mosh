@@ -177,6 +177,13 @@ AS_IF([test x"$with_utempter" != xno],
       [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])],
       [AC_MSG_ERROR([--with-utempter was given but libutempter was not found.])])])])
 
+# Handle --disable-agent-forwarding
+AC_ARG_ENABLE(agent-forwarding,
+              AS_HELP_STRING([--disable-agent-forwarding],
+                             [disable ssh agent forwarding in compile time]),
+              , enable_agent_forwarding=yes)
+
+
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
 AC_SEARCH_LIBS([socket], [socket])
@@ -186,6 +193,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 
 # Checks for header files.
 AC_CHECK_HEADERS(m4_normalize([
+  errno.h
   fcntl.h
   langinfo.h
   limits.h
@@ -213,6 +221,8 @@ AC_CHECK_HEADERS([endian.h sys/endian.h])
 AC_CHECK_HEADERS([utmpx.h])
 AC_CHECK_HEADERS([termio.h])
 AC_CHECK_HEADERS([sys/uio.h])
+AC_CHECK_HEADERS([sys/un.h])
+AC_CHECK_HEADERS([sys/types.h])
 AC_LANG_PUSH(C++)
 AC_CHECK_HEADERS([memory tr1/memory])
 AC_LANG_POP(C++)
@@ -466,6 +476,11 @@ AC_CHECK_DECL([IUTF8],
   [AC_MSG_WARN([No IUTF8 termios mode; character-erase of multibyte character sequence probably does not work properly in canonical mode on this platform.])],
   [[#include <termios.h>]])
 
+if test "$enable_agent_forwarding" = "yes"; then
+  AC_DEFINE([SUPPORT_AGENT_FORWARDING], [], [
+    Define to enable support for SSH agent forwarding])
+fi
+
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 
@@ -496,6 +511,7 @@ AC_CONFIG_FILES([
   src/protobufs/Makefile
   src/statesync/Makefile
   src/terminal/Makefile
+  src/agent/Makefile
   src/util/Makefile
   scripts/Makefile
   src/examples/Makefile

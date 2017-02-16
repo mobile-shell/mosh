@@ -32,7 +32,7 @@ clean-local:
 cppcheck: $(BUILT_SOURCES) config.h
 	cppcheck --enable=all --template=gcc -include config.h -I . \
 		-I src/crypto -I src/frontend -I src/network -I src/protobufs \
-		-I src/statesync -I src/terminal -I src/util \
+		-I src/statesync -I src/terminal -I src/util -I src/agent \
 		-I /usr/include -I /usr/include/google/protobuf -I/usr/include/openssl \
 		.
 

@@ -30,11 +30,17 @@
     also delete it here.
 */
 
+#include "config.h"
+
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
+#include <time.h>
 
+#include "timestamp.h"
 #include "swrite.h"
+#include "fatal_assert.h"
 
 int swrite( int fd, const char *str, ssize_t len )
 {
@@ -51,5 +57,44 @@ int swrite( int fd, const char *str, ssize_t len )
     }
   }
 
+  return 0;
+}
+
+
+int swrite_timeout( int fd, uint64_t timeout_ms, const char *str, ssize_t len )
+{
+  size_t total_bytes_written = 0;
+  size_t bytes_to_write = ( len >= 0 ) ? len : (ssize_t) strlen( str );
+  uint64_t t0 = frozen_timestamp();
+  uint64_t iteration = 0;
+
+  while ( total_bytes_written < bytes_to_write ) {
+    iteration++;
+    ssize_t rv = write( fd, str + total_bytes_written, bytes_to_write - total_bytes_written);
+    if ( rv > 0 ) {
+      total_bytes_written += rv;
+      continue;
+    } else if ( rv < 0 && ( errno == EAGAIN || errno == EWOULDBLOCK ) ) {
+      uint64_t t1 = frozen_timestamp();
+      fatal_assert( t1 >= t0 );
+      uint64_t total_time_spent = t1 - t0;
+      if ( total_time_spent > timeout_ms ) {
+	perror( "write" );
+	return -1;
+      }
+      uint64_t time_left = timeout_ms - total_time_spent;
+      uint64_t sleep_time = 999;
+      if ( time_left < sleep_time ) sleep_time = time_left;
+      if ( iteration * 50 < sleep_time ) sleep_time = iteration * 50;
+      fatal_assert( sleep_time > 0 );
+      struct timespec req;
+      req.tv_sec = 0;
+      req.tv_nsec = sleep_time * 1000000;
+      nanosleep( &req, NULL );
+      continue;
+    } else {
+      perror( "write" );
+    }
+  }
   return 0;
 }

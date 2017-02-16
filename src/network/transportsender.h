@@ -42,6 +42,7 @@
 #include "transportstate.h"
 #include "transportfragment.h"
 #include "prng.h"
+#include "outofband.h"
 
 using std::list;
 using std::pair;
@@ -104,6 +105,8 @@ namespace Network {
 
     uint64_t last_heard; /* last time received new state */
 
+    OutOfBand oob_ctl; /* out of band protocol object */
+
     /* chaff to disguise instruction length */
     PRNG prng;
     const string make_chaff( void );
@@ -133,7 +136,10 @@ namespace Network {
     void remote_heard( uint64_t ts ) { last_heard = ts; }
 
     /* Starts shutdown sequence */
-    void start_shutdown( void ) { if ( !shutdown_in_progress ) { shutdown_start = timestamp(); shutdown_in_progress = true; } }
+    void start_shutdown( void ) { if ( !shutdown_in_progress ) { oob_ctl.uninit(); shutdown_start = timestamp(); shutdown_in_progress = true; } }
+
+    /* Get refenrece to out of band control object */
+    OutOfBand *oob( void ) { return &oob_ctl; }
 
     /* Misc. getters and setters */
     /* Cannot modify current_state while shutdown in progress */

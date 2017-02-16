@@ -112,6 +112,8 @@ int main( int argc, char *argv[] )
   /* Detect edge case */
   fatal_assert( argc > 0 );
 
+  bool forward_agent = false;
+
   /* Get arguments */
   for ( int i = 1; i < argc; i++ ) {
     if ( 0 == strcmp( argv[ i ], "--help" ) ) {
@@ -125,10 +127,12 @@ int main( int argc, char *argv[] )
   }
 
   int opt;
-  while ( (opt = getopt( argc, argv, "#:cv" )) != -1 ) {
+  while ( (opt = getopt( argc, argv, "#:cvA" )) != -1 ) {
     switch ( opt ) {
     case '#':
-      // Ignore the original arguments to mosh wrapper
+      break;
+    case 'A':
+      forward_agent = true;
       break;
     case 'c':
       print_colorcount();
@@ -189,7 +193,7 @@ int main( int argc, char *argv[] )
 
   bool success = false;
   try {
-    STMClient client( ip, desired_port, key, predict_mode, verbose );
+    STMClient client( ip, desired_port, key, predict_mode, verbose, forward_agent );
     client.init();
 
     try {
