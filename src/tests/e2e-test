@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. "$(dirname "$0")/e2e-test-subrs"
+
 #
 # Validate that mosh produces expected output, using screen captures
 # in tmux.
@@ -106,6 +108,9 @@ mosh_server()
 }
 
 # main
+if ! set_locale; then
+    test_error "e2e-test: no usable locale\n"
+fi
 
 # Set up environment
 if [ -z "$srcdir" ]; then

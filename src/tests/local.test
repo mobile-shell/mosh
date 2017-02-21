@@ -1,4 +1,11 @@
 #!/bin/sh
+
+. "$(dirname "$0")/e2e-test-subrs"
+if ! set_locale; then
+    echo "$0: no usable locale" >&2
+    exit 99
+fi
+
 set -eu
 out=$(
     TERM=xterm \
