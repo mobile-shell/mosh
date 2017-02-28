@@ -51,20 +51,20 @@ baseline()
 	    ;;
 	# First 8 256-color attributes.  Comparing mosh and tmux fails.
 	256color8)
-	for attr in $(seq 0 7); do
-	    printf '\033[38;5;%dmE\033[m ' "$attr"
-	    printf '\033[48;5;%dmM\033[m ' "$attr"
-	done
-	printf '\n'
-	;;
+	    for attr in $(seq 0 7); do
+		printf '\033[38;5;%dmE\033[m ' "$attr"
+		printf '\033[48;5;%dmM\033[m ' "$attr"
+	    done
+	    printf '\n'
+	    ;;
 	# Last 248 256-color attributes.
 	256color248)
-	for attr in $(seq 8 255); do
-	    printf '\033[38;5;%dmE\033[m ' "$attr"
-	    printf '\033[48;5;%dmM\033[m ' "$attr"
-	done
-	printf '\n'
-	;;
+	    for attr in $(seq 8 255); do
+		printf '\033[38;5;%dmE\033[m ' "$attr"
+		printf '\033[48;5;%dmM\033[m ' "$attr"
+	    done
+	    printf '\n'
+	    ;;
 	*)
 	    fail "unknown test name %s\n" "$1"
 	    ;;
