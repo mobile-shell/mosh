@@ -42,7 +42,7 @@ tmux_commands()
     # An interactive shell is waiting for us in the mosh session.
     # Start a full screen application that will redraw on window
     # resize.
-    printf "send-keys 'less /etc/services' 0x0d\n"
+    printf "send-keys 'less \"%s\"' 0x0d\n" "${srcdir}/e2e-test"
     sleep 1
     # we control the horizontal...
     tmux_resize_commands v D U

@@ -109,7 +109,7 @@ mosh_server()
 
 # Set up environment
 if [ -z "$srcdir" ]; then
-    srcdir=$PWD
+    export srcdir=$PWD
 else
     srcdir="$(cd "$srcdir" && pwd)"
     if [ $? -ne 0 ]; then
