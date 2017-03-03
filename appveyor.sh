@@ -10,7 +10,7 @@ eeval()
     eval "$@"
     rv=$?
     if [ $rv -ne 0 ]; then
-	echo "$0: failed, exitcod $rv"
+	echo "$0: failed, exitcode $rv"
 	exit $rv
     fi
     return 0
