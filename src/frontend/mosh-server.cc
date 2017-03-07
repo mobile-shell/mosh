@@ -92,6 +92,13 @@
 
 #include "networktransport-impl.h"
 
+/* If no client messages are seen in this number of miliseconds, then
+ * the mosh-server process will terminate. */
+#ifndef CLEANUP_TIMEOUT
+  /* One week, in miliseconds. */
+# define CLEANUP_TIMEOUT (604800 * 1000)
+#endif
+
 typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConnection;
 
 static void serve( int host_fd,
@@ -848,6 +855,15 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	}
       }
       #endif
+
+      /* Check to see if it's been a long time (defined at the start)
+       * since the client has sent a message and terminate.  This
+       * prevents unused servers from piling up on the server. */
+      if ( time_since_remote_state > CLEANUP_TIMEOUT ) {
+          fprintf( stderr, "mosh-server %d no-client timeout\n",
+                   getpid() );
+          exit(5);
+      }
 
       if ( terminal.set_echo_ack( now ) ) {
 	/* update client with new echo ack */
