@@ -60,6 +60,14 @@ test_exitstatus()
 # Tmux check.
 tmux_check()
 {
+    # OpenBSD tmux does not have '-V'.
+    if [ "$(uname -s)" = "OpenBSD" ]; then
+	openbsd_major="$(uname -r)"
+	openbsd_major="${openbsd_major%%.*}"
+	if [ "${openbsd_major}" -ge 6 ]; then
+	    return 0
+	fi
+    fi
     version=$(tmux -V)
     if [ $? != 0 ]; then
 	error "tmux unavailable\n"
