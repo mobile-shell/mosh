@@ -4,6 +4,7 @@
 /encrypt-decrypt
 /nonce-incr
 /inpty
+/is-utf8-locale
 /*.d/
 *.log
 *.trs
