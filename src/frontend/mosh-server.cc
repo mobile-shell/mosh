@@ -577,7 +577,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
     /* Drop unnecessary privileges */
 #ifdef HAVE_PLEDGE
     /* OpenBSD pledge() syscall */
-    if ( pledge( "stdio inet ioctl tty", NULL )) {
+    if ( pledge( "stdio inet tty", NULL )) {
       perror( "pledge() failed" );
       exit( 1 );
     }
