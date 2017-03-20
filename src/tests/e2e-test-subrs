@@ -61,6 +61,11 @@ set_locale()
 {
     # Test for a usable locale.
     map=$(locale charmap 2>/dev/null)
+    # 'locale charmap' is not POSIX.  If it's not available,
+    # pretend everything is OK.
+    if [ $? != 0 ]; then
+	return 0
+    fi
     if [ "$map" = "utf-8" ] || [ "$map" = "UTF-8" ]; then
 	return 0
     fi
