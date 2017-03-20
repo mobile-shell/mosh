@@ -60,14 +60,12 @@ chr()
 set_locale()
 {
     # Test for a usable locale.
-    map=$(locale charmap 2>/dev/null)
-    if [ "$map" = "utf-8" ] || [ "$map" = "UTF-8" ]; then
+    if env PATH="$PATH:${binpath}" is-utf8-locale 2> /dev/null; then
 	return 0
     fi
     # Attempt to find/set a usable locale.
     for i in en_US.UTF-8 en_US.utf8 C.UTF-8; do
-	map="$(env LANG=$i locale charmap 2>/dev/null)"
-	if [ "$map" = "utf-8" ] || [ "$map" = "UTF-8" ]; then
+	if env PATH="$PATH:${binpath}" LANG=$i is-utf8-locale 2>/dev/null; then
 	    export LANG=$i LC_ALL=''
 	    return 0
 	fi

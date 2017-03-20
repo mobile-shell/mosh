@@ -108,10 +108,6 @@ mosh_server()
 }
 
 # main
-if ! set_locale; then
-    test_error "e2e-test: no usable locale\n"
-fi
-
 # Set up environment
 if [ -z "$srcdir" ]; then
     export srcdir=$PWD
@@ -137,10 +133,6 @@ case "$(basename "$0")" in
 	;;
 esac
 
-if ! tmux_check; then
-    test_skipped "tmux unavailable\n"
-fi
-
 if [ $# -lt 2 ]; then
     test_error "not enough args\n"
 fi
@@ -152,6 +144,15 @@ test_args=$@
 # XXX could use AM testsubdir macro instead
 test_dir=$(basename "${test_name}").d
 test_script="${test_name}"
+
+tests_dir=$(dirname "${test_name}")
+if ! set_locale "${tests_dir}"; then
+    test_error "e2e-test: no usable locale\n"
+fi
+
+if ! tmux_check; then
+    test_skipped "tmux unavailable\n"
+fi
 
 rm -rf "${test_dir}"
 mkdir "${test_dir}"
