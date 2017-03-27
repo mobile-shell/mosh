@@ -386,7 +386,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
       frame.append_silent_move( frame_y, frame_x - clear_count );
       frame.update_rendition( blank_renditions );
       bool can_use_erase = has_bce || ( frame.current_rendition == initial_rendition() );
-      if ( can_use_erase && has_ech ) {
+      if ( can_use_erase && has_ech && clear_count > 4 ) {
 	snprintf( tmp, 64, "\033[%dX", clear_count );
 	frame.append( tmp );
       } else {
@@ -436,8 +436,8 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
     frame.append_silent_move( frame_y, frame_x - clear_count );
     frame.update_rendition( blank_renditions );
 
-    bool can_use_erase = !wrap_this && ( has_bce || ( frame.current_rendition == initial_rendition() ) );
-    if ( can_use_erase ) {
+    bool can_use_erase = has_bce || ( frame.current_rendition == initial_rendition() );
+    if ( can_use_erase && !wrap_this ) {
       frame.append( "\033[K" );
     } else {
       frame.append( clear_count, ' ' );
