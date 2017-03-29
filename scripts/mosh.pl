@@ -30,14 +30,14 @@
 #   this exception statement from all source files in the program, then
 #   also delete it here.
 
-use 5.10.0;
+use 5.8.8;
 
 use warnings;
 use strict;
 use Getopt::Long;
 use IO::Socket;
 use Text::ParseWords;
-use Socket qw( IPPROTO_IP IPPROTO_IPV6 IPPROTO_TCP IPPROTO_UDP );
+use Socket qw(IPPROTO_TCP);
 use Errno qw(EINTR);
 use POSIX qw(_exit);
 
