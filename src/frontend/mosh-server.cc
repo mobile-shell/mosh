@@ -98,7 +98,8 @@ static void serve( int host_fd,
 		   Terminal::Complete &terminal,
 		   ServerConnection &network,
 		   long network_timeout,
-		   long network_signaled_timeout );
+		   long network_signaled_timeout,
+		   int wait_fd );
 
 static int run_server( const char *desired_ip, const char *desired_port,
 		       const string &command_path, char *command_argv[],
@@ -492,6 +493,12 @@ static int run_server( const char *desired_ip, const char *desired_port,
   char utmp_entry[ 64 ] = { 0 };
   snprintf( utmp_entry, 64, "mosh [%ld]", static_cast<long int>( getpid() ) );
 
+  int wait_pipe[2];
+  if ( pipe( wait_pipe ) < 0 ) {
+    perror( "pipe" );
+    exit( 1 );
+  }
+
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, NULL, &window_size );
 
@@ -502,6 +509,11 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
   if ( child == 0 ) {
     /* child */
+
+    if ( close( wait_pipe[1] ) < 0 ) {
+      perror( "wait_pipe[1] close" );
+      exit( 1 );
+    }
 
     /* reenable signals */
     struct sigaction sa;
@@ -559,10 +571,14 @@ static int run_server( const char *desired_ip, const char *desired_port,
     }
 
     /* Wait for parent to release us. */
-    char linebuf[81];
-    if (fgets(linebuf, sizeof linebuf, stdin) == NULL) {
+    char c;
+    if ( read( wait_pipe[0], &c, 1 ) < 1 ) {
       perror( "parent signal" );
       _exit( 1 );
+    }
+    if ( close( wait_pipe[0] ) < 0 ) {
+      perror( "wait_pipe[0] close" );
+      exit( 1 );
     }
 
     Crypto::reenable_dumping_core();
@@ -573,6 +589,10 @@ static int run_server( const char *desired_ip, const char *desired_port,
     }
   } else {
     /* parent */
+    if ( close( wait_pipe[0] ) < 0 ) {
+      perror( "wait_pipe[0] close" );
+      exit( 1 );
+    }
 
     /* Drop unnecessary privileges */
 #ifdef HAVE_PLEDGE
@@ -589,7 +609,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
 #endif
 
     try {
-      serve( master, terminal, *network, network_timeout, network_signaled_timeout );
+      serve( master, terminal, *network, network_timeout, network_signaled_timeout, wait_pipe[1] );
     } catch ( const Network::NetworkException &e ) {
       fprintf( stderr, "Network exception: %s\n",
 	       e.what() );
@@ -615,7 +635,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
   return 0;
 }
 
-static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network, long network_timeout, long network_signaled_timeout )
+static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network, long network_timeout, long network_signaled_timeout, int wait_fd )
 {
   /* scale timeouts */
   const uint64_t network_timeout_ms = static_cast<uint64_t>( network_timeout ) * 1000;
@@ -761,9 +781,13 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
 	  /* Tell child to start login session. */
 	  if ( !child_released ) {
-	    if ( swrite( host_fd, "\n", 1 ) < 0) {
+	    if ( swrite( wait_fd, "\0", 1 ) < 0) {
 	      perror( "child release" );
 	      _exit( 1 );
+	    }
+	    if ( close( wait_fd ) < 0 ) {
+	      perror( "wait_fd close" );
+	      exit( 1 );
 	    }
 	    child_released = true;
 	  }
