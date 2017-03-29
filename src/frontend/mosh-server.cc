@@ -422,11 +422,11 @@ static int run_server( const char *desired_ip, const char *desired_port,
    * If mosh-server is run on a pty, then typeahead may echo and break mosh.pl's
    * detection of the MOSH CONNECT message.  Print it on a new line to bodge
    * around that.
+   *
+   * Do it all in one printf to get a single write on the pty.
    */
-  if ( isatty( STDIN_FILENO ) ) {
-    puts( "\r\n" );
-  }
-  printf( "MOSH CONNECT %s %s\n", network->port().c_str(), network->get_key().c_str() );
+  printf( "%sMOSH CONNECT %s %s\n", isatty( STDIN_FILENO ) ? "\n" : "",
+	  network->port().c_str(), network->get_key().c_str() );
 
   /* don't let signals kill us */
   struct sigaction sa;

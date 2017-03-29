@@ -423,6 +423,8 @@ if ( $pid == 0 ) { # child
       } else {
 	die "Bad MOSH CONNECT string: $_\n";
       }
+    } elsif ( m{^\s*$} ) {
+      # do nothing
     } else {
       if ( defined $port_request and $port_request =~ m{:} and m{Bad UDP port} ) {
 	$bad_udp_port_warning = 1;
