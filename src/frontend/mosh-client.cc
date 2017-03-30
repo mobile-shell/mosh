@@ -72,16 +72,18 @@
 
 static void print_version( FILE *file )
 {
-  fprintf( file, "mosh-client (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
-  fprintf( file, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
-  fprintf( file, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n" );
+  fputs( "mosh-client (" PACKAGE_STRING ") [build " BUILD_VERSION "]\n"
+	 "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n"
+	 "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+	 "This is free software: you are free to change and redistribute it.\n"
+	 "There is NO WARRANTY, to the extent permitted by law.\n", file );
 }
 
 static void print_usage( FILE *file, const char *argv0 )
 {
   print_version( file );
-  fprintf( file, "\n" );
-  fprintf( file, "Usage: %s [-# 'ARGS'] IP PORT\n       %s -c\n", argv0, argv0 );
+  fprintf( file, "\nUsage: %s [-# 'ARGS'] IP PORT\n"
+	   "       %s -c\n", argv0, argv0 );
 }
 
 static void print_colorcount( void )
@@ -165,7 +167,7 @@ int main( int argc, char *argv[] )
   /* Read key from environment */
   char *env_key = getenv( "MOSH_KEY" );
   if ( env_key == NULL ) {
-    fprintf( stderr, "MOSH_KEY environment variable not found.\n" );
+    fputs( "MOSH_KEY environment variable not found.\n", stderr );
     exit( 1 );
   }
 

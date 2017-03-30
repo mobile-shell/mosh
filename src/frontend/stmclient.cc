@@ -84,8 +84,10 @@ void STMClient::init( void )
     LocaleVar native_ctype = get_ctype();
     string native_charset( locale_charset() );
 
-    fprintf( stderr, "mosh-client needs a UTF-8 native locale to run.\n\n" );
-    fprintf( stderr, "Unfortunately, the client's environment (%s) specifies\nthe character set \"%s\".\n\n", native_ctype.str().c_str(), native_charset.c_str() );
+    fprintf( stderr, "mosh-client needs a UTF-8 native locale to run.\n\n"
+    "Unfortunately, the client's environment (%s) specifies\n"
+	     "the character set \"%s\".\n\n",
+	     native_ctype.str().c_str(), native_charset.c_str() );
     int unused __attribute((unused)) = system( "locale" );
     exit( 1 );
   }
@@ -213,10 +215,12 @@ void STMClient::shutdown( void )
   if ( still_connecting() ) {
     fprintf( stderr, "\nmosh did not make a successful connection to %s:%s.\n", ip.c_str(), port.c_str() );
     fprintf( stderr, "Please verify that UDP port %s is not firewalled and can reach the server.\n\n", port.c_str() );
-    fprintf( stderr, "(By default, mosh uses a UDP port between 60000 and 61000. The -p option\nselects a specific UDP port number.)\n" );
+    fputs( "(By default, mosh uses a UDP port between 60000 and 61000. The -p option\n"
+	   "selects a specific UDP port number.)\n", stderr );
   } else if ( network ) {
     if ( !clean_shutdown ) {
-      fprintf( stderr, "\n\nmosh did not shut down cleanly. Please note that the\nmosh-server process may still be running on the server.\n" );
+      fputs( "\n\nmosh did not shut down cleanly. Please note that the\n"
+	     "mosh-server process may still be running on the server.\n", stderr );
     }
   }
 }
@@ -337,7 +341,7 @@ bool STMClient::process_user_input( int fd )
 	    exit( 1 );
 	  }
 
-	  printf( "\n\033[37;44m[mosh is suspended.]\033[m\n" );
+	  fputs( "\n\033[37;44m[mosh is suspended.]\033[m\n", stdout );
 
 	  fflush( NULL );
 
