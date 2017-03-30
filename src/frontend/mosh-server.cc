@@ -118,7 +118,7 @@ static void print_usage( FILE *stream, const char *argv0 )
   fprintf( stream, "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n", argv0 );
 }
 
-static void print_motd( void );
+static bool print_motd( const char *filename );
 static void chdir_homedir( void );
 static bool motd_hushed( void );
 static void warn_unattached( const string & ignore_entry );
@@ -554,7 +554,24 @@ static int run_server( const char *desired_ip, const char *desired_port,
     chdir_homedir();
 
     if ( with_motd && (!motd_hushed()) ) {
-      print_motd();
+      // For Ubuntu, try and print {,/var}/run/motd.dynamic.
+      // If they're the same, only print once.
+      // This file is only updated when pam_motd is run, but when
+      // mosh-server is run in the usual way with ssh via the script,
+      // this always happens.
+      // XXX Hackish knowledge of Ubuntu PAM configuration.
+      // But this seems less awful than build-time detection with autoconf.
+      struct stat first;
+      struct stat second;
+      if (!print_motd("/run/motd.dynamic") ||
+	  (stat("/run/motd.dynamic", &first) < 0 &&
+	   stat("/var/run/motd.dynamic", &second) < 0 &&
+	   (first.st_dev != second.st_dev ||
+	    first.st_ino != second.st_ino))) {
+	  print_motd("/var/run/motd.dynamic");
+      }
+      // Always print traditional /etc/motd.
+      print_motd("/etc/motd");
       warn_unattached( utmp_entry );
     }
 
@@ -877,12 +894,12 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
   }
 }
 
-/* OpenSSH prints the motd on startup, so we will too */
-static void print_motd( void )
+/* Print the motd from a given file, if available */
+static bool print_motd( const char *filename )
 {
-  FILE *motd = fopen( "/etc/motd", "r" );
+  FILE *motd = fopen( filename, "r" );
   if ( !motd ) {
-    return; /* don't report error on missing or forbidden motd */
+    return false;
   }
 
   const int BUFSIZE = 256;
@@ -900,6 +917,7 @@ static void print_motd( void )
   }
 
   fclose( motd );
+  return true;
 }
 
 static void chdir_homedir( void )
