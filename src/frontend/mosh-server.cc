@@ -554,7 +554,10 @@ static int run_server( const char *desired_ip, const char *desired_port,
     chdir_homedir();
 
     if ( with_motd && (!motd_hushed()) ) {
+#ifndef __sun
+/* On illumos motd is printed by /etc/profile */
       print_motd();
+#endif
       warn_unattached( utmp_entry );
     }
 
