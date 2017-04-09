@@ -34,7 +34,7 @@
 
 #include "locale_utils.h"
 
-int main( int argc, char **argv )
+int main( int argc __attribute__(( unused )), char **argv __attribute__(( unused )))
 {
   set_native_locale();
   if ( !is_utf8_locale() ) {
