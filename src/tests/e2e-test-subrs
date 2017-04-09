@@ -59,16 +59,13 @@ chr()
 # or C.UTF-8.
 set_locale()
 {
-    # AppVeyor debug
-    echo $PATH
-    env PATH="$PATH:${binpath}" type is-utf8-locale
     # Test for a usable locale.
-    if env PATH="$PATH:${binpath}" is-utf8-locale; then
+    if ./is-utf8-locale 2> /dev/null; then
 	return 0
     fi
     # Attempt to find/set a usable locale.
     for i in en_US.UTF-8 en_US.utf8 C.UTF-8; do
-	if env PATH="$PATH:${binpath}" LANG=$i is-utf8-locale; then
+	if env LANG=$i ./is-utf8-locale 2> /dev/null; then
 	    export LANG=$i LC_ALL=''
 	    return 0
 	fi
