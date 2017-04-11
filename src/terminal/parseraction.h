@@ -57,8 +57,6 @@ namespace Parser {
 
     Action() : ch( -1 ), char_present( false ) {};
     virtual ~Action() {};
-
-    virtual bool operator==( const Action &other ) const;
   };
 
   typedef shared::shared_ptr<Action> ActionPointer;
