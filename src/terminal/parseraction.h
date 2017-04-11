@@ -55,8 +55,6 @@ namespace Parser {
 
     Action() : ch( -1 ), char_present( false ) {};
     virtual ~Action() {};
-
-    virtual bool operator==( const Action &other ) const;
   };
 
   typedef std::vector<Action *> Actions;
