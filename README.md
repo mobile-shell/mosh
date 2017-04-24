@@ -139,6 +139,11 @@ saving almost 200 kilobytes on disk). While Mosh is not especially CPU
 intensive and mostly sits idle when the user is not typing, we think
 the results suggest that `-O2` (the default) is preferable.
 
+Our Debian and Fedora packaging presents Mosh as a single package.
+Mosh has a Perl dependency that is only required for client use.  For
+some platforms, it may make sense to have separate mosh-server and
+mosh-client packages to allow mosh-server usage without Perl.
+
 More info
 ---------
 
