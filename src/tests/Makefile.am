@@ -22,6 +22,7 @@ displaytests = \
 	emulation-back-tab.test \
 	emulation-cursor-motion.test \
 	emulation-multiline-scroll.test \
+	emulation-scroll.test \
 	emulation-wrap-across-frames.test \
 	network-no-diff.test \
 	prediction-unicode.test \

@@ -1,0 +1,76 @@
+#!/bin/sh
+
+#
+# This is a regression test for a bug in Mosh: it would move the
+# cursor for the SCROLL UP and SCROLL DOWN commands, though it should
+# not.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline post
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    # Clear
+    printf '\033[H\033[J'
+    # Fill with sample text
+    for i in $(seq 1 24); do
+	printf '\ntext %s' "$i"
+    done
+    # Scroll up 4 lines
+    printf '\033[4S'
+    # Then down 2
+    printf '\033[2T'
+
+    # The cursor should not have moved and this should print on the
+    # last line, and not overprint 'line 24'
+    printf '\rBad line'
+    # Overprint on line 24
+    printf '\033[24;1HLast line'
+    # and line 1
+    printf '\033[HFirst line\n'
+
+}
+
+post()
+{
+    local capture
+    capture="$(basename "$0").d/baseline.capture"
+    # 'Bad line' should have been overwritten
+    if grep -q '^Bad line$' "$capture"; then
+	exit 1
+    fi
+    # The first four lines should have scrolled off
+    if grep -q '^text [1-4]$' "$capture"; then
+	exit 1
+    fi
+    # The last line should not have scrolled off or been overwritten
+    if ! grep -q '^text 24$' "$capture"; then
+	exit 1
+    fi
+    # 20 lines of the original text should remain
+    if [ "$(grep -c '^text' "$capture")" -ne 20 ]; then
+	exit 1
+    fi
+    exit 0
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac
