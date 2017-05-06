@@ -37,6 +37,9 @@ variant()
 post()
 {
     export LANG=C
+    if [ "$(tmux -V)" = "tmux 2.4" ]; then
+	skip "tmux 2.4 unicode combining bug breaks this test\n"
+    fi
     if grep -q "$(printf '^\302\240\314\202$')" "$(basename "$0").d/baseline.capture"; then
 	exit 0
     fi
