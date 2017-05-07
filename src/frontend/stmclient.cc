@@ -314,10 +314,18 @@ bool STMClient::process_user_input( int fd )
   if ( !network->shutdown_in_progress() ) {
     overlays.get_prediction_engine().set_local_frame_sent( network->get_sent_state_last() );
 
+    /* Don't predict for bulk data. */
+    bool paste = bytes_read > 100;
+    if ( paste ) {
+      overlays.get_prediction_engine().reset();
+    }
+
     for ( int i = 0; i < bytes_read; i++ ) {
       char the_byte = buf[ i ];
 
-      overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
+      if ( !paste ) {
+	overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
+      }
 
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
