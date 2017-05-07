@@ -240,7 +240,8 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 
   if ( message.empty() && (!time_expired) ) {
     return;
-  } else if ( message.empty() && time_expired ) {
+  }
+  if ( message.empty() && time_expired ) {
     swprintf( tmp, 128, L"mosh: Last %s %s ago.%s", explanation,
 	      human_readable_duration( static_cast<int>( time_elapsed ),
 				       "seconds" ).c_str(),
@@ -361,23 +362,23 @@ void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bo
 
 void PredictionEngine::apply( Framebuffer &fb ) const
 {
-  bool show = (display_preference != Never) && ( srtt_trigger
-						 || glitch_trigger
-						 || (display_preference == Always)
-						 || (display_preference == Experimental) );
+  if ( (display_preference == Never) || !( srtt_trigger
+					   || glitch_trigger
+					   || (display_preference == Always)
+					   || (display_preference == Experimental) ) ){
+    return;
+  }
 
-  if ( show ) {
-    for ( cursors_type::const_iterator it = cursors.begin();
-          it != cursors.end();
-          it++ ) {
-      it->apply( fb, confirmed_epoch );
-    }
+  for ( cursors_type::const_iterator it = cursors.begin();
+	it != cursors.end();
+	it++ ) {
+    it->apply( fb, confirmed_epoch );
+  }
 
-    for ( overlays_type::const_iterator it = overlays.begin();
-          it != overlays.end();
-          it++ ) {
-      it->apply( fb, confirmed_epoch, flagging );
-    }
+  for ( overlays_type::const_iterator it = overlays.begin();
+	it != overlays.end();
+	it++ ) {
+    it->apply( fb, confirmed_epoch, flagging );
   }
 }
 
@@ -651,7 +652,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 {
   if ( display_preference == Never ) {
     return;
-  } else if ( display_preference == Experimental ) {
+  }
+  if ( display_preference == Experimental ) {
     prediction_epoch = confirmed_epoch;
   }
 
