@@ -672,22 +672,22 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
   for ( Parser::Actions::iterator it = actions.begin();
         it != actions.end();
         it++ ) {
-    Parser::Action *act = *it;
+    Parser::Action& act = **it;
 
     /*
     fprintf( stderr, "Action: %s (%lc)\n",
 	     act->name().c_str(), act->char_present ? act->ch : L'_' );
     */
 
-    const std::type_info& type_act = typeid( *act );
+    const std::type_info& type_act = typeid( act );
     if ( type_act == typeid( Parser::Print ) ) {
       /* make new prediction */
 
       init_cursor( fb );
 
-      assert( act->char_present );
+      assert( act.char_present );
 
-      wchar_t ch = act->ch;
+      wchar_t ch = act.ch;
       /* XXX handle wide characters */
 
       if ( ch == 0x7f ) { /* backspace */
@@ -826,24 +826,24 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	}
       }
     } else if ( type_act == typeid( Parser::Execute ) ) {
-      if ( act->char_present && (act->ch == 0x0d) /* CR */ ) {
+      if ( act.char_present && (act.ch == 0x0d) /* CR */ ) {
 	become_tentative();
 	newline_carriage_return( fb );
       } else {
-	//	fprintf( stderr, "Execute 0x%x\n", act->ch );
+	//	fprintf( stderr, "Execute 0x%x\n", act.ch );
 	become_tentative();	
       }
     } else if ( type_act == typeid( Parser::Esc_Dispatch ) ) {
       //      fprintf( stderr, "Escape sequence\n" );
       become_tentative();
     } else if ( type_act == typeid( Parser::CSI_Dispatch ) ) {
-      if ( act->char_present && (act->ch == L'C') ) { /* right arrow */
+      if ( act.char_present && (act.ch == L'C') ) { /* right arrow */
 	init_cursor( fb );
 	if ( cursor().col < fb.ds.get_width() - 1 ) {
 	  cursor().col++;
 	  cursor().expire( local_frame_sent + 1, now );
 	}
-      } else if ( act->char_present && (act->ch == L'D') ) { /* left arrow */
+      } else if ( act.char_present && (act.ch == L'D') ) { /* left arrow */
 	init_cursor( fb );
 	
 	if ( cursor().col > 0 ) {
@@ -851,12 +851,10 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	  cursor().expire( local_frame_sent + 1, now );
 	}
       } else {
-	//	fprintf( stderr, "CSI sequence %lc\n", act->ch );
+	//	fprintf( stderr, "CSI sequence %lc\n", act.ch );
 	become_tentative();
       }
     }
-
-    delete act;
   }
 }
 

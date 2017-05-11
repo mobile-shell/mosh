@@ -123,15 +123,16 @@ void UserStream::apply_string( const string &diff )
   }
 }
 
-const Parser::Action *UserStream::get_action( unsigned int i ) const
+const Parser::Action &UserStream::get_action( unsigned int i ) const
 {
   switch( actions[ i ].type ) {
   case UserByteType:
-    return &( actions[ i ].userbyte );
+    return actions[ i ].userbyte;
   case ResizeType:
-    return &( actions[ i ].resize );
+    return actions[ i ].resize;
   default:
     assert( false );
-    return NULL;
+    static const Parser::Ignore nothing = Parser::Ignore();
+    return nothing;
   }
 }

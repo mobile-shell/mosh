@@ -719,22 +719,25 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  us.apply_string( network.get_remote_diff() );
 	  /* apply userstream to terminal */
 	  for ( size_t i = 0; i < us.size(); i++ ) {
-	    const Parser::Action *action = us.get_action( i );
-	    if ( typeid( *action ) == typeid( Parser::Resize ) ) {
+	    const Parser::Action &action = us.get_action( i );
+	    if ( typeid( action ) == typeid( Parser::Resize ) ) {
 	      /* apply only the last consecutive Resize action */
-	      while ( i < us.size() - 1 &&
-		   typeid( us.get_action( i + 1 ) ) == typeid( Parser::Resize ) ) {
+	      while ( i < us.size() - 1 ) {
+		const Parser::Action &next  = us.get_action( i + 1 );
+		if ( typeid( next ) != typeid( Parser::Resize ) ) {
+		  break;
+		}
 		i++;
 	      }
 	      /* tell child process of resize */
-	      const Parser::Resize *res = static_cast<const Parser::Resize *>( action );
+	      const Parser::Resize &res = static_cast<const Parser::Resize &>( action );
 	      struct winsize window_size;
 	      if ( ioctl( host_fd, TIOCGWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCGWINSZ" );
 		network.start_shutdown();
 	      }
-	      window_size.ws_col = res->width;
-	      window_size.ws_row = res->height;
+	      window_size.ws_col = res.width;
+	      window_size.ws_row = res.height;
 	      if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCSWINSZ" );
 		network.start_shutdown();

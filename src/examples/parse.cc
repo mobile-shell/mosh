@@ -199,20 +199,18 @@ static int vt_parser( int fd, Parser::UTF8Parser *parser )
 	  j != actions.end();
 	  j++ ) {
 
-      Parser::Action *act = *j;
-      assert( act );
+      assert( *j );
+      Parser::Action &act = **j;
 
-      if ( act->char_present ) {
-	if ( iswprint( act->ch ) ) {
-	  printf( "%s(0x%02x=%lc) ", act->name().c_str(), (unsigned int)act->ch, (wint_t)act->ch );
+      if ( act.char_present ) {
+	if ( iswprint( act.ch ) ) {
+	  printf( "%s(0x%02x=%lc) ", act.name().c_str(), (unsigned int)act.ch, (wint_t)act.ch );
 	} else {
-	  printf( "%s(0x%02x) ", act->name().c_str(), (unsigned int)act->ch );
+	  printf( "%s(0x%02x) ", act.name().c_str(), (unsigned int)act.ch );
 	}
       } else {
-	printf( "[%s] ", act->name().c_str() );
+	printf( "[%s] ", act.name().c_str() );
       }
-
-      delete act;
 
       fflush( stdout );
     }

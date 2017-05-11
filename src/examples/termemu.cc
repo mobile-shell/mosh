@@ -270,8 +270,7 @@ static void emulate_terminal( int fd )
       std::string terminal_to_host;
       
       for ( int i = 0; i < bytes_read; i++ ) {
-	Parser::UserByte ub( buf[ i ] );
-	terminal_to_host += complete.act( &ub );
+	terminal_to_host += complete.act( Parser::UserByte( buf[ i ] ) );
       }
       
       if ( swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
@@ -302,8 +301,7 @@ static void emulate_terminal( int fd )
       }
 
       /* tell emulator */
-      Parser::Resize r( window_size.ws_col, window_size.ws_row );
-      complete.act( &r );
+      complete.act( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
 
       /* tell child process */
       if ( ioctl( fd, TIOCSWINSZ, &window_size ) < 0 ) {
