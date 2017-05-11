@@ -46,6 +46,7 @@
 #include "prng.h"
 #include "fatal_assert.h"
 #include "test_utils.h"
+#include "shared.h"
 
 #define KEY_LEN   16
 #define NONCE_LEN 12
@@ -60,6 +61,8 @@ static bool equal( const AlignedBuffer &a, const AlignedBuffer &b ) {
     && !memcmp( a.data(), b.data(), a.len() );
 }
 
+typedef shared::shared_ptr< AlignedBuffer > AlignedPointer;
+
 static AlignedBuffer *get_ctx( const AlignedBuffer &key ) {
   AlignedBuffer *ctx_buf = new AlignedBuffer( ae_ctx_sizeof() );
   fatal_assert( ctx_buf );
@@ -67,15 +70,14 @@ static AlignedBuffer *get_ctx( const AlignedBuffer &key ) {
   return ctx_buf;
 }
 
-static void scrap_ctx( AlignedBuffer *ctx_buf ) {
-  fatal_assert( AE_SUCCESS == ae_clear( (ae_ctx *)ctx_buf->data() ) );
-  delete ctx_buf;
+static void scrap_ctx( AlignedBuffer &ctx_buf ) {
+  fatal_assert( AE_SUCCESS == ae_clear( (ae_ctx *)ctx_buf.data() ) );
 }
 
 static void test_encrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
 			  const AlignedBuffer &plaintext, const AlignedBuffer &assoc,
 			  const AlignedBuffer &expected_ciphertext ) {
-  AlignedBuffer *ctx_buf = get_ctx( key );
+  AlignedPointer ctx_buf( get_ctx( key ) );
   ae_ctx *ctx = (ae_ctx *)ctx_buf->data();
 
   AlignedBuffer observed_ciphertext( plaintext.len() + TAG_LEN );
@@ -94,14 +96,14 @@ static void test_encrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
   fatal_assert( ret == int( expected_ciphertext.len() ) );
   fatal_assert( equal( expected_ciphertext, observed_ciphertext ) );
 
-  scrap_ctx( ctx_buf );
+  scrap_ctx( *ctx_buf );
 }
 
 static void test_decrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
 			  const AlignedBuffer &ciphertext, const AlignedBuffer &assoc,
 			  const AlignedBuffer &expected_plaintext,
 			  bool valid ) {
-  AlignedBuffer *ctx_buf = get_ctx( key );
+  AlignedPointer ctx_buf( get_ctx( key ) );
   ae_ctx *ctx = (ae_ctx *)ctx_buf->data();
 
   AlignedBuffer observed_plaintext( ciphertext.len() - TAG_LEN );
@@ -126,7 +128,7 @@ static void test_decrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
     fatal_assert( ret == AE_INVALID );
   }
 
-  scrap_ctx( ctx_buf );
+  scrap_ctx( *ctx_buf );
 }
 
 static void test_vector( const char *key_p, const char *nonce_p,
@@ -468,7 +470,7 @@ static void test_iterative( void ) {
   AlignedBuffer key( KEY_LEN );
   memset( key.data(), 0, KEY_LEN );
 
-  AlignedBuffer *ctx_buf = get_ctx( key );
+  AlignedPointer ctx_buf( get_ctx( key ) );
   ae_ctx *ctx = (ae_ctx *)ctx_buf->data();
 
   AlignedBuffer nonce( NONCE_LEN );
@@ -530,8 +532,6 @@ static void test_iterative( void ) {
   /* Check this final tag against the known value */
   AlignedBuffer correct( TAG_LEN, "\xB2\xB4\x1C\xBF\x9B\x05\x03\x7D\xA7\xF1\x6C\x24\xA3\x5C\x1C\x94" );
   fatal_assert( equal( out, correct ) );
-
-  scrap_ctx( ctx_buf );
 
   if ( verbose ) {
     printf( "iterative PASSED\n\n" );
