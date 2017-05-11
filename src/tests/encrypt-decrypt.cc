@@ -58,11 +58,10 @@ bool verbose = false;
 
 static std::string random_payload( void ) {
   const size_t len = prng.uint32() % MESSAGE_SIZE_MAX;
-  char *buf = new char[len];
+  char buf[ MESSAGE_SIZE_MAX ];
   prng.fill( buf, len );
 
   std::string payload( buf, len );
-  delete [] buf;
   return payload;
 }
 
