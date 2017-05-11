@@ -1449,12 +1449,10 @@ static void validate()
     ALIGN(16) uint8_t key[32] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
     ALIGN(16) uint8_t valid[] = {0xB2,0xB4,0x1C,0xBF,0x9B,0x05,0x03,0x7D,
                                  0xA7,0xF1,0x6C,0x24,0xA3,0x5C,0x1C,0x94};
+    ALIGN(16) uint8_t val_buf[22400];
     ae_ctx ctx;
-    uint8_t *val_buf, *next;
+    uint8_t *next = val_buf;
     int i, len;
-
-    val_buf = (uint8_t *)malloc(22400 + 16);
-    next = val_buf = (uint8_t *)(((size_t)val_buf + 16) & ~((size_t)15));
 
     if (0) {
 		ae_init(&ctx, key, 16, 12, 16);
