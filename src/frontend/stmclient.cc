@@ -252,8 +252,7 @@ void STMClient::main_init( void )
   /* open network */
   Network::UserStream blank;
   Terminal::Complete local_terminal( window_size.ws_col, window_size.ws_row );
-  network = new Network::Transport< Network::UserStream, Terminal::Complete >( blank, local_terminal,
-									       key.c_str(), ip.c_str(), port.c_str() );
+  network = NetworkPointer( new NetworkType( blank, local_terminal, key.c_str(), ip.c_str(), port.c_str() ) );
 
   network->set_send_delay( 1 ); /* minimal delay on outgoing keystrokes */
 

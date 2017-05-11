@@ -417,7 +417,8 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
   /* open network */
   Network::UserStream blank;
-  ServerConnection *network = new ServerConnection( terminal, blank, desired_ip, desired_port );
+  typedef shared::shared_ptr<ServerConnection> NetworkPointer;
+  NetworkPointer network( new ServerConnection( terminal, blank, desired_ip, desired_port ) );
 
   network->set_verbose( verbose );
   Select::set_verbose( verbose );
@@ -521,7 +522,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
     fatal_assert( 0 == sigaction( SIGPIPE, &sa, NULL ) );
 
     /* close server-related file descriptors */
-    delete network;
+    network.reset();
 
     /* set IUTF8 if available */
 #ifdef HAVE_IUTF8
@@ -628,8 +629,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
       perror( "close" );
       exit( 1 );
     }
-
-    delete network;
   }
 
   fputs( "\n[mosh-server is exiting.]\n", stdout );
