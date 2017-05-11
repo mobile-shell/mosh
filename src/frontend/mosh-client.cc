@@ -179,11 +179,7 @@ int main( int argc, char *argv[] )
   char *predict_overwrite = getenv( "MOSH_PREDICTION_OVERWRITE" );
   /* can be NULL */
 
-  char *key = strdup( env_key );
-  if ( key == NULL ) {
-    perror( "strdup" );
-    exit( 1 );
-  }
+  string key( env_key );
 
   if ( unsetenv( "MOSH_KEY" ) < 0 ) {
     perror( "unsetenv" );
@@ -195,7 +191,7 @@ int main( int argc, char *argv[] )
 
   bool success = false;
   try {
-    STMClient client( ip, desired_port, key, predict_mode, verbose, predict_overwrite );
+    STMClient client( ip, desired_port, key.c_str(), predict_mode, verbose, predict_overwrite );
     client.init();
 
     try {
@@ -220,8 +216,6 @@ int main( int argc, char *argv[] )
   }
 
   printf( "[mosh is exiting.]\n" );
-
-  free( key );
 
   return !success;
 }
