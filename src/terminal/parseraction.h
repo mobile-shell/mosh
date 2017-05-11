@@ -36,6 +36,8 @@
 #include <string>
 #include <vector>
 
+#include "shared.h"
+
 namespace Terminal {
   class Emulator;
 }
@@ -59,7 +61,8 @@ namespace Parser {
     virtual bool operator==( const Action &other ) const;
   };
 
-  typedef std::vector<Action *> Actions;
+  typedef shared::shared_ptr<Action> ActionPointer;
+  typedef std::vector<ActionPointer> Actions;
 
   class Ignore : public Action {
   public:

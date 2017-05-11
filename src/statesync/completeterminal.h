@@ -64,7 +64,7 @@ namespace Terminal {
 					      actions(), input_history(), echo_ack( 0 ) {}
     
     std::string act( const std::string &str );
-    std::string act( const Parser::Action *act );
+    std::string act( const Parser::Action &act );
 
     const Framebuffer & get_fb( void ) const { return terminal.get_fb(); }
     void reset_input( void ) { parser.reset_input(); }
