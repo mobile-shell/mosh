@@ -314,8 +314,10 @@ bool STMClient::process_user_input( int fd )
     return false;
   }
 
-  if ( !network->shutdown_in_progress() ) {
-    overlays.get_prediction_engine().set_local_frame_sent( network->get_sent_state_last() );
+  NetworkType &net = *network;
+
+  if ( !net.shutdown_in_progress() ) {
+    overlays.get_prediction_engine().set_local_frame_sent( net.get_sent_state_last() );
 
     /* Don't predict for bulk data. */
     bool paste = bytes_read > 100;
@@ -332,9 +334,9 @@ bool STMClient::process_user_input( int fd )
 
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
-	  if ( network->has_remote_addr() && (!network->shutdown_in_progress()) ) {
+	  if ( net.has_remote_addr() && (!net.shutdown_in_progress()) ) {
 	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting on user request..." ), true );
-	    network->start_shutdown();
+	    net.start_shutdown();
 	    return true;
 	  } else {
 	    return false;
@@ -359,11 +361,11 @@ bool STMClient::process_user_input( int fd )
 	} else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
 	  /* Emulation sequence to type escape_key is escape_key +
 	     escape_pass_key (that is escape key without Ctrl) */
-	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
+	  net.get_current_state().push_back( Parser::UserByte( escape_key ) );
 	} else {
 	  /* Escape key followed by anything other than . and ^ gets sent literally */
-	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
-	  network->get_current_state().push_back( Parser::UserByte( the_byte ) );	  
+	  net.get_current_state().push_back( Parser::UserByte( escape_key ) );
+	  net.get_current_state().push_back( Parser::UserByte( the_byte ) );
 	}
 
 	quit_sequence_started = false;
@@ -388,7 +390,7 @@ bool STMClient::process_user_input( int fd )
 	repaint_requested = true;
       }
 
-      network->get_current_state().push_back( Parser::UserByte( the_byte ) );		
+      net.get_current_state().push_back( Parser::UserByte( the_byte ) );
     }
   }
 
