@@ -953,12 +953,14 @@ static bool motd_hushed( void )
   return (0 == lstat( ".hushlogin", &buf ));
 }
 
+#ifdef HAVE_UTMPX_H
 static bool device_exists( const char *ut_line )
 {
   string device_name = string( "/dev/" ) + string( ut_line );
   struct stat buf;
   return (0 == lstat( device_name.c_str(), &buf ));
 }
+#endif
 
 static void warn_unattached( const string & ignore_entry )
 {
