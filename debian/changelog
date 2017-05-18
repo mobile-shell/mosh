@@ -14,7 +14,7 @@ mosh (1.3.1~rc1-1) experimental; urgency=medium
     * Do not move cursor for SCROLL UP and SCROLL DOWN--
       fixes an issue with tmux 2.4.  (John Hood)
 
- -- Keith Winstein <keithw@cs.stanford.edu>  Sun, 07 May 2017 21:22:26 -0400
+ -- Keith Winstein <keithw@cs.stanford.edu>  Thu, 18 May 2017 00:52:01 -0400
 
 mosh (1.3.0-1) unstable; urgency=medium
 
