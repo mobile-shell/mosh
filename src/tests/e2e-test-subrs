@@ -70,9 +70,10 @@ set_locale()
 	return 0
     fi
     # Attempt to find/set a usable locale.
+    unset LANG LC_CTYPE LC_COLLATE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME LC_ALL
     for i in en_US.UTF-8 en_US.utf8 C.UTF-8; do
-	if env LANG=$i ./is-utf8-locale 2> /dev/null; then
-	    export LANG=$i LC_ALL=''
+	if env LC_ALL=$i ./is-utf8-locale 2> /dev/null; then
+	    export LC_ALL=$i
 	    return 0
 	fi
     done
