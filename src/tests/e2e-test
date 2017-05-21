@@ -82,7 +82,8 @@ tmux_check()
 	error "tmux version %s too old\n" "$version"
 	return 1
     fi
-    return 0
+    # Finally, check that tmux actually works to some degree.
+    tmux -C new-session true
 }
 
 ssh_localhost_check()
