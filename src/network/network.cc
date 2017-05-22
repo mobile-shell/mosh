@@ -41,6 +41,7 @@
 #include <netinet/in.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "dos_assert.h"
@@ -324,6 +325,14 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
       break;
     default:
       throw NetworkException( "Unknown address family", 0 );
+    }
+
+    if ( local_addr.sa.sa_family == AF_INET6
+      && memcmp(&local_addr.sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any)) == 0 ) {
+      const int off = 0;
+      if ( setsockopt( sock(), IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off) ) ) {
+        perror( "setsockopt( IPV6_V6ONLY, off )" );
+      }
     }
 
     if ( bind( sock(), &local_addr.sa, local_addr_len ) == 0 ) {
