@@ -327,6 +327,7 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
       throw NetworkException( "Unknown address family", 0 );
     }
 
+#ifdef HAVE_IPV6_V6ONLY
     if ( local_addr.sa.sa_family == AF_INET6
       && memcmp(&local_addr.sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any)) == 0 ) {
       const int off = 0;
@@ -334,6 +335,7 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
         perror( "setsockopt( IPV6_V6ONLY, off )" );
       }
     }
+#endif
 
     if ( bind( sock(), &local_addr.sa, local_addr_len ) == 0 ) {
       set_MTU( local_addr.sa.sa_family );

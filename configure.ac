@@ -453,6 +453,11 @@ AC_CHECK_DECL([IP_RECVTOS],
      [Define if IP_RECVTOS is a valid sockopt.])],
   , [[#include <netinet/in.h>]])
 
+AC_CHECK_DECL([IPV6_V6ONLY],
+  [AC_DEFINE([HAVE_IPV6_V6ONLY], [1],
+     [Define if IPV6_V6ONLY is a valid IPv6 socket option.])],
+  , [[#include <netinet/in.h>]])
+
 AC_CHECK_DECL([__STDC_ISO_10646__],
   [],
   [AC_MSG_WARN([C library doesn't advertise wchar_t is Unicode (OS X works anyway with workaround).])],
