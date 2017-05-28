@@ -73,6 +73,9 @@ tmux_check()
 	error "tmux unavailable\n"
 	return 1
     fi
+    if [ "$version" = "tmux master" ]; then
+	return 0
+    fi
     version=${version##tmux }
     version_major=${version%%.*}
     version_minor=${version##*.}
