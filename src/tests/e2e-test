@@ -243,9 +243,10 @@ for run in $server_tests; do
     # XXX tmux 1.8 requires shell command as a single arg; once we move to 2.0, undo these quotes
     # XXX this ignores $TMPDIR, because it results in an overlong pathname on OS X
     tmux_socket="/tmp/.tmux-mosh-test-$$"
+    ln -fs "${tmux_socket}" "${test_dir}/tmux-socket"
     ${tmux_stdin} tmux -f /dev/null -S "${tmux_socket}" -C new-session "${srcdir}/print-exitstatus ${client_wrapper} ${sut} ${server_wrapper} \"${PWD}/${test_dir}/${run}\" \"${PWD}/${test_script} ${run}\"" > "${test_dir}/${run}.tmux.log"
     rv=$?
-    rm -f "${tmux_socket}"
+    rm -f "${tmux_socket}" "${test_dir}/tmux-socket"
     if [ $rv -ne 0 ]; then
 	test_error "tmux failure on test %s\n" "$run"
     fi
