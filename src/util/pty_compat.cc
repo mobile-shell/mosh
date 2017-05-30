@@ -39,7 +39,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#ifndef __HAIKU__
 #include <sys/stropts.h>
+#endif
 #include <termios.h>
 
 #include "pty_compat.h"
@@ -92,7 +94,7 @@ pid_t my_forkpty( int *amaster, char *name,
     return -1;
   }
 
-#ifndef _AIX
+#if !defined(_AIX) && !defined(__HAIKU__)
   if ( ioctl(slave, I_PUSH, "ptem") < 0 ||
        ioctl(slave, I_PUSH, "ldterm") < 0 ) {
     perror( "ioctl(I_PUSH)" );
