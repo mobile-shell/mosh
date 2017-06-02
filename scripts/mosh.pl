@@ -382,6 +382,11 @@ if ( $pid == 0 ) { # child
   if ( scalar @command > 0 ) {
     push @server, '--', @command;
   }
+  
+  if ( $server cmp 'mosh-server' ) {
+    undef @server;
+    my @server = ( '' );
+  }
 
   if ( defined( $localhost )) {
     delete $ENV{ 'SSH_CONNECTION' };
