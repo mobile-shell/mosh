@@ -39,7 +39,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#ifdef HAVE_SYS_STROPTS_H
 #include <sys/stropts.h>
+#endif
 #include <termios.h>
 
 #include "pty_compat.h"
@@ -92,15 +94,28 @@ pid_t my_forkpty( int *amaster, char *name,
     return -1;
   }
 
-#ifndef _AIX
-  if ( ioctl(slave, I_PUSH, "ptem") < 0 ||
-       ioctl(slave, I_PUSH, "ldterm") < 0 ) {
-    perror( "ioctl(I_PUSH)" );
-    close( slave );
-    close( master );
-    return -1;
+  static const char *modules[] = {
+    "ptem",
+    "ldterm",
+    NULL
+  };
+  for ( const char **module = modules;
+	*module != NULL;
+	module++ ) {
+    int result = ioctl( slave, I_FIND, *module );
+    if ( result == 1 ) {
+      continue;
+    }
+    if ( result < 0 ) {
+      perror( "ioctl(I_LOOK)" );
+    }
+    if ( ioctl( slave, I_PUSH, *module ) < 0) {
+      perror( "ioctl(I_PUSH)" );
+      close( slave );
+      close( master );
+      return -1;
+    }
   }
-#endif
 
   if ( amaster != NULL )
     *amaster = master;
