@@ -68,13 +68,13 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   if ( f.get_bell_count() != frame.last_frame.get_bell_count() ) {
     frame.append( '\007' );
   }
+  typedef Terminal::Framebuffer::title_type title_type;
 
   /* has icon name or window title changed? */
   if ( has_title && f.is_title_initialized() &&
        ( (!initialized)
          || (f.get_icon_name() != frame.last_frame.get_icon_name())
          || (f.get_window_title() != frame.last_frame.get_window_title()) ) ) {
-    typedef Terminal::Framebuffer::title_type title_type;
       /* set icon name and window title */
     if ( f.get_icon_name() == f.get_window_title() ) {
       /* write combined Icon Name and Window Title */
@@ -108,6 +108,18 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       frame.append( '\007' );
     }
 
+  }
+
+  /* has clipboard changed? */
+  if (f.get_clipboard() != frame.last_frame.get_clipboard()) {
+    frame.append( "\033]52;c;" );
+    const title_type &clipboard( f.get_clipboard() );
+    for ( title_type::const_iterator i = clipboard.begin();
+          i != clipboard.end();
+          i++ ) {
+      frame.append( *i );
+    }
+    frame.append( '\007' );
   }
 
   /* has reverse video state changed? */
