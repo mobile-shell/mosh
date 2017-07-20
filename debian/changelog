@@ -1,3 +1,9 @@
+mosh (1.3.1-1) unstable; urgency=medium
+
+  * Version 1.3.1 released to unstable.
+
+ -- Keith Winstein <keithw@cs.stanford.edu>  Thu, 20 Jul 2017 17:32:58 -0400
+
 mosh (1.3.1-rc3-1) experimental; urgency=medium
 
   * Platform support:
