@@ -1,3 +1,25 @@
+2017-07-21 Keith Winstein <mosh-devel@mit.edu>
+
+	* Version 1.3.2 released.
+
+	* Platform support:
+		* Explicitly enable binding to both IPv4 and IPv6 addresses.
+		  (Giel van Schijndel)
+		* Restore perl 5.8.8 support for RHEL5.  (Alexander Chernyakhovsky)
+		* Make tests detect UTF-8 locale with a helper executable.  (John Hood)
+		* Don't print /etc/motd on IllumOS.  (John Hood)
+		* Print {,/var}/run/motd.dynamic on Ubuntu.  (John Hood)
+		* Fix build on Haiku. (Adrien Destugues)
+		* Disable unicode-later-combining.test for tmux 2.4.
+		  This fixes build failures.  (John Hood)
+
+	* Bug fixes:
+		* In tests, explicitly set 80x24 tmux window, for newer versions
+		  of tmux.  (John Hood)
+		* Work around JuiceSSH rendering bug.  (John Hood)
+		* Do not move cursor for SCROLL UP and SCROLL DOWN--
+		  fixes an issue with tmux 2.4.  (John Hood)
+
 2017-03-25 Keith Winstein <mosh-devel@mit.edu>
 
 	* Version 1.3.0 released.

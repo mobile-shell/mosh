@@ -119,11 +119,8 @@ void Framebuffer::scroll( int N )
 {
   if ( N >= 0 ) {
     delete_line( ds.get_scrolling_region_top_row(), N );
-    ds.move_row( -N, true );
   } else {
-    N = -N;
-    insert_line( ds.get_scrolling_region_top_row(), N );
-    ds.move_row( N, true );
+    insert_line( ds.get_scrolling_region_top_row(), -N );
   }
 }
 
@@ -187,9 +184,13 @@ void Framebuffer::move_rows_autoscroll( int rows )
   }
 
   if ( ds.get_cursor_row() + rows > ds.get_scrolling_region_bottom_row() ) {
-    scroll( ds.get_cursor_row() + rows - ds.get_scrolling_region_bottom_row() );
+    int N = ds.get_cursor_row() + rows - ds.get_scrolling_region_bottom_row();
+    scroll( N );
+    ds.move_row( -N, true );
   } else if ( ds.get_cursor_row() + rows < ds.get_scrolling_region_top_row() ) {
-    scroll( ds.get_cursor_row() + rows - ds.get_scrolling_region_top_row() );
+    int N = ds.get_cursor_row() + rows - ds.get_scrolling_region_top_row();
+    scroll( N );
+    ds.move_row( -N, true );
   }
 
   ds.move_row( rows, true );

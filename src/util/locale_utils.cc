@@ -88,9 +88,9 @@ bool is_utf8_locale( void ) {
   /* Verify locale calls for UTF-8 */
   if ( strcmp( locale_charset(), "UTF-8" ) != 0 &&
        strcmp( locale_charset(), "utf-8" ) != 0 ) {
-    return 0;
+    return false;
   }
-  return 1;
+  return true;
 }
 
 void set_native_locale( void ) {

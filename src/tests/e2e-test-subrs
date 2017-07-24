@@ -10,6 +10,12 @@ fail()
     exit 99
 }
 
+skip()
+{
+    printf "$@" 2>&1
+    exit 77
+}
+
 sleepf()
 {
     (sleep .1 || sleep 1) > /dev/null 2>&1
@@ -60,15 +66,14 @@ chr()
 set_locale()
 {
     # Test for a usable locale.
-    map=$(locale charmap 2>/dev/null)
-    if [ "$map" = "utf-8" ] || [ "$map" = "UTF-8" ]; then
+    if ./is-utf8-locale 2> /dev/null; then
 	return 0
     fi
     # Attempt to find/set a usable locale.
+    unset LANG LC_CTYPE LC_COLLATE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME LC_ALL
     for i in en_US.UTF-8 en_US.utf8 C.UTF-8; do
-	map="$(env LANG=$i locale charmap 2>/dev/null)"
-	if [ "$map" = "utf-8" ] || [ "$map" = "UTF-8" ]; then
-	    export LANG=$i LC_ALL=''
+	if env LC_ALL=$i ./is-utf8-locale 2> /dev/null; then
+	    export LC_ALL=$i
 	    return 0
 	fi
     done
