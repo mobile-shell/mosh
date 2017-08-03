@@ -94,8 +94,8 @@ namespace Crypto {
 
   public:
     Base64Key(); /* random key */
-    Base64Key(PRNG &prng);
-    Base64Key( string printable_key );
+    explicit Base64Key(PRNG &prng);
+    explicit Base64Key( string printable_key );
     string printable_key( void ) const;
     unsigned char *data( void ) { return key; }
   };
@@ -108,7 +108,7 @@ namespace Crypto {
     char bytes[ NONCE_LEN ];
 
   public:
-    Nonce( uint64_t val );
+    explicit Nonce( uint64_t val );
     Nonce( const char *s_bytes, size_t len );
     
     string cc_str( void ) const { return string( bytes + 4, 8 ); }
@@ -147,7 +147,7 @@ namespace Crypto {
     /* Overhead (not counting the nonce, which is handled by network transport) */
     static const int ADDED_BYTES = 16 /* final OCB block */;
 
-    Session( Base64Key s_key );
+    explicit Session( Base64Key s_key );
     ~Session();
     
     const string encrypt( const Message & plaintext );

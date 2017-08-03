@@ -89,7 +89,7 @@ namespace Network {
     uint64_t next_ack_time;
     uint64_t next_send_time;
 
-    void calculate_timers( void );
+    void calculate_timers( uint64_t now );
 
     unsigned int verbose;
     bool shutdown_in_progress;

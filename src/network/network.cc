@@ -77,7 +77,7 @@ Packet::Packet( const Message & message )
 {
   dos_assert( message.text.size() >= 2 * sizeof( uint16_t ) );
 
-  const uint16_t *data = (uint16_t *)message.text.data();
+  const uint16_t *data = reinterpret_cast<const uint16_t *>( message.text.data() );
   timestamp = be16toh( data[ 0 ] );
   timestamp_reply = be16toh( data[ 1 ] );
 
@@ -190,10 +190,11 @@ void Connection::setup( void )
 const std::vector< int > Connection::fds( void ) const
 {
   std::vector< int > ret;
+  ret.reserve(socks.size());
 
   for ( std::deque< Socket >::const_iterator it = socks.begin();
 	it != socks.end();
-	it++ ) {
+    ++it ) {
     ret.push_back( it->fd() );
   }
 
@@ -441,7 +442,7 @@ string Connection::recv( void )
   assert( !socks.empty() );
   for ( std::deque< Socket >::const_iterator it = socks.begin();
 	it != socks.end();
-	it++ ) {
+    ++it ) {
     bool islast = (it + 1) == socks.end();
     string payload;
     try {
