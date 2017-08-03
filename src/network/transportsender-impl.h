@@ -85,18 +85,21 @@ unsigned int TransportSender<MyState>::send_interval( void ) const
 
 /* Housekeeping routine to calculate next send and ack times */
 template <class MyState>
-void TransportSender<MyState>::calculate_timers( void )
+void TransportSender<MyState>::calculate_timers( uint64_t now )
 {
-  uint64_t now = timestamp();
-
   /* Update assumed receiver state */
   update_assumed_receiver_state();
 
   /* Cut out common prefix of all states */
   rationalize_states();
 
+  uint64_t last_sended_state_timestamp = sent_states.back().timestamp;
+
   if ( pending_data_ack && (next_ack_time > now + ACK_DELAY) ) {
     next_ack_time = now + ACK_DELAY;
+  } else if ( shutdown_in_progress || (ack_num == uint64_t(-1)) ) {
+    /* speed up shutdown sequence */
+    next_ack_time = last_sended_state_timestamp + send_interval();
   }
 
   if ( !(current_state == sent_states.back().state) ) {
@@ -105,23 +108,19 @@ void TransportSender<MyState>::calculate_timers( void )
     }
 
     next_send_time = max( mindelay_clock + SEND_MINDELAY,
-			  sent_states.back().timestamp + send_interval() );
-  } else if ( !(current_state == assumed_receiver_state->state)
-	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
-    next_send_time = sent_states.back().timestamp + send_interval();
-    if ( mindelay_clock != uint64_t( -1 ) ) {
-      next_send_time = max( next_send_time, mindelay_clock + SEND_MINDELAY );
+			  last_sended_state_timestamp + send_interval() );
+  } else if ( (last_heard + ACTIVE_RETRY_TIMEOUT) > now ) {
+    if ( !(current_state == assumed_receiver_state->state) ) {
+      if ( mindelay_clock != uint64_t( -1 ) ) {
+        next_send_time = max( last_sended_state_timestamp + send_interval(), mindelay_clock + SEND_MINDELAY );
+      } else {
+        next_send_time = last_sended_state_timestamp + send_interval();
+      }
+    } else if ( !(current_state == sent_states.front().state) ) {
+      next_send_time = last_sended_state_timestamp + connection->timeout() + ACK_DELAY;
     }
-  } else if ( !(current_state == sent_states.front().state )
-	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
-    next_send_time = sent_states.back().timestamp + connection->timeout() + ACK_DELAY;
   } else {
     next_send_time = uint64_t(-1);
-  }
-
-  /* speed up shutdown sequence */
-  if ( shutdown_in_progress || (ack_num == uint64_t(-1)) ) {
-    next_ack_time = sent_states.back().timestamp + send_interval();
   }
 }
 
@@ -129,14 +128,14 @@ void TransportSender<MyState>::calculate_timers( void )
 template <class MyState>
 int TransportSender<MyState>::wait_time( void )
 {
-  calculate_timers();
+  uint64_t now = timestamp();
+
+  calculate_timers(now);
 
   uint64_t next_wakeup = next_ack_time;
   if ( next_send_time < next_wakeup ) {
     next_wakeup = next_send_time;
   }
-
-  uint64_t now = timestamp();
 
   if ( !connection->get_has_remote_addr() ) {
     return INT_MAX;
@@ -153,13 +152,13 @@ int TransportSender<MyState>::wait_time( void )
 template <class MyState>
 void TransportSender<MyState>::tick( void )
 {
-  calculate_timers(); /* updates assumed receiver state and rationalizes */
+  uint64_t now = timestamp();
+
+  calculate_timers(now); /* updates assumed receiver state and rationalizes */
 
   if ( !connection->get_has_remote_addr() ) {
     return;
   }
-
-  uint64_t now = timestamp();
 
   if ( (now < next_ack_time)
        && (now < next_send_time) ) {
@@ -167,7 +166,7 @@ void TransportSender<MyState>::tick( void )
   }
 
   /* Determine if a new diff or empty ack needs to be sent */
-    
+
   string diff = current_state.diff_from( assumed_receiver_state->state );
 
   attempt_prospective_resend_optimization( diff );
@@ -230,9 +229,9 @@ void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t 
 {
   sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
   if ( sent_states.size() > 32 ) { /* limit on state queue */
-    typename sent_states_type::iterator last = sent_states.end();
-    for ( int i = 0; i < 16; i++ ) { last--; }
-    sent_states.erase( last ); /* erase state from middle of queue */
+    typename sent_states_type::iterator it = sent_states.end();
+    std::advance(it, -16);
+    sent_states.erase( it ); /* erase state from middle of queue */
   }
 }
 
