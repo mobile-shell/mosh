@@ -52,9 +52,8 @@ string Complete::act( const string &str )
     for ( Actions::iterator it = actions.begin();
 	  it != actions.end();
 	  it++ ) {
-      Action *act = *it;
-      act->act_on_terminal( &terminal );
-      delete act;
+      Action &act = **it;
+      act.act_on_terminal( &terminal );
     }
     actions.clear();
   }
@@ -62,10 +61,10 @@ string Complete::act( const string &str )
   return terminal.read_octets_to_host();
 }
 
-string Complete::act( const Action *act )
+string Complete::act( const Action &act )
 {
   /* apply action to terminal */
-  act->act_on_terminal( &terminal );
+  act.act_on_terminal( &terminal );
   return terminal.read_octets_to_host();
 }
 
@@ -112,9 +111,8 @@ void Complete::apply_string( const string & diff )
       string terminal_to_host = act( input.instruction( i ).GetExtension( hostbytes ).hoststring() );
       assert( terminal_to_host.empty() ); /* server never interrogates client terminal */
     } else if ( input.instruction( i ).HasExtension( resize ) ) {
-      Resize new_size( input.instruction( i ).GetExtension( resize ).width(),
-		       input.instruction( i ).GetExtension( resize ).height() );
-      act( &new_size );
+      act( Resize( input.instruction( i ).GetExtension( resize ).width(),
+				      input.instruction( i ).GetExtension( resize ).height() ) );
     } else if ( input.instruction( i ).HasExtension( echoack ) ) {
       uint64_t inst_echo_ack_num = input.instruction( i ).GetExtension( echoack ).echo_ack_num();
       assert( inst_echo_ack_num >= echo_ack );

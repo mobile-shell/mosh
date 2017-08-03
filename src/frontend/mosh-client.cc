@@ -72,16 +72,18 @@
 
 static void print_version( FILE *file )
 {
-  fprintf( file, "mosh-client (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
-  fprintf( file, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
-  fprintf( file, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n" );
+  fputs( "mosh-client (" PACKAGE_STRING ") [build " BUILD_VERSION "]\n"
+	 "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n"
+	 "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+	 "This is free software: you are free to change and redistribute it.\n"
+	 "There is NO WARRANTY, to the extent permitted by law.\n", file );
 }
 
 static void print_usage( FILE *file, const char *argv0 )
 {
   print_version( file );
-  fprintf( file, "\n" );
-  fprintf( file, "Usage: %s [-# 'ARGS'] IP PORT\n       %s -c\n", argv0, argv0 );
+  fprintf( file, "\nUsage: %s [-# 'ARGS'] IP PORT\n"
+	   "       %s -c\n", argv0, argv0 );
 }
 
 static void print_colorcount( void )
@@ -169,7 +171,7 @@ int main( int argc, char *argv[] )
   /* Read key from environment */
   char *env_key = getenv( "MOSH_KEY" );
   if ( env_key == NULL ) {
-    fprintf( stderr, "MOSH_KEY environment variable not found.\n" );
+    fputs( "MOSH_KEY environment variable not found.\n", stderr );
     exit( 1 );
   }
 
@@ -177,11 +179,11 @@ int main( int argc, char *argv[] )
   char *predict_mode = getenv( "MOSH_PREDICTION_DISPLAY" );
   /* can be NULL */
 
-  char *key = strdup( env_key );
-  if ( key == NULL ) {
-    perror( "strdup" );
-    exit( 1 );
-  }
+  /* Read prediction insertion preference */
+  char *predict_overwrite = getenv( "MOSH_PREDICTION_OVERWRITE" );
+  /* can be NULL */
+
+  string key( env_key );
 
   if ( unsetenv( "MOSH_KEY" ) < 0 ) {
     perror( "unsetenv" );
@@ -193,7 +195,7 @@ int main( int argc, char *argv[] )
 
   bool success = false;
   try {
-    STMClient client( ip, desired_port, key, predict_mode, verbose, forward_agent );
+    STMClient client( ip, desired_port, key.c_str(), predict_mode, verbose, predict_overwrite, forward_agent );
     client.init();
 
     try {
@@ -218,8 +220,6 @@ int main( int argc, char *argv[] )
   }
 
   printf( "[mosh is exiting.]\n" );
-
-  free( key );
 
   return !success;
 }

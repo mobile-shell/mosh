@@ -85,8 +85,10 @@ void STMClient::init( void )
     LocaleVar native_ctype = get_ctype();
     string native_charset( locale_charset() );
 
-    fprintf( stderr, "mosh-client needs a UTF-8 native locale to run.\n\n" );
-    fprintf( stderr, "Unfortunately, the client's environment (%s) specifies\nthe character set \"%s\".\n\n", native_ctype.str().c_str(), native_charset.c_str() );
+    fprintf( stderr, "mosh-client needs a UTF-8 native locale to run.\n\n"
+    "Unfortunately, the client's environment (%s) specifies\n"
+	     "the character set \"%s\".\n\n",
+	     native_ctype.str().c_str(), native_charset.c_str() );
     int unused __attribute((unused)) = system( "locale" );
     exit( 1 );
   }
@@ -214,10 +216,12 @@ void STMClient::shutdown( void )
   if ( still_connecting() ) {
     fprintf( stderr, "\nmosh did not make a successful connection to %s:%s.\n", ip.c_str(), port.c_str() );
     fprintf( stderr, "Please verify that UDP port %s is not firewalled and can reach the server.\n\n", port.c_str() );
-    fprintf( stderr, "(By default, mosh uses a UDP port between 60000 and 61000. The -p option\nselects a specific UDP port number.)\n" );
+    fputs( "(By default, mosh uses a UDP port between 60000 and 61000. The -p option\n"
+	   "selects a specific UDP port number.)\n", stderr );
   } else if ( network ) {
     if ( !clean_shutdown ) {
-      fprintf( stderr, "\n\nmosh did not shut down cleanly. Please note that the\nmosh-server process may still be running on the server.\n" );
+      fputs( "\n\nmosh did not shut down cleanly. Please note that the\n"
+	     "mosh-server process may still be running on the server.\n", stderr );
     }
   }
 }
@@ -249,8 +253,7 @@ void STMClient::main_init( void )
   /* open network */
   Network::UserStream blank;
   Terminal::Complete local_terminal( window_size.ws_col, window_size.ws_row );
-  network = new Network::Transport< Network::UserStream, Terminal::Complete >( blank, local_terminal,
-									       key.c_str(), ip.c_str(), port.c_str() );
+  network = NetworkPointer( new NetworkType( blank, local_terminal, key.c_str(), ip.c_str(), port.c_str() ) );
 
   network->set_send_delay( 1 ); /* minimal delay on outgoing keystrokes */
 
@@ -312,19 +315,29 @@ bool STMClient::process_user_input( int fd )
     return false;
   }
 
-  if ( !network->shutdown_in_progress() ) {
-    overlays.get_prediction_engine().set_local_frame_sent( network->get_sent_state_last() );
+  NetworkType &net = *network;
+
+  if ( !net.shutdown_in_progress() ) {
+    overlays.get_prediction_engine().set_local_frame_sent( net.get_sent_state_last() );
+
+    /* Don't predict for bulk data. */
+    bool paste = bytes_read > 100;
+    if ( paste ) {
+      overlays.get_prediction_engine().reset();
+    }
 
     for ( int i = 0; i < bytes_read; i++ ) {
       char the_byte = buf[ i ];
 
-      overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
+      if ( !paste ) {
+	overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
+      }
 
       if ( quit_sequence_started ) {
 	if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
-	  if ( network->has_remote_addr() && (!network->shutdown_in_progress()) ) {
+	  if ( net.has_remote_addr() && (!net.shutdown_in_progress()) ) {
 	    overlays.get_notification_engine().set_notification_string( wstring( L"Exiting on user request..." ), true );
-	    network->start_shutdown();
+	    net.start_shutdown();
 	    return true;
 	  } else {
 	    return false;
@@ -338,7 +351,7 @@ bool STMClient::process_user_input( int fd )
 	    exit( 1 );
 	  }
 
-	  printf( "\n\033[37;44m[mosh is suspended.]\033[m\n" );
+	  fputs( "\n\033[37;44m[mosh is suspended.]\033[m\n", stdout );
 
 	  fflush( NULL );
 
@@ -349,11 +362,11 @@ bool STMClient::process_user_input( int fd )
 	} else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
 	  /* Emulation sequence to type escape_key is escape_key +
 	     escape_pass_key (that is escape key without Ctrl) */
-	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
+	  net.get_current_state().push_back( Parser::UserByte( escape_key ) );
 	} else {
 	  /* Escape key followed by anything other than . and ^ gets sent literally */
-	  network->get_current_state().push_back( Parser::UserByte( escape_key ) );
-	  network->get_current_state().push_back( Parser::UserByte( the_byte ) );	  
+	  net.get_current_state().push_back( Parser::UserByte( escape_key ) );
+	  net.get_current_state().push_back( Parser::UserByte( the_byte ) );
 	}
 
 	quit_sequence_started = false;
@@ -378,7 +391,7 @@ bool STMClient::process_user_input( int fd )
 	repaint_requested = true;
       }
 
-      network->get_current_state().push_back( Parser::UserByte( the_byte ) );		
+      net.get_current_state().push_back( Parser::UserByte( the_byte ) );
     }
   }
 

@@ -52,6 +52,12 @@ namespace shared {
   using std::tr1::shared_ptr;
 
   // make_shared emulation.
+  template<typename Tp>
+    inline shared_ptr<Tp>
+    make_shared()
+  {
+    return shared_ptr<Tp>(new Tp());
+  }
   template<typename Tp, typename A1>
     inline shared_ptr<Tp>
     make_shared(const A1& a1)

@@ -111,9 +111,11 @@ using namespace std;
 
 static void print_version( FILE *file )
 {
-  fprintf( file, "mosh-server (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
-  fprintf( file, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
-  fprintf( file, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n" );
+  fputs( "mosh-server (" PACKAGE_STRING ") [build " BUILD_VERSION "]\n"
+	 "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n"
+	 "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+	 "This is free software: you are free to change and redistribute it.\n"
+	 "There is NO WARRANTY, to the extent permitted by law.\n", file );
 }
 
 static void print_usage( FILE *stream, const char *argv0 )
@@ -145,14 +147,14 @@ static string get_SSH_IP( void )
 {
   const char *SSH_CONNECTION = getenv( "SSH_CONNECTION" );
   if ( !SSH_CONNECTION ) { /* Older sshds don't set this */
-    fprintf( stderr, "Warning: SSH_CONNECTION not found; binding to any interface.\n" );
+    fputs( "Warning: SSH_CONNECTION not found; binding to any interface.\n", stderr );
     return string( "" );
   }
   istringstream ss( SSH_CONNECTION );
   string dummy, local_interface_IP;
   ss >> dummy >> dummy >> local_interface_IP;
   if ( !ss ) {
-    fprintf( stderr, "Warning: Could not parse SSH_CONNECTION; binding to any interface.\n" );
+    fputs( "Warning: Could not parse SSH_CONNECTION; binding to any interface.\n", stderr );
     return string( "" );
   }
 
@@ -350,9 +352,12 @@ int main( int argc, char *argv[] )
       LocaleVar client_ctype = get_ctype();
       string client_charset( locale_charset() );
 
-      fprintf( stderr, "mosh-server needs a UTF-8 native locale to run.\n\n" );
-      fprintf( stderr, "Unfortunately, the local environment (%s) specifies\nthe character set \"%s\",\n\n", native_ctype.str().c_str(), native_charset.c_str() );
-      fprintf( stderr, "The client-supplied environment (%s) specifies\nthe character set \"%s\".\n\n", client_ctype.str().c_str(), client_charset.c_str() );
+      fprintf( stderr, "mosh-server needs a UTF-8 native locale to run.\n\n"
+	       "Unfortunately, the local environment (%s) specifies\n"
+	       "the character set \"%s\",\n\n"
+	       "The client-supplied environment (%s) specifies\n"
+	       "the character set \"%s\".\n\n",
+	       native_ctype.str().c_str(), native_charset.c_str(), client_ctype.str().c_str(), client_charset.c_str() );
       int unused __attribute((unused)) = system( "locale" );
       exit( 1 );
     }
@@ -383,9 +388,9 @@ static int run_server( const char *desired_ip, const char *desired_port,
     char *endptr;
     network_timeout = strtol( timeout_envar, &endptr, 10 );
     if ( *endptr != '\0' || ( network_timeout == 0 && errno == EINVAL ) ) {
-      fprintf( stderr, "MOSH_SERVER_NETWORK_TMOUT not a valid integer, ignoring\n" );
+      fputs( "MOSH_SERVER_NETWORK_TMOUT not a valid integer, ignoring\n", stderr );
     } else if ( network_timeout < 0 ) {
-      fprintf( stderr, "MOSH_SERVER_NETWORK_TMOUT is negative, ignoring\n" );
+      fputs( "MOSH_SERVER_NETWORK_TMOUT is negative, ignoring\n", stderr );
       network_timeout = 0;
     }
   }
@@ -397,9 +402,9 @@ static int run_server( const char *desired_ip, const char *desired_port,
     char *endptr;
     network_signaled_timeout = strtol( signal_envar, &endptr, 10 );
     if ( *endptr != '\0' || ( network_signaled_timeout == 0 && errno == EINVAL ) ) {
-      fprintf( stderr, "MOSH_SERVER_SIGNAL_TMOUT not a valid integer, ignoring\n" );
+      fputs( "MOSH_SERVER_SIGNAL_TMOUT not a valid integer, ignoring\n", stderr );
     } else if ( network_signaled_timeout < 0 ) {
-      fprintf( stderr, "MOSH_SERVER_SIGNAL_TMOUT is negative, ignoring\n" );
+      fputs( "MOSH_SERVER_SIGNAL_TMOUT is negative, ignoring\n", stderr );
       network_signaled_timeout = 0;
     }
   }
@@ -420,7 +425,8 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
   /* open network */
   Network::UserStream blank;
-  ServerConnection *network = new ServerConnection( terminal, blank, desired_ip, desired_port );
+  typedef shared::shared_ptr<ServerConnection> NetworkPointer;
+  NetworkPointer network( new ServerConnection( terminal, blank, desired_ip, desired_port ) );
 
   network->set_verbose( verbose );
   Select::set_verbose( verbose );
@@ -451,13 +457,17 @@ static int run_server( const char *desired_ip, const char *desired_port,
   if ( the_pid < 0 ) {
     perror( "fork" );
   } else if ( the_pid > 0 ) {
-    fprintf( stderr, "\nmosh-server (%s) [build %s]\n", PACKAGE_STRING, BUILD_VERSION );
-    fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
-    fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
+    fputs( "\nmosh-server (" PACKAGE_STRING ") [build " BUILD_VERSION "]\n"
+	   "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n"
+	   "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+	   "This is free software: you are free to change and redistribute it.\n"
+	   "There is NO WARRANTY, to the extent permitted by law.\n\n", stderr );
 
     fprintf( stderr, "[mosh-server detached, pid = %d]\n", static_cast<int>(the_pid) );
 #ifndef HAVE_IUTF8
-    fprintf( stderr, "\nWarning: termios IUTF8 flag not defined.\nCharacter-erase of multibyte character sequence\nprobably does not work properly on this platform.\n" );
+    fputs( "\nWarning: termios IUTF8 flag not defined.\n"
+	   "Character-erase of multibyte character sequence\n"
+	   "probably does not work properly on this platform.\n", stderr );
 #endif /* HAVE_IUTF8 */
 
     fflush( stdout );
@@ -527,7 +537,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
     fatal_assert( 0 == sigaction( SIGPIPE, &sa, NULL ) );
 
     /* close server-related file descriptors */
-    delete network;
+    network.reset();
 
     /* set IUTF8 if available */
 #ifdef HAVE_IUTF8
@@ -642,11 +652,9 @@ static int run_server( const char *desired_ip, const char *desired_port,
       perror( "close" );
       exit( 1 );
     }
-
-    delete network;
   }
 
-  printf( "\n[mosh-server is exiting.]\n" );
+  fputs( "\n[mosh-server is exiting.]\n", stdout );
 
   return 0;
 }
@@ -738,22 +746,25 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  us.apply_string( network.get_remote_diff() );
 	  /* apply userstream to terminal */
 	  for ( size_t i = 0; i < us.size(); i++ ) {
-	    const Parser::Action *action = us.get_action( i );
-	    if ( typeid( *action ) == typeid( Parser::Resize ) ) {
+	    const Parser::Action &action = us.get_action( i );
+	    if ( typeid( action ) == typeid( Parser::Resize ) ) {
 	      /* apply only the last consecutive Resize action */
-	      while ( i < us.size() - 1 &&
-		   typeid( us.get_action( i + 1 ) ) == typeid( Parser::Resize ) ) {
+	      while ( i < us.size() - 1 ) {
+		const Parser::Action &next  = us.get_action( i + 1 );
+		if ( typeid( next ) != typeid( Parser::Resize ) ) {
+		  break;
+		}
 		i++;
 	      }
 	      /* tell child process of resize */
-	      const Parser::Resize *res = static_cast<const Parser::Resize *>( action );
+	      const Parser::Resize &res = static_cast<const Parser::Resize &>( action );
 	      struct winsize window_size;
 	      if ( ioctl( host_fd, TIOCGWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCGWINSZ" );
 		network.start_shutdown();
 	      }
-	      window_size.ws_col = res->width;
-	      window_size.ws_row = res->height;
+	      window_size.ws_col = res.width;
+	      window_size.ws_row = res.height;
 	      if ( ioctl( host_fd, TIOCSWINSZ, &window_size ) < 0 ) {
 		perror( "ioctl TIOCSWINSZ" );
 		network.start_shutdown();
@@ -984,12 +995,14 @@ static bool motd_hushed( void )
   return (0 == lstat( ".hushlogin", &buf ));
 }
 
+#ifdef HAVE_UTMPX_H
 static bool device_exists( const char *ut_line )
 {
   string device_name = string( "/dev/" ) + string( ut_line );
   struct stat buf;
   return (0 == lstat( device_name.c_str(), &buf ));
 }
+#endif
 
 static void warn_unattached( const string & ignore_entry )
 {

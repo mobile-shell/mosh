@@ -40,6 +40,7 @@
 #include "completeterminal.h"
 #include "networktransport.h"
 #include "user.h"
+#include "shared.h"
 #include "terminaloverlay.h"
 
 class STMClient {
@@ -60,7 +61,9 @@ private:
 
   Terminal::Framebuffer local_framebuffer, new_state;
   Overlay::OverlayManager overlays;
-  Network::Transport< Network::UserStream, Terminal::Complete > *network;
+  typedef Network::Transport< Network::UserStream, Terminal::Complete > NetworkType;
+  typedef shared::shared_ptr< NetworkType > NetworkPointer;
+  NetworkPointer network;
   Terminal::Display display;
 
   std::wstring connecting_notification;
@@ -84,7 +87,7 @@ private:
   void resume( void ); /* restore state after SIGCONT */
 
 public:
-  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, unsigned int s_verbose, bool s_forward_agent )
+    STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, unsigned int s_verbose, const char *predict_overwrite, bool s_forward_agent)
     : ip( s_ip ? s_ip : "" ), port( s_port ? s_port : "" ),
     key( s_key ? s_key : "" ), forward_agent( s_forward_agent ),
     escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
@@ -94,7 +97,7 @@ public:
       local_framebuffer( 1, 1 ),
       new_state( 1, 1 ),
       overlays(),
-      network( NULL ),
+      network(),
       display( true ), /* use TERM environment var to initialize display */
       connecting_notification(),
       repaint_requested( false ),
@@ -117,18 +120,14 @@ public:
 	exit( 1 );
       }
     }
+    if ( predict_overwrite && !strcmp( predict_overwrite, "yes" ) ) {
+      overlays.get_prediction_engine().set_predict_overwrite( true );
+    } 
   }
 
   void init( void );
   void shutdown( void );
   bool main( void );
-
-  ~STMClient()
-  {
-    if ( network != NULL ) {
-      delete network;
-    }
-  }
 
   /* unused */
   STMClient( const STMClient & );

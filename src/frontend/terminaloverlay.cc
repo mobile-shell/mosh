@@ -240,7 +240,8 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 
   if ( message.empty() && (!time_expired) ) {
     return;
-  } else if ( message.empty() && time_expired ) {
+  }
+  if ( message.empty() && time_expired ) {
     swprintf( tmp, 128, L"mosh: Last %s %s ago.%s", explanation,
 	      human_readable_duration( static_cast<int>( time_elapsed ),
 				       "seconds" ).c_str(),
@@ -361,23 +362,23 @@ void ConditionalOverlayRow::apply( Framebuffer &fb, uint64_t confirmed_epoch, bo
 
 void PredictionEngine::apply( Framebuffer &fb ) const
 {
-  bool show = (display_preference != Never) && ( srtt_trigger
-						 || glitch_trigger
-						 || (display_preference == Always)
-						 || (display_preference == Experimental) );
+  if ( (display_preference == Never) || !( srtt_trigger
+					   || glitch_trigger
+					   || (display_preference == Always)
+					   || (display_preference == Experimental) ) ){
+    return;
+  }
 
-  if ( show ) {
-    for ( cursors_type::const_iterator it = cursors.begin();
-          it != cursors.end();
-          it++ ) {
-      it->apply( fb, confirmed_epoch );
-    }
+  for ( cursors_type::const_iterator it = cursors.begin();
+	it != cursors.end();
+	it++ ) {
+    it->apply( fb, confirmed_epoch );
+  }
 
-    for ( overlays_type::const_iterator it = overlays.begin();
-          it != overlays.end();
-          it++ ) {
-      it->apply( fb, confirmed_epoch, flagging );
-    }
+  for ( overlays_type::const_iterator it = overlays.begin();
+	it != overlays.end();
+	it++ ) {
+    it->apply( fb, confirmed_epoch, flagging );
   }
 }
 
@@ -651,7 +652,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 {
   if ( display_preference == Never ) {
     return;
-  } else if ( display_preference == Experimental ) {
+  }
+  if ( display_preference == Experimental ) {
     prediction_epoch = confirmed_epoch;
   }
 
@@ -672,22 +674,22 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
   for ( Parser::Actions::iterator it = actions.begin();
         it != actions.end();
         it++ ) {
-    Parser::Action *act = *it;
+    Parser::Action& act = **it;
 
     /*
     fprintf( stderr, "Action: %s (%lc)\n",
 	     act->name().c_str(), act->char_present ? act->ch : L'_' );
     */
 
-    const std::type_info& type_act = typeid( *act );
+    const std::type_info& type_act = typeid( act );
     if ( type_act == typeid( Parser::Print ) ) {
       /* make new prediction */
 
       init_cursor( fb );
 
-      assert( act->char_present );
+      assert( act.char_present );
 
-      wchar_t ch = act->ch;
+      wchar_t ch = act.ch;
       /* XXX handle wide characters */
 
       if ( ch == 0x7f ) { /* backspace */
@@ -698,32 +700,45 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	  cursor().col--;
 	  cursor().expire( local_frame_sent + 1, now );
 
-	  for ( int i = cursor().col; i < fb.ds.get_width(); i++ ) {
-	    ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
-	    
+	  if ( predict_overwrite ) {
+	    ConditionalOverlayCell &cell = the_row.overlay_cells[ cursor().col ];
 	    cell.reset_with_orig();
 	    cell.active = true;
 	    cell.tentative_until_epoch = prediction_epoch;
 	    cell.expire( local_frame_sent + 1, now );
-	    cell.original_contents.push_back( *fb.get_cell( cursor().row, i ) );
-	  
-	    if ( i + 2 < fb.ds.get_width() ) {
-	      ConditionalOverlayCell &next_cell = the_row.overlay_cells[ i + 1 ];
-	      const Cell *next_cell_actual = fb.get_cell( cursor().row, i + 1 );
+	    const Cell orig_cell = *fb.get_cell();
+	    cell.original_contents.push_back( orig_cell );
+	    cell.replacement = orig_cell;
+	    cell.replacement.clear();
+	    cell.replacement.append(' ');
+	  } else {
+	    for ( int i = cursor().col; i < fb.ds.get_width(); i++ ) {
+	      ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
 
-	      if ( next_cell.active ) {
-		if ( next_cell.unknown ) {
-		  cell.unknown = true;
+	      cell.reset_with_orig();
+	      cell.active = true;
+	      cell.tentative_until_epoch = prediction_epoch;
+	      cell.expire( local_frame_sent + 1, now );
+	      cell.original_contents.push_back( *fb.get_cell( cursor().row, i ) );
+	  
+	      if ( i + 2 < fb.ds.get_width() ) {
+		ConditionalOverlayCell &next_cell = the_row.overlay_cells[ i + 1 ];
+		const Cell *next_cell_actual = fb.get_cell( cursor().row, i + 1 );
+
+		if ( next_cell.active ) {
+		  if ( next_cell.unknown ) {
+		    cell.unknown = true;
+		  } else {
+		    cell.unknown = false;
+		    cell.replacement = next_cell.replacement;
+		  }
 		} else {
 		  cell.unknown = false;
-		  cell.replacement = next_cell.replacement;
+		  cell.replacement = *next_cell_actual;
 		}
 	      } else {
-		cell.unknown = false;
-		cell.replacement = *next_cell_actual;
+		cell.unknown = true;
 	      }
-	    } else {
-	      cell.unknown = true;
 	    }
 	  }
 	}
@@ -746,7 +761,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	}
 
 	/* do the insert */
-	for ( int i = fb.ds.get_width() - 1; i > cursor().col; i-- ) {
+	int rightmost_column = predict_overwrite ? cursor().col : fb.ds.get_width() - 1;
+	for ( int i = rightmost_column; i > cursor().col; i-- ) {
 	  ConditionalOverlayCell &cell = the_row.overlay_cells[ i ];
 	  cell.reset_with_orig();
 	  cell.active = true;
@@ -812,24 +828,24 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	}
       }
     } else if ( type_act == typeid( Parser::Execute ) ) {
-      if ( act->char_present && (act->ch == 0x0d) /* CR */ ) {
+      if ( act.char_present && (act.ch == 0x0d) /* CR */ ) {
 	become_tentative();
 	newline_carriage_return( fb );
       } else {
-	//	fprintf( stderr, "Execute 0x%x\n", act->ch );
+	//	fprintf( stderr, "Execute 0x%x\n", act.ch );
 	become_tentative();	
       }
     } else if ( type_act == typeid( Parser::Esc_Dispatch ) ) {
       //      fprintf( stderr, "Escape sequence\n" );
       become_tentative();
     } else if ( type_act == typeid( Parser::CSI_Dispatch ) ) {
-      if ( act->char_present && (act->ch == L'C') ) { /* right arrow */
+      if ( act.char_present && (act.ch == L'C') ) { /* right arrow */
 	init_cursor( fb );
 	if ( cursor().col < fb.ds.get_width() - 1 ) {
 	  cursor().col++;
 	  cursor().expire( local_frame_sent + 1, now );
 	}
-      } else if ( act->char_present && (act->ch == L'D') ) { /* left arrow */
+      } else if ( act.char_present && (act.ch == L'D') ) { /* left arrow */
 	init_cursor( fb );
 	
 	if ( cursor().col > 0 ) {
@@ -837,12 +853,10 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	  cursor().expire( local_frame_sent + 1, now );
 	}
       } else {
-	//	fprintf( stderr, "CSI sequence %lc\n", act->ch );
+	//	fprintf( stderr, "CSI sequence %lc\n", act.ch );
 	become_tentative();
       }
     }
-
-    delete act;
   }
 }
 

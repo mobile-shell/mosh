@@ -40,15 +40,13 @@
 
 const Parser::StateFamily Parser::family;
 
-static void append_or_delete( Parser::Action *act,
+static void append_or_delete( Parser::ActionPointer act,
 			      Parser::Actions &vec )
 {
   assert( act );
 
   if ( !act->ignore() ) {
     vec.push_back( act );
-  } else {
-    delete act;
   }
 }
 
@@ -61,7 +59,6 @@ void Parser::Parser::input( wchar_t ch, Actions &ret )
   }
 
   append_or_delete( tx.action, ret );
-  tx.action = NULL;
 
   if ( tx.next_state != NULL ) {
     append_or_delete( tx.next_state->enter(), ret );

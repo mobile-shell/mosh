@@ -152,6 +152,18 @@ Synonym for \-\-forward-agent
 Synonym for \-\-predict=never
 
 .TP
+.B \-\-predict\-overwrite\fP
+When prediction is enabled, do not insert speculative local echo
+before existing text, but overwrite it instead.
+
+The MOSH_PREDICTION_OVERWRITE environment variable also enables this
+if its value is 'yes'.
+
+.TP
+.B \-o
+Synonym for \-\-predict\-overwrite
+
+.TP
 .B \-\-family=inet
 Only use IPv4 for the SSH connection and Mosh session.
 

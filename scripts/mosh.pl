@@ -65,6 +65,8 @@ my $server = 'mosh-server';
 
 my $predict = undef;
 
+my $overwrite = 0;
+
 my $bind_ip = undef;
 
 my $use_remote_ip = 'proxy';
@@ -98,6 +100,8 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 -a      --predict=always        use local echo even on fast links
 -n      --predict=never         never use local echo
         --predict=experimental  aggressively echo even when incorrect
+
+-o      --predict-overwrite     prediction overwrites instead of inserting
 
 -4      --family=inet        use IPv4 only
 -6      --family=inet6       use IPv6 only
@@ -154,6 +158,7 @@ sub predict_check {
 GetOptions( 'client=s' => \$client,
 	    'server=s' => \$server,
 	    'predict=s' => \$predict,
+	    'predict-overwrite|o!' => \$overwrite,
 	    'port=s' => \$port_request,
 	    'a' => sub { $predict = 'always' },
 	    'n' => sub { $predict = 'never' },
@@ -205,6 +210,9 @@ if (!$have_ipv6) {
   }
   # Force IPv4.
   $family = "inet";
+}
+if ( $overwrite ) {
+    $ENV{ "MOSH_PREDICTION_OVERWRITE" } = "yes";
 }
 
 if ( defined $port_request ) {
