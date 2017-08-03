@@ -99,7 +99,7 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 -n      --predict=never         never use local echo
         --predict=experimental  aggressively echo even when incorrect
 
--o      --overwrite             prediction overwrites instead of inserting
+-o      --predict-overwrite     prediction overwrites instead of inserting
 
 -4      --family=inet        use IPv4 only
 -6      --family=inet6       use IPv6 only
@@ -154,7 +154,7 @@ sub predict_check {
 GetOptions( 'client=s' => \$client,
 	    'server=s' => \$server,
 	    'predict=s' => \$predict,
-	    'overwrite|o!' => \$overwrite,
+	    'predict-overwrite|o!' => \$overwrite,
 	    'port=s' => \$port_request,
 	    'a' => sub { $predict = 'always' },
 	    'n' => sub { $predict = 'never' },
