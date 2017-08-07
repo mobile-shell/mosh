@@ -286,7 +286,6 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
     throw; /* this time it's fatal */
   }
 
-  assert( false );
   throw NetworkException( "Could not bind", errno );
 }
 
@@ -352,7 +351,6 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
     }
   }
 
-  assert( false );
   return false;
 }
 
@@ -458,7 +456,6 @@ string Connection::recv( void )
     prune_sockets();
     return payload;
   }
-  assert( false );
   return "";
 }
 

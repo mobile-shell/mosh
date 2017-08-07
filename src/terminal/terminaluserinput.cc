@@ -76,7 +76,6 @@ string UserInput::input( const Parser::UserByte *act,
   default:
     /* This doesn't handle the 8-bit SS3 C1 control, which would be
        two octets in UTF-8. Fortunately nobody seems to send this. */
-    assert( false );
     return string();
   }
 }

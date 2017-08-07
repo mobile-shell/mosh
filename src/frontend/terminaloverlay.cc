@@ -126,7 +126,6 @@ Validity ConditionalCursorMove::get_validity( const Framebuffer &fb,
 
   if ( (row >= fb.ds.get_height())
        || (col >= fb.ds.get_width()) ) {
-    //    assert( false );
     //    fprintf( stderr, "Crazy cursor (%d,%d)!\n", row, col );
     return IncorrectOrExpired;
   }
@@ -299,9 +298,8 @@ void NotificationEngine::apply( Framebuffer &fb ) const
       }
       break;
     case -1: /* unprintable character */
+    default: /* Bogus width, ignore. */
       break;
-    default:
-      assert( false );
     }
   }
 }

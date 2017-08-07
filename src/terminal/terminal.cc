@@ -140,9 +140,7 @@ void Emulator::print( const Parser::Print *act )
     }
     break;
   case -1: /* unprintable character */
-    break;
-  default:
-    assert( false );
+  default: /* bogus width, ignore */
     break;
   }
 }
