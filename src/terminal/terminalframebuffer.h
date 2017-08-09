@@ -93,9 +93,10 @@ namespace Terminal {
     unsigned int fallback : 1; /* first character is combining character */
     unsigned int wrap : 1;
 
+  private:
+    Cell();
   public:
     Cell( color_type background_color );
-    Cell(); /* default constructor required by C++11 STL */
 
     void reset( color_type background_color );
 
@@ -208,8 +209,10 @@ namespace Terminal {
     // in scrolling.
     uint64_t gen;
 
+  private:
+    Row();
+  public:
     Row( const size_t s_width, const color_type background_color );
-    Row(); /* default constructor required by C++11 STL */
 
     void insert_cell( int col, color_type background_color );
     void delete_cell( int col, color_type background_color );

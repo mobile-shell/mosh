@@ -45,15 +45,6 @@ Cell::Cell( color_type background_color )
     fallback( false ),
     wrap( false )
 {}
-Cell::Cell() /* default constructor required by C++11 STL */
-  : contents(),
-    renditions( 0 ),
-    wide( false ),
-    fallback( false ),
-    wrap( false )
-{
-  assert( false );
-}
 
 void Cell::reset( color_type background_color )
 {
@@ -229,14 +220,13 @@ int DrawState::get_next_tab( int count ) const
       }
     }
     return -1;
-  } else {
-    for ( int i = cursor_col - 1; i > 0; i-- ) {
-      if ( tabs[ i ] && ++count == 0 ) {
-	return i;
-      }
-    }
-    return 0;
   }
+  for ( int i = cursor_col - 1; i > 0; i-- ) {
+    if ( tabs[ i ] && ++count == 0 ) {
+      return i;
+    }
+  }
+  return 0;
 }
 
 void DrawState::set_scrolling_region( int top, int bottom )
@@ -314,21 +304,21 @@ void Framebuffer::insert_line( int before_row, int count )
     return;
   }
 
-  int max_scroll = ds.get_scrolling_region_bottom_row() + 1 - before_row;
-  if ( count > max_scroll ) {
-    count = max_scroll;
+  int scroll = ds.get_scrolling_region_bottom_row() + 1 - before_row;
+  if ( count < scroll ) {
+    scroll = count;
   }
 
-  if ( count == 0 ) {
+  if ( scroll == 0 ) {
     return;
   }
 
   // delete old rows
-  rows_type::iterator start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  rows.erase( start, start + count );
+  rows_type::iterator start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - scroll;
+  rows.erase( start, start + scroll );
   // insert new rows
   start = rows.begin() + before_row;
-  rows.insert( start, count, newrow());
+  rows.insert( start, scroll, newrow());
 }
 
 void Framebuffer::delete_line( int row, int count )
@@ -338,32 +328,26 @@ void Framebuffer::delete_line( int row, int count )
     return;
   }
 
-  int max_scroll = ds.get_scrolling_region_bottom_row() + 1 - row;
-  if ( count > max_scroll ) {
-    count = max_scroll;
+  int scroll = ds.get_scrolling_region_bottom_row() + 1 - row;
+  if ( count < scroll ) {
+    scroll = count;
   }
 
-  if ( count == 0 ) {
+  if ( scroll == 0 ) {
     return;
   }
 
   // delete old rows
   rows_type::iterator start = rows.begin() + row;
-  rows.erase( start, start + count );
+  rows.erase( start, start + scroll );
   // insert a block of dummy rows
-  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - count;
-  rows.insert( start, count, newrow());
+  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - scroll;
+  rows.insert( start, scroll, newrow());
 }
 
 Row::Row( const size_t s_width, const color_type background_color )
   : cells( s_width, Cell( background_color ) ), gen( get_gen() )
 {}
-
-Row::Row() /* default constructor required by C++11 STL */
-  : cells( 1, Cell() ), gen( get_gen() )
-{
-  assert( false );
-}
 
 uint64_t Row::get_gen() const
 {
@@ -513,6 +497,7 @@ void Renditions::set_rendition( color_type num )
   case 5: case 25: set_attribute(blink, value); break;
   case 7: case 27: set_attribute(inverse, value); break;
   case 8: case 28: set_attribute(invisible, value); break;
+  default: assert(false);
   }
 }
 
@@ -597,23 +582,22 @@ std::string Cell::debug_contents( void ) const
 {
   if ( contents.empty() ) {
     return "'_' ()";
-  } else {
-    std::string chars( 1, '\'' );
-    print_grapheme( chars );
-    chars.append( "' [" );
-    const char *lazycomma = "";
-    char buf[64];
-    for ( content_type::const_iterator i = contents.begin();
-	  i < contents.end();
-	  i++ ) {
-
-      snprintf( buf, sizeof buf, "%s0x%02x", lazycomma, static_cast<uint8_t>(*i) );
-      chars.append( buf );
-      lazycomma = ", ";
-    }
-    chars.append( "]" );
-    return chars;
   }
+  std::string chars( 1, '\'' );
+  print_grapheme( chars );
+  chars.append( "' [" );
+  const char *lazycomma = "";
+  char buf[64];
+  for ( content_type::const_iterator i = contents.begin();
+	i < contents.end();
+	i++ ) {
+
+    snprintf( buf, sizeof buf, "%s0x%02x", lazycomma, static_cast<uint8_t>(*i) );
+    chars.append( buf );
+    lazycomma = ", ";
+  }
+  chars.append( "]" );
+  return chars;
 }
 
 bool Cell::compare( const Cell &other ) const

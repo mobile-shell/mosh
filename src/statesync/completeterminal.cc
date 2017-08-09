@@ -173,9 +173,8 @@ int Complete::wait_time( uint64_t now ) const
   uint64_t next_echo_ack_time = it->second + ECHO_TIMEOUT;
   if ( next_echo_ack_time <= now ) {
     return 0;
-  } else {
-    return next_echo_ack_time - now;
   }
+  return next_echo_ack_time - now;
 }
 
 bool Complete::compare( const Complete &other ) const

@@ -95,7 +95,6 @@ string UserStream::diff_from( const UserStream &existing ) const
       }
       break;
     default:
-      assert( false );
       break;
     }
 
@@ -131,7 +130,6 @@ const Parser::Action &UserStream::get_action( unsigned int i ) const
   case ResizeType:
     return actions[ i ].resize;
   default:
-    assert( false );
     static const Parser::Ignore nothing = Parser::Ignore();
     return nothing;
   }

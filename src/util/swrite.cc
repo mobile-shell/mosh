@@ -52,9 +52,8 @@ int swrite( int fd, const char *str, ssize_t len )
     if ( bytes_written <= 0 ) {
       perror( "write" );
       return -1;
-    } else {
-      total_bytes_written += bytes_written;
     }
+    total_bytes_written += bytes_written;
   }
 
   return 0;

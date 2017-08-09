@@ -52,17 +52,14 @@ string UserInput::input( const Parser::UserByte *act,
       state = ESC;
     }
     return string( &act->c, 1 );
-    break;
 
   case ESC:
     if ( act->c == 'O' ) { /* ESC O = 7-bit SS3 */
       state = SS3;
       return string();
-    } else {
-      state = Ground;
-      return string( &act->c, 1 );
     }
-    break;
+    state = Ground;
+    return string( &act->c, 1 );
 
   case SS3:
     state = Ground;
@@ -75,12 +72,10 @@ string UserInput::input( const Parser::UserByte *act,
       char original_cursor[ 2 ] = { 'O', act->c };
       return string( original_cursor, 2 );
     }
-    break;
+
+  default:
+    /* This doesn't handle the 8-bit SS3 C1 control, which would be
+       two octets in UTF-8. Fortunately nobody seems to send this. */
+    return string();
   }
-
-  /* This doesn't handle the 8-bit SS3 C1 control, which would be
-     two octets in UTF-8. Fortunately nobody seems to send this. */
-
-  assert( false );
-  return string();
 }

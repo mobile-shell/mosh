@@ -63,10 +63,6 @@ namespace Terminal {
 
   class Display {
   private:
-    static bool ti_flag( const char *capname );
-    static int ti_num( const char *capname );
-    static const char *ti_str( const char *capname );
-
     bool has_ech; /* erase character is part of vt200 but not supported by tmux
 		     (or by "screen" terminfo entry, which is what tmux advertises) */
 

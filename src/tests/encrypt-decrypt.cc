@@ -144,7 +144,7 @@ int main( int argc, char *argv[] ) {
     } catch ( const CryptoException &e ) {
       fprintf( stderr, "Crypto exception: %s\r\n",
                e.what() );
-      fatal_assert( false );
+      return 1;
     }
   }
 
