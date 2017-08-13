@@ -335,23 +335,20 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
     if ( bind( sock(), &local_addr.sa, local_addr_len ) == 0 ) {
       set_MTU( local_addr.sa.sa_family );
       return true;
-    } else if ( i == search_high ) { /* last port to search */
-      int saved_errno = errno;
-      socks.pop_back();
-      char host[ NI_MAXHOST ], serv[ NI_MAXSERV ];
-      int errcode = getnameinfo( &local_addr.sa, local_addr_len,
-				 host, sizeof( host ), serv, sizeof( serv ),
-				 NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
-      if ( errcode != 0 ) {
-	throw NetworkException( std::string( "bind: getnameinfo: " ) + gai_strerror( errcode ), 0 );
-      }
-      fprintf( stderr, "Failed binding to %s:%s\n",
-	       host, serv );
-      throw NetworkException( "bind", saved_errno );
-    }
+    } // else fallthrough to below code, on last iteration.
   }
-
-  return false;
+  int saved_errno = errno;
+  socks.pop_back();
+  char host[ NI_MAXHOST ], serv[ NI_MAXSERV ];
+  int errcode = getnameinfo( &local_addr.sa, local_addr_len,
+			     host, sizeof( host ), serv, sizeof( serv ),
+			     NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
+  if ( errcode != 0 ) {
+    throw NetworkException( std::string( "bind: getnameinfo: " ) + gai_strerror( errcode ), 0 );
+  }
+  fprintf( stderr, "Failed binding to %s:%s\n",
+	   host, serv );
+  throw NetworkException( "bind", saved_errno );
 }
 
 Connection::Connection( const char *key_str, const char *ip, const char *port ) /* client */
@@ -456,7 +453,7 @@ string Connection::recv( void )
     prune_sockets();
     return payload;
   }
-  return "";
+  throw NetworkException( "No packet received" );
 }
 
 string Connection::recv_one( int sock_to_recv, bool nonblocking )

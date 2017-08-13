@@ -140,7 +140,9 @@ void Emulator::print( const Parser::Print *act )
     }
     break;
   case -1: /* unprintable character */
-  default: /* bogus width, ignore */
+    break;
+  default:
+    assert( !"unexpected character width from wcwidth()" );
     break;
   }
 }
