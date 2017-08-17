@@ -435,14 +435,12 @@ string Connection::recv( void )
   for ( std::deque< Socket >::const_iterator it = socks.begin();
 	it != socks.end();
 	it++ ) {
-    bool islast = (it + 1) == socks.end();
     string payload;
     try {
-      payload = recv_one( it->fd(), !islast );
+      payload = recv_one( it->fd());
     } catch ( NetworkException & e ) {
       if ( (e.the_errno == EAGAIN)
 	   || (e.the_errno == EWOULDBLOCK) ) {
-	assert( !islast );
 	continue;
       } else {
 	throw;
@@ -456,7 +454,7 @@ string Connection::recv( void )
   throw NetworkException( "No packet received" );
 }
 
-string Connection::recv_one( int sock_to_recv, bool nonblocking )
+string Connection::recv_one( int sock_to_recv )
 {
   /* receive source address, ECN, and payload in msghdr structure */
   Addr packet_remote_addr;
@@ -483,7 +481,7 @@ string Connection::recv_one( int sock_to_recv, bool nonblocking )
   /* receive flags */
   header.msg_flags = 0;
 
-  ssize_t received_len = recvmsg( sock_to_recv, &header, nonblocking ? MSG_DONTWAIT : 0 );
+  ssize_t received_len = recvmsg( sock_to_recv, &header, MSG_DONTWAIT );
 
   if ( received_len < 0 ) {
     throw NetworkException( "recvmsg", errno );

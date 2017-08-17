@@ -198,7 +198,7 @@ namespace Network {
 
     void prune_sockets( void );
 
-    string recv_one( int sock_to_recv, bool nonblocking );
+    string recv_one( int sock_to_recv );
 
     void set_MTU( int family );
 
