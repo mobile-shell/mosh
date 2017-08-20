@@ -531,14 +531,14 @@ std::string Renditions::sgr( void ) const
        && (foreground_color <= 37) ) {
     /* ANSI foreground color */
     char col[ 8 ];
-    snprintf( col, 8, ";%d", foreground_color );
+    snprintf( col, 8, ";%u", foreground_color );
     ret.append( col );
   }
 
   if ( background_color
        && (background_color <= 47) ) {
     char col[ 8 ];
-    snprintf( col, 8, ";%d", background_color );
+    snprintf( col, 8, ";%u", background_color );
     ret.append( col );
   }
 
@@ -546,13 +546,13 @@ std::string Renditions::sgr( void ) const
 
   if ( foreground_color > 37 ) { /* use 256-color set */
     char col[ 64 ];
-    snprintf( col, 64, "\033[38;5;%dm", foreground_color - 30 );
+    snprintf( col, 64, "\033[38;5;%um", foreground_color - 30 );
     ret.append( col );
   }
 
   if ( background_color > 47 ) { /* use 256-color set */
     char col[ 64 ];
-    snprintf( col, 64, "\033[48;5;%dm", background_color - 40 );
+    snprintf( col, 64, "\033[48;5;%um", background_color - 40 );
     ret.append( col );
   }
 
@@ -626,13 +626,13 @@ bool Cell::compare( const Cell &other ) const
 
   if ( fallback != other.fallback ) {
     // ret = true;
-    fprintf( stderr, "fallback: %d vs. %d\n",
+    fprintf( stderr, "fallback: %u vs. %u\n",
 	     fallback, other.fallback );
   }
 
   if ( wide != other.wide ) {
     ret = true;
-    fprintf( stderr, "width: %d vs. %d\n",
+    fprintf( stderr, "width: %u vs. %u\n",
 	     wide, other.wide );
   }
 
@@ -643,7 +643,7 @@ bool Cell::compare( const Cell &other ) const
 
   if ( wrap != other.wrap ) {
     ret = true;
-    fprintf( stderr, "wrap: %d vs. %d\n",
+    fprintf( stderr, "wrap: %u vs. %u\n",
 	     wrap, other.wrap );
   }
 
