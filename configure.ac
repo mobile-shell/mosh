@@ -346,6 +346,33 @@ case "${with_crypto_library}" in
     ;;
 esac
 
+if test "${with_crypto_library}" = "openssl"; then
+  # push LDFLAGS/CFLAGS
+  old_LIBS="$LIBS"
+  old_CFLAGS="$CFLAGS"
+  # modify
+  LIBS="$LIBS $CRYPTO_LIBS"
+  CFLAGS="$CFLAGS $CRYPTO_CFLAGS"
+
+  AC_CHECK_DECL([EVP_aes_128_ocb],
+    [AC_DEFINE([HAVE_OPENSSL_OCB], [1],
+       [Define if the OCB AE algorithm is available in OpenSSL.])],
+    , [[#include <openssl/evp.h>]])
+
+  dnl AC_MSG_CHECKING([whether OCB is available in OpenSSL])
+  dnl AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <openssl/evp.h>
+  dnl ]], [[(void) EVP_aes_128_ocb();]])],
+  dnl   [AC_DEFINE([HAVE_OPENSSL_OCB], [1],
+  dnl      [Define if the OCB AE algorithm is available in OpenSSL.])
+  dnl    AC_MSG_RESULT([yes])],
+  dnl   [AC_MSG_RESULT([no])])
+
+  # restore old LDFLAGS/CPPFLAGS
+  LIBS="$old_LIBS"
+  CFLAGS="$old_CFLAGS"
+fi
+
+
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
      [Define if libutil.h necessary for forkpty().])],
