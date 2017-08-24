@@ -1,0 +1,97 @@
+From 93daa5ac3bae003084ce620e885ae6b48286ef27 Mon Sep 17 00:00:00 2001
+From: John Hood <cgull@glup.org>
+Date: Mon, 7 Aug 2017 04:38:30 +0200
+Subject: [PATCH] Fix Debian GCC7 FTBFS: remove default constructors
+
+---
+ src/statesync/user.h                | 10 +++-------
+ src/terminal/terminalframebuffer.cc | 15 ---------------
+ src/terminal/terminalframebuffer.h  |  7 +++++--
+ 3 files changed, 8 insertions(+), 24 deletions(-)
+
+diff --git a/src/statesync/user.h b/src/statesync/user.h
+index 2b21a7fb..49f26aa2 100644
+--- a/src/statesync/user.h
++++ b/src/statesync/user.h
+@@ -60,14 +60,10 @@ namespace Network {
+     UserEvent( const Parser::UserByte & s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 ) {}
+     UserEvent( const Parser::Resize & s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ) {}
+ 
+-    UserEvent() /* default constructor required by C++11 STL */
+-      : type( UserByteType ),
+-	userbyte( 0 ),
+-	resize( -1, -1 )
+-    {
+-      assert( false );
+-    }
++  private:
++    UserEvent();
+ 
++  public:
+     bool operator==( const UserEvent &x ) const { return ( type == x.type ) && ( userbyte == x.userbyte ) && ( resize == x.resize ); }
+   };
+ 
+diff --git a/src/terminal/terminalframebuffer.cc b/src/terminal/terminalframebuffer.cc
+index 03026f69..656fc370 100644
+--- a/src/terminal/terminalframebuffer.cc
++++ b/src/terminal/terminalframebuffer.cc
+@@ -45,15 +45,6 @@ Cell::Cell( color_type background_color )
+     fallback( false ),
+     wrap( false )
+ {}
+-Cell::Cell() /* default constructor required by C++11 STL */
+-  : contents(),
+-    renditions( 0 ),
+-    wide( false ),
+-    fallback( false ),
+-    wrap( false )
+-{
+-  assert( false );
+-}
+ 
+ void Cell::reset( color_type background_color )
+ {
+@@ -358,12 +349,6 @@ Row::Row( const size_t s_width, const color_type background_color )
+   : cells( s_width, Cell( background_color ) ), gen( get_gen() )
+ {}
+ 
+-Row::Row() /* default constructor required by C++11 STL */
+-  : cells( 1, Cell() ), gen( get_gen() )
+-{
+-  assert( false );
+-}
+-
+ uint64_t Row::get_gen() const
+ {
+   static uint64_t gen_counter = 0;
+diff --git a/src/terminal/terminalframebuffer.h b/src/terminal/terminalframebuffer.h
+index fa72bf5a..f159aea7 100644
+--- a/src/terminal/terminalframebuffer.h
++++ b/src/terminal/terminalframebuffer.h
+@@ -93,9 +93,10 @@ namespace Terminal {
+     unsigned int fallback : 1; /* first character is combining character */
+     unsigned int wrap : 1;
+ 
++  private:
++    Cell();
+   public:
+     Cell( color_type background_color );
+-    Cell(); /* default constructor required by C++11 STL */
+ 
+     void reset( color_type background_color );
+ 
+@@ -208,8 +209,10 @@ namespace Terminal {
+     // in scrolling.
+     uint64_t gen;
+ 
++  private:
++    Row();
++  public:
+     Row( const size_t s_width, const color_type background_color );
+-    Row(); /* default constructor required by C++11 STL */
+ 
+     void insert_cell( int col, color_type background_color );
+     void delete_cell( int col, color_type background_color );
+-- 
+2.11.0
+
