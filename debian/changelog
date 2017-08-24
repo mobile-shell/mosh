@@ -3,7 +3,7 @@ mosh (1.3.2-2) unstable; urgency=medium
   * Fix "mosh FTBFS with gcc 7" <remove default constructors>
     (Closes: #871030)
 
- -- Keith Winstein <keithw@cs.stanford.edu>  Thu, 24 Aug 2017 01:03:23 -0400
+ -- Keith Winstein <keithw@mit.edu>  Thu, 24 Aug 2017 15:04:25 -0700
 
 mosh (1.3.2-1) unstable; urgency=medium
 
