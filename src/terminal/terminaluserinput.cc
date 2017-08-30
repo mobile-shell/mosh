@@ -46,6 +46,9 @@ string UserInput::input( const Parser::UserByte *act,
   /* We need to look ahead one byte in the SS3 state to see if
      the next byte will be A, B, C, or D (cursor control keys). */
 
+  /* This doesn't handle the 8-bit SS3 C1 control, which would be
+     two octets in UTF-8. Fortunately nobody seems to send this. */
+
   switch ( state ) {
   case Ground:
     if ( act->c == 0x1b ) { /* ESC */
@@ -74,8 +77,8 @@ string UserInput::input( const Parser::UserByte *act,
     }
 
   default:
-    /* This doesn't handle the 8-bit SS3 C1 control, which would be
-       two octets in UTF-8. Fortunately nobody seems to send this. */
+    assert( !"unexpected state" );
+    state = Ground;
     return string();
   }
 }

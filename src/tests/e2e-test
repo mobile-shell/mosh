@@ -86,7 +86,11 @@ tmux_check()
 	return 1
     fi
     # Finally, check that tmux actually works to some degree.
-    tmux -C new-session true
+    #
+    # Use a different socket name.  On Cygwin, this tmux server is
+    # slow to exit, and the actual test tmux can attach to it, causing
+    # problems with missing environment variables.
+    tmux -f /dev/null -S "${tmux_socket}c" -C new-session true
 }
 
 ssh_localhost_check()
@@ -162,6 +166,9 @@ if ! set_locale "${tests_dir}"; then
     test_error "e2e-test: no usable locale\n"
 fi
 
+# XXX this ignores $TMPDIR, because it results in an overlong pathname on OS X
+tmux_socket="/tmp/.tmux-mosh-test-$$"
+
 if ! tmux_check; then
     test_skipped "tmux unavailable\n"
 fi
@@ -226,7 +233,7 @@ if [ -n "$tmux" ];  then
     tmux_stdin="${test_script} tmux"
 fi
 
-
+ln -fs "${tmux_socket}" "${test_dir}/tmux-socket"
 
 for run in $server_tests; do
     log "Running server test %s.\n" "$run"
@@ -241,9 +248,6 @@ for run in $server_tests; do
     fi
     # Actually execute code under test
     # XXX tmux 1.8 requires shell command as a single arg; once we move to 2.0, undo these quotes
-    # XXX this ignores $TMPDIR, because it results in an overlong pathname on OS X
-    tmux_socket="/tmp/.tmux-mosh-test-$$"
-    ln -fs "${tmux_socket}" "${test_dir}/tmux-socket"
     # tmux <= 2.5 ignore -x/-y, but the client sets the session to 80x24.
     # tmux from 2017-05-27 and later should default to an 80x24 session,
     # but do use -x/-y on control-master clients.

@@ -43,7 +43,7 @@ namespace Network {
     unsigned char buffer[BUFFER_SIZE];
 
   public:
-    Compressor() {}
+  Compressor() : buffer() {}
     ~Compressor() {}
 
     std::string compress_str( const std::string &input );

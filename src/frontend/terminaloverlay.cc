@@ -298,8 +298,9 @@ void NotificationEngine::apply( Framebuffer &fb ) const
       }
       break;
     case -1: /* unprintable character */
-    default: /* Bogus width, ignore. */
       break;
+    default:
+      assert( !"unexpected character width from wcwidth()" );
     }
   }
 }

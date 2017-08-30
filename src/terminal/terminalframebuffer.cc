@@ -497,7 +497,7 @@ void Renditions::set_rendition( color_type num )
   case 5: case 25: set_attribute(blink, value); break;
   case 7: case 27: set_attribute(inverse, value); break;
   case 8: case 28: set_attribute(invisible, value); break;
-  default: assert(false);
+  default: break; /* ignore unknown rendition */
   }
 }
 

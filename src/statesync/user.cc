@@ -95,6 +95,7 @@ string UserStream::diff_from( const UserStream &existing ) const
       }
       break;
     default:
+      assert( !"unexpected event type" );
       break;
     }
 
@@ -130,6 +131,7 @@ const Parser::Action &UserStream::get_action( unsigned int i ) const
   case ResizeType:
     return actions[ i ].resize;
   default:
+    assert( !"unexpected action type" );
     static const Parser::Ignore nothing = Parser::Ignore();
     return nothing;
   }
