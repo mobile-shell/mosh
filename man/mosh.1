@@ -262,6 +262,24 @@ This option ignores any configuration in
 .B ssh_config
 for the same hostname.
 
+.TP
+.B \-\-widths\-file=\fIFILENAME\fP
+If this option is given, Mosh will load a character width table from
+the given file.  Otherwise, it defaults to "~/.mosh-widths".  This
+feature is currently under development and underdocumented.
+
+.TP
+.B \-\-no\-widths\-file
+If this option is given, Mosh will not load any character width table
+file, and will instead use its built-in default table.
+
+.TP
+.B \-\-eaw\-wide
+.B \-\-no\-eaw\-wide
+Enable/disable interpretation of East Asian ambiguous-width characters
+as wide.  If this option is not given, Mosh will automatically enable
+this option for Chinese, Japanese, and Korean locales.
+
 .SH ESCAPE SEQUENCES
 
 The default escape character used by Mosh is ASCII RS (decimal 30).

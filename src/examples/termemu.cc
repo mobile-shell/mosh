@@ -232,8 +232,10 @@ static void emulate_terminal( int fd )
   }
 
   /* open parser and terminal */
-  Terminal::Complete complete( window_size.ws_col, window_size.ws_row );
-  Terminal::Framebuffer state( window_size.ws_col, window_size.ws_row );
+  ChWidthPtr widths = shared::make_shared<ChWidth>();
+  widths->apply_diff( ChWidth::get_default() );
+  Terminal::Complete complete( window_size.ws_col, window_size.ws_row, widths );
+  Terminal::Framebuffer state( window_size.ws_col, window_size.ws_row, widths );
 
   /* open display */
   Terminal::Display display( true ); /* use TERM to initialize */

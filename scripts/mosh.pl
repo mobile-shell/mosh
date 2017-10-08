@@ -34,7 +34,9 @@ use 5.8.8;
 
 use warnings;
 use strict;
+use Fcntl;
 use Getopt::Long;
+use IO::Handle;
 use IO::Socket;
 use Text::ParseWords;
 use Socket qw(IPPROTO_TCP);
@@ -71,6 +73,12 @@ my $overwrite = 0;
 my $bind_ip = undef;
 
 my $use_remote_ip = 'proxy';
+
+my $no_widths_file = 0;
+my $default_widths_file = "$ENV{HOME}/.mosh-widths"; # XXX need better defined location
+my $widths_file = $default_widths_file;
+
+my $eaw_wide = undef;
 
 my $family = 'prefer-inet';
 my $port_request = undef;
@@ -128,6 +136,17 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
                              discovering the remote IP address to use for mosh
                              (default: "proxy")
 
+        --widths-file=filename  Read a character width table from the specified
+                             filename (default: "~/.mosh-widths")
+
+        --no-widths-file     Do not read the default width table file
+
+        --eaw-wide           Treat Unicode East Asian ambiguous width characters
+                             as wide (default: depends on locale)
+
+        --no-eaw-wide        Treat Unicode East Asian ambiguous width characters
+                             as narrow (default: depends on locale)
+
         --help               this message
         --version            version and copyright information
 
@@ -171,7 +190,11 @@ GetOptions( 'client=s' => \$client,
 	    'version' => \$version,
 	    'fake-proxy!' => \my $fake_proxy,
 	    'bind-server=s' => \$bind_ip,
-	    'experimental-remote-ip=s' => \$use_remote_ip) or die $usage;
+	    'experimental-remote-ip=s' => \$use_remote_ip,
+	    'widths-file=s' => \$widths_file,
+	    'no-widths-file' => \$no_widths_file,
+	    'eaw-wide!' => \$eaw_wide,
+    ) or die $usage;
 
 if ( defined $help ) {
     print $usage;
@@ -231,6 +254,18 @@ if ( defined $port_request ) {
   } else {
     die "$0: Server-side port or range ($port_request) is not valid.\n";
   }
+}
+
+
+if ( $no_widths_file ) {
+    undef $widths_file;
+}
+
+if ( defined $widths_file && ! -f $widths_file ) {
+    if ( $widths_file ne $default_widths_file ) {
+	warn "$0: no width file found at $widths_file\n";
+    }
+    undef $widths_file;
 }
 
 delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
@@ -326,6 +361,11 @@ if ( (not defined $colors)
     or $colors < 0 ) {
   $colors = 0;
 }
+
+if ( !defined( $eaw_wide ) ) {
+    $eaw_wide = (($ENV{LC_ALL} || $ENV{LC_CTYPE} || $ENV{LANG}) =~ /^(?:ja|ko|zh)(?:_|$)/);
+}
+
 
 $ENV{ 'MOSH_CLIENT_PID' } = $$; # We don't support this, but it's useful for test and debug.
 
@@ -462,7 +502,17 @@ if ( $pid == 0 ) { # child
   $ENV{ 'MOSH_KEY' } = $key;
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
   $ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
-  exec {$client} ("$client", "-# @cmdline |", $ip, $port);
+  my @exec_argv = ( "$client", "-# @cmdline |" );
+  if ( defined $widths_file ) {
+      my $wfd = POSIX::open( $widths_file, O_RDONLY )
+	  or die "$0: Could not open character widths file $widths_file";
+      push @exec_argv, ('-w', $wfd);
+  }
+  if ( $eaw_wide ) {
+      push @exec_argv, '-W';
+  }
+  push @exec_argv, ($ip, $port);
+  exec {$client} @exec_argv;
 }
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }

@@ -36,12 +36,13 @@
 #include <unistd.h>
 #include <typeinfo>
 
+#include "chwidth.h"
 #include "terminal.h"
 
 using namespace Terminal;
 
-Emulator::Emulator( size_t s_width, size_t s_height )
-  : fb( s_width, s_height ), dispatch(), user()
+Emulator::Emulator( size_t s_width, size_t s_height, ChWidthPtr widths )
+  : fb( s_width, s_height, widths ), dispatch(), user(), widths( widths )
 {}
 
 std::string Emulator::read_octets_to_host( void )
@@ -66,11 +67,11 @@ void Emulator::print( const Parser::Print *act )
    * Check for printing ISO 8859-1 first, it's a cheap way to detect
    * some common narrow characters.
    */
-  const int chwidth = ch == L'\0' ? -1 : ( Cell::isprint_iso8859_1( ch ) ? 1 : wcwidth( ch ));
+  const int width = ch == L'\0' ? -1 : ( Cell::isprint_iso8859_1( ch ) ? 1 : widths->chwidth( ch ));
 
   Cell *this_cell = fb.get_mutable_cell();
 
-  switch ( chwidth ) {
+  switch ( width ) {
   case 1: /* normal character */
   case 2: /* wide character */
     if ( fb.ds.auto_wrap_mode && fb.ds.next_print_will_wrap ) {
@@ -79,7 +80,7 @@ void Emulator::print( const Parser::Print *act )
       fb.move_rows_autoscroll( 1 );
       this_cell = NULL;
     } else if ( fb.ds.auto_wrap_mode
-		&& (chwidth == 2)
+		&& (width == 2)
 		&& (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
       /* wrap 2-cell chars if no room, even without will-wrap flag */
       fb.reset_cell( this_cell );
@@ -94,7 +95,7 @@ void Emulator::print( const Parser::Print *act )
     }
 
     if ( fb.ds.insert_mode ) {
-      for ( int i = 0; i < chwidth; i++ ) {
+      for ( int i = 0; i < width; i++ ) {
 	fb.insert_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
       }
       this_cell = NULL;
@@ -106,15 +107,15 @@ void Emulator::print( const Parser::Print *act )
 
     fb.reset_cell( this_cell );
     this_cell->append( ch );
-    this_cell->set_wide( chwidth == 2 ); /* chwidth had better be 1 or 2 here */
+    this_cell->set_wide( width == 2 ); /* width had better be 1 or 2 here */
     fb.apply_renditions_to_cell( this_cell );
 
-    if ( chwidth == 2
+    if ( width == 2
       && fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) { /* erase overlapped cell */
       fb.reset_cell( fb.get_mutable_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 ) );
     }
 
-    fb.ds.move_col( chwidth, true, true );
+    fb.ds.move_col( width, true, true );
 
     break;
   case 0: /* combining character */
@@ -174,6 +175,11 @@ void Emulator::Esc_dispatch( const Parser::Esc_Dispatch *act )
 void Emulator::resize( size_t s_width, size_t s_height )
 {
   fb.resize( s_width, s_height );
+}
+
+void Emulator::chwidth_overlay( const std::string& diff )
+{
+  widths->apply_diff( diff );
 }
 
 bool Emulator::operator==( Emulator const &x ) const

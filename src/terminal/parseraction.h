@@ -161,6 +161,21 @@ namespace Parser {
       return ( width == other.width ) && ( height == other.height );
     }
   };
+  class ChWidthOverlay : public Action {
+    /* chwidth overlay string -- not part of the host-source state machine*/
+  public:
+    std::string overlay; /* The character width map. */
+
+    std::string name( void ) { return std::string( "ChWidthOverlay" ); }
+    void act_on_terminal( Terminal::Emulator *emu ) const;
+
+    ChWidthOverlay( const std::string& d ) : overlay( d ) {}
+
+    bool operator==( const ChWidthOverlay &other ) const
+    {
+      return overlay == other.overlay;
+    }
+  };
 }
 
 #endif

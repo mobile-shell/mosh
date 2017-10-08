@@ -30,7 +30,6 @@
     also delete it here.
 */
 
-#include <stdio.h>
 #include <wctype.h>
 
 #include "parseraction.h"
@@ -98,3 +97,9 @@ void Resize::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->resize( width, height );
 }
+
+void ChWidthOverlay::act_on_terminal( Terminal::Emulator *emu ) const
+{
+  emu->chwidth_overlay( overlay );
+}
+

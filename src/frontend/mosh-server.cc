@@ -88,6 +88,7 @@
 #include "select.h"
 #include "timestamp.h"
 #include "fatal_assert.h"
+#include "chwidth.h"
 
 #ifndef _PATH_BSHELL
 #define _PATH_BSHELL "/bin/sh"
@@ -420,7 +421,9 @@ static int run_server( const char *desired_ip, const char *desired_port,
   }
 
   /* open parser and terminal */
-  Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
+  ChWidthPtr widths = shared::make_shared<ChWidth>();
+  widths->apply_diff( ChWidth::get_reference() );
+  Terminal::Complete terminal( window_size.ws_col, window_size.ws_row, widths );
 
   /* open network */
   Network::UserStream blank;

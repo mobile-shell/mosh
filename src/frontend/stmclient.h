@@ -37,6 +37,7 @@
 #include <termios.h>
 #include <string>
 
+#include "chwidth.h"
 #include "completeterminal.h"
 #include "networktransport.h"
 #include "user.h"
@@ -58,6 +59,8 @@ private:
   struct termios saved_termios, raw_termios;
 
   struct winsize window_size;
+
+  ChWidthPtr chwidth_table;
 
   Terminal::Framebuffer local_framebuffer, new_state;
   Overlay::OverlayManager overlays;
@@ -87,15 +90,16 @@ private:
   void resume( void ); /* restore state after SIGCONT */
 
 public:
-  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, unsigned int s_verbose, const char *predict_overwrite )
+  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, unsigned int s_verbose, const char *predict_overwrite, ChWidthPtr chwidths )
     : ip( s_ip ? s_ip : "" ), port( s_port ? s_port : "" ),
     key( s_key ? s_key : "" ),
     escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
     escape_requires_lf( false ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(),
       window_size(),
-      local_framebuffer( 1, 1 ),
-      new_state( 1, 1 ),
+      chwidth_table( chwidths ),
+      local_framebuffer( 1, 1, chwidths ),
+      new_state( 1, 1, chwidths ),
       overlays(),
       network(),
       display( true ), /* use TERM environment var to initialize display */

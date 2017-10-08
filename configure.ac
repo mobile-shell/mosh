@@ -508,6 +508,7 @@ AC_CONFIG_FILES([
   src/protobufs/Makefile
   src/statesync/Makefile
   src/terminal/Makefile
+  src/unicode/Makefile
   src/util/Makefile
   scripts/Makefile
   src/examples/Makefile

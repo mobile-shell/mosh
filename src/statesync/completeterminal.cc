@@ -98,7 +98,7 @@ string Complete::diff_from( const Complete &existing ) const
 
 string Complete::init_diff( void ) const
 {
-  return diff_from( Complete( get_fb().ds.get_width(), get_fb().ds.get_height() ));
+  return diff_from( Complete( get_fb().ds.get_width(), get_fb().ds.get_height(), widths ));
 }
 
 void Complete::apply_string( const string & diff )

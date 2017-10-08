@@ -47,8 +47,10 @@ namespace Network {
 
   enum UserEventType {
     UserByteType = 0,
-    ResizeType = 1
+    ResizeType = 1,
+    ChWidthOverlayType = 2
   };
+  static const unsigned int chwidth_version = 0; // XXX change before commit to master
 
   class UserEvent
   {
@@ -56,9 +58,11 @@ namespace Network {
     UserEventType type;
     Parser::UserByte userbyte;
     Parser::Resize resize;
+    Parser::ChWidthOverlay overlay;
 
-    UserEvent( const Parser::UserByte & s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 ) {}
-    UserEvent( const Parser::Resize & s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ) {}
+    UserEvent( const Parser::UserByte & s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 ), overlay( "" ) {}
+    UserEvent( const Parser::Resize & s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ), overlay( "" ) {}
+    UserEvent( const Parser::ChWidthOverlay & s_overlay ) : type( ChWidthOverlayType ), userbyte( 0 ), resize( -1, -1 ), overlay( s_overlay ) {}
 
   private:
     UserEvent();
@@ -77,6 +81,7 @@ namespace Network {
     
     void push_back( const Parser::UserByte & s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
     void push_back( const Parser::Resize & s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
+    void push_back( const Parser::ChWidthOverlay & s_overlay ) { actions.push_back( UserEvent( s_overlay ) ); }
     
     bool empty( void ) const { return actions.empty(); }
     size_t size( void ) const { return actions.size(); }

@@ -47,6 +47,7 @@ namespace Terminal {
     Parser::UTF8Parser parser;
     Terminal::Emulator terminal;
     Terminal::Display display;
+    ChWidthPtr widths;
 
     // Only used locally by act(), but kept here as a performance optimization,
     // to avoid construction/destruction.  It must always be empty
@@ -60,8 +61,8 @@ namespace Terminal {
     static const int ECHO_TIMEOUT = 50; /* for late ack */
 
   public:
-    Complete( size_t width, size_t height ) : parser(), terminal( width, height ), display( false ),
-					      actions(), input_history(), echo_ack( 0 ) {}
+    Complete( size_t width, size_t height, ChWidthPtr widths ) : parser(), terminal( width, height, widths ), display( false ),
+                                                                widths( widths ), actions(), input_history(), echo_ack( 0 ) {}
     
     std::string act( const std::string &str );
     std::string act( const Parser::Action &act );
