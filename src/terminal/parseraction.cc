@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <wctype.h>
 
+#include "compressor.h"
 #include "parseraction.h"
 #include "terminal.h"
 
@@ -98,3 +99,11 @@ void Resize::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->resize( width, height );
 }
+
+void ChWidthOverlay::act_on_terminal( Terminal::Emulator *emu ) const
+{
+  // XXX handle/remove CryptoException
+  emu->chwidth_overlay( Network::get_compressor().
+			uncompress_str( overlay ));
+}
+

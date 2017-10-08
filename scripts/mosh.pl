@@ -34,7 +34,9 @@ use 5.8.8;
 
 use warnings;
 use strict;
+use Fcntl;
 use Getopt::Long;
+use IO::Handle;
 use IO::Socket;
 use Text::ParseWords;
 use Socket qw(IPPROTO_TCP);
@@ -71,6 +73,9 @@ my $overwrite = 0;
 my $bind_ip = undef;
 
 my $use_remote_ip = 'proxy';
+
+my $default_widths_file = "$ENV{HOME}/.mosh-widths"; # XXX need better defined location
+my $widths_file = $default_widths_file;
 
 my $family = 'prefer-inet';
 my $port_request = undef;
@@ -128,6 +133,9 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
                              discovering the remote IP address to use for mosh
                              (default: "proxy")
 
+        --widths-file=filename  Read a character width table from the specified
+                             filename (default: "~/.mosh-widths")
+
         --help               this message
         --version            version and copyright information
 
@@ -171,7 +179,9 @@ GetOptions( 'client=s' => \$client,
 	    'version' => \$version,
 	    'fake-proxy!' => \my $fake_proxy,
 	    'bind-server=s' => \$bind_ip,
-	    'experimental-remote-ip=s' => \$use_remote_ip) or die $usage;
+	    'experimental-remote-ip=s' => \$use_remote_ip,
+	    'widths-file=s' => \$widths_file,
+    ) or die $usage;
 
 if ( defined $help ) {
     print $usage;
@@ -231,6 +241,13 @@ if ( defined $port_request ) {
   } else {
     die "$0: Server-side port or range ($port_request) is not valid.\n";
   }
+}
+
+if ( ! -f $widths_file ) {
+    if ( $widths_file ne $default_widths_file ) {
+	warn "$0: no width file found at $widths_file\n";
+    }
+    undef $widths_file;
 }
 
 delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
@@ -310,16 +327,17 @@ if ( ! defined $fake_proxy ) {
   exit;
 }
 
-# Count colors
-open COLORCOUNT, '-|', $client, ('-c') or die "Can't count colors: $!\n";
-my $colors = "";
-{
-  local $/ = undef;
-  $colors = <COLORCOUNT>;
-}
-close COLORCOUNT or die;
+my $colors;
+# # Count colors
+# open COLORCOUNT, '-|', $client, ('-c') or die "Can't count colors: $!\n";
+# my $colors = "";
+# {
+#   local $/ = undef;
+#   $colors = <COLORCOUNT>;
+# }
+# close COLORCOUNT or die;
 
-chomp $colors;
+# chomp $colors;
 
 if ( (not defined $colors)
     or $colors !~ m{^[0-9]+$}
@@ -462,7 +480,14 @@ if ( $pid == 0 ) { # child
   $ENV{ 'MOSH_KEY' } = $key;
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
   $ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
-  exec {$client} ("$client", "-# @cmdline |", $ip, $port);
+  my @exec_argv = ( "$client", "-# @cmdline |" );
+  if ( defined $widths_file ) {
+      my $wfd = POSIX::open( $widths_file, O_RDONLY )
+	  or die "$0: Could not open character widths file $widths_file";
+      push @exec_argv, ('-w', $wfd);
+  }
+  push @exec_argv, ($ip, $port);
+  exec {$client} @exec_argv;
 }
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }

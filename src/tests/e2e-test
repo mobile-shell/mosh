@@ -207,7 +207,7 @@ for run in $server_tests; do
     export MOSH_SERVER="$PWD/../frontend/mosh-server"
     export MOSH_E2E_TEST="$PWD/${test_dir}/${run}"
     # XXX need to quote special chars in server pathname here somehow
-    sut="../../scripts/mosh --client=${srcdir}/mosh-client --server=${srcdir}/mosh-server --local --bind-server=127.0.0.1 ${mosh_args} 127.0.0.1"
+    sut="../../scripts/mosh --client=${srcdir}/mosh-client --server=${srcdir}/mosh-server --local --bind-server=127.0.0.1 --widths-file=/dev/null ${mosh_args} 127.0.0.1"
     if [ "$run" = "direct" ]; then
 	sut=""
     fi

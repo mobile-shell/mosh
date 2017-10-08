@@ -262,6 +262,13 @@ This option ignores any configuration in
 .B ssh_config
 for the same hostname.
 
+.TP
+.B \-\-widths\-file=\fIFILENAME\fP
+If this option is given, Mosh will load a Unicode character width
+table from the given file.  Otherwise, it defaults to
+"~/.mosh-widths".  This feature is currently under development and
+underdocumented.
+
 .SH ESCAPE SEQUENCES
 
 The default escape character used by Mosh is ASCII RS (decimal 30).

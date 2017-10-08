@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "chwidth.h"
 #include "terminalframebuffer.h"
 
 using namespace Terminal;
@@ -65,6 +66,7 @@ void DrawState::reinitialize_tabs( unsigned int start )
 
 DrawState::DrawState( int s_width, int s_height )
   : width( s_width ), height( s_height ),
+    chwidthoverlay(),
     cursor_col( 0 ), cursor_row( 0 ),
     combining_char_col( 0 ), combining_char_row( 0 ), default_tabs( true ), tabs( s_width ),
     scrolling_region_top_row( 0 ), scrolling_region_bottom_row( height - 1 ),
@@ -451,6 +453,16 @@ void DrawState::resize( int s_width, int s_height )
        || (combining_char_row >= height) ) {
     combining_char_col = combining_char_row = -1;
   }
+}
+
+void DrawState::chwidth_overlay( const std::string& s_overlay )
+{
+  if ( chwidthoverlay != s_overlay )
+    {
+      chwidth_set_base( chwidth_get_reference() );
+      chwidth_set_overlay( s_overlay ); // XXX handle error
+      chwidthoverlay = s_overlay;
+    }
 }
 
 Renditions::Renditions( color_type s_background )

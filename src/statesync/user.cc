@@ -94,6 +94,13 @@ string UserStream::diff_from( const UserStream &existing ) const
 	new_inst->MutableExtension( resize )->set_height( my_it->resize.height );
       }
       break;
+    case ChWidthOverlayType:
+      {
+	  Instruction *new_inst = output.add_instruction();
+	  new_inst->MutableExtension( overlay )->set_version( chwidth_version );
+	  new_inst->MutableExtension( overlay )->set_overlay( my_it->overlay.overlay );
+	}
+      break;
     default:
       assert( !"unexpected event type" );
       break;
@@ -119,6 +126,10 @@ void UserStream::apply_string( const string &diff )
     } else if ( input.instruction( i ).HasExtension( resize ) ) {
       actions.push_back( UserEvent( Resize( input.instruction( i ).GetExtension( resize ).width(),
 					    input.instruction( i ).GetExtension( resize ).height() ) ) );
+    } else if ( input.instruction( i ).HasExtension( overlay ) ) {
+      if ( input.instruction( i ).GetExtension( overlay ).version() == chwidth_version ) {
+	actions.push_back( UserEvent( ChWidthOverlay( input.instruction( i ).GetExtension( overlay ).overlay() ) ) );
+      }
     }
   }
 }
@@ -130,6 +141,8 @@ const Parser::Action &UserStream::get_action( unsigned int i ) const
     return actions[ i ].userbyte;
   case ResizeType:
     return actions[ i ].resize;
+  case ChWidthOverlayType:
+    return actions[ i ].overlay;
   default:
     assert( !"unexpected action type" );
     static const Parser::Ignore nothing = Parser::Ignore();

@@ -37,6 +37,7 @@
 #include <unistd.h>
 
 #include "stmclient.h"
+#include "chwidth.h"
 #include "crypto.h"
 #include "locale_utils.h"
 #include "fatal_assert.h"
@@ -108,6 +109,7 @@ int main( int argc, char *argv[] )
 #endif
 {
   unsigned int verbose = 0;
+  int chwidth_fd = -1;
   /* For security, make sure we don't dump core */
   Crypto::disable_dumping_core();
 
@@ -127,7 +129,7 @@ int main( int argc, char *argv[] )
   }
 
   int opt;
-  while ( (opt = getopt( argc, argv, "#:cv" )) != -1 ) {
+  while ( (opt = getopt( argc, argv, "#:cvw:" )) != -1 ) {
     switch ( opt ) {
     case '#':
       // Ignore the original arguments to mosh wrapper
@@ -138,6 +140,9 @@ int main( int argc, char *argv[] )
       break;
     case 'v':
       verbose++;
+      break;
+    case 'w':
+      chwidth_fd = atoi( optarg );
       break;
     default:
       print_usage( stderr, argv[ 0 ] );
@@ -189,9 +194,34 @@ int main( int argc, char *argv[] )
   /* Adopt native locale */
   set_native_locale();
 
+  std::string user_overlay;
+  if ( chwidth_fd != -1 ) {
+    /* Read character width table. */
+    /* Dup it to see if it's actually open. */
+    int chwidth_fd2 = dup( chwidth_fd );
+    if ( chwidth_fd2 == -1 ) {
+      perror( "dup chwidth fd" );
+      exit( 1 );
+    }
+    close( chwidth_fd2 );
+    /* C++ streams offers no standard way to attach to an fd.  So use stdio. */
+    FILE *chwidth_file = fdopen( chwidth_fd, "r" );
+    if ( !chwidth_file ) {
+      perror( "fdopen chwidth fd" );
+      exit( 1 );
+    }
+    /* Read characters. */
+    user_overlay.reserve( unicode_codespace );
+    int ch;
+    while ( EOF != ( ch = getc_unlocked( chwidth_file ) ) ) {
+      user_overlay.push_back( static_cast<char>( ch ) );
+    }
+    fclose( chwidth_file );
+  }
+
   bool success = false;
   try {
-    STMClient client( ip, desired_port, key.c_str(), predict_mode, verbose, predict_overwrite );
+    STMClient client( ip, desired_port, key.c_str(), predict_mode, verbose, predict_overwrite, user_overlay );
     client.init();
 
     try {

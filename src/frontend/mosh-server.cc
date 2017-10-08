@@ -88,6 +88,7 @@
 #include "select.h"
 #include "timestamp.h"
 #include "fatal_assert.h"
+#include "chwidth.h"
 
 #ifndef _PATH_BSHELL
 #define _PATH_BSHELL "/bin/sh"
@@ -364,6 +365,9 @@ int main( int argc, char *argv[] )
     }
   }
 
+  /* Set initial chwidth table to fixed base. */
+  chwidth_set_base( chwidth_get_reference() );
+  
   try {
     return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd );
   } catch ( const Network::NetworkException &e ) {
