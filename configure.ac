@@ -177,6 +177,17 @@ AS_IF([test x"$with_utempter" != xno],
       [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])],
       [AC_MSG_ERROR([--with-utempter was given but libutempter was not found.])])])])
 
+AC_ARG_ENABLE([syslog],
+  [AS_HELP_STRING([--enable-syslog], [Enable connection logging in mosh-server @<:@no@:>@])],
+  [enable_syslog="$enableval"],
+  [enable_syslog="no"])
+AS_IF([test x"$enable_syslog" != xno],
+  [AC_CHECK_HEADERS([syslog.h],
+    [AC_DEFINE([HAVE_SYSLOG], [1], [Define if syslog is available.])],
+    [AS_IF([test x"$enable_syslog" = xcheck],
+      [AC_MSG_WARN([Unable to find syslog.h.])],
+      [AC_MSG_ERROR([--enable-syslog was given but syslog.h was not found.])])])])
+
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 
 AC_SEARCH_LIBS([socket], [socket network])

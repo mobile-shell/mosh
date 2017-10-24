@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = scripts src man conf
 EXTRA_DIST = autogen.sh ocb-license.html README.md COPYING.iOS
 BUILT_SOURCES = version.h
-AM_DISTCHECK_CONFIGURE_FLAGS = --enable-compile-warnings=distcheck --enable-examples
+AM_DISTCHECK_CONFIGURE_FLAGS = --enable-compile-warnings=distcheck --enable-examples --enable-syslog
 
 # non-Automake defines
 CPPCHECK_FLAGS = --enable=all --template=gcc --force # -j8 disables unused function checking.
