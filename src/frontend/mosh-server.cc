@@ -52,6 +52,13 @@
 #ifdef HAVE_UTEMPTER
 #include <utempter.h>
 #endif
+#ifdef HAVE_SYSLOG_H
+#ifdef HAVE_STDARG_H
+#include <stdarg.h>
+#endif
+#define HAVE_SYSLOG
+#include <syslog.h>
+#endif
 #include <sys/socket.h>
 #include <netdb.h>
 #include <time.h>
@@ -657,6 +664,12 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
   socklen_t saved_addr_len = 0;
   #endif
 
+  #ifdef HAVE_SYSLOG
+  Addr syslog_saved_addr;
+  socklen_t syslog_saved_addr_len = 0;
+  openlog("mosh-server", LOG_PID | LOG_NDELAY, LOG_AUTH);
+  #endif
+
   bool child_released = false;
 
   while ( true ) {
@@ -783,6 +796,28 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	    connected_utmp = true;
 	  }
 	  #endif
+      #ifdef HAVE_SYSLOG
+	  if ( syslog_saved_addr_len != network.get_remote_addr_len()
+	       || memcmp( &syslog_saved_addr, &network.get_remote_addr(),
+			  syslog_saved_addr_len ) != 0 ) {
+
+	    syslog_saved_addr = network.get_remote_addr();
+	    syslog_saved_addr_len = network.get_remote_addr_len();
+
+	    char host[ NI_MAXHOST ];
+	    int errcode = getnameinfo( &syslog_saved_addr.sa, syslog_saved_addr_len,
+				       host, sizeof( host ), NULL, 0,
+				       NI_NUMERICHOST );
+	    if ( errcode != 0 ) {
+	      throw NetworkException( std::string( "serve: getnameinfo: " ) + gai_strerror( errcode ), 0 );
+	    }
+        struct passwd *pw = getpwuid( getuid() );
+        if (pw == NULL) {
+	      throw NetworkException( std::string( "serve: getpwuid: " ) + gai_strerror( errno ), 0 );
+        }
+        syslog(LOG_INFO, "user %s connected from host: %s", pw->pw_name, host);
+      }
+      #endif
 
 	  /* Tell child to start login session. */
 	  if ( !child_released ) {
