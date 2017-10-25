@@ -281,6 +281,11 @@ int main( int argc, char *argv[] )
 
   bool with_motd = false;
 
+  #ifdef HAVE_SYSLOG
+  openlog(argv[0], LOG_PID | LOG_NDELAY, LOG_AUTH);
+  #endif
+
+
   /* Get shell */
   char *my_argv[ 2 ];
   string shell_name;
@@ -655,16 +660,13 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
   #ifdef HAVE_UTEMPTER
   bool connected_utmp = false;
-
+  #endif
+  #if defined(HAVE_SYSLOG) || defined(HAVE_UPTEMPTER)
+  bool force_connection_change_evt = false;
   Addr saved_addr;
   socklen_t saved_addr_len = 0;
   #endif
 
-  #ifdef HAVE_SYSLOG
-  Addr syslog_saved_addr;
-  socklen_t syslog_saved_addr_len = 0;
-  openlog("mosh-server", LOG_PID | LOG_NDELAY, LOG_AUTH);
-  #endif
 
   bool child_released = false;
 
@@ -765,14 +767,25 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  if ( !network.shutdown_in_progress() ) {
 	    network.set_current_state( terminal );
 	  }
-	  
-	  #ifdef HAVE_UTEMPTER
-	  /* update utmp entry if we have become "connected" */
-	  if ( (!connected_utmp)
+      #if defined(HAVE_SYSLOG) || defined(HAVE_UPTEMPTER)
+      #ifdef HAVE_UTEMPTER
+      if (!connected_utmp) {
+          force_connection_change_evt = true;
+      } else {
+          force_connection_change_evt = false;
+      }
+      #else
+      force_connection_change_evt = false;
+      #endif
+
+	  /**
+       * - HAVE_UTEMPTER - update utmp entry if we have become "connected"
+       * - HAVE_SYSLOG - log connection information to syslog
+       **/
+	  if ( (force_connection_change_evt)
 	       || saved_addr_len != network.get_remote_addr_len()
 	       || memcmp( &saved_addr, &network.get_remote_addr(),
 			  saved_addr_len ) != 0 ) {
-	    utempter_remove_record( host_fd );
 
 	    saved_addr = network.get_remote_addr();
 	    saved_addr_len = network.get_remote_addr_len();
@@ -785,34 +798,22 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	      throw NetworkException( std::string( "serve: getnameinfo: " ) + gai_strerror( errcode ), 0 );
 	    }
 
+        #ifdef HAVE_UTEMPTER
+        utempter_remove_record( host_fd );
 	    char tmp[ 64 ];
 	    snprintf( tmp, 64, "%s via mosh [%d]", host, getpid() );
 	    utempter_add_record( host_fd, tmp );
-
 	    connected_utmp = true;
-	  }
-	  #endif
-      #ifdef HAVE_SYSLOG
-	  if ( syslog_saved_addr_len != network.get_remote_addr_len()
-	       || memcmp( &syslog_saved_addr, &network.get_remote_addr(),
-			  syslog_saved_addr_len ) != 0 ) {
+        #endif
 
-	    syslog_saved_addr = network.get_remote_addr();
-	    syslog_saved_addr_len = network.get_remote_addr_len();
-
-	    char host[ NI_MAXHOST ];
-	    int errcode = getnameinfo( &syslog_saved_addr.sa, syslog_saved_addr_len,
-				       host, sizeof( host ), NULL, 0,
-				       NI_NUMERICHOST );
-	    if ( errcode != 0 ) {
-	      throw NetworkException( std::string( "serve: getnameinfo: " ) + gai_strerror( errcode ), 0 );
-	    }
+        #ifdef HAVE_SYSLOG
         struct passwd *pw = getpwuid( getuid() );
         if (pw == NULL) {
-	      throw NetworkException( std::string( "serve: getpwuid: " ) + gai_strerror( errno ), 0 );
+	      throw NetworkException( std::string( "serve: getpwuid: " ) + strerror( errno ), 0 );
         }
         syslog(LOG_INFO, "user %s connected from host: %s", pw->pw_name, host);
-      }
+        #endif
+	  }
       #endif
 
 	  /* Tell child to start login session. */
