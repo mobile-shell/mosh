@@ -52,11 +52,7 @@
 #ifdef HAVE_UTEMPTER
 #include <utempter.h>
 #endif
-#ifdef HAVE_SYSLOG_H
-#ifdef HAVE_STDARG_H
-#include <stdarg.h>
-#endif
-#define HAVE_SYSLOG
+#ifdef HAVE_SYSLOG
 #include <syslog.h>
 #endif
 #include <sys/socket.h>
