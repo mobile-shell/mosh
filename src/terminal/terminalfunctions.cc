@@ -424,6 +424,27 @@ static void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
       i += 2;
       continue;
     }
+
+    /* True color support: ESC[ ... [34]8;2;<r>;<g>;<b> ... m */
+    if ( (rendition == 38 || rendition == 48) &&
+         (dispatch->param_count() - i >= 5) &&
+         (dispatch->getparam( i+1, -1 ) == 2)) {
+      unsigned int red = dispatch->getparam(i+2, 0);
+      unsigned int green = dispatch->getparam(i+3, 0);
+      unsigned int blue = dispatch->getparam(i+4, 0);
+      unsigned int color;
+
+      color = Renditions::make_true_color( red, green, blue );
+
+      if ( rendition == 38 ) {
+        fb->ds.set_foreground_color( color );
+      } else {
+        fb->ds.set_background_color( color );
+      }
+      i += 4;
+      continue;
+    }
+
     fb->ds.add_rendition( rendition );
   }
 }
