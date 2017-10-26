@@ -505,6 +505,8 @@ void Renditions::set_foreground_color( int num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     foreground_color = 30 + num;
+  } else if ( is_true_color( num ) ) {
+    foreground_color = num;
   }
 }
 
@@ -512,6 +514,8 @@ void Renditions::set_background_color( int num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     background_color = 40 + num;
+  } else if ( is_true_color( num ) ) {
+    background_color = num;
   }
 }
 
@@ -544,13 +548,27 @@ std::string Renditions::sgr( void ) const
 
   ret.append( "m" );
 
-  if ( foreground_color > 37 ) { /* use 256-color set */
+  if ( is_true_color( foreground_color ) ) {
+    char col[64];
+    snprintf( col, 64, "\033[38;2;%d;%d;%dm",
+              (foreground_color >> 16) & 0xff,
+              (foreground_color >> 8) & 0xff,
+              foreground_color & 0xff);
+    ret.append( col );
+  } else if ( foreground_color > 37 ) { /* use 256-color set */
     char col[ 64 ];
     snprintf( col, 64, "\033[38;5;%dm", foreground_color - 30 );
     ret.append( col );
   }
 
-  if ( background_color > 47 ) { /* use 256-color set */
+  if ( is_true_color( background_color ) ) {
+    char col[64];
+    snprintf( col, 64, "\033[48;2;%d;%d;%dm",
+              (background_color >> 16) & 0xff,
+              (background_color >> 8) & 0xff,
+              background_color & 0xff);
+    ret.append( col );
+  } else if ( background_color > 47 ) { /* use 256-color set */
     char col[ 64 ];
     snprintf( col, 64, "\033[48;5;%dm", background_color - 40 );
     ret.append( col );
