@@ -44,8 +44,9 @@ use POSIX qw(_exit);
 BEGIN {
   my @gai_reqs = qw( getaddrinfo getnameinfo AI_CANONNAME AI_NUMERICHOST NI_NUMERICHOST );
   eval { Socket->import( @gai_reqs ); 1; }
-    || eval { require Socket::GetAddrInfo; Socket::GetAddrInfo->import( ':newapi', @gai_reqs ); 1; }
-    || eval { Socket::GetAddrInfo->import( '0.22', @gai_reqs ); 1; }
+    || (eval { require Socket::GetAddrInfo; 1; }
+        && (eval { Socket::GetAddrInfo->import( ':newapi', @gai_reqs ); 1; }
+            || eval { Socket::GetAddrInfo->import( '0.22', @gai_reqs ); 1; }))
     || die "$0 error: requires Perl 5.14 or Socket::GetAddrInfo.\n";
 }
 
