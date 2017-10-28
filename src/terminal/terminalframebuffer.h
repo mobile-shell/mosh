@@ -55,9 +55,9 @@ namespace Terminal {
   public:
     typedef enum { bold, faint, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
 
-    // all together, a 32 bit word now...
-    unsigned int foreground_color : 12;
-    unsigned int background_color : 12;
+    static const unsigned int true_color_mask = 0x80000000;
+    unsigned int foreground_color;
+    unsigned int background_color;
   private:
     unsigned int attributes : 8;
 
@@ -67,6 +67,14 @@ namespace Terminal {
     void set_background_color( int num );
     void set_rendition( color_type num );
     std::string sgr( void ) const;
+
+    static unsigned int make_true_color( unsigned int r, unsigned int g, unsigned int b ) {
+      return true_color_mask | (r << 16) | (g << 8) | b;
+    }
+
+    static bool is_true_color(unsigned int color) {
+      return (color & true_color_mask) != 0;
+    }
 
     bool operator==( const Renditions &x ) const
     {
