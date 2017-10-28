@@ -55,7 +55,6 @@ namespace Terminal {
   public:
     typedef enum { bold, faint, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
 
-    // all together, a 32 bit word now...
     static const unsigned int true_color_mask = 0x80000000;
     unsigned int foreground_color;
     unsigned int background_color;
