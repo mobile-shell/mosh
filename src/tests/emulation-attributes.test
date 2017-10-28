@@ -1,9 +1,10 @@
 #!/bin/sh
 
 #
-# This validates VT100, 16-color, and 256-color attributes against
-# tmux.  It is not run directly, but as subtests based on the
-# executable's name for vt100, 16color, 256color8, and 256color248.
+# This validates VT100, 16-color, 256-color and true color attributes
+# against tmux.  It is not run directly, but as subtests based on the
+# executable's name for vt100, 16color, 256color8, 256color248 and
+# truecolor.
 # This is because Mosh internally represents the first 8 values of the
 # 256color space as though they were the 16-color values they are
 # equivalent to.  tmux does not filter this out on its redisplay, so
@@ -61,6 +62,31 @@ baseline()
 		printf '\033[48;5;%dmM\033[m ' "$attr"
 	    done
 	    ;;
+        # True color.
+        # See https://gist.github.com/XVilka/8346728 for the test case
+        truecolor)
+            for attr in $(seq 0 76); do
+                r=$((255-(attr*255/76)))
+                g=$((attr*510/76))
+                b=$((attr*255/76))
+                if [ $g -gt 255 ]; then
+                    g=$((510-g))
+                fi
+                invr=$((255-r))
+                invg=$((255-g))
+                invb=$((255-b))
+                idx=$((attr%2))
+                if [ $idx -eq "0" ]; then
+                    c="/"
+                else
+                    c="\\"
+                fi
+
+                printf "\033[48;2;%d;%d;%dm" $r $g $b;
+                printf "\033[38;2;%d;%d;%dm" $invr $invg $invb
+                printf "%s\033[m" "$c"
+            done
+            ;;
 	*)
 	    fail "unknown test name %s\n" "$1"
 	    ;;
