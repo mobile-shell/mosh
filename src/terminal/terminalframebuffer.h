@@ -55,11 +55,11 @@ namespace Terminal {
   public:
     typedef enum { bold, faint, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
 
-    static const unsigned int true_color_mask = 0x80000000;
-    unsigned int foreground_color;
-    unsigned int background_color;
   private:
-    unsigned int attributes : 8;
+    static const uint64_t true_color_mask = 0x1000000;
+    uint64_t foreground_color : 25;
+    uint64_t background_color : 25;
+    uint64_t attributes : 8;
 
   public:
     Renditions( color_type s_background );
@@ -75,6 +75,9 @@ namespace Terminal {
     static bool is_true_color(unsigned int color) {
       return (color & true_color_mask) != 0;
     }
+
+    unsigned int get_foreground_color() const { return foreground_color; }
+    unsigned int get_background_color() const { return background_color; }
 
     bool operator==( const Renditions &x ) const
     {
@@ -332,7 +335,7 @@ namespace Terminal {
     void add_rendition( color_type x ) { renditions.set_rendition( x ); }
     const Renditions& get_renditions( void ) const { return renditions; }
     Renditions& get_renditions( void ) { return renditions; }
-    int get_background_rendition( void ) const { return renditions.background_color; }
+    int get_background_rendition( void ) const { return renditions.get_background_color(); }
 
     void save_cursor( void );
     void restore_cursor( void );
