@@ -535,14 +535,14 @@ std::string Renditions::sgr( void ) const
        && (foreground_color <= 37) ) {
     /* ANSI foreground color */
     char col[ 8 ];
-    snprintf( col, 8, ";%d", foreground_color );
+    snprintf( col, 8, ";%u", static_cast<unsigned int>( foreground_color ) );
     ret.append( col );
   }
 
   if ( background_color
        && (background_color <= 47) ) {
     char col[ 8 ];
-    snprintf( col, 8, ";%d", background_color );
+    snprintf( col, 8, ";%u", static_cast<unsigned int>( background_color ) );
     ret.append( col );
   }
 
@@ -550,27 +550,27 @@ std::string Renditions::sgr( void ) const
 
   if ( is_true_color( foreground_color ) ) {
     char col[64];
-    snprintf( col, 64, "\033[38;2;%d;%d;%dm",
+    snprintf( col, 64, "\033[38;2;%u;%u;%um",
               (foreground_color >> 16) & 0xff,
               (foreground_color >> 8) & 0xff,
               foreground_color & 0xff);
     ret.append( col );
   } else if ( foreground_color > 37 ) { /* use 256-color set */
     char col[ 64 ];
-    snprintf( col, 64, "\033[38;5;%dm", foreground_color - 30 );
+    snprintf( col, 64, "\033[38;5;%um", foreground_color - 30 );
     ret.append( col );
   }
 
   if ( is_true_color( background_color ) ) {
     char col[64];
-    snprintf( col, 64, "\033[48;2;%d;%d;%dm",
+    snprintf( col, 64, "\033[48;2;%u;%u;%um",
               (background_color >> 16) & 0xff,
               (background_color >> 8) & 0xff,
               background_color & 0xff);
     ret.append( col );
   } else if ( background_color > 47 ) { /* use 256-color set */
     char col[ 64 ];
-    snprintf( col, 64, "\033[48;5;%dm", background_color - 40 );
+    snprintf( col, 64, "\033[48;5;%um", background_color - 40 );
     ret.append( col );
   }
 
