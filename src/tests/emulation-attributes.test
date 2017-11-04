@@ -14,6 +14,13 @@
 # shellcheck source=e2e-test-subrs
 . "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
+# Need 2.3 for true-color support (2.2 may work also)
+if [ "$(basename "$0")" = emulation-attributes-truecolor.test ] &&
+   ! tmux_check 2 3; then
+    printf "tmux does not support true color\n" >&2
+    exit 77
+fi
+
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
     e2e-test "$0" baseline direct verify
