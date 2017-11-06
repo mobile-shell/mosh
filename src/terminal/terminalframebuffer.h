@@ -49,7 +49,7 @@
 namespace Terminal {
   using shared::shared_ptr;
   using shared::make_shared;
-  typedef uint16_t color_type;
+  typedef uint32_t color_type;
 
   class Renditions {
   public:
