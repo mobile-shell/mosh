@@ -76,8 +76,8 @@ namespace Terminal {
       return (color & true_color_mask) != 0;
     }
 
-    unsigned int get_foreground_color() const { return foreground_color; }
-    unsigned int get_background_color() const { return background_color; }
+    // unsigned int get_foreground_rendition() const { return foreground_color; }
+    unsigned int get_background_rendition() const { return background_color; }
 
     bool operator==( const Renditions &x ) const
     {
@@ -335,7 +335,7 @@ namespace Terminal {
     void add_rendition( color_type x ) { renditions.set_rendition( x ); }
     const Renditions& get_renditions( void ) const { return renditions; }
     Renditions& get_renditions( void ) { return renditions; }
-    int get_background_rendition( void ) const { return renditions.get_background_color(); }
+    int get_background_rendition( void ) const { return renditions.get_background_rendition(); }
 
     void save_cursor( void );
     void restore_cursor( void );
