@@ -116,5 +116,10 @@ tmux_check()
     # Use a different socket name.  On Cygwin, this tmux server is
     # slow to exit, and the actual test tmux can attach to it, causing
     # problems with missing environment variables.
-    tmux -f /dev/null -S "${tmux_socket}c" -C new-session true
+    tmux_check_socket=$(mktemp -d /tmp/mosh-tmux-check.XXXXXXXX)
+    tmux -f /dev/null -S "${tmux_check_socket}/s" -C new-session true
+    rv=$?
+    rm ${tmux_check_socket}/s
+    rmdir ${tmux_check_socket}
+    return $rv
 }
