@@ -100,8 +100,6 @@ baseline()
         # True color.
         # See https://gist.github.com/XVilka/8346728 for the test case
         truecolor)
-	    # Also check background color erase.
-	    printf '\033[48;2;255;0;255m\033[H\033[J'
             echo "Normal:"
             test_true_color
             echo "Bold:"
