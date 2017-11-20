@@ -103,7 +103,13 @@ void Resize::act_on_terminal( Terminal::Emulator *emu ) const
 void ChWidthOverlay::act_on_terminal( Terminal::Emulator *emu ) const
 {
   // XXX handle/remove CryptoException
-  emu->chwidth_overlay( Network::get_compressor().
-			uncompress_str( overlay ));
+  Network::Compressor & compressor = Network::get_compressor();
+  std::string unpacked = compressor.uncompress_str( overlay );
+  std::string packed2 = compressor.compress_str( overlay );
+  emu->chwidth_overlay( unpacked );
+  fprintf( stderr, "chwidth overlay size = %llu compress1 = %llu compress2 = %llu\n",
+	   static_cast<unsigned long long>(unpacked.size() ),
+	   static_cast<unsigned long long>(overlay.size() ),
+	   static_cast<unsigned long long>(packed2.size() ) );
 }
 
