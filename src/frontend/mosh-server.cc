@@ -664,7 +664,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
   #ifdef HAVE_UTEMPTER
   bool connected_utmp = false;
   #endif
-  #if defined(HAVE_SYSLOG) || defined(HAVE_UPTEMPTER)
+  #if defined(HAVE_SYSLOG) || defined(HAVE_UTEMPTER)
   bool force_connection_change_evt = false;
   Addr saved_addr;
   socklen_t saved_addr_len = 0;
@@ -777,7 +777,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  if ( !network.shutdown_in_progress() ) {
 	    network.set_current_state( terminal );
 	  }
-	  #if defined(HAVE_SYSLOG) || defined(HAVE_UPTEMPTER)
+	  #if defined(HAVE_SYSLOG) || defined(HAVE_UTEMPTER)
 	  #ifdef HAVE_UTEMPTER
 	  if (!connected_utmp) {
 	    force_connection_change_evt = true;
