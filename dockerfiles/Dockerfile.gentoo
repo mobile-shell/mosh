@@ -1,0 +1,13 @@
+FROM gentoo/stage3-amd64:latest
+MAINTAINER Brett Randall <javabrett@gmail.com>
+
+RUN ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa \
+	&& ssh-keygen -f /etc/ssh/ssh_host_dsa_key -N '' -t dsa \
+	&& ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -N '' -t ed25519 \
+	&& useradd mosh \
+	&& echo 'mosh:m0sh-st@t1c' | chpasswd
+
+EXPOSE 22
+
+ENTRYPOINT /usr/sbin/sshd \
+	&& sh
