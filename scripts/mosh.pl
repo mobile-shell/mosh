@@ -396,7 +396,7 @@ if ( $pid == 0 ) { # child
     delete $ENV{ 'SSH_CONNECTION' };
     chdir; # $HOME
     print "MOSH IP ${userhost}\n";
-    exec( $server, @server );
+    exec( "$server " . shell_quote( @server ) );
     die "Cannot exec $server: $!\n";
   }
   if ( $use_remote_ip eq 'proxy' ) {
