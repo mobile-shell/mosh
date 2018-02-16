@@ -81,23 +81,20 @@ static const char *ti_str( const char *capname )
 }
 
 Display::Display( bool use_environment )
-  : has_ech( true ), has_bce( true ), has_title( true ), smcup( NULL ), rmcup( NULL )
+  : has_ech( false ), has_bce( false ), has_title( false ), smcup( NULL ), rmcup( NULL )
 {
   if ( use_environment ) {
     int errret = -2;
-    int ret = setupterm( (char *)0, 1, &errret );
+    int ret = setupterm( (char *)0, 2, &errret );
 
     if ( ret != OK ) {
       switch ( errret ) {
       case 1:
 	throw std::runtime_error( "Terminal is hardcopy and cannot be used by curses applications." );
 	break;
-      case 0:
-	throw std::runtime_error( "Unknown terminal type." );
-	break;
-      case -1:
-	throw std::runtime_error( "Terminfo database could not be found." );
-	break;
+      case 0: // Unknown/generic terminal.
+      case -1: // terminfo database could not be found.
+	return;
       default:
 	throw std::runtime_error( "Unknown terminfo error." );
 	break;
@@ -118,17 +115,16 @@ Display::Display( bool use_environment )
       "xterm", "rxvt", "kterm", "Eterm", "screen"
     };
 
-    has_title = false;
     const char *term_type = getenv( "TERM" );
     if ( term_type ) {
       for ( size_t i = 0;
-            i < sizeof( title_term_types ) / sizeof( const char * );
-            i++ ) {
-        if ( 0 == strncmp( term_type, title_term_types[ i ],
-                           strlen( title_term_types[ i ] ) ) ) {
-          has_title = true;
-          break;
-        }
+	    i < sizeof( title_term_types ) / sizeof( const char * );
+	    i++ ) {
+	if ( 0 == strncmp( term_type, title_term_types[ i ],
+			   strlen( title_term_types[ i ] ) ) ) {
+	  has_title = true;
+	  break;
+	}
       }
     }
 
