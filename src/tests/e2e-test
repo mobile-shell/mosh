@@ -57,42 +57,6 @@ test_exitstatus()
 }
 
 
-# Tmux check.
-tmux_check()
-{
-    # OpenBSD tmux does not have '-V'.
-    if [ "$(uname -s)" = "OpenBSD" ]; then
-	openbsd_major="$(uname -r)"
-	openbsd_major="${openbsd_major%%.*}"
-	if [ "${openbsd_major}" -ge 6 ]; then
-	    return 0
-	fi
-    fi
-    version=$(tmux -V)
-    if [ $? != 0 ]; then
-	error "tmux unavailable\n"
-	return 1
-    fi
-    if [ "$version" = "tmux master" ]; then
-	return 0
-    fi
-    version=${version##tmux }
-    version_major=${version%%.*}
-    version_minor=${version##*.}
-    # need version 1.8 for capture-pane
-    if [ "$version_major" -lt 1 ] ||
-	{ [ "$version_major" -eq 1 ] && [ "$version_minor" -lt 8 ]; }; then
-	error "tmux version %s too old\n" "$version"
-	return 1
-    fi
-    # Finally, check that tmux actually works to some degree.
-    #
-    # Use a different socket name.  On Cygwin, this tmux server is
-    # slow to exit, and the actual test tmux can attach to it, causing
-    # problems with missing environment variables.
-    tmux -f /dev/null -S "${tmux_socket}c" -C new-session true
-}
-
 ssh_localhost_check()
 {
     ssh localhost :
@@ -169,7 +133,8 @@ fi
 # XXX this ignores $TMPDIR, because it results in an overlong pathname on OS X
 tmux_socket="/tmp/.tmux-mosh-test-$$"
 
-if ! tmux_check; then
+# need version 1.8 for capture-pane
+if ! tmux_check 1 8; then
     test_skipped "tmux unavailable\n"
 fi
 

@@ -505,6 +505,8 @@ void Renditions::set_foreground_color( int num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     foreground_color = 30 + num;
+  } else if ( is_true_color( num ) ) {
+    foreground_color = num;
   }
 }
 
@@ -512,12 +514,15 @@ void Renditions::set_background_color( int num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     background_color = 40 + num;
+  } else if ( is_true_color( num ) ) {
+    background_color = num;
   }
 }
 
 std::string Renditions::sgr( void ) const
 {
   std::string ret;
+  char col[64];
 
   ret.append( "\033[0" );
   if ( get_attribute( bold ) ) ret.append( ";1" );
@@ -527,34 +532,33 @@ std::string Renditions::sgr( void ) const
   if ( get_attribute( inverse ) ) ret.append( ";7" );
   if ( get_attribute( invisible ) ) ret.append( ";8" );
 
-  if ( foreground_color
-       && (foreground_color <= 37) ) {
-    /* ANSI foreground color */
-    char col[ 8 ];
-    snprintf( col, 8, ";%d", foreground_color );
+  if ( foreground_color ) {
+    if ( is_true_color( foreground_color ) ) {
+      snprintf( col, sizeof( col ), ";38;2;%u;%u;%u",
+		(foreground_color >> 16) & 0xff,
+		(foreground_color >> 8) & 0xff,
+		foreground_color & 0xff);
+    } else if ( foreground_color > 37 ) { /* use 256-color set */
+      snprintf( col, sizeof( col ), ";38;5;%u", foreground_color - 30 );
+    } else { /* ANSI foreground color */
+      snprintf( col, sizeof( col ), ";%u", static_cast<unsigned int>( foreground_color ) );
+    }
     ret.append( col );
   }
-
-  if ( background_color
-       && (background_color <= 47) ) {
-    char col[ 8 ];
-    snprintf( col, 8, ";%d", background_color );
+  if ( background_color ) {
+    if ( is_true_color( background_color ) ) {
+      snprintf( col, sizeof( col ), ";48;2;%u;%u;%u",
+		(background_color >> 16) & 0xff,
+		(background_color >> 8) & 0xff,
+		background_color & 0xff);
+    } else if ( background_color > 47 ) { /* use 256-color set */
+      snprintf( col, sizeof( col ), ";48;5;%u", background_color - 40 );
+    } else { /* ANSI background color */
+      snprintf( col, sizeof( col ), ";%u", static_cast<unsigned int>( background_color ) );
+    }
     ret.append( col );
   }
-
   ret.append( "m" );
-
-  if ( foreground_color > 37 ) { /* use 256-color set */
-    char col[ 64 ];
-    snprintf( col, 64, "\033[38;5;%dm", foreground_color - 30 );
-    ret.append( col );
-  }
-
-  if ( background_color > 47 ) { /* use 256-color set */
-    char col[ 64 ];
-    snprintf( col, 64, "\033[48;5;%dm", background_color - 40 );
-    ret.append( col );
-  }
 
   return ret;
 }

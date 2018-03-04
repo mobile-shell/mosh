@@ -202,8 +202,8 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 
   /* draw bar across top of screen */
   Cell notification_bar( 0 );
-  notification_bar.get_renditions().foreground_color = 37;
-  notification_bar.get_renditions().background_color = 44;
+  notification_bar.get_renditions().set_foreground_color( 7 );
+  notification_bar.get_renditions().set_background_color( 4 );
   notification_bar.append( 0x20 );
 
   for ( int i = 0; i < fb.ds.get_width(); i++ ) {
@@ -273,8 +273,8 @@ void NotificationEngine::apply( Framebuffer &fb ) const
       this_cell = fb.get_mutable_cell( 0, overlay_col );
       fb.reset_cell( this_cell );
       this_cell->get_renditions().set_attribute(Renditions::bold, true);
-      this_cell->get_renditions().foreground_color = 37;
-      this_cell->get_renditions().background_color = 44;
+      this_cell->get_renditions().set_foreground_color( 7 );
+      this_cell->get_renditions().set_background_color( 4 );
       
       this_cell->append( ch );
       this_cell->set_wide( chwidth == 2 );

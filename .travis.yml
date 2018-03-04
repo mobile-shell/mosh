@@ -13,9 +13,8 @@ language: cpp
 sudo: required
 dist: trusty
 
-# Currently we're using the Travis Xcode 6.4/OS X 10.10 image to
-# get i386/x86_64 fat binaries.
-osx_image: xcode6.4
+# Use macOS 10.12 + Xcode 9.1 + DEPLOYMENT_TARGET=10.12
+osx_image: xcode9.1
 
 # Linux dependencies
 addons:
@@ -71,7 +70,7 @@ script:
   - |
     if test osx = "${TRAVIS_OS_NAME}" && test -n "${TRAVIS_TAG}"; then
       cd macosx &&
-        env ZERO_AR_DATE=1 MACOSX_DEPLOYMENT_TARGET=10.10 ./build.sh &&
+        env ZERO_AR_DATE=1 MACOSX_DEPLOYMENT_TARGET=10.12 ./build.sh &&
         shasum -a 256 "${TRAVIS_TAG}.pkg" "${TRAVIS_TAG}-osx-build-report.tbz" &&
         cd -
     fi

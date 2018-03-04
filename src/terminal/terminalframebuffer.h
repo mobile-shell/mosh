@@ -49,17 +49,17 @@
 namespace Terminal {
   using shared::shared_ptr;
   using shared::make_shared;
-  typedef uint16_t color_type;
+  typedef uint32_t color_type;
 
   class Renditions {
   public:
     typedef enum { bold, faint, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
 
-    // all together, a 32 bit word now...
-    unsigned int foreground_color : 12;
-    unsigned int background_color : 12;
   private:
-    unsigned int attributes : 8;
+    static const uint64_t true_color_mask = 0x1000000;
+    uint64_t foreground_color : 25;
+    uint64_t background_color : 25;
+    uint64_t attributes : 8;
 
   public:
     Renditions( color_type s_background );
@@ -67,6 +67,17 @@ namespace Terminal {
     void set_background_color( int num );
     void set_rendition( color_type num );
     std::string sgr( void ) const;
+
+    static unsigned int make_true_color( unsigned int r, unsigned int g, unsigned int b ) {
+      return true_color_mask | (r << 16) | (g << 8) | b;
+    }
+
+    static bool is_true_color(unsigned int color) {
+      return (color & true_color_mask) != 0;
+    }
+
+    // unsigned int get_foreground_rendition() const { return foreground_color; }
+    unsigned int get_background_rendition() const { return background_color; }
 
     bool operator==( const Renditions &x ) const
     {
@@ -324,7 +335,7 @@ namespace Terminal {
     void add_rendition( color_type x ) { renditions.set_rendition( x ); }
     const Renditions& get_renditions( void ) const { return renditions; }
     Renditions& get_renditions( void ) { return renditions; }
-    int get_background_rendition( void ) const { return renditions.background_color; }
+    int get_background_rendition( void ) const { return renditions.get_background_rendition(); }
 
     void save_cursor( void );
     void restore_cursor( void );

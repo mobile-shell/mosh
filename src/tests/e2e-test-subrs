@@ -80,3 +80,46 @@ set_locale()
     # Fail.
     return 1
 }
+
+# Tmux check.
+tmux_check()
+{
+    need_major="$1"; shift
+    need_minor="$1"; shift
+    # OpenBSD tmux does not have '-V'.
+    if [ "$(uname -s)" = "OpenBSD" ]; then
+	openbsd_major="$(uname -r)"
+	openbsd_major="${openbsd_major%%.*}"
+	if [ "${openbsd_major}" -ge 6 ]; then
+	    return 0
+	fi
+    fi
+    version=$(tmux -V)
+    if [ $? != 0 ]; then
+	error "tmux unavailable\n"
+	return 1
+    fi
+    if [ "$version" = "tmux master" ]; then
+	return 0
+    fi
+    version=${version##tmux }
+    version_major=${version%%.*}
+    version_minor=${version##*.}
+
+    if [ "$version_major" -lt "$need_major" ] ||
+	{ [ "$version_major" -eq "$need_major" ] && [ "$version_minor" -lt "$need_minor" ]; }; then
+	printf "tmux version %s too old\n" "$version" >&2
+	return 1
+    fi
+    # Finally, check that tmux actually works to some degree.
+    #
+    # Use a different socket name.  On Cygwin, this tmux server is
+    # slow to exit, and the actual test tmux can attach to it, causing
+    # problems with missing environment variables.
+    tmux_check_socket=$(mktemp -d /tmp/mosh-tmux-check.XXXXXXXX)
+    tmux -f /dev/null -S "${tmux_check_socket}/s" -C new-session true
+    rv=$?
+    rm ${tmux_check_socket}/s
+    rmdir ${tmux_check_socket}
+    return $rv
+}

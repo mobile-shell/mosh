@@ -183,6 +183,17 @@ AC_ARG_ENABLE(agent-forwarding,
                              [disable ssh agent forwarding in compile time]),
               , enable_agent_forwarding=yes)
 
+# Syslog
+AC_ARG_ENABLE([syslog],
+  [AS_HELP_STRING([--enable-syslog], [Enable connection logging in mosh-server @<:@no@:>@])],
+  [enable_syslog="$enableval"],
+  [enable_syslog="no"])
+AS_IF([test x"$enable_syslog" != xno],
+  [AC_CHECK_HEADERS([syslog.h],
+    [AC_DEFINE([HAVE_SYSLOG], [1], [Define if syslog is available.])],
+    [AS_IF([test x"$enable_syslog" = xcheck],
+      [AC_MSG_WARN([Unable to find syslog.h.])],
+      [AC_MSG_ERROR([--enable-syslog was given but syslog.h was not found.])])])])
 
 AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
 

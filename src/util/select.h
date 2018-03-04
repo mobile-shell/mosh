@@ -74,7 +74,11 @@ private:
 
   void clear_got_signal( void )
   {
-    memset( got_signal, 0, sizeof( got_signal ) );
+    for ( volatile sig_atomic_t *p = got_signal;
+          p < got_signal + sizeof( got_signal ) / sizeof( *got_signal );
+          p++ ) {
+      *p = 0;
+    }
   }
 
   /* not implemented */
@@ -227,9 +231,9 @@ private:
 
   int max_fd;
 
-  /* We assume writes to these ints are atomic, though we also try to mask out
+  /* We assume writes to got_signal are atomic, though we also try to mask out
      concurrent signal handlers. */
-  int got_signal[ MAX_SIGNAL_NUMBER + 1 ];
+  volatile sig_atomic_t got_signal[ MAX_SIGNAL_NUMBER + 1 ];
 
   fd_set all_fds, read_fds;
 
