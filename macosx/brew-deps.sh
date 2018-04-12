@@ -31,8 +31,10 @@ install()
 #
 deps()
 {
+    brew unlink python
     brew update
     brew update
+    brew upgrade
     brew reinstall tmux
     brew reinstall protobuf
 }
