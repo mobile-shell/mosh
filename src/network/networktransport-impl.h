@@ -81,6 +81,7 @@ void Transport<MyState, RemoteState>::recv( void )
       throw NetworkException( "mosh protocol version mismatch", 0 );
     }
 
+    uint64_t now = timestamp();
     sender.process_acknowledgment_through( inst.ack_num() );
 
     /* inform network layer of roundtrip (end-to-end-to-end) connectivity */
@@ -119,7 +120,6 @@ void Transport<MyState, RemoteState>::recv( void )
     process_throwaway_until( inst.throwaway_num() );
 
     if ( received_states.size() > 1024 ) { /* limit on state queue */
-      uint64_t now = timestamp();
       if ( now < receiver_quench_timer ) { /* deny letting state grow further */
 	if ( verbose ) {
 	  fprintf( stderr, "[%u] Receiver queue full, discarding %d (malicious sender or long-unidirectional connectivity?)\n",
@@ -133,7 +133,7 @@ void Transport<MyState, RemoteState>::recv( void )
 
     /* apply diff to reference state */
     TimestampedState<RemoteState> new_state = *reference_state;
-    new_state.timestamp = timestamp();
+    new_state.timestamp = now;
     new_state.num = inst.new_num();
 
     if ( !inst.diff().empty() ) {
@@ -148,19 +148,19 @@ void Transport<MyState, RemoteState>::recv( void )
 	received_states.insert( i, new_state );
 	if ( verbose ) {
 	  fprintf( stderr, "[%u] Received OUT-OF-ORDER state %d [ack %d]\n",
-		   (unsigned int)(timestamp() % 100000), (int)new_state.num, (int)inst.ack_num() );
+		   (unsigned int)(now % 100000), (int)new_state.num, (int)inst.ack_num() );
 	}
 	return;
       }
     }
     if ( verbose ) {
       fprintf( stderr, "[%u] Received state %d [coming from %d, ack %d]\n",
-	       (unsigned int)(timestamp() % 100000), (int)new_state.num, (int)inst.old_num(), (int)inst.ack_num() );
+	       (unsigned int)(now % 100000), (int)new_state.num, (int)inst.old_num(), (int)inst.ack_num() );
     }
     received_states.push_back( new_state );
     sender.set_ack_num( received_states.back().num );
 
-    sender.remote_heard( new_state.timestamp );
+    sender.remote_heard( new_state.timestamp ); // XXX
     if ( !inst.diff().empty() ) {
       sender.set_data_ack();
     }

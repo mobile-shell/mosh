@@ -158,6 +158,7 @@ namespace Network {
     void set_send_delay( int new_delay ) { SEND_MINDELAY = new_delay; }
 
     unsigned int send_interval( void ) const;
+    uint64_t backoff_send( uint64_t now ) const;
 
     /* nonexistent methods to satisfy -Weffc++ */
     TransportSender( const TransportSender &x );

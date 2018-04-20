@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <list>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -83,6 +84,30 @@ unsigned int TransportSender<MyState>::send_interval( void ) const
   return SEND_INTERVAL;
 }
 
+/* If we're not seeing acks for sent states, exponentially
+ * increase send interval since last unacked state.
+ */
+template <class MyState>
+uint64_t TransportSender<MyState>::backoff_send( uint64_t now ) const
+{
+  typename sent_states_type::const_iterator unreceived_state = sent_states.begin();
+  if ( ++unreceived_state != sent_states.end() &&
+       ++unreceived_state != sent_states.end() &&
+       now - unreceived_state->timestamp > 2 * connection->timeout() ) {
+    uint64_t rtt = connection->timeout();
+    uint64_t target = sent_states.back().timestamp * 2 - unreceived_state->timestamp;
+    if ( verbose > 1 ) {
+      fprintf( stderr, "%s: now %" PRIu64 ", next_send_time %" PRIu64
+	       ", rtt %" PRIu64 ", uts %" PRIu64 ", lts %" PRIu64
+	       ", target %" PRIu64 ", step %" PRIu64 "\n",
+	       __func__, now, next_send_time,
+	       rtt, unreceived_state->timestamp, sent_states.back().timestamp,
+	       target, target - now );
+    }
+    return target;
+  }
+  return 0;
+}
 /* Housekeeping routine to calculate next send and ack times */
 template <class MyState>
 void TransportSender<MyState>::calculate_timers( void )
@@ -100,24 +125,31 @@ void TransportSender<MyState>::calculate_timers( void )
   }
 
   if ( !(current_state == sent_states.back().state) ) {
+    /* New, unsent state */
     if ( mindelay_clock == uint64_t( -1 ) ) {
       mindelay_clock = now;
     }
 
     next_send_time = max( mindelay_clock + SEND_MINDELAY,
 			  sent_states.back().timestamp + send_interval() );
+    next_send_time = max( next_send_time, backoff_send( now ) );
   } else if ( !(current_state == assumed_receiver_state->state)
 	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
+    /* The receiver isn't up to date with our state */
     next_send_time = sent_states.back().timestamp + send_interval();
     if ( mindelay_clock != uint64_t( -1 ) ) {
       next_send_time = max( next_send_time, mindelay_clock + SEND_MINDELAY );
     }
+    next_send_time = max( next_send_time, backoff_send( now ) );
   } else if ( !(current_state == sent_states.front().state )
 	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
+    /* Receiver does not have our current state */
     next_send_time = sent_states.back().timestamp + connection->timeout() + ACK_DELAY;
   } else {
+    /* Nothing to send */
     next_send_time = uint64_t(-1);
   }
+
 
   /* speed up shutdown sequence */
   if ( shutdown_in_progress || (ack_num == uint64_t(-1)) ) {
@@ -274,9 +306,8 @@ void TransportSender<MyState>::update_assumed_receiver_state( void )
 
   /* start from what is known and give benefit of the doubt to unacknowledged states
      transmitted recently enough ago */
-  assumed_receiver_state = sent_states.begin();
-
   typename list< TimestampedState<MyState> >::iterator i = sent_states.begin();
+  assumed_receiver_state = i;
   i++;
 
   while ( i != sent_states.end() ) {
