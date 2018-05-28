@@ -304,6 +304,18 @@ namespace Terminal {
 
     bool application_mode_cursor_keys;
 
+    enum ResourceValues {
+      MODIFY_KEYBOARD = 0,
+      MODIFY_CURSOR_KEYS = 1,
+      MODIFY_FUNCTION_KEYS = 2,
+      MODIFY_OTHER_KEYS = 4
+    };
+
+    int resource_modify_keyboard;
+    int resource_modify_cursor_keys;
+    int resource_modify_function_keys;
+    int resource_modify_other_keys;
+
     /* bold, etc. */
 
     void move_row( int N, bool relative = false );

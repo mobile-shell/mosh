@@ -642,3 +642,46 @@ static void CSI_SU( Framebuffer *fb, Dispatcher *dispatch )
 }
 
 static Function func_CSI_SU( CSI, "T", CSI_SU );
+
+/* resource values */
+static void CSI_RSRCV( Framebuffer *fb, Dispatcher *dispatch )
+{
+  const int resource = dispatch->getparam( 0, 0 );
+  const int value    = dispatch->getparam( 1, 0 );
+
+  switch ( dispatch->param_count() ) {
+  case 0:
+    /* no parameters means reset all */
+    fb->ds.resource_modify_keyboard = 0;
+    fb->ds.resource_modify_cursor_keys = 0;
+    fb->ds.resource_modify_function_keys = 0;
+    fb->ds.resource_modify_other_keys = 0;
+    break;
+
+  case 1:
+    /* 1 paramter means reset specific resource */
+    switch ( resource ) {
+    case Terminal::DrawState::MODIFY_KEYBOARD:      fb->ds.resource_modify_keyboard = 0; break;
+    case Terminal::DrawState::MODIFY_CURSOR_KEYS:   fb->ds.resource_modify_cursor_keys = 0; break;
+    case Terminal::DrawState::MODIFY_FUNCTION_KEYS: fb->ds.resource_modify_function_keys = 0; break;
+    case Terminal::DrawState::MODIFY_OTHER_KEYS:    fb->ds.resource_modify_other_keys = 0; break;
+    default:
+      /* ignore unknown resource */
+      break;
+    }
+
+  default:
+    /* 2 paramters means set specific resource */
+    switch ( resource ) {
+    case Terminal::DrawState::MODIFY_KEYBOARD:      fb->ds.resource_modify_keyboard = value; break;
+    case Terminal::DrawState::MODIFY_CURSOR_KEYS:   fb->ds.resource_modify_cursor_keys = value; break;
+    case Terminal::DrawState::MODIFY_FUNCTION_KEYS: fb->ds.resource_modify_function_keys = value; break;
+    case Terminal::DrawState::MODIFY_OTHER_KEYS:    fb->ds.resource_modify_other_keys = value; break;
+    default:
+      /* ignore unknown resource */
+      break;
+    }
+  }
+}
+
+static Function func_CSI_RSRCV( CSI, ">m", CSI_RSRCV );

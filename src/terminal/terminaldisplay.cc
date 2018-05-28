@@ -336,6 +336,27 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     }
   }
 
+  /* have resource values changed? */
+  if ( (!initialized)
+       || (f.ds.resource_modify_keyboard != frame.last_frame.ds.resource_modify_keyboard)
+       || (f.ds.resource_modify_cursor_keys != frame.last_frame.ds.resource_modify_cursor_keys)
+       || (f.ds.resource_modify_function_keys != frame.last_frame.ds.resource_modify_function_keys)
+       || (f.ds.resource_modify_other_keys != frame.last_frame.ds.resource_modify_other_keys) ) {
+    /* set all local values to match */
+
+    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm", DrawState::MODIFY_KEYBOARD, f.ds.resource_modify_keyboard);
+    frame.append(tmp);
+
+    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm", DrawState::MODIFY_CURSOR_KEYS, f.ds.resource_modify_cursor_keys);
+    frame.append(tmp);
+
+    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm", DrawState::MODIFY_FUNCTION_KEYS, f.ds.resource_modify_function_keys);
+    frame.append(tmp);
+
+    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm", DrawState::MODIFY_OTHER_KEYS, f.ds.resource_modify_other_keys);
+    frame.append(tmp);
+  }
+
   return frame.str;
 }
 
