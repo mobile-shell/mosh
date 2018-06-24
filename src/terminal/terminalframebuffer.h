@@ -253,6 +253,67 @@ namespace Terminal {
     SavedCursor();
   };
 
+  class ModifierResources {
+  public:
+    ModifierResources()
+      : modify_keyboard(0), modify_cursor_keys(0),
+        modify_function_keys(0), modify_other_keys(0)
+    {}
+
+    bool operator==( const ModifierResources &x ) const {
+      return modify_keyboard == x.modify_keyboard
+      && modify_cursor_keys == x.modify_cursor_keys
+      && modify_function_keys == x.modify_function_keys
+      && modify_other_keys == x.modify_other_keys;
+    }
+
+    enum ModifierResourceID {
+      MODIFY_KEYBOARD = 0,
+      MODIFY_CURSOR_KEYS = 1,
+      MODIFY_FUNCTION_KEYS = 2,
+      MODIFY_OTHER_KEYS = 4
+    };
+
+    void reset() {
+      modify_keyboard = 0;
+      modify_cursor_keys = 0;
+      modify_function_keys = 0;
+      modify_other_keys = 0;
+    }
+
+    void reset( const int id ) { set(id, 0); }
+
+    void set( const int id, const int value ) {
+      switch ( id ) {
+      case MODIFY_KEYBOARD:      modify_keyboard = value; break;
+      case MODIFY_CURSOR_KEYS:   modify_cursor_keys = value; break;
+      case MODIFY_FUNCTION_KEYS: modify_function_keys = value; break;
+      case MODIFY_OTHER_KEYS:    modify_other_keys = value; break;
+      default:
+	/* ignore unknown resource */
+	break;
+      }
+    }
+
+    int get( int id ) const {
+      switch( id ) {
+      case MODIFY_KEYBOARD:      return modify_keyboard;
+      case MODIFY_CURSOR_KEYS:   return modify_cursor_keys;
+      case MODIFY_FUNCTION_KEYS: return modify_function_keys;
+      case MODIFY_OTHER_KEYS:    return modify_other_keys;
+      default:
+	/* ignore unknown resource */
+	return 0;
+      }
+    }
+
+  private:
+    int modify_keyboard;
+    int modify_cursor_keys;
+    int modify_function_keys;
+    int modify_other_keys;
+  };
+
   class DrawState {
   private:
     int width, height;
@@ -304,17 +365,7 @@ namespace Terminal {
 
     bool application_mode_cursor_keys;
 
-    enum ResourceValues {
-      MODIFY_KEYBOARD = 0,
-      MODIFY_CURSOR_KEYS = 1,
-      MODIFY_FUNCTION_KEYS = 2,
-      MODIFY_OTHER_KEYS = 4
-    };
-
-    int resource_modify_keyboard;
-    int resource_modify_cursor_keys;
-    int resource_modify_function_keys;
-    int resource_modify_other_keys;
+    ModifierResources mod_resources;
 
     /* bold, etc. */
 
@@ -360,12 +411,13 @@ namespace Terminal {
     bool operator==( const DrawState &x ) const
     {
       /* only compare fields that affect display */
-      return ( width == x.width ) && ( height == x.height ) && ( cursor_col == x.cursor_col )
-	&& ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible ) &&
-	( reverse_video == x.reverse_video ) && ( renditions == x.renditions ) &&
-  ( bracketed_paste == x.bracketed_paste ) && ( mouse_reporting_mode == x.mouse_reporting_mode ) &&
-  ( mouse_focus_event == x.mouse_focus_event ) && ( mouse_alternate_scroll == x.mouse_alternate_scroll) &&
-  ( mouse_encoding_mode == x.mouse_encoding_mode );
+      return ( width == x.width ) && ( height == x.height ) && ( cursor_col == x.cursor_col ) &&
+      ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible ) &&
+      ( reverse_video == x.reverse_video ) && ( renditions == x.renditions ) &&
+      ( bracketed_paste == x.bracketed_paste ) && ( mouse_reporting_mode == x.mouse_reporting_mode ) &&
+      ( mouse_focus_event == x.mouse_focus_event ) && ( mouse_alternate_scroll == x.mouse_alternate_scroll) &&
+      ( mouse_encoding_mode == x.mouse_encoding_mode ) &&
+      ( mod_resources == x.mod_resources );
     }
   };
 

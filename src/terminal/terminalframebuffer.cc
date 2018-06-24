@@ -73,8 +73,7 @@ DrawState::DrawState( int s_width, int s_height )
     insert_mode( false ), cursor_visible( true ), reverse_video( false ),
     bracketed_paste( false ), mouse_reporting_mode( MOUSE_REPORTING_NONE ), mouse_focus_event( false ),
     mouse_alternate_scroll( false ), mouse_encoding_mode( MOUSE_ENCODING_DEFAULT ), application_mode_cursor_keys( false ),
-    resource_modify_keyboard( 0 ), resource_modify_cursor_keys( 0 ),
-    resource_modify_function_keys( 0 ), resource_modify_other_keys( 0 )
+    mod_resources( )
 {
   reinitialize_tabs( 0 );
 }

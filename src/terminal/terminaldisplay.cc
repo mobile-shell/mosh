@@ -337,25 +337,32 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   }
 
   /* have resource values changed? */
-  if ( (!initialized)
-       || (f.ds.resource_modify_keyboard != frame.last_frame.ds.resource_modify_keyboard)
-       || (f.ds.resource_modify_cursor_keys != frame.last_frame.ds.resource_modify_cursor_keys)
-       || (f.ds.resource_modify_function_keys != frame.last_frame.ds.resource_modify_function_keys)
-       || (f.ds.resource_modify_other_keys != frame.last_frame.ds.resource_modify_other_keys) ) {
-    /* set all local values to match */
+  if ( (!initialized) || !(f.ds.mod_resources == frame.last_frame.ds.mod_resources) ) {
+    /* set all local resource values to match */
 
-    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm", DrawState::MODIFY_KEYBOARD, f.ds.resource_modify_keyboard);
+    /* with C++x11 support, the snprintf() could be passed as a lambda
+       to a "for each" style method on the ModiferResources class */
+
+    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm",
+	     ModifierResources::MODIFY_KEYBOARD,
+	     f.ds.mod_resources.get(ModifierResources::MODIFY_KEYBOARD));
     frame.append(tmp);
 
-    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm", DrawState::MODIFY_CURSOR_KEYS, f.ds.resource_modify_cursor_keys);
+    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm",
+	     ModifierResources::MODIFY_CURSOR_KEYS,
+	     f.ds.mod_resources.get(ModifierResources::MODIFY_CURSOR_KEYS));
     frame.append(tmp);
 
-    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm", DrawState::MODIFY_FUNCTION_KEYS, f.ds.resource_modify_function_keys);
+    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm",
+	     ModifierResources::MODIFY_FUNCTION_KEYS,
+	     f.ds.mod_resources.get(ModifierResources::MODIFY_FUNCTION_KEYS));
     frame.append(tmp);
 
-    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm", DrawState::MODIFY_OTHER_KEYS, f.ds.resource_modify_other_keys);
+    snprintf(tmp, sizeof(tmp), "\033[>%d;%dm",
+	     ModifierResources::MODIFY_OTHER_KEYS,
+	     f.ds.mod_resources.get(ModifierResources::MODIFY_OTHER_KEYS));
     frame.append(tmp);
-  }
+}
 
   return frame.str;
 }
