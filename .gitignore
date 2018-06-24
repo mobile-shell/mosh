@@ -28,3 +28,8 @@ Makefile.in
 /VERSION
 /scripts/mosh
 /version.h
+
+GPATH
+GTAGS
+GSYMS
+GRTAGS
