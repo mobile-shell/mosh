@@ -57,13 +57,15 @@ string UserInput::input( const Parser::UserByte *act,
 
   switch ( state ) {
   case Ground:
+    collector.assign( 1, act->c );
     if ( act->c == 0x1b ) { /* ESC */
       state = ESC;
       return string();
     }
-    return string( &act->c, 1 );
+    return collector;
 
   case ESC:
+    collector.push_back( act->c );
     if ( act->c == 'O' ) { /* ESC O = 7-bit SS3 */
       state = SS3;
       return string();
@@ -73,45 +75,36 @@ string UserInput::input( const Parser::UserByte *act,
       return string();
     }
     state = Ground;
-    {
-      char return_to_ground[ 2 ] = { '\x1b', act->c };
-      return string( return_to_ground, 2 );
-    }
+    return collector;
 
   case SS3:
-    state = Ground;
+    collector.push_back( act->c );
     if ( (!application_mode_cursor_keys)
 	 && (act->c >= 'A')
 	 && (act->c <= 'D') ) {
       char translated_cursor[ 3 ] = { 0x1b, '[', act->c };
       return string( translated_cursor, 3 );
-    } else {
-      char original_cursor[ 3 ] = { 0x1b, 'O', act->c };
-      return string( original_cursor, 3 );
     }
+    state = Ground;
+    return collector;
 
   case CSI:
+    collector.push_back( act->c );
     if ( act->c == '>' ) {
-      char collector_init[ 3 ] = { '\x1b', '[', '>' };
-      collector.assign( collector_init, 3 );
       ps.clear();
       state = CSI_AB;
       return string();
     }
     state = Ground;
-    {
-      char return_to_ground[ 3 ] = { 0x1b, '[', act->c };
-      return string( return_to_ground, 3 );
-    }
+    return collector;
 
   case CSI_AB:
+    collector.push_back( act->c );
+
     /* A CSI followed by '>' must be response to a "send secondary
        device attributes" request. It should contain three numeric
        parameters and end in 'c'. Parse the parameters until the 'c'
        is found. */
-
-    collector.push_back( act->c );
-
     if ( act->c >= '0' && act->c <= '9' ) {
       if ( ps.empty() )
 	ps.push_back("");
@@ -124,18 +117,15 @@ string UserInput::input( const Parser::UserByte *act,
     }
     if ( act->c == 'c' ) {
       /* store the terminal type and version, then return to ground */
-
       if ( ps.size() > 1 ) {
 	client_type = ps[0];
 	client_version = ps[1];
       }
-
       state = Ground;
       return string();
     }
 
     /* Quit parsing the CSI function on any unknown character */
-
     state = Ground;
     return collector;
 

@@ -50,9 +50,8 @@ namespace Terminal {
 
   private:
     UserInputState state;
-
-    std::string collector;
-    std::vector<std::string> ps;
+    std::string collector; 	 /* characters seen since last ground state */
+    std::vector<std::string> ps; /* paramters parsed in CSI_AB state */
 
   public:
     UserInput()
