@@ -446,6 +446,8 @@ namespace Terminal {
     title_type clipboard;
     unsigned int bell_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
+    std::string client_type; /* blank if not set by response in user input */
+    std::string client_version;
 
     row_pointer newrow( void )
     {
@@ -531,8 +533,12 @@ namespace Terminal {
     void ring_bell( void ) { bell_count++; }
     unsigned int get_bell_count( void ) const { return bell_count; }
 
+    std::string & get_client_type( void ) { return client_type; }
+    std::string & get_client_version( void ) { return client_version; }
+
     bool operator==( const Framebuffer &x ) const
     {
+      /* client type/version isn't relevant to frame, so skipped here */
       return ( rows == x.rows ) && ( window_title == x.window_title ) && ( clipboard  == x.clipboard ) && ( bell_count == x.bell_count ) && ( ds == x.ds );
     }
   };

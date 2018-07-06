@@ -91,7 +91,9 @@ void OSC_End::act_on_terminal( Terminal::Emulator *emu ) const
 void UserByte::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->dispatch.terminal_to_host.append( emu->user.input( this,
-							  emu->fb.ds.application_mode_cursor_keys ) );
+							  emu->fb.ds.application_mode_cursor_keys,
+							  emu->fb.get_client_type(),
+							  emu->fb.get_client_version() ) );
 }
 
 void Resize::act_on_terminal( Terminal::Emulator *emu ) const
