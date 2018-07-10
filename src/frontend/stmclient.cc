@@ -206,7 +206,7 @@ void STMClient::shutdown( void )
 
   /* Restore terminal and terminal-driver state */
   swrite( STDOUT_FILENO, display.close().c_str() );
-  
+
   if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
     perror( "tcsetattr" );
     exit( 1 );
@@ -237,7 +237,7 @@ void STMClient::main_init( void )
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
     perror( "ioctl TIOCGWINSZ" );
     return;
-  }  
+  }
 
   /* local state */
   local_framebuffer = Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
@@ -249,13 +249,19 @@ void STMClient::main_init( void )
 
   /* open network */
   Network::UserStream blank;
+  vector<Network::Stream*> localStreams = {&blank};
   Terminal::Complete local_terminal( window_size.ws_col, window_size.ws_row );
-  network = NetworkPointer( new NetworkType( blank, local_terminal, key.c_str(), ip.c_str(), port.c_str() ) );
+  vector<Network::Stream*> remoteStreams = {&local_terminal};
+
+  Network::MultiplexerStream local(localStreams);
+  Network::MultiplexerStream remote(remoteStreams);
+
+  network = NetworkPointer( new NetworkType( local, remote, key.c_str(), ip.c_str(), port.c_str() ) );
 
   network->set_send_delay( 1 ); /* minimal delay on outgoing keystrokes */
 
   /* tell server the size of the terminal */
-  network->get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
+  network->get_current_state().stream<Network::UserStream>(0)->push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
 
   /* be noisy as necessary */
   network->set_verbose( verbose );
@@ -269,7 +275,7 @@ void STMClient::output_new_frame( void )
   }
 
   /* fetch target state */
-  new_state = network->get_latest_remote_state().state.get_fb();
+  new_state = network->get_latest_remote_state().state.stream<Terminal::Complete>(0)->get_fb();
 
   /* apply local overlays */
   overlays.apply( new_state );
@@ -288,14 +294,14 @@ void STMClient::output_new_frame( void )
 void STMClient::process_network_input( void )
 {
   network->recv();
-  
+
   /* Now give hints to the overlays */
   overlays.get_notification_engine().server_heard( network->get_latest_remote_state().timestamp );
   overlays.get_notification_engine().server_acked( network->get_sent_state_acked_timestamp() );
 
   overlays.get_prediction_engine().set_local_frame_acked( network->get_sent_state_acked() );
   overlays.get_prediction_engine().set_send_interval( network->send_interval() );
-  overlays.get_prediction_engine().set_local_frame_late_acked( network->get_latest_remote_state().state.get_echo_ack() );
+  overlays.get_prediction_engine().set_local_frame_late_acked( network->get_latest_remote_state().state.stream<Terminal::Complete>(0)->get_echo_ack() );
 }
 
 bool STMClient::process_user_input( int fd )
@@ -360,11 +366,11 @@ bool STMClient::process_user_input( int fd )
       } else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
 	/* Emulation sequence to type escape_key is escape_key +
 	   escape_pass_key (that is escape key without Ctrl) */
-	net.get_current_state().push_back( Parser::UserByte( escape_key ) );
+	net.get_current_state().stream<Network::UserStream>(0)->push_back( Parser::UserByte( escape_key ) );
       } else {
 	/* Escape key followed by anything other than . and ^ gets sent literally */
-	net.get_current_state().push_back( Parser::UserByte( escape_key ) );
-	net.get_current_state().push_back( Parser::UserByte( the_byte ) );	  
+	net.get_current_state().stream<Network::UserStream>(0)->push_back( Parser::UserByte( escape_key ) );
+	net.get_current_state().stream<Network::UserStream>(0)->push_back( Parser::UserByte( the_byte ) );
       }
 
       quit_sequence_started = false;
@@ -389,7 +395,7 @@ bool STMClient::process_user_input( int fd )
       repaint_requested = true;
     }
 
-    net.get_current_state().push_back( Parser::UserByte( the_byte ) );		
+    net.get_current_state().stream<Network::UserStream>(0)->push_back( Parser::UserByte( the_byte ) );
   }
 
   return true;
@@ -402,16 +408,16 @@ bool STMClient::process_resize( void )
     perror( "ioctl TIOCGWINSZ" );
     return false;
   }
-  
+
   /* tell remote emulator */
   Parser::Resize res( window_size.ws_col, window_size.ws_row );
-  
+
   if ( !network->shutdown_in_progress() ) {
-    network->get_current_state().push_back( res );
+    network->get_current_state().stream<Network::UserStream>(0)->push_back( res );
   }
 
   /* note remote emulator will probably reply with its own Resize to adjust our state */
-  
+
   /* tell prediction engine */
   overlays.get_prediction_engine().reset();
 
@@ -478,7 +484,7 @@ bool STMClient::main( void )
       if ( network_ready_to_read ) {
 	process_network_input();
       }
-    
+
       if ( sel.read( STDIN_FILENO ) && !process_user_input( STDIN_FILENO ) ) { /* input from the user needs to be fed to the network */
 	if ( !network->has_remote_addr() ) {
 	  break;

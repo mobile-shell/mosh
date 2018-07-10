@@ -39,6 +39,7 @@
 #include <assert.h>
 
 #include "parseraction.h"
+#include "stream.h"
 
 using std::deque;
 using std::list;
@@ -67,27 +68,30 @@ namespace Network {
     bool operator==( const UserEvent &x ) const { return ( type == x.type ) && ( userbyte == x.userbyte ) && ( resize == x.resize ); }
   };
 
-  class UserStream
+  class UserStream : public Stream
   {
   private:
     deque<UserEvent> actions;
-    
+
   public:
     UserStream() : actions() {}
-    
+
     void push_back( const Parser::UserByte & s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
     void push_back( const Parser::Resize & s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
-    
+
     bool empty( void ) const { return actions.empty(); }
     size_t size( void ) const { return actions.size(); }
     const Parser::Action &get_action( unsigned int i ) const;
-    
+
     /* interface for Network::Transport */
-    void subtract( const UserStream *prefix );
-    string diff_from( const UserStream &existing ) const;
+    void subtract( const Stream *prefix );
+    string diff_from( const Stream &existing ) const;
     string init_diff( void ) const { return diff_from( UserStream() ); };
     void apply_string( const string &diff );
-    bool operator==( const UserStream &x ) const { return actions == x.actions; }
+    bool operator==( const Stream &xStream ) const {
+      const UserStream &x = dynamic_cast<const UserStream&>(xStream);
+      return actions == x.actions;
+    }
 
     bool compare( const UserStream & ) { return false; }
   };
