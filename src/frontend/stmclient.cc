@@ -248,10 +248,13 @@ void STMClient::main_init( void )
   swrite( STDOUT_FILENO, init.data(), init.size() );
 
   /* open network */
-  Network::UserStream blank;
-  vector<Network::Stream*> localStreams = {&blank};
-  Terminal::Complete local_terminal( window_size.ws_col, window_size.ws_row );
-  vector<Network::Stream*> remoteStreams = {&local_terminal};
+  vector<Network::Stream*> localStreams = {
+    new Network::UserStream(),
+  };
+
+  vector<Network::Stream*> remoteStreams = {
+    new Terminal::Complete( window_size.ws_col, window_size.ws_row ),
+  };
 
   Network::MultiplexerStream local(localStreams);
   Network::MultiplexerStream remote(remoteStreams);

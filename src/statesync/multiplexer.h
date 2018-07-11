@@ -5,6 +5,7 @@
 #include <string>
 
 #include "stream.h"
+#include <assert.h>
 
 namespace Network {
   class MultiplexerStream : public Stream {
@@ -13,10 +14,28 @@ namespace Network {
 
   public:
     MultiplexerStream(std::vector<Stream*> s) : streams(s) {}
+    MultiplexerStream(const MultiplexerStream & other) : streams() {
+      for (Stream *s : other.streams) {
+        streams.push_back(s->copy());
+      }
+    }
+
+    ~MultiplexerStream() {
+      for (Stream *s : streams) {
+        delete s;
+      }
+      streams.clear();
+    }
 
     template <typename T>
     T* stream(int i) const {
-      return dynamic_cast<T*>(streams.at(i));
+      Stream* stream = streams.at(i);
+      assert(stream != NULL);
+      return dynamic_cast<T*>(stream);
+    }
+
+    void set(int i, Stream *s) {
+      streams.at(i) = s;
     }
 
     /* interface for Network::Transport */
@@ -33,6 +52,7 @@ namespace Network {
     }
 
     bool compare( const MultiplexerStream & ) { return false; }
+    MultiplexerStream* copy(void) const;
   };
 }
 

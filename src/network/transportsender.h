@@ -142,7 +142,6 @@ namespace Network {
     {
       assert( !shutdown_in_progress );
       current_state = x;
-      current_state.reset_input();
     }
     void set_verbose( unsigned int s_verbose ) { verbose = s_verbose; }
 

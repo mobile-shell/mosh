@@ -63,7 +63,6 @@ namespace Terminal {
   public:
     Complete( size_t width, size_t height ) : parser(), terminal( width, height ), display( false ),
 					      actions(), input_history(), echo_ack( 0 ) {}
-
     std::string act( const std::string &str );
     std::string act( const Parser::Action &act );
 
@@ -80,6 +79,9 @@ namespace Terminal {
     std::string init_diff( void ) const;
     void apply_string( const std::string & diff );
     bool operator==( const Network::Stream &x ) const;
+    Stream* copy() const {
+      return new Complete(*this);
+    }
 
     bool compare( const Complete &other ) const;
   };

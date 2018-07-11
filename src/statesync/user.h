@@ -92,8 +92,16 @@ namespace Network {
       const UserStream &x = dynamic_cast<const UserStream&>(xStream);
       return actions == x.actions;
     }
+    Stream* copy() const {
+      return new UserStream(*this);
+    }
 
     bool compare( const UserStream & ) { return false; }
+
+    template <typename T>
+    UserStream* stream(int) {
+      return this;
+    }
   };
 }
 
