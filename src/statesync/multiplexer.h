@@ -3,9 +3,11 @@
 
 #include <vector>
 #include <string>
+#include <assert.h>
 
 #include "stream.h"
-#include <assert.h>
+#include "stream.pb.h"
+#include "fatal_assert.h"
 
 namespace Network {
   class MultiplexerStream : public Stream {
@@ -13,7 +15,11 @@ namespace Network {
     std::vector<Stream*> streams;
 
   public:
-    MultiplexerStream(std::vector<Stream*> s) : streams(s) {}
+    MultiplexerStream(std::vector<Stream*> s) : streams() {
+      for (Stream *s : s) {
+        streams.push_back(s->copy());
+      }
+    }
     MultiplexerStream(const MultiplexerStream & other) : streams() {
       for (Stream *s : other.streams) {
         streams.push_back(s->copy());
@@ -35,16 +41,15 @@ namespace Network {
     }
 
     void set(int i, Stream *s) {
-      streams.at(i) = s;
+      Stream *old = streams.at(i);
+      delete old;
+      streams.at(i) = s->copy();
     }
 
     /* interface for Network::Transport */
     void subtract( const Stream *prefix );
     std::string diff_from( const Stream &existing ) const;
-    std::string init_diff( void ) const {
-      std::vector<Stream*> empty;
-      return diff_from( MultiplexerStream(empty) );
-    };
+    std::string init_diff( void ) const;
     void apply_string( const std::string &diff );
     bool operator==( const Stream &xStream ) const {
       const MultiplexerStream &x = dynamic_cast<const MultiplexerStream&>(xStream);
@@ -53,6 +58,12 @@ namespace Network {
 
     bool compare( const MultiplexerStream & ) { return false; }
     MultiplexerStream* copy(void) const;
+
+    static std::string diffForStream(int i, std::string diff) {
+      StreamBuffers::StreamMessage input;
+      fatal_assert( input.ParseFromString( diff ) );
+      return input.diffs(i);
+    };
   };
 }
 

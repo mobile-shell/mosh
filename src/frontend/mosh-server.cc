@@ -743,7 +743,7 @@ static void serve( int host_fd, Network::MultiplexerStream &local, Terminal::Com
 
 
 	  Network::UserStream us;
-	  us.apply_string( network.get_remote_diff() );
+	  us.apply_string( Network::MultiplexerStream::diffForStream(0, network.get_remote_diff()) );
 	  /* apply userstream to terminal */
 	  for ( size_t i = 0; i < us.size(); i++ ) {
 	    const Parser::Action &action = us.get_action( i );
