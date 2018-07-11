@@ -1,4 +1,4 @@
-source = userinput.proto hostinput.proto transportinstruction.proto
+source = userinput.proto hostinput.proto transportinstruction.proto stream.proto
 
 AM_CPPFLAGS = $(protobuf_CFLAGS)
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS) -Wno-error
