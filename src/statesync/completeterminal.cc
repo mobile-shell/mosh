@@ -140,9 +140,9 @@ bool Complete::set_echo_ack( uint64_t now )
     }
   }
 
-  for ( input_history_type::const_iterator i = input_history.begin();
+  for ( input_history_type::iterator i = input_history.begin();
 	i != input_history.end(); ) {
-    input_history_type::const_iterator i_next = i;
+    input_history_type::iterator i_next = i;
     i_next++;
     if ( i->first < newest_echo_ack ) {
       input_history.erase( i );
