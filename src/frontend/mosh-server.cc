@@ -451,8 +451,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
 
   /* detach from terminal */
-  fflush( stdout );
-  fflush( stderr );
+  fflush( NULL );
   pid_t the_pid = fork();
   if ( the_pid < 0 ) {
     perror( "fork" );
@@ -470,15 +469,14 @@ static int run_server( const char *desired_ip, const char *desired_port,
 	   "probably does not work properly on this platform.\n", stderr );
 #endif /* HAVE_IUTF8 */
 
-    fflush( stdout );
-    fflush( stderr );
+    fflush( NULL );
     if ( isatty( STDOUT_FILENO ) ) {
       tcdrain( STDOUT_FILENO );
     }
     if ( isatty( STDERR_FILENO ) ) {
       tcdrain( STDERR_FILENO );
     }
-    _exit( 0 );
+    exit( 0 );
   }
 
   int master;
@@ -596,15 +594,13 @@ static int run_server( const char *desired_ip, const char *desired_port,
     /* Wait for parent to release us. */
     char linebuf[81];
     if (fgets(linebuf, sizeof linebuf, stdin) == NULL) {
-      perror( "parent signal" );
-      _exit( 1 );
+      err( 1, "parent signal" );
     }
 
     Crypto::reenable_dumping_core();
 
     if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
-      perror( "execvp" );
-      _exit( 1 );
+      err( 1, "execvp: %s", command_path.c_str() );
     }
   } else {
     /* parent */
@@ -826,8 +822,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  /* Tell child to start login session. */
 	  if ( !child_released ) {
 	    if ( swrite( host_fd, "\n", 1 ) < 0) {
-	      perror( "child release" );
-	      _exit( 1 );
+	      err( 1, "child release" );
 	    }
 	    child_released = true;
 	  }
