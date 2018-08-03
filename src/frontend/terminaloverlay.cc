@@ -378,8 +378,8 @@ void PredictionEngine::apply( Framebuffer &fb ) const
 
 void PredictionEngine::kill_epoch( uint64_t epoch, const Framebuffer &fb )
 {
-  for( cursors_type::const_iterator it = cursors.begin(); it != cursors.end(); ) {
-    cursors_type::const_iterator it_next = it;
+  for( cursors_type::iterator it = cursors.begin(); it != cursors.end(); ) {
+    cursors_type::iterator it_next = it;
     it_next++;
     if ( it->tentative( epoch - 1 )) {
       cursors.erase( it );

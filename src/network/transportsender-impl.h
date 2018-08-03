@@ -360,7 +360,7 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
 {
   /* Ignore ack if we have culled the state it's acknowledging */
 
-  typename sent_states_type::const_iterator i;
+  typename sent_states_type::iterator i;
   for ( i = sent_states.begin(); i != sent_states.end(); i++ ) {
     if ( i->num == ack_num ) {
       break;
@@ -369,7 +369,7 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
 
   if ( i != sent_states.end() ) {
     for ( i = sent_states.begin(); i != sent_states.end(); ) {
-      typename sent_states_type::const_iterator i_next = i;
+      typename sent_states_type::iterator i_next = i;
       i_next++;
       if ( i->num < ack_num ) {
 	sent_states.erase( i );
