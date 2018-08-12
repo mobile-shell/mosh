@@ -97,7 +97,7 @@ namespace Crypto {
     Base64Key(PRNG &prng);
     Base64Key( string printable_key );
     string printable_key( void ) const;
-    unsigned char *data( void ) { return key; }
+    const unsigned char *data( void ) const { return key; }
   };
 
   class Nonce {
