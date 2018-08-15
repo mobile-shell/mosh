@@ -43,11 +43,11 @@
 #include "transportfragment.h"
 #include "prng.h"
 
-using std::list;
-using std::pair;
-using namespace TransportBuffers;
-
 namespace Network {
+  using std::list;
+  using std::pair;
+  using namespace TransportBuffers;
+
   /* timing parameters */
   const int SEND_INTERVAL_MIN = 20; /* ms between frames */
   const int SEND_INTERVAL_MAX = 250; /* ms between frames */

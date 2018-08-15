@@ -39,11 +39,11 @@
 
 #include "transportinstruction.pb.h"
 
-using std::vector;
-using std::string;
-using namespace TransportBuffers;
-
 namespace Network {
+  using std::vector;
+  using std::string;
+  using namespace TransportBuffers;
+
   class Fragment
   {
   public:

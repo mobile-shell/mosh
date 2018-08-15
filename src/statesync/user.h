@@ -40,11 +40,11 @@
 
 #include "parseraction.h"
 
-using std::deque;
-using std::list;
-using std::string;
-
 namespace Network {
+  using std::deque;
+  using std::list;
+  using std::string;
+
   enum UserEventType {
     UserByteType = 0,
     ResizeType = 1

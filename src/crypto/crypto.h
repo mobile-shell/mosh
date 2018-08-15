@@ -40,13 +40,13 @@
 #include <stdlib.h>
 #include <exception>
 
-using std::string;
 
 long int myatoi( const char *str );
 
 class PRNG;
 
 namespace Crypto {
+  using std::string;
 
   class CryptoException : public std::exception {
   public:
