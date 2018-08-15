@@ -63,6 +63,8 @@
 
 #include "networktransport-impl.h"
 
+using std::wstring;
+
 void STMClient::resume( void )
 {
   /* Restore termios state */

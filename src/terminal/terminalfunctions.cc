@@ -40,7 +40,6 @@
 #include "parseraction.h"
 
 using namespace Terminal;
-using namespace std;
 
 /* Terminal functions -- routines activated by CSI, escape or a control char */
 

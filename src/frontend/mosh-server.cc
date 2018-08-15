@@ -107,7 +107,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
 		       const string &command_path, char *command_argv[],
 		       const int colors, unsigned int verbose, bool with_motd );
 
-using namespace std;
 
 static void print_version( FILE *file )
 {
@@ -150,7 +149,7 @@ static string get_SSH_IP( void )
     fputs( "Warning: SSH_CONNECTION not found; binding to any interface.\n", stderr );
     return string( "" );
   }
-  istringstream ss( SSH_CONNECTION );
+  std::istringstream ss( SSH_CONNECTION );
   string dummy, local_interface_IP;
   ss >> dummy >> dummy >> local_interface_IP;
   if ( !ss ) {

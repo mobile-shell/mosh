@@ -44,7 +44,6 @@
 #include "fatal_assert.h"
 #include "prng.h"
 
-using namespace std;
 using namespace Crypto;
 
 long int myatoi( const char *str )

@@ -60,7 +60,6 @@
 #define AI_NUMERICSERV 0
 #endif
 
-using namespace std;
 using namespace Network;
 using namespace Crypto;
 

@@ -161,7 +161,7 @@ bool Complete::set_echo_ack( uint64_t now )
 
 void Complete::register_input_frame( uint64_t n, uint64_t now )
 {
-  input_history.push_back( make_pair( n, now ) );
+  input_history.push_back( std::make_pair( n, now ) );
 }
 
 int Complete::wait_time( uint64_t now ) const
