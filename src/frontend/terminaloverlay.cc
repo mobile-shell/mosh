@@ -39,7 +39,6 @@
 #include "terminaloverlay.h"
 
 using namespace Overlay;
-using std::max;
 
 void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const
 {
