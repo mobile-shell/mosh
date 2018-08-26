@@ -26,8 +26,13 @@ message ChWidthOverlayMessage {
   optional bytes overlay = 9;
 }
 
+message SessionHoldMessage {
+  optional bool hold = 11;
+}
+
 extend Instruction {
   optional Keystroke keystroke = 2;
   optional ResizeMessage resize = 3;
   optional ChWidthOverlayMessage overlay = 7;
+  optional SessionHoldMessage hold = 10;
 }

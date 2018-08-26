@@ -734,7 +734,6 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	if ( network.get_remote_state_num() != last_remote_num ) {
 	  last_remote_num = network.get_remote_state_num();
 
-	  
 	  Network::UserStream us;
 	  us.apply_string( network.get_remote_diff() );
 	  /* apply userstream to terminal */
@@ -822,7 +821,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  #endif
 
 	  /* Tell child to start login session. */
-	  if ( !child_released ) {
+	  if ( !child_released && !terminal.get_hold_session() ) {
 	    if ( swrite( host_fd, "\n", 1 ) < 0) {
 	      err( 1, "child release" );
 	    }

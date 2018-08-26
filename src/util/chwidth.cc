@@ -38,7 +38,7 @@
 
 ChWidth::ChWidth() : widths( unicode_codespace, '-' ) {}
 
-ChWidth::ChWidth( const ChWidth & other ) { widths = other.widths; }
+ChWidth::ChWidth( const ChWidth & other ) : widths( other.widths ) {}
 
 ChWidth & ChWidth::operator=( const ChWidth & other ) { widths = other.widths; return *this; }
 

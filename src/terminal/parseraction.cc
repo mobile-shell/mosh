@@ -103,3 +103,7 @@ void ChWidthOverlay::act_on_terminal( Terminal::Emulator *emu ) const
   emu->chwidth_overlay( overlay );
 }
 
+void HoldSession::act_on_terminal( Terminal::Emulator *emu ) const
+{
+  emu->hold_session( hold );
+}

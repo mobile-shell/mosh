@@ -176,6 +176,21 @@ namespace Parser {
       return overlay == other.overlay;
     }
   };
+  class HoldSession : public Action {
+    /* chwidth overlay string -- not part of the host-source state machine*/
+  public:
+    bool hold;
+
+    std::string name( void ) { return std::string( "HoldSession" ); }
+    void act_on_terminal( Terminal::Emulator *emu ) const;
+
+    HoldSession( bool h ) : hold( h ) {}
+
+    bool operator==( const HoldSession &other ) const
+    {
+      return hold == other.hold;
+    }
+  };
 }
 
 #endif

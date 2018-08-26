@@ -42,7 +42,7 @@
 using namespace Terminal;
 
 Emulator::Emulator( size_t s_width, size_t s_height, ChWidthPtr widths )
-  : fb( s_width, s_height, widths ), dispatch(), user(), widths( widths )
+  : fb( s_width, s_height, widths ), dispatch(), user(), widths( widths ), hold()
 {}
 
 std::string Emulator::read_octets_to_host( void )
@@ -180,6 +180,11 @@ void Emulator::resize( size_t s_width, size_t s_height )
 void Emulator::chwidth_overlay( const std::string& diff )
 {
   widths->apply_diff( diff );
+}
+
+void Emulator::hold_session( bool wait )
+{
+  hold = wait;
 }
 
 bool Emulator::operator==( Emulator const &x ) const

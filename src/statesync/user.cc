@@ -101,6 +101,13 @@ string UserStream::diff_from( const UserStream &existing ) const
 	  new_inst->MutableExtension( overlay )->set_overlay( my_it->overlay.overlay );
 	}
       break;
+    case HoldSessionType:
+      {
+	Instruction *new_inst = output.add_instruction();
+	new_inst->MutableExtension( hold );
+	new_inst->MutableExtension( hold )->set_hold( my_it->hold.hold );
+      }
+      break;
     default:
       assert( !"unexpected event type" );
       break;
@@ -130,6 +137,8 @@ void UserStream::apply_string( const string &diff )
       if ( input.instruction( i ).GetExtension( overlay ).version() == chwidth_version ) {
 	actions.push_back( UserEvent( ChWidthOverlay( input.instruction( i ).GetExtension( overlay ).overlay() ) ) );
       }
+    } else if ( input.instruction( i ).HasExtension( hold ) ) {
+      actions.push_back( UserEvent( HoldSession( input.instruction( i ).GetExtension( hold ).hold() ) ) );
     }
   }
 }
@@ -143,6 +152,8 @@ const Parser::Action &UserStream::get_action( unsigned int i ) const
     return actions[ i ].resize;
   case ChWidthOverlayType:
     return actions[ i ].overlay;
+  case HoldSessionType:
+    return actions[ i ].hold;
   default:
     assert( !"unexpected action type" );
     static const Parser::Ignore nothing = Parser::Ignore();
