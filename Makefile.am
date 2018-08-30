@@ -46,7 +46,7 @@ cppcheck:
 		-I src/crypto -I src/frontend -I src/network -I src/protobufs \
 		-I src/statesync -I src/terminal -I src/util \
 		-I /usr/include -I /usr/include/google/protobuf -I/usr/include/openssl \
-		.
+		src
 
 # Coverity.
 cov-build:
