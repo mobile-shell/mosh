@@ -102,7 +102,7 @@ void TransportSender<MyState>::calculate_timers( void )
   if ( oob()->has_unsent_output() ) {
     next_send_time = sent_states.back().timestamp + send_interval();
     if ( mindelay_clock != uint64_t( -1 ) ) {
-      next_send_time = max( next_send_time, mindelay_clock + SEND_MINDELAY );
+      next_send_time = std::max( next_send_time, mindelay_clock + SEND_MINDELAY );
     }
   } else if ( !(current_state == sent_states.back().state) ) {
     if ( mindelay_clock == uint64_t( -1 ) ) {
