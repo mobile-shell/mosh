@@ -60,7 +60,6 @@
 #define AI_NUMERICSERV 0
 #endif
 
-using namespace std;
 using namespace Network;
 using namespace Crypto;
 
@@ -332,7 +331,7 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
       }
     }
 
-    if ( bind( sock(), &local_addr.sa, local_addr_len ) == 0 ) {
+    if ( ::bind( sock(), &local_addr.sa, local_addr_len ) == 0 ) {
       set_MTU( local_addr.sa.sa_family );
       return true;
     } // else fallthrough to below code, on last iteration.

@@ -110,7 +110,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
 		const int colors, unsigned int verbose, bool with_motd,
 		bool with_agent_fwd );
 
-using namespace std;
 
 static void print_version( FILE *file )
 {
@@ -153,7 +152,7 @@ static string get_SSH_IP( void )
     fputs( "Warning: SSH_CONNECTION not found; binding to any interface.\n", stderr );
     return string( "" );
   }
-  istringstream ss( SSH_CONNECTION );
+  std::istringstream ss( SSH_CONNECTION );
   string dummy, local_interface_IP;
   ss >> dummy >> dummy >> local_interface_IP;
   if ( !ss ) {
@@ -459,8 +458,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
 
   /* detach from terminal */
-  fflush( stdout );
-  fflush( stderr );
+  fflush( NULL );
   pid_t the_pid = fork();
   if ( the_pid < 0 ) {
     perror( "fork" );
@@ -478,15 +476,14 @@ static int run_server( const char *desired_ip, const char *desired_port,
 	   "probably does not work properly on this platform.\n", stderr );
 #endif /* HAVE_IUTF8 */
 
-    fflush( stdout );
-    fflush( stderr );
+    fflush( NULL );
     if ( isatty( STDOUT_FILENO ) ) {
       tcdrain( STDOUT_FILENO );
     }
     if ( isatty( STDERR_FILENO ) ) {
       tcdrain( STDERR_FILENO );
     }
-    _exit( 0 );
+    exit( 0 );
   }
 
   /* initialize agent listener if requested */
@@ -619,15 +616,13 @@ static int run_server( const char *desired_ip, const char *desired_port,
     /* Wait for parent to release us. */
     char linebuf[81];
     if (fgets(linebuf, sizeof linebuf, stdin) == NULL) {
-      perror( "parent signal" );
-      _exit( 1 );
+      err( 1, "parent signal" );
     }
 
     Crypto::reenable_dumping_core();
 
     if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
-      perror( "execvp" );
-      _exit( 1 );
+      err( 1, "execvp: %s", command_path.c_str() );
     }
   } else {
     /* parent */
@@ -711,11 +706,11 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
       int timeout = INT_MAX;
       uint64_t now = Network::timestamp();
 
-      timeout = min( timeout, network.wait_time() );
-      timeout = min( timeout, terminal.wait_time( now ) );
+      timeout = std::min( timeout, network.wait_time() );
+      timeout = std::min( timeout, terminal.wait_time( now ) );
       if ( (!network.get_remote_state_num())
 	   || network.shutdown_in_progress() ) {
-        timeout = min( timeout, 5000 );
+        timeout = std::min( timeout, 5000 );
       }
       /*
        * The server goes completely asleep if it has no remote peer.
@@ -730,7 +725,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  /* 24 days might be too soon.  That's OK. */
 	  network_sleep = INT_MAX;
 	}
-	timeout = min( timeout, static_cast<int>(network_sleep) );
+	timeout = std::min( timeout, static_cast<int>(network_sleep) );
       }
 
       /* poll for events */
@@ -837,8 +832,8 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
 	    #ifdef HAVE_UTEMPTER
 	    utempter_remove_record( host_fd );
-	    char tmp[ 64 ];
-	    snprintf( tmp, 64, "%s via mosh [%d]", host, getpid() );
+	    char tmp[ 64 + NI_MAXHOST ];
+	    snprintf( tmp, 64 + NI_MAXHOST, "%s via mosh [%d]", host, getpid() );
 	    utempter_add_record( host_fd, tmp );
 
 	    connected_utmp = true;
@@ -853,8 +848,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  /* Tell child to start login session. */
 	  if ( !child_released ) {
 	    if ( swrite( host_fd, "\n", 1 ) < 0) {
-	      perror( "child release" );
-	      _exit( 1 );
+	      err( 1, "child release" );
 	    }
 	    child_released = true;
 	  }

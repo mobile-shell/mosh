@@ -37,7 +37,6 @@
 #include "crypto.h"
 
 using namespace Crypto;
-using namespace std;
 
 int main( int argc, char *argv[] )
 {
@@ -52,18 +51,18 @@ int main( int argc, char *argv[] )
     Nonce nonce( myatoi( argv[ 1 ] ) );
 
     /* Read input */
-    ostringstream input;
-    input << cin.rdbuf();
+    std::ostringstream input;
+    input << std::cin.rdbuf();
 
     /* Encrypt message */
 
     string ciphertext = session.encrypt( Message( nonce, input.str() ) );
 
-    cerr << "Key: " << key.printable_key() << endl;
+    std::cerr << "Key: " << key.printable_key() << std::endl;
 
-    cout << ciphertext;
+    std::cout << ciphertext;
   } catch ( const CryptoException &e ) {
-    cerr << e.what() << endl;
+    std::cerr << e.what() << std::endl;
     exit( 1 );
   }
 

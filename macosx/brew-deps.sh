@@ -33,6 +33,7 @@ deps()
 {
     brew update
     brew update
+    brew upgrade
     brew reinstall tmux
     brew reinstall protobuf
 }

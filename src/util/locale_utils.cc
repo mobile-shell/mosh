@@ -45,12 +45,11 @@
 
 #include "locale_utils.h"
 
-using namespace std;
 
-const string LocaleVar::str( void ) const
+const std::string LocaleVar::str( void ) const
 {
   if ( name.empty() ) {
-    return string( "[no charset variables]" );
+    return std::string( "[no charset variables]" );
   }
   return name + "=" + value;
 }

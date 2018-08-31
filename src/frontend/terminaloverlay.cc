@@ -39,9 +39,6 @@
 #include "terminaloverlay.h"
 
 using namespace Overlay;
-using std::max;
-using std::mem_fun_ref;
-using std::bind2nd;
 
 void ConditionalOverlayCell::apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const
 {
@@ -380,7 +377,14 @@ void PredictionEngine::apply( Framebuffer &fb ) const
 
 void PredictionEngine::kill_epoch( uint64_t epoch, const Framebuffer &fb )
 {
-  cursors.remove_if( bind2nd( mem_fun_ref( &ConditionalCursorMove::tentative ), epoch - 1 ) );
+  for( cursors_type::iterator it = cursors.begin(); it != cursors.end(); ) {
+    cursors_type::iterator it_next = it;
+    it_next++;
+    if ( it->tentative( epoch - 1 )) {
+      cursors.erase( it );
+    }
+    it = it_next;
+  }
 
   cursors.push_back( ConditionalCursorMove( local_frame_sent + 1,
 					    fb.ds.get_cursor_row(),
@@ -623,9 +627,13 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
 ConditionalOverlayRow & PredictionEngine::get_or_make_row( int row_num, int num_cols )
 {
-  overlays_type::iterator it =
-    find_if( overlays.begin(), overlays.end(),
-	     bind2nd( mem_fun_ref( &ConditionalOverlayRow::row_num_eq ), row_num ) );
+  overlays_type::iterator it;
+
+  for ( it = overlays.begin(); it != overlays.end(); it++ ) {
+    if ( it->row_num == row_num ) {
+      break;
+    }
+  }
 
   if ( it != overlays.end() ) {
     return *it;

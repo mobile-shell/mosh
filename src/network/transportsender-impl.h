@@ -45,7 +45,6 @@
 #include <limits.h>
 
 using namespace Network;
-using namespace std;
 
 template <class MyState>
 TransportSender<MyState>::TransportSender( Connection *s_connection, MyState &initial_state )
@@ -109,13 +108,13 @@ void TransportSender<MyState>::calculate_timers( void )
     if ( mindelay_clock == uint64_t( -1 ) ) {
       mindelay_clock = now;
     }
-    next_send_time = max( mindelay_clock + SEND_MINDELAY,
-			  sent_states.back().timestamp + send_interval() );
+    next_send_time = std::max( mindelay_clock + SEND_MINDELAY,
+			       sent_states.back().timestamp + send_interval() );
   } else if ( ((!(current_state == assumed_receiver_state->state)) || (oob()->has_output()))
 	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
     next_send_time = sent_states.back().timestamp + send_interval();
     if ( mindelay_clock != uint64_t( -1 ) ) {
-      next_send_time = max( next_send_time, mindelay_clock + SEND_MINDELAY );
+      next_send_time = std::max( next_send_time, mindelay_clock + SEND_MINDELAY );
     }
   } else if ( !(current_state == sent_states.front().state )
 	      && (last_heard + ACTIVE_RETRY_TIMEOUT > now) ) {
@@ -369,12 +368,23 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
 {
   /* Ignore ack if we have culled the state it's acknowledging */
 
-  if ( sent_states.end() !=
-       find_if( sent_states.begin(), sent_states.end(),
-		bind2nd( mem_fun_ref( &TimestampedState<MyState>::num_eq ), ack_num ) ) ) {
-    sent_states.remove_if( bind2nd( mem_fun_ref( &TimestampedState<MyState>::num_lt ), ack_num ) );
+  typename sent_states_type::iterator i;
+  for ( i = sent_states.begin(); i != sent_states.end(); i++ ) {
+    if ( i->num == ack_num ) {
+      break;
+    }
   }
 
+  if ( i != sent_states.end() ) {
+    for ( i = sent_states.begin(); i != sent_states.end(); ) {
+      typename sent_states_type::iterator i_next = i;
+      i_next++;
+      if ( i->num < ack_num ) {
+	sent_states.erase( i );
+      }
+      i = i_next;
+    }
+  }
   assert( !sent_states.empty() );
 }
 

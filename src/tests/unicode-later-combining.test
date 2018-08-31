@@ -5,6 +5,10 @@
 # page, a combining character drawn on a cell after returning the
 # cursor to that cell.
 #
+# We print 'COMBINING CIRCUMFLEX ACCENT' (U+0302) onto an unused cell.
+# We expect Mosh to output U+0020, U+0302 for that character cell (or
+# possibly U+00A0, U+0302).
+#
 # XXX This test is fragile because it depends on tmux's unicode rendering.
 # The baseline and variant tests produce different (but valid) outputs
 # that are visually identical.  The variant test is not run or validated.

@@ -13,8 +13,8 @@ language: cpp
 sudo: required
 dist: trusty
 
-# Use macOS 10.12 + Xcode 9.1 + DEPLOYMENT_TARGET=10.12
-osx_image: xcode9.1
+# Use whatever Travis likes + DEPLOYMENT_TARGET=10.12
+# osx_image: xcode9.1
 
 # Linux dependencies
 addons:
@@ -63,6 +63,10 @@ before_script:
 
 # 'make distcheck', and OS X package build on tag builds.
 script:
+  - |
+    if test osx = "${TRAVIS_OS_NAME}"; then
+      sysctl hw.ncpu
+    fi
   - ./autogen.sh
   - ./configure --enable-compile-warnings=error --enable-examples
   - make distcheck VERBOSE=1 V=1

@@ -37,7 +37,6 @@
 #include "crypto.h"
 
 using namespace Crypto;
-using namespace std;
 
 int main( int argc, char *argv[] )
 {
@@ -51,8 +50,8 @@ int main( int argc, char *argv[] )
     Session session( key );
 
     /* Read input */
-    ostringstream input;
-    input << cin.rdbuf();
+    std::ostringstream input;
+    input << std::cin.rdbuf();
 
     /* Decrypt message */
 
@@ -60,9 +59,9 @@ int main( int argc, char *argv[] )
 
     fprintf( stderr, "Nonce = %ld\n",
 	     (long)message.nonce.val() );
-    cout << message.text;
+    std::cout << message.text;
   } catch ( const CryptoException &e ) {
-    cerr << e.what() << endl;
+    std::cerr << e.what() << std::endl;
     exit( 1 );
   }
 

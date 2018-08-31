@@ -38,7 +38,6 @@
 #include "transportsender-impl.h"
 
 using namespace Network;
-using namespace std;
 
 template <class MyState, class RemoteState>
 Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState &initial_remote,

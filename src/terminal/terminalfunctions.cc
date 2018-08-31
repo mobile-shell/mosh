@@ -40,7 +40,6 @@
 #include "parseraction.h"
 
 using namespace Terminal;
-using namespace std;
 
 /* Terminal functions -- routines activated by CSI, escape or a control char */
 
@@ -619,7 +618,7 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End *act __attribute((unused)),
     bool set_title = cmd_num == 0 || cmd_num == 2;
     if ( set_icon || set_title ) {
       fb->set_title_initialized();
-      int title_length = min(OSC_string.size(), (size_t)256);
+      int title_length = std::min(OSC_string.size(), (size_t)256);
       Terminal::Framebuffer::title_type newtitle( OSC_string.begin() + offset, OSC_string.begin() + title_length );
       if ( set_icon )  { fb->set_icon_name( newtitle ); }
       if ( set_title ) { fb->set_window_title( newtitle ); }

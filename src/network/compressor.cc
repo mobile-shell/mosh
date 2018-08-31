@@ -36,7 +36,7 @@
 #include "dos_assert.h"
 
 using namespace Network;
-using namespace std;
+using std::string;
 
 string Compressor::compress_str( const string &input )
 {

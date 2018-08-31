@@ -64,6 +64,8 @@
 
 #include "networktransport-impl.h"
 
+using std::wstring;
+
 void STMClient::resume( void )
 {
   /* Restore termios state */
@@ -444,11 +446,11 @@ bool STMClient::main( void )
     try {
       output_new_frame();
 
-      int wait_time = min( network->wait_time(), overlays.wait_time() );
+      int wait_time = std::min( network->wait_time(), overlays.wait_time() );
 
       /* Handle startup "Connecting..." message */
       if ( still_connecting() ) {
-	wait_time = min( 250, wait_time );
+	wait_time = std::min( 250, wait_time );
       }
 
       /* poll for events */

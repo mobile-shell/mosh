@@ -133,9 +133,6 @@ namespace Overlay {
 
     void apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const;
 
-    /* For use with find_if */
-    bool row_num_eq( int v ) const { return row_num == v; }
-
     ConditionalOverlayRow( int s_row_num ) : row_num( s_row_num ), overlay_cells() {}
   };
 

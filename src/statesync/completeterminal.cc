@@ -127,11 +127,6 @@ bool Complete::operator==( Complete const &x ) const
   return (terminal == x.terminal) && (echo_ack == x.echo_ack);
 }
 
-static bool old_ack(uint64_t newest_echo_ack, const pair<uint64_t, uint64_t> p)
-{
-  return p.first < newest_echo_ack;
-}
-
 bool Complete::set_echo_ack( uint64_t now )
 {
   bool ret = false;
@@ -145,7 +140,15 @@ bool Complete::set_echo_ack( uint64_t now )
     }
   }
 
-  input_history.remove_if( bind1st( ptr_fun( old_ack ), newest_echo_ack ) );
+  for ( input_history_type::iterator i = input_history.begin();
+	i != input_history.end(); ) {
+    input_history_type::iterator i_next = i;
+    i_next++;
+    if ( i->first < newest_echo_ack ) {
+      input_history.erase( i );
+    }
+    i = i_next;
+  }
 
   if ( echo_ack != newest_echo_ack ) {
     ret = true;
@@ -158,7 +161,7 @@ bool Complete::set_echo_ack( uint64_t now )
 
 void Complete::register_input_frame( uint64_t n, uint64_t now )
 {
-  input_history.push_back( make_pair( n, now ) );
+  input_history.push_back( std::make_pair( n, now ) );
 }
 
 int Complete::wait_time( uint64_t now ) const

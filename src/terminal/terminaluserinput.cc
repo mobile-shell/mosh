@@ -34,7 +34,7 @@
 #include "terminaluserinput.h"
 
 using namespace Terminal;
-using namespace std;
+using std::string;
 
 string UserInput::input( const Parser::UserByte *act,
 			 bool application_mode_cursor_keys )

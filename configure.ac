@@ -20,6 +20,9 @@ AS_IF([test x"$PROTOC" = x],
 # automake 1.12 seems to require this, but automake 1.11 doesn't recognize it
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
+AS_IF([pkg-config --atleast-version 3.6.0 protobuf],
+  [AX_CXX_COMPILE_STDCXX([11], [noext])])
+
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""
 DISTCHECK_CXXFLAGS=""
