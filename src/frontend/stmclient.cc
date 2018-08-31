@@ -257,6 +257,8 @@ void STMClient::main_init( void )
 
   network->set_send_delay( 1 ); /* minimal delay on outgoing keystrokes */
 
+  /* Hold session until further notice */
+  network->get_current_state().push_back( Parser::HoldSession( true ) );
   /* tell server the size of the terminal */
   network->get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
 
@@ -267,6 +269,8 @@ void STMClient::main_init( void )
   /* send server the wcwidth overlay */
   network->get_current_state().
     push_back( Parser::ChWidthOverlay( network_overlay ) );
+  /* Release session.  (In a future version of Mosh, this might be in a later message.) */
+  network->get_current_state().push_back( Parser::HoldSession( false ) );
 
 
   /* be noisy as necessary */
