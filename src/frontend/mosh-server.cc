@@ -88,6 +88,7 @@
 #include "select.h"
 #include "timestamp.h"
 #include "fatal_assert.h"
+#include "stdfds.h"
 
 #ifndef _PATH_BSHELL
 #define _PATH_BSHELL "/bin/sh"
@@ -170,6 +171,9 @@ static string get_SSH_IP( void )
 
 int main( int argc, char *argv[] )
 {
+  /* Make sure all standard i/o fds are open on something. */
+  open_stdfds();
+
   /* For security, make sure we don't dump core */
   Crypto::disable_dumping_core();
 
@@ -478,34 +482,15 @@ static int run_server( const char *desired_ip, const char *desired_port,
     exit( 0 );
   }
 
-  int master;
-
-  /* close file descriptors */
+  /* Close file descriptors on tty */
   if ( verbose == 0 ) {
-    /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
-    int nullfd;
-
-    nullfd = open( "/dev/null", O_RDWR );
-    if ( nullfd == -1 ) {
-      perror( "open" );
-      exit( 1 );
-    }
-
-    if ( dup2 ( nullfd, STDIN_FILENO ) < 0 ||
-         dup2 ( nullfd, STDOUT_FILENO ) < 0 ||
-         dup2 ( nullfd, STDERR_FILENO ) < 0 ) {
-      perror( "dup2" );
-      exit( 1 );
-    }
-
-    if ( close( nullfd ) < 0 ) {
-      perror( "close" );
-      exit( 1 );
-    }
+    detach_stdfds();
   }
 
   char utmp_entry[ 64 ] = { 0 };
   snprintf( utmp_entry, 64, "mosh [%ld]", static_cast<long int>( getpid() ) );
+
+  int master;
 
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, NULL, &window_size );
