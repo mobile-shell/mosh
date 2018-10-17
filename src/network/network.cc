@@ -122,6 +122,11 @@ void Connection::hop_port( void )
   assert( remote_addr_len != 0 );
   socks.push_back( Socket( remote_addr.sa.sa_family ) );
 
+  /* Servers don't roam, don't accept packets from elsewhere */
+  if ( connect( sock(), &remote_addr.sa, remote_addr_len ) != 0) {
+    throw NetworkException( "connect" );
+  }
+
   prune_sockets();
 }
 
@@ -388,6 +393,11 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
 
   socks.push_back( Socket( remote_addr.sa.sa_family ) );
 
+  /* Servers don't roam, don't accept packets from elsewhere */
+  if ( connect( sock(), &remote_addr.sa, remote_addr_len ) != 0) {
+    throw NetworkException( "connect" );
+  }
+
   set_MTU( remote_addr.sa.sa_family );
 }
 
@@ -401,8 +411,13 @@ void Connection::send( const string & s )
 
   string p = session.encrypt( px.toMessage() );
 
-  ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
-			       &remote_addr.sa, remote_addr_len );
+  ssize_t bytes_sent;
+  if ( server ) {
+    bytes_sent = ::sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
+			   &remote_addr.sa, remote_addr_len );
+  } else {
+    bytes_sent = ::send( sock(), p.data(), p.size(), MSG_DONTWAIT );
+  }
 
   if ( bytes_sent != static_cast<ssize_t>( p.size() ) ) {
     /* Make sendto() failure available to the frontend. */
