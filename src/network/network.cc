@@ -411,7 +411,9 @@ void Connection::send( const string & s )
 
   string p = session.encrypt( px.toMessage() );
 
+  bool retry = true;
   ssize_t bytes_sent;
+ retry:
   if ( server ) {
     bytes_sent = ::sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
 			   &remote_addr.sa, remote_addr_len );
@@ -420,6 +422,17 @@ void Connection::send( const string & s )
   }
 
   if ( bytes_sent != static_cast<ssize_t>( p.size() ) ) {
+    /*
+     * If the error had a remote cause, hop port and retry once.
+     * XXX we'd like to be able to tell what the cause was but there
+     * is great variation in error reporting.
+     */
+    if ( !server && retry
+	 /* && ( errno == EHOSTUNREACH ... ) */) {
+      retry = false;
+      hop_port();
+      goto retry;
+    }
     /* Make sendto() failure available to the frontend. */
     send_error = "sendto: ";
     send_error += strerror( errno );
