@@ -168,18 +168,6 @@ AC_ARG_ENABLE([completion],
   [install_completion="no"])
 AM_CONDITIONAL([INSTALL_COMPLETION], [test x"$install_completion" != xno])
 
-# Checks for libraries.
-AC_ARG_WITH([utempter],
-  [AS_HELP_STRING([--with-utempter], [write utmp entries using libutempter @<:@check@:>@])],
-  [with_utempter="$withval"],
-  [with_utempter="check"])
-AS_IF([test x"$with_utempter" != xno],
-  [AC_SEARCH_LIBS([utempter_remove_record], [utempter],
-    [AC_DEFINE([HAVE_UTEMPTER], [1], [Define if libutempter is available.])],
-    [AS_IF([test x"$with_utempter" = xcheck],
-      [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])],
-      [AC_MSG_ERROR([--with-utempter was given but libutempter was not found.])])])])
-
 AC_ARG_ENABLE([syslog],
   [AS_HELP_STRING([--enable-syslog], [Enable connection logging in mosh-server @<:@no@:>@])],
   [enable_syslog="$enableval"],
@@ -191,7 +179,49 @@ AS_IF([test x"$enable_syslog" != xno],
       [AC_MSG_WARN([Unable to find syslog.h.])],
       [AC_MSG_ERROR([--enable-syslog was given but syslog.h was not found.])])])])
 
-AC_SEARCH_LIBS([compress], [z], , [AC_MSG_ERROR([Unable to find zlib.])])
+# Checks for libraries.
+AC_ARG_ENABLE([static-libraries],
+  [AS_HELP_STRING([--enable-static-libraries], [Enable all static linking options below @<:@no@:>@])])
+
+AC_ARG_ENABLE([static-libstdc++],
+  [AS_HELP_STRING([--enable-static-libstdc++], [Link libstdc++ statically @<:@no@:>@])],
+  [], [enable_static_libstdc__="$enable_static_libraries"])
+AS_IF([test "$enable_static_libstdc__" = yes],
+  [LDFLAGS="$LDFLAGS -static-libstdc++"])
+
+AC_ARG_ENABLE([static-libgcc],
+  [AS_HELP_STRING([--enable-static-libgcc], [Link libgcc statically @<:@no@:>@])],
+  [], [enable_static_libgcc="$enable_static_libraries"])
+AS_IF([test "$enable_static_libgcc" = yes],
+  [LDFLAGS="$LDFLAGS -static-libgcc"])
+
+AC_ARG_WITH([utempter],
+  [AS_HELP_STRING([--with-utempter], [write utmp entries using libutempter @<:@check@:>@])],
+  [with_utempter="$withval"],
+  [with_utempter="check"])
+AC_ARG_ENABLE([static-utempter],
+  [AS_HELP_STRING([--enable-static-utempter], [Link utempter statically @<:@no@:>@])],
+  [], [enable_static_utempter="$enable_static_libraries"])
+AS_IF([test x"$with_utempter" != xno],
+  [AC_CHECK_LIB([utempter], [utempter_remove_record],
+    [UTEMPTER_LIBS=-lutempter
+     AS_IF([test "$enable_static_utempter" = yes],
+       [UTEMPTER_LIBS="-Wl,-Bstatic $UTEMPTER_LIBS -Wl,-Bdynamic"])
+     LIBS="$UTEMPTER_LIBS $LIBS"
+     AC_DEFINE([HAVE_UTEMPTER], [1], [Define if libutempter is available.])],
+    [AS_IF([test x"$with_utempter" = xcheck],
+      [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])],
+      [AC_MSG_ERROR([--with-utempter was given but libutempter was not found.])])])])
+
+AC_ARG_ENABLE([static-zlib],
+  [AS_HELP_STRING([--enable-static-zlib], [Link zlib statically @<:@no@:>@])],
+  [], [enable_static_zlib="$enable_static_libraries"])
+AC_CHECK_LIB([z], [compress],
+  [ZLIB_LIBS=-lz
+   AS_IF([test "$enable_static_zlib" = yes],
+     [ZLIB_LIBS="-Wl,-Bstatic $ZLIB_LIBS -Wl,-Bdynamic"])
+   LIBS="$ZLIB_LIBS $LIBS"],
+  [AC_MSG_ERROR([Unable to find zlib.])])
 
 AC_SEARCH_LIBS([socket], [socket network])
 AC_SEARCH_LIBS([inet_addr], [nsl])
@@ -314,6 +344,12 @@ if test "x$ax_cv_have_TINFO" = xno ; then
     fi
 fi
 
+AC_ARG_ENABLE([static-curses],
+  [AS_HELP_STRING([--enable-static-curses], [Link curses statically @<:@no@:>@])],
+  [], [enable_static_curses="$enable_static_libraries"])
+AS_IF([test "$enable_static_curses" = yes],
+  [TINFO_LIBS="-Wl,-Bstatic $TINFO_LIBS -Wl,-Bdynamic"])
+
 dnl Default to OpenSSL, or OS X crypto library if found
 AC_CHECK_HEADERS([CommonCrypto/CommonCrypto.h],
   [default_crypto_library="apple-common-crypto"],
@@ -359,6 +395,12 @@ case "${with_crypto_library}" in
     AC_DEFINE([USE_APPLE_COMMON_CRYPTO_AES], [1], [Use Apple Common Crypto library])
     ;;
 esac
+
+AC_ARG_ENABLE([static-crypto],
+  [AS_HELP_STRING([--enable-static-crypto], [Link crypto library statically @<:@no@:>@])],
+  [], [enable_static_crypto="$enable_static_libraries"])
+AS_IF([test "$enable_static_crypto" = yes],
+  [CRYPTO_LIBS="-Wl,-Bstatic $CRYPTO_LIBS -Wl,-Bdynamic"])
 
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
@@ -487,6 +529,16 @@ PKG_CHECK_MODULES([protobuf], [protobuf])
 # mosh-server.
 AS_IF([echo "$protobuf_LIBS" | grep -q -- -pthread],
   [protobuf_LIBS="`echo $protobuf_LIBS | sed 's/-lpthread//g'`"])
+
+AC_ARG_ENABLE([static-protobuf],
+  [AS_HELP_STRING([--enable-static-protobuf], [Link protobuf statically @<:@no@:>@])],
+  [], [enable_static_protobuf="$enable_static_libraries"])
+AS_IF([test "$enable_static_protobuf" = yes],
+  [protobuf_LIBS="-Wl,-Bstatic $protobuf_LIBS -Wl,-Bdynamic"],
+  [AS_IF([test "$enable_static_libstdc__" = yes],
+     [AC_MSG_ERROR([--enable-static-libstdc++ requires --enable-static-protobuf])])
+   AS_IF([test "$enable_static_libgcc" = yes],
+     [AC_MSG_ERROR([--enable-static-libgcc requires --enable-static-protobuf])])])
 
 # Bash completion needs to ask where it goes if >= 2.0 is installed.
 AS_IF([test "$install_completion" != no],
