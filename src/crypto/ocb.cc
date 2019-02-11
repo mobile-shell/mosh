@@ -45,12 +45,17 @@
 /* Set the AES key length to use and length of authentication tag to produce.
 /  Setting either to 0 requires the value be set at runtime via ae_init().
 /  Some optimizations occur for each when set to a fixed value.            */
+/*
+ * These values were adjustable in the original Rogaway/Krovetz code,
+ * but not in Mosh.
+ */
 #define OCB_KEY_LEN         16  /* 0, 16, 24 or 32. 0 means set in ae_init */
 #define OCB_TAG_LEN         16  /* 0 to 16. 0 means set in ae_init         */
 
 /* This implementation has built-in support for multiple AES APIs. Set any
 /  one of the following to non-zero to specify which to use.               */
 #if 0
+#define USE_LIBGCRYPT_AES    0
 #define USE_APPLE_COMMON_CRYPTO_AES       0
 #define USE_NETTLE_AES       0
 #define USE_OPENSSL_AES      1  /* http://openssl.org                      */
@@ -89,6 +94,272 @@
 #include <sys/types.h>
 #include <sys/endian.h>
 #endif
+
+/*
+ * Some common code for libgcrypt
+ */
+#if defined(USE_LIBGCRYPT_AES) || defined(HAVE_LIBGCRYPT_OCB)
+#include <fatal_assert.h>
+#define GCRYPT_NO_MPI_MACROS 1
+#define GCRYPT_NO_DEPRECATED 1
+#include <gcrypt.h>
+
+const static int do_debug = 0;
+
+static void ae_gcrypt_fail(const char *function, int line, gcry_error_t rv)
+{
+	if (do_debug && rv) {
+		fprintf (stderr, "%s:%d: Failure: %s/%s\n",
+			 function,
+			 line,
+			 gcry_strsource (rv),
+			 gcry_strerror (rv));
+	}
+	fatal_assert(rv == 0);
+}
+
+static bool ae_gcrypt_initialized = false;
+static void ae_gcrypt_init() {
+	if (ae_gcrypt_initialized) {
+		return;
+	}
+	/* Version check should be the very first call because it
+	   makes sure that important subsystems are initialized. */
+	if (!gcry_check_version (GCRYPT_VERSION))
+	{
+		fputs ("libgcrypt version mismatch\n", stderr);
+		exit (2);
+	}
+
+	/* Allocate a pool of 16k secure memory.  This make the secure memory
+	   available and also drops privileges where needed.  */
+	gcry_control (GCRYCTL_INIT_SECMEM, 16384, 0);
+
+	/* Tell Libgcrypt that initialization has completed. */
+	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+
+	ae_gcrypt_initialized = true;
+}
+
+#endif
+
+/*
+ * cheat for now and use USE_OPENSSL_AES as a proxy for the presence
+ * of OpenSSL
+ */
+#if defined(USE_OPENSSL_AES) && defined(HAVE_OPENSSL_OCB)
+/*
+ * This shims the Krovetz/Rogaway OCB API (which Mosh uses) on top of
+ * OpenSSL's API.  This shim does not implement all the possible uses
+ * of the Krovetz/Rogaway API; it only implements the simple cases
+ * that Mosh uses (a single call to ae_encrypt() with both plaintext
+ * and associated data, and ae_encrypt() calls on the resulting
+ * messages), and a few more.
+ *
+ * It fails some of the test cases in the test program at the bottom
+ * of this file (but passes all of Mosh's test cases).
+ */
+#include <openssl/evp.h>
+
+/*
+ * This assumes that the caller's copy of the key remains available
+ * through encryption/decryption.
+ */
+struct _ae_ctx {
+	unsigned char *key;
+	EVP_CIPHER_CTX *ocb_ctx;
+};
+
+int     ae_clear     (ae_ctx *ctx)
+{
+	EVP_CIPHER_CTX_free(ctx->ocb_ctx);
+	memset(ctx, '\0', sizeof *ctx);
+	return AE_SUCCESS;
+}
+int     ae_ctx_sizeof(void)
+{
+	return sizeof(_ae_ctx);
+}
+
+int ae_init(ae_ctx *ctx, const void *key_param, int key_len, int nonce_len, int tag_len)
+{
+	if (nonce_len != 12 || key_len != OCB_KEY_LEN || tag_len != OCB_TAG_LEN)
+		return AE_NOT_SUPPORTED;
+	ctx->ocb_ctx = EVP_CIPHER_CTX_new();
+	ctx->key = (unsigned char *)key_param;
+	return AE_SUCCESS;
+}
+
+int ae_encrypt(ae_ctx     *  ctx,
+               const void *  nonce_param,
+               const void *pt_param,
+               int         pt_len,
+               const void *ad_param,
+               int         ad_len,
+               void       *ct_param,
+               void       *tag,
+               int         final)
+{
+	const unsigned char *nonce = (const unsigned char *)nonce_param;
+	const unsigned char *pt = (const unsigned char *)pt_param;
+	const unsigned char *ad = (const unsigned char *)ad_param;
+	unsigned char *ct = (unsigned char *)ct_param;
+	if (nonce) {
+		EVP_EncryptInit_ex(
+			ctx->ocb_ctx, EVP_aes_128_ocb(), NULL, ctx->key, nonce);
+	}
+	if (ad_len) {
+		int ad_ct_len;
+		EVP_EncryptUpdate(ctx->ocb_ctx, NULL, &ad_ct_len, ad, ad_len);
+	}
+	int ct_len = 0;
+	if (pt_len) {
+		EVP_EncryptUpdate(ctx->ocb_ctx, ct, &ct_len, pt, pt_len);
+	}
+	int ct_len_2 = 0;
+	if (final == AE_FINALIZE) {
+		EVP_EncryptFinal_ex(ctx->ocb_ctx, ct + ct_len, &ct_len_2);
+		EVP_CIPHER_CTX_ctrl(
+			ctx->ocb_ctx, EVP_CTRL_AEAD_GET_TAG, OCB_TAG_LEN, ct + ct_len + ct_len_2);
+	}
+	return ct_len + ct_len_2 + OCB_TAG_LEN;
+}
+
+int ae_decrypt(ae_ctx     *ctx,
+               const void *nonce_param,
+               const void *ct_param,
+               int         ct_len,
+               const void *ad_param,
+               int         ad_len,
+               void       *pt_param,
+               const void *tag,
+               int         final)
+{
+	const unsigned char *nonce = (const unsigned char *)nonce_param;
+	unsigned char *pt = (unsigned char *)pt_param;
+	unsigned char *ad = (unsigned char *)ad_param;
+	const unsigned char *ct = (const unsigned char *)ct_param;
+	if (nonce) {
+		EVP_DecryptInit_ex(ctx->ocb_ctx, EVP_aes_128_ocb(), NULL, ctx->key, nonce);
+		EVP_CIPHER_CTX_ctrl(
+			ctx->ocb_ctx, EVP_CTRL_AEAD_SET_TAG, 16, (void *)(ct + ct_len - OCB_TAG_LEN));
+	}
+	if (ad_len) {
+		int ad_pt_len;
+		EVP_DecryptUpdate(ctx->ocb_ctx, NULL, &ad_pt_len, ad, ad_len);
+	}
+	int pt_len;
+	EVP_DecryptUpdate(ctx->ocb_ctx, pt, &pt_len, ct, ct_len - OCB_TAG_LEN);
+	int pt_len_2 = 0;
+	int rv = 1;
+	if (final == AE_FINALIZE) {
+		rv = EVP_DecryptFinal_ex(ctx->ocb_ctx, pt + pt_len, &pt_len_2);
+	}
+	return rv ? pt_len + pt_len_2 : AE_INVALID;
+}
+
+#elif defined(USE_LIBGCRYPT_AES) && defined(HAVE_LIBGCRYPT_OCB)
+/*
+ * This shims the Krovetz/Rogaway OCB API (which Mosh uses) on top of
+ * libgcrypt's API.
+ *
+ * It fails some of the test cases in the test program at the bottom
+ * of this file (but passes all of Mosh's test cases).
+ */
+
+struct _ae_ctx {
+	gcry_cipher_hd_t handle;
+};
+
+int     ae_clear     (ae_ctx *ctx)
+{
+	gcry_cipher_close(ctx->handle);
+	memset(ctx, '\0', sizeof *ctx);
+	return AE_SUCCESS;
+}
+int     ae_ctx_sizeof(void)
+{
+	return sizeof(_ae_ctx);
+}
+
+int ae_init(ae_ctx *ctx, const void *key, int key_len, int nonce_len, int tag_len)
+{
+	if (nonce_len != 12 || key_len != OCB_KEY_LEN || tag_len != OCB_TAG_LEN)
+		return AE_NOT_SUPPORTED;
+	ae_gcrypt_init();
+	gcry_error_t rv = gcry_cipher_open(&ctx->handle, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_OCB, 0);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	rv = gcry_cipher_setkey(ctx->handle, key, key_len);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	return AE_SUCCESS;
+}
+
+int ae_encrypt(ae_ctx     *  ctx,
+               const void *  nonce,
+               const void *pt,
+               int         pt_len,
+               const void *ad,
+               int         ad_len,
+               void       *ct,
+               void       *tag,
+               int         final)
+{
+	gcry_error_t rv;
+	if (nonce) {
+		rv = gcry_cipher_setiv(ctx->handle, nonce, 12);
+		ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	}
+	rv = gcry_cipher_authenticate(ctx->handle, ad, ad_len);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	if (final == AE_FINALIZE) {
+		gcry_cipher_final(ctx->handle);
+	}
+	rv = gcry_cipher_encrypt(ctx->handle, ct, pt_len, pt, pt_len);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	int ct_len_2 = 0;
+	if (final == AE_FINALIZE) {
+		ct_len_2 = OCB_TAG_LEN;
+		rv = gcry_cipher_gettag(ctx->handle, (void *)((char *)ct + pt_len), OCB_TAG_LEN);
+		ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	}
+	return pt_len + ct_len_2;
+}
+
+int ae_decrypt(ae_ctx     *ctx,
+               const void *nonce,
+               const void *ct,
+               int         ct_len,
+               const void *ad,
+               int         ad_len,
+               void       *pt,
+               const void *tag,
+               int         final)
+{
+	gcry_error_t rv;
+	if (nonce) {
+		rv = gcry_cipher_setiv(ctx->handle, nonce, 12);
+		ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	}
+	rv = gcry_cipher_authenticate(ctx->handle, ad, ad_len);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	int ct_len_2 = 0;
+	if (final == AE_FINALIZE) {
+		gcry_cipher_final(ctx->handle);
+		ct_len_2 = OCB_TAG_LEN;
+	}
+	rv = gcry_cipher_decrypt(ctx->handle, pt, ct_len, ct, ct_len - ct_len_2);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	if (final == AE_FINALIZE) {
+		rv = gcry_cipher_checktag(ctx->handle, (void *)((char *)ct + ct_len - ct_len_2), OCB_TAG_LEN);
+		if (gcry_err_code(rv) == GPG_ERR_CHECKSUM) {
+			return AE_INVALID;
+		}
+		ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	}
+	return ct_len - ct_len_2;
+}
+
+#else
 
 /* Define standard sized integers                                          */
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
@@ -496,6 +767,75 @@ static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *ke
 #define BPI 4  /* Number of blocks in buffer per ECB call */
 
 /*-------------------*/
+#elif USE_LIBGCRYPT_AES
+/*-------------------*/
+
+#include <fatal_assert.h>
+#define GCRYPT_NO_MPI_MACROS 1
+#define GCRYPT_NO_DEPRECATED 1
+#include <gcrypt.h>
+
+typedef struct {
+	gcry_cipher_hd_t handle;
+	size_t keylen;
+} AES_KEY;
+
+#if (OCB_KEY_LEN == 0)
+#define ROUNDS(ctx) ((ctx)->rounds)
+#else
+#define ROUNDS(ctx) (6+OCB_KEY_LEN/4)
+#endif
+
+static inline void AES_set_encrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	ae_gcrypt_init();
+	/* Use AES. */
+	gcry_error_t rv = gcry_cipher_open(&key->handle, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+	key->keylen = gcry_cipher_get_algo_blklen(GCRY_CIPHER_AES);
+	fatal_assert(key->keylen == bits/8);
+	rv = gcry_cipher_setkey(key->handle, handle, bits/8);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+}
+static inline void AES_set_decrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
+{
+	return AES_set_encrypt_key(handle, bits, key);
+}
+static inline void AES_encrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	size_t srclen = key->keylen;
+	if (src == dst) {
+		src = NULL;
+		srclen = 0;
+	}
+	gcry_error_t rv = gcry_cipher_encrypt(key->handle, dst, key->keylen, src, srclen);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+}
+#if 0
+/* unused */
+static inline void AES_decrypt(unsigned char *src, unsigned char *dst, AES_KEY *key) {
+	size_t srclen = key->keylen;
+	if (src == dst) {
+		src = NULL;
+		srclen = 0;
+	}
+	gcry_error_t rv = gcry_cipher_decrypt(key->handle, dst, key->keylen, src, srclen);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+}
+#endif
+static inline void AES_ecb_encrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	gcry_error_t rv = gcry_cipher_encrypt(key->handle, (unsigned char *)blks, nblks * key->keylen,
+					      NULL, 0);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+}
+static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	gcry_error_t rv = gcry_cipher_decrypt(key->handle, (unsigned char *)blks, nblks * key->keylen,
+					      NULL, 0);
+	ae_gcrypt_fail(__FUNCTION__, __LINE__, rv);
+}
+
+#define BPI 4  /* Number of blocks in buffer per ECB call */
+
+/*-------------------*/
 #elif USE_REFERENCE_AES
 /*-------------------*/
 
@@ -781,6 +1121,10 @@ static block getL(const ae_ctx *ctx, unsigned tz)
 
 int ae_clear (ae_ctx *ctx) /* Zero ae_ctx and undo initialization          */
 {
+#if USE_LIBGCRYPT_AES
+	gcry_cipher_close(ctx->decrypt_key.handle);
+	gcry_cipher_close(ctx->encrypt_key.handle);
+#endif	
 	memset(ctx, 0, sizeof(ae_ctx));
 	return AE_SUCCESS;
 }
@@ -1398,6 +1742,8 @@ int ae_decrypt(ae_ctx     *ctx,
     return ct_len;
  }
 
+#endif
+
 /* ----------------------------------------------------------------------- */
 /* Simple test program                                                     */
 /* ----------------------------------------------------------------------- */
@@ -1406,6 +1752,10 @@ int ae_decrypt(ae_ctx     *ctx,
 
 #include <stdio.h>
 #include <time.h>
+
+#ifndef BPI
+#define BPI 4
+#endif
 
 #if __GNUC__
 	#define ALIGN(n) __attribute__ ((aligned(n)))

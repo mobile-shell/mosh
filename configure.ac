@@ -323,10 +323,10 @@ AC_CHECK_HEADERS([CommonCrypto/CommonCrypto.h],
 dnl Allow user to select over the default.
 AC_ARG_WITH(
   [crypto-library],
-  [AS_HELP_STRING([--with-crypto-library=library], [build with the given crypto library, TYPE=openssl|nettle|apple-common-crypto @<:@default=openssl@:>@])],
+  [AS_HELP_STRING([--with-crypto-library=library], [build with the given crypto library, TYPE=openssl|nettle|apple-common-crypto|libgcrypt @<:@default=openssl@:>@])],
   [
     case "${withval}" in
-      openssl|nettle|apple-common-crypto) ;;
+      openssl|nettle|apple-common-crypto|libgcrypt) ;;
       *) AC_MSG_ERROR([bad value ${withval} for --with-crypto-library]) ;;
     esac
   ],
@@ -358,7 +358,63 @@ case "${with_crypto_library}" in
       [AC_MSG_ERROR([Apple Common Crypto header not found])])
     AC_DEFINE([USE_APPLE_COMMON_CRYPTO_AES], [1], [Use Apple Common Crypto library])
     ;;
+  libgcrypt)
+    AC_CHECK_PROG([LIBGCRYPT_CONFIG], [libgcrypt-config], [yes], [no],,)
+    AS_IF([test x"$LIBGCRYPT_CONFIG" = x],
+      [AC_MSG_ERROR([cannot find libgcrypt-config])])
+    CRYPTO_LIBS=`libgcrypt-config --libs`
+    CRYPTO_CFLAGS=`libgcrypt-config --cflags`
+    AC_DEFINE([USE_LIBGCRYPT_AES], [1], [Use gcrypt library])
+    ;;
+  *)
+    AC_MSG_ERROR([Unknown crypto library])
 esac
+
+AC_ARG_WITH(
+  [external-ocb],
+  [AS_HELP_STRING([--with-external-ocb], [Use the OCB implementation from the selected crypto library @<:@no@:>@])],
+  [with_external_ocb="$withval"],
+  [with_external_ocb="no"])
+
+  AS_IF([test x"$with_external_ocb" != xno],
+    [
+      # push LDFLAGS/CFLAGS
+      old_LIBS="$LIBS"
+      old_CFLAGS="$CFLAGS"
+      # modify
+      LIBS="$LIBS $CRYPTO_LIBS"
+      CFLAGS="$CFLAGS $CRYPTO_CFLAGS"
+      # check for OCB
+      case "${with_crypto_library}" in
+	openssl)
+	AC_CHECK_DECL([EVP_aes_128_ocb],
+	  [AC_DEFINE([HAVE_OPENSSL_OCB], [1],
+	     [Define if the OCB AE algorithm is available in OpenSSL.])],
+	  [AS_IF([test x"$with_external_ocb" = xcheck],
+	    [AC_MSG_WARN([Unable to find OCB in OpenSSL.])],
+	    [AC_MSG_ERROR([--with-external-ocb was given but OCB implementation was not found in OpenSSL.])])],
+	  [[#include <openssl/evp.h>]])
+	;;
+	libgcrypt)
+	AC_CHECK_DECL([GCRY_CIPHER_MODE_OCB],
+	  [AC_DEFINE([HAVE_LIBGCRYPT_OCB], [1],
+	     [Define if the OCB AE algorithm is available in libgcrypt.])],
+	  [AS_IF([test x"$with_external_ocb" = xcheck],
+	    [AC_MSG_WARN([Unable to find OCB in libgcrypt.])],
+	    [AC_MSG_ERROR([--with-external-ocb was given but OCB implementation was not found in libgcrypt.])])],
+	  [[#include <gcrypt.h>]])
+	;;
+	*)
+	  AS_IF([test x"$with_external_ocb" = xcheck],
+	   [AC_MSG_WARN([OCB unavailable in selected crypto library.])],
+	   [AC_MSG_ERROR([--with-external-ocb was given but OCB unavailable in selected crypto library.])])
+	;;
+      esac
+      # restore old LDFLAGS/CPPFLAGS
+      LIBS="$old_LIBS"
+      CFLAGS="$old_CFLAGS"
+    ],[])
+
 
 AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
