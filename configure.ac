@@ -372,7 +372,7 @@ AC_CHECK_DECL([forkpty],
   [AC_DEFINE([FORKPTY_IN_LIBUTIL], [1],
      [Define if libutil.h necessary for forkpty().])],
   , [[#include <sys/types.h>
-  #include <libutil.h>]])
+#include <libutil.h>]])
 
 AC_SEARCH_LIBS([forkpty], [util bsd], [
   AC_DEFINE([HAVE_FORKPTY],, [Define if you have forkpty().])
