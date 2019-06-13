@@ -53,6 +53,8 @@ AC_ARG_ENABLE([compile-warnings],
          [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=c++11-extensions"], [], [-Werror])
        AX_CHECK_COMPILE_FLAG([-Wno-error=deprecated-declarations],
          [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=deprecated-declarations"], [], [-Werror])
+       AX_CHECK_COMPILE_FLAG([-Wno-error=nested-anon-types],
+         [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=nested-anon-types"], [], [-Werror])
        AC_LANG_POP(C++)
        ;;
      *)
