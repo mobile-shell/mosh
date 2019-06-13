@@ -249,7 +249,6 @@ AC_CHECK_HEADERS([sys/uio.h])
 AC_CHECK_HEADERS([memory tr1/memory])
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_HEADER_STDBOOL
 AC_C_INLINE
 AC_TYPE_INT64_T
 AC_TYPE_PID_T
@@ -263,31 +262,11 @@ AC_TYPE_UINT8_T
 AC_TYPE_UINTPTR_T
 
 # Checks for library functions.
-AC_FUNC_FORK
-AC_FUNC_MBRTOWC
 AC_CHECK_FUNCS(m4_normalize([
   gettimeofday
-  setrlimit
-  iswprint
-  memchr
-  memset
-  nl_langinfo
   posix_memalign
-  setenv
-  setlocale
-  sigaction
-  socket
-  strchr
-  strdup
-  strncasecmp
-  strtok
-  strerror
-  strtol
-  wcwidth
   cfmakeraw
   pselect
-  getaddrinfo
-  getnameinfo
   pledge
   ]))
 
@@ -398,17 +377,6 @@ AC_CHECK_DECL([forkpty],
 AC_SEARCH_LIBS([forkpty], [util bsd], [
   AC_DEFINE([HAVE_FORKPTY],, [Define if you have forkpty().])
 ])
-
-AC_MSG_CHECKING([whether pipe2(..., O_CLOEXEC) is supported])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
-#include <unistd.h>
-#include <fcntl.h>
-int pipefd[2];
-]], [[(void) pipe2(pipefd, O_CLOEXEC);]])],
-  [AC_DEFINE([HAVE_PIPE2_CLOEXEC], [1],
-     [Define if pipe2(..., O_CLOEXEC) is available.])
-   AC_MSG_RESULT([yes])],
-  [AC_MSG_RESULT([no])])
 
 AC_MSG_CHECKING([whether FD_ISSET() argument is const])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/select.h>
