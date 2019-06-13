@@ -384,7 +384,7 @@ class T {
 public:
   fd_set fds;
   bool Fun( void ) const { return FD_ISSET( 0, &fds ); } };]],
-[[T x; return x.Fun();]])],
+[[T x = T(); return x.Fun();]])],
   [AC_DEFINE([FD_ISSET_IS_CONST], [1],
      [Define if FD_ISSET() fd_set argument is const.])
    AC_MSG_RESULT([yes])],
