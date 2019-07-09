@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = scripts src man conf
 EXTRA_DIST = autogen.sh ocb-license.html README.md COPYING.iOS
-BUILT_SOURCES = version.h
+BUILT_SOURCES = VERSION
 AM_DISTCHECK_CONFIGURE_FLAGS = --enable-compile-warnings=distcheck --enable-examples --enable-syslog
 
 # non-Automake defines
@@ -29,20 +29,13 @@ VERSION:
 	fi
 	@rm -f VERSION.dist VERSION.git
 
-version.h:	VERSION
-	@printf '#define BUILD_VERSION "%s"\n' "$$(cat VERSION)" > version.h.new
-	@set -e; if ! diff -q version.h version.h.new > /dev/null 2>&1; then \
-		mv -f version.h.new version.h; \
-	fi
-	@rm -f version.h.new
-
 clean-local:
-	@rm -rf version.h VERSION cov-int mosh-coverity.txz compile_commands.json
+	@rm -rf VERSION cov-int mosh-coverity.txz compile_commands.json
 
 # Linters and static checkers, for development only.  Not included in
 # build dependencies, and outside of Automake processing.
 cppcheck:
-	cppcheck $(CPPCHECK_FLAGS) -include config.h -I . \
+	cppcheck $(CPPCHECK_FLAGS) -include src/include/config.h -I src/include \
 		-I src/crypto -I src/frontend -I src/network -I src/protobufs \
 		-I src/statesync -I src/terminal -I src/util \
 		-I /usr/include -I /usr/include/google/protobuf -I/usr/include/openssl \
