@@ -7,7 +7,7 @@ AM_INIT_AUTOMAKE([foreign std-options -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([src/include/config.h])
 AC_LANG([C++])
 
 # Checks for programs.
@@ -523,6 +523,7 @@ AC_CONFIG_FILES([
   src/Makefile
   src/crypto/Makefile
   src/frontend/Makefile
+  src/include/Makefile
   src/network/Makefile
   src/protobufs/Makefile
   src/statesync/Makefile
