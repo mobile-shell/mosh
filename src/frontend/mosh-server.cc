@@ -599,7 +599,9 @@ static int run_server( const char *desired_ip, const char *desired_port,
     Crypto::reenable_dumping_core();
 
     if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
-      err( 1, "execvp: %s", command_path.c_str() );
+      warn( "execvp: %s", command_path.c_str() );
+      sleep( 3 );
+      exit( 1 );
     }
   } else {
     /* parent */
