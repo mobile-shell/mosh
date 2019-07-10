@@ -31,8 +31,8 @@ init:
 # Install needed build dependencies
 # 
 install:
-    - '%CYG_ROOT%\setup-x86_64.exe --quiet-mode --no-shortcuts --upgrade-also --packages autoconf,autogen,automake,cygwin-devel,git,gcc-core,gcc-g++,libncurses-devel,libprotobuf-devel,make,openssh,openssl-devel,perl,perl_pods,pkg-config,tmux,zlib-devel'
-    - '%CYG_ROOT%\bin\cygcheck -dc cygwin'
+    - '%CYG_ROOT%\setup-x86_64.exe --quiet-mode --no-shortcuts --upgrade-also --packages autoconf,autogen,automake,cygwin-devel,git,gcc-core,gcc-g++,libncurses-devel,libprotobuf-devel,libssl-devel,make,openssh,perl,perl_pods,pkg-config,tmux,zlib-devel'
+    - '%CYG_ROOT%\bin\cygcheck -dc'
 
 #
 # Mosh uses symlinks and other Unixisms in the work dir.  Fix by replacing it with a Cygwin checkout.
