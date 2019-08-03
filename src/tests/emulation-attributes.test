@@ -110,6 +110,8 @@ baseline()
             test_true_color
             echo "Bold:"
             test_true_color 1
+            echo "Faint:"
+            test_true_color 2
             echo "Italic:"
             test_true_color 3
             echo "Underline:"
