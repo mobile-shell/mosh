@@ -484,7 +484,8 @@ AC_CHECK_DECL([mach_absolute_time],
 AC_CHECK_DECLS([__builtin_ctz])
 
 AC_CHECK_DECLS([ffs], [], [],
-  [[#include <strings.h>]])
+  [[#define _XOPEN_SOURCE 700
+#include <strings.h>]])
 
 AC_CHECK_DECLS([be64toh, betoh64, bswap64, __builtin_bswap64], [], [],
   [[#if defined(HAVE_ENDIAN_H)
