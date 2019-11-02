@@ -84,12 +84,14 @@ int main( int argc, char **argv )
 	exit(1);
       }
     }
-    Framebuffer local_framebuffers[ 2 ] = { Framebuffer(width,height), Framebuffer(width,height) };
+    ChWidthPtr widths = shared::make_shared<ChWidth>();
+    widths->apply_diff( ChWidth::get_default() );
+    Framebuffer local_framebuffers[ 2 ] = { Framebuffer( width, height, widths ), Framebuffer( width, height, widths ) };
     Framebuffer *local_framebuffer = &(local_framebuffers[ fbmod ]);
     Framebuffer *new_state = &(local_framebuffers[ !fbmod ]);
     Overlay::OverlayManager overlays;
     Display display( true );
-    Complete local_terminal( width, height );
+    Complete local_terminal( width, height, widths );
 
     /* Adopt native locale */
     set_native_locale();

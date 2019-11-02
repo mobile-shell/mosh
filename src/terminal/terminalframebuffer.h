@@ -43,6 +43,7 @@
 #include <list>
 
 #include "shared.h"
+#include "chwidth.h"
 
 /* Terminal framebuffer */
 
@@ -382,6 +383,7 @@ namespace Terminal {
     title_type clipboard;
     unsigned int bell_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
+    ChWidthPtr widths;
 
     row_pointer newrow( void )
     {
@@ -391,7 +393,7 @@ namespace Terminal {
     }
 
   public:
-    Framebuffer( int s_width, int s_height );
+    Framebuffer( int s_width, int s_height, ChWidthPtr widths );
     Framebuffer( const Framebuffer &other );
     Framebuffer &operator=( const Framebuffer &other );
     DrawState ds;
@@ -466,6 +468,8 @@ namespace Terminal {
 
     void ring_bell( void ) { bell_count++; }
     unsigned int get_bell_count( void ) const { return bell_count; }
+
+    int chwidth( wchar_t wc ) const { return widths->chwidth( wc ); }
 
     bool operator==( const Framebuffer &x ) const
     {

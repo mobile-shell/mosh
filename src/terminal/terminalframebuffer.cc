@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "chwidth.h"
 #include "terminalframebuffer.h"
 
 using namespace Terminal;
@@ -77,8 +78,10 @@ DrawState::DrawState( int s_width, int s_height )
   reinitialize_tabs( 0 );
 }
 
-Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows(), icon_name(), window_title(), clipboard(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
+Framebuffer::Framebuffer( int s_width, int s_height, ChWidthPtr s_widths )
+  : rows(), icon_name(), window_title(), clipboard(), bell_count( 0 ), title_initialized( false ), widths( s_widths ),
+    ds( s_width, s_height )
+
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
@@ -90,7 +93,7 @@ Framebuffer::Framebuffer( int s_width, int s_height )
 Framebuffer::Framebuffer( const Framebuffer &other )
   : rows( other.rows ), icon_name( other.icon_name ), window_title( other.window_title ),
     clipboard( other.clipboard ), bell_count( other.bell_count ),
-    title_initialized( other.title_initialized ), ds( other.ds )
+    title_initialized( other.title_initialized ), widths( other.widths ), ds( other.ds )
 {
 }
 

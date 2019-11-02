@@ -47,8 +47,11 @@ namespace Network {
 
   enum UserEventType {
     UserByteType = 0,
-    ResizeType = 1
+    ResizeType = 1,
+    ChWidthOverlayType = 2,
+    HoldSessionType = 3
   };
+  static const unsigned int chwidth_version = 0; // XXX change before commit to master
 
   class UserEvent
   {
@@ -56,15 +59,19 @@ namespace Network {
     UserEventType type;
     Parser::UserByte userbyte;
     Parser::Resize resize;
+    Parser::ChWidthOverlay overlay;
+    Parser::HoldSession hold;
 
-    UserEvent( const Parser::UserByte & s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 ) {}
-    UserEvent( const Parser::Resize & s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ) {}
+    UserEvent( const Parser::UserByte & s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 ), overlay( "" ), hold( false ) {}
+    UserEvent( const Parser::Resize & s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ), overlay( "" ), hold( false ) {}
+    UserEvent( const Parser::ChWidthOverlay & s_overlay ) : type( ChWidthOverlayType ), userbyte( 0 ), resize( -1, -1 ), overlay( s_overlay ), hold( false ) {}
+    UserEvent( const Parser::HoldSession & s_hold ) : type( HoldSessionType ), userbyte( 0 ), resize( -1, -1 ), overlay( "" ), hold( s_hold ) {}
 
   private:
     UserEvent();
 
   public:
-    bool operator==( const UserEvent &x ) const { return ( type == x.type ) && ( userbyte == x.userbyte ) && ( resize == x.resize ); }
+    bool operator==( const UserEvent &x ) const { return ( type == x.type ) && ( userbyte == x.userbyte ) && ( resize == x.resize ) && ( hold == x.hold ); }
   };
 
   class UserStream
@@ -77,6 +84,8 @@ namespace Network {
     
     void push_back( const Parser::UserByte & s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
     void push_back( const Parser::Resize & s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
+    void push_back( const Parser::ChWidthOverlay & s_overlay ) { actions.push_back( UserEvent( s_overlay ) ); }
+    void push_back( const Parser::HoldSession & s_hold ) { actions.push_back( UserEvent( s_hold ) ); }
     
     bool empty( void ) const { return actions.empty(); }
     size_t size( void ) const { return actions.size(); }

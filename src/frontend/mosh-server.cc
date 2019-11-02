@@ -88,6 +88,7 @@
 #include "select.h"
 #include "timestamp.h"
 #include "fatal_assert.h"
+#include "chwidth.h"
 
 #ifndef _PATH_BSHELL
 #define _PATH_BSHELL "/bin/sh"
@@ -420,7 +421,9 @@ static int run_server( const char *desired_ip, const char *desired_port,
   }
 
   /* open parser and terminal */
-  Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
+  ChWidthPtr widths = shared::make_shared<ChWidth>();
+  widths->apply_diff( ChWidth::get_reference() );
+  Terminal::Complete terminal( window_size.ws_col, window_size.ws_row, widths );
 
   /* open network */
   Network::UserStream blank;
@@ -731,7 +734,6 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	if ( network.get_remote_state_num() != last_remote_num ) {
 	  last_remote_num = network.get_remote_state_num();
 
-	  
 	  Network::UserStream us;
 	  us.apply_string( network.get_remote_diff() );
 	  /* apply userstream to terminal */
@@ -818,7 +820,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  #endif
 
 	  /* Tell child to start login session. */
-	  if ( !child_released ) {
+	  if ( !child_released && !terminal.get_hold_session() ) {
 	    if ( swrite( host_fd, "\n", 1 ) < 0) {
 	      err( 1, "child release" );
 	    }

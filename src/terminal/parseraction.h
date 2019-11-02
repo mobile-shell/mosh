@@ -161,6 +161,36 @@ namespace Parser {
       return ( width == other.width ) && ( height == other.height );
     }
   };
+  class ChWidthOverlay : public Action {
+    /* chwidth overlay string -- not part of the host-source state machine*/
+  public:
+    std::string overlay; /* The character width map. */
+
+    std::string name( void ) { return std::string( "ChWidthOverlay" ); }
+    void act_on_terminal( Terminal::Emulator *emu ) const;
+
+    ChWidthOverlay( const std::string& d ) : overlay( d ) {}
+
+    bool operator==( const ChWidthOverlay &other ) const
+    {
+      return overlay == other.overlay;
+    }
+  };
+  class HoldSession : public Action {
+    /* chwidth overlay string -- not part of the host-source state machine*/
+  public:
+    bool hold;
+
+    std::string name( void ) { return std::string( "HoldSession" ); }
+    void act_on_terminal( Terminal::Emulator *emu ) const;
+
+    HoldSession( bool h ) : hold( h ) {}
+
+    bool operator==( const HoldSession &other ) const
+    {
+      return hold == other.hold;
+    }
+  };
 }
 
 #endif

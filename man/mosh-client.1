@@ -20,7 +20,7 @@ mosh-client \- client-side helper for mosh
 .SH SYNOPSIS
 MOSH_KEY=KEY
 .B mosh-client 
-[\-v]
+[\-v] [\-w fd] [\-W]
 IP PORT
 .br
 .B mosh-client 
@@ -54,6 +54,12 @@ The \-v option will print some debugging information on standard
 error.  More instances of this flag will result in more debugging
 information.  If standard error is not redirected from the terminal,
 the display will be corrupted and quickly become unusable.
+
+The \-w fd option specifies a character width table for terminal emulation.  See
+.BR mosh (1).
+
+The \-W option causes \fBmosh-server\fP to treat all Unicode East
+Asian ambiguous-width characters as wide.
 
 .SH ENVIRONMENT VARIABLES
 

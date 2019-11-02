@@ -30,8 +30,11 @@
     also delete it here.
 */
 
-#include <stdio.h>
+#include <unistd.h>
 #include <wctype.h>
+
+#include <fstream>
+#include <sstream>
 
 #include "parseraction.h"
 #include "terminal.h"
@@ -97,4 +100,21 @@ void UserByte::act_on_terminal( Terminal::Emulator *emu ) const
 void Resize::act_on_terminal( Terminal::Emulator *emu ) const
 {
   emu->resize( width, height );
+}
+
+void ChWidthOverlay::act_on_terminal( Terminal::Emulator *emu ) const
+{
+  emu->chwidth_overlay( overlay );
+  // XXX debug/exposition-- drop a copy of the overlay.
+  {
+    std::ostringstream s;
+    s << "/tmp/chwidth_overlay_" << getpid();
+    std::ofstream f(s.str().c_str());
+    f << overlay;
+  }
+}
+
+void HoldSession::act_on_terminal( Terminal::Emulator *emu ) const
+{
+  emu->hold_session( hold );
 }

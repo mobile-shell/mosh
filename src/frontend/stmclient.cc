@@ -51,6 +51,7 @@
 #include <util.h>
 #endif
 
+#include "compressor.h"
 #include "stmclient.h"
 #include "swrite.h"
 #include "completeterminal.h"
@@ -242,8 +243,8 @@ void STMClient::main_init( void )
   }  
 
   /* local state */
-  local_framebuffer = Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
-  new_state = Terminal::Framebuffer( 1, 1 );
+  local_framebuffer = Terminal::Framebuffer( window_size.ws_col, window_size.ws_row, chwidth_table );
+  new_state = Terminal::Framebuffer( 1, 1, chwidth_table );
 
   /* initialize screen */
   string init = display.new_frame( false, local_framebuffer, local_framebuffer );
@@ -251,13 +252,26 @@ void STMClient::main_init( void )
 
   /* open network */
   Network::UserStream blank;
-  Terminal::Complete local_terminal( window_size.ws_col, window_size.ws_row );
+  Terminal::Complete local_terminal( window_size.ws_col, window_size.ws_row, chwidth_table );
   network = NetworkPointer( new NetworkType( blank, local_terminal, key.c_str(), ip.c_str(), port.c_str() ) );
 
   network->set_send_delay( 1 ); /* minimal delay on outgoing keystrokes */
 
+  /* Hold session until further notice */
+  network->get_current_state().push_back( Parser::HoldSession( true ) );
   /* tell server the size of the terminal */
   network->get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
+
+  /* Now generate the network overlay for the server (generated from the fixed base and the working table) */
+  ChWidth reference_widths;
+  reference_widths.apply_diff( ChWidth::get_reference() );
+  string network_overlay = reference_widths.make_diff( *chwidth_table );
+  /* send server the wcwidth overlay */
+  network->get_current_state().
+    push_back( Parser::ChWidthOverlay( network_overlay ) );
+  /* Release session.  (In a future version of Mosh, this might be in a later message.) */
+  network->get_current_state().push_back( Parser::HoldSession( false ) );
+
 
   /* be noisy as necessary */
   network->set_verbose( verbose );

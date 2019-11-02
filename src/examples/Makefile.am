@@ -15,11 +15,11 @@ decrypt_LDADD = ../crypto/libmoshcrypto.a $(CRYPTO_LIBS)
 
 parse_SOURCES = parse.cc
 parse_CPPFLAGS = -I$(srcdir)/../terminal -I$(srcdir)/../util
-parse_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a
+parse_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a ../network/libmoshnetwork.a
 
 termemu_SOURCES = termemu.cc
 termemu_CPPFLAGS = -I$(srcdir)/../terminal -I$(srcdir)/../util -I$(srcdir)/../statesync -I../protobufs
-termemu_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a ../statesync/libmoshstatesync.a ../protobufs/libmoshprotos.a $(TINFO_LIBS) $(protobuf_LIBS)
+termemu_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a ../statesync/libmoshstatesync.a ../protobufs/libmoshprotos.a ../network/libmoshnetwork.a $(TINFO_LIBS) $(protobuf_LIBS)
 
 ntester_SOURCES = ntester.cc
 ntester_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I../protobufs $(protobuf_CFLAGS)

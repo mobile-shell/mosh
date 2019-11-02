@@ -38,6 +38,7 @@
 #include <vector>
 #include <deque>
 
+#include "chwidth.h"
 #include "parseraction.h"
 #include "terminalframebuffer.h"
 #include "terminaldispatcher.h"
@@ -59,11 +60,16 @@ namespace Terminal {
 
     friend void Parser::UserByte::act_on_terminal( Emulator * ) const;
     friend void Parser::Resize::act_on_terminal( Emulator * ) const;
+    friend void Parser::ChWidthOverlay::act_on_terminal( Emulator * ) const;
+    friend void Parser::HoldSession::act_on_terminal( Emulator * ) const;
 
   private:
     Framebuffer fb;
     Dispatcher dispatch;
     UserInput user;
+
+    ChWidthPtr widths;
+    bool hold;
 
     /* action methods */
     void print( const Parser::Print *act );
@@ -72,13 +78,17 @@ namespace Terminal {
     void Esc_dispatch( const Parser::Esc_Dispatch *act );
     void OSC_end( const Parser::OSC_End *act );
     void resize( size_t s_width, size_t s_height );
+    void chwidth_overlay ( const std::string& diff );
+    void hold_session ( bool wait );
 
   public:
-    Emulator( size_t s_width, size_t s_height );
+    Emulator( size_t s_width, size_t s_height, ChWidthPtr widths );
 
     std::string read_octets_to_host( void );
 
     const Framebuffer & get_fb( void ) const { return fb; }
+
+    bool get_hold_session() const { return hold; }
 
     bool operator==( Emulator const &x ) const;
   };
