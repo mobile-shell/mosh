@@ -59,6 +59,7 @@ namespace Terminal {
 
     friend void Parser::UserByte::act_on_terminal( Emulator * ) const;
     friend void Parser::Resize::act_on_terminal( Emulator * ) const;
+    friend void Parser::ChWidthOverlay::act_on_terminal( Emulator * ) const;
 
   private:
     Framebuffer fb;
@@ -72,6 +73,7 @@ namespace Terminal {
     void Esc_dispatch( const Parser::Esc_Dispatch *act );
     void OSC_end( const Parser::OSC_End *act );
     void resize( size_t s_width, size_t s_height );
+    void chwidth_overlay ( const std::string& diff );
 
   public:
     Emulator( size_t s_width, size_t s_height );

@@ -51,6 +51,8 @@
 #include <util.h>
 #endif
 
+#include "chwidth.h"
+#include "compressor.h"
 #include "stmclient.h"
 #include "swrite.h"
 #include "completeterminal.h"
@@ -258,6 +260,17 @@ void STMClient::main_init( void )
 
   /* tell server the size of the terminal */
   network->get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
+
+  /* Set up the chwidth table-- first install the current default table, then apply the user's overlay. */
+  chwidth_set_base( chwidth_get_default() );
+  chwidth_set_overlay( chwidth_table );
+  /* Now generate the network overlay for the server (generated from the fixed base and the working table) */
+  // XXX handle/remove CryptoException
+  string network_overlay = chwidth_make_overlay( chwidth_get_reference(), chwidth_get_working() );
+  /* send server the wcwidth overlay */
+  network->get_current_state().
+    push_back( Parser::ChWidthOverlay( get_compressor().compress_str( network_overlay ) ) );
+
 
   /* be noisy as necessary */
   network->set_verbose( verbose );

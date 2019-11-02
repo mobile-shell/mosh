@@ -257,6 +257,10 @@ namespace Terminal {
   private:
     int width, height;
 
+    // XXX this should be a hash, or a reference/smartptr
+    // to a shared string
+    std::string chwidthoverlay;
+
     void new_grapheme( void );
     void snap_cursor_to_border( void );
 
@@ -342,6 +346,8 @@ namespace Terminal {
     void clear_saved_cursor( void ) { save = SavedCursor(); }
 
     void resize( int s_width, int s_height );
+
+    void chwidth_overlay( const std::string& overlay );
 
     DrawState( int s_width, int s_height );
 
@@ -460,6 +466,11 @@ namespace Terminal {
     void prefix_window_title( const title_type &s );
 
     void resize( int s_width, int s_height );
+
+    void chwidth_overlay( const std::string& overlay )
+    {
+      ds.chwidth_overlay( overlay );
+    }
 
     void reset_cell( Cell *c ) { c->reset( ds.get_background_rendition() ); }
     void reset_row( Row *r ) { r->reset( ds.get_background_rendition() ); }
