@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # There is no way to make clang's "argument unused" warning fatal.  So when
-# configure checks for supported flags, it runs $CC, $CXX, $LD via this
+# configure checks for supported flags, it runs $CXX and $LD via this
 # wrapper.
 #
 # Ideally the search string would also include 'clang: ' but this output might
