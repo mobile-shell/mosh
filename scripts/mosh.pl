@@ -350,65 +350,75 @@ if ( $use_remote_ip eq 'local' ) {
   $userhost = "$user$ip";
 }
 
+# Construct exec arguments.
+
+my @sshopts = ( '-n' );
+if ($ssh_pty) {
+  push @sshopts, '-tt';
+}
+
+my $ssh_connection = "";
+if ( $use_remote_ip eq 'remote' ) {
+  # Ask the server for its IP.  The user's shell may not be
+  # Posix-compatible so invoke sh explicitly.
+  $ssh_connection = "sh -c " .
+    shell_quote ( '[ -n "$SSH_CONNECTION" ] && printf "\nMOSH SSH_CONNECTION %s\n" "$SSH_CONNECTION"' ) .
+    " ; ";
+  # Only with 'remote', we may need to tell SSH which protocol to use.
+  if ( $family eq 'inet' ) {
+    push @sshopts, '-4';
+  } elsif ( $family eq 'inet6' ) {
+    push @sshopts, '-6';
+  }
+}
+my @server = ( 'new' );
+
+push @server, ( '-c', $colors );
+
+push @server, @bind_arguments;
+
+if ( defined $port_request ) {
+  push @server, ( '-p', $port_request );
+}
+
+for ( &locale_vars ) {
+  push @server, ( '-l', $_ );
+}
+
+if ( scalar @command > 0 ) {
+  push @server, '--', @command;
+}
+
+if ( $use_remote_ip eq 'proxy' ) {
+  my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
+  push @sshopts, ( '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p" );
+}
+my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . "$server " . shell_quote( @server ) );
+
+# Override command line for local execution.
+if ( defined( $localhost )) {
+  @exec_argv = ( "$server " . shell_quote( @server ) );
+}
+
 my $pid = open(my $pipe, "-|");
 die "$0: fork: $!\n" unless ( defined $pid );
 if ( $pid == 0 ) { # child
   open(STDERR, ">&STDOUT") or die;
 
-  my @sshopts = ( '-n' );
-  if ($ssh_pty) {
-      push @sshopts, '-tt';
-  }
-
-  my $ssh_connection = "";
-  if ( $use_remote_ip eq 'remote' ) {
-    # Ask the server for its IP.  The user's shell may not be
-    # Posix-compatible so invoke sh explicitly.
-    $ssh_connection = "sh -c " .
-      shell_quote ( '[ -n "$SSH_CONNECTION" ] && printf "\nMOSH SSH_CONNECTION %s\n" "$SSH_CONNECTION"' ) .
-      " ; ";
-    # Only with 'remote', we may need to tell SSH which protocol to use.
-    if ( $family eq 'inet' ) {
-      push @sshopts, '-4';
-    } elsif ( $family eq 'inet6' ) {
-      push @sshopts, '-6';
-    }
-  }
-  my @server = ( 'new' );
-
-  push @server, ( '-c', $colors );
-
-  push @server, @bind_arguments;
-
-  if ( defined $port_request ) {
-    push @server, ( '-p', $port_request );
-  }
-
-  for ( &locale_vars ) {
-    push @server, ( '-l', $_ );
-  }
-
-  if ( scalar @command > 0 ) {
-    push @server, '--', @command;
+  if ( !defined( $localhost) && $use_remote_ip eq 'proxy' ) {
+    # Non-standard shells and broken shrc files cause the ssh
+    # proxy to break mysteriously.
+    $ENV{ 'SHELL' } = '/bin/sh';
   }
 
   if ( defined( $localhost )) {
     delete $ENV{ 'SSH_CONNECTION' };
     chdir; # $HOME
     print "MOSH IP ${userhost}\n";
-    exec( "$server " . shell_quote( @server ) );
-    die "Cannot exec $server: $!\n";
   }
-  if ( $use_remote_ip eq 'proxy' ) {
-    # Non-standard shells and broken shrc files cause the ssh
-    # proxy to break mysteriously.
-    $ENV{ 'SHELL' } = '/bin/sh';
-    my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
-    push @sshopts, ( '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p" );
-  }
-  my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . "$server " . shell_quote( @server ) );
+
   exec @exec_argv;
-  die "Cannot exec ssh: $!\n";
+  die "Cannot exec child: $!\n";
 }
 # parent
 my ( $sship, $port, $key );
