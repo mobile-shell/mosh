@@ -409,61 +409,61 @@ if ( $pid == 0 ) { # child
   my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . "$server " . shell_quote( @server ) );
   exec @exec_argv;
   die "Cannot exec ssh: $!\n";
-} else { # parent
-  my ( $sship, $port, $key );
-  my $bad_udp_port_warning = 0;
-  LINE: while ( <$pipe> ) {
-    chomp;
-    if ( m{^MOSH IP } ) {
-      if ( defined $ip ) {
-	die "$0 error: detected attempt to redefine MOSH IP.\n";
-      }
-      ( $ip ) = m{^MOSH IP (\S+)\s*$} or die "Bad MOSH IP string: $_\n";
-    } elsif ( m{^MOSH SSH_CONNECTION } ) {
-      my @words = split;
-      if ( scalar @words == 6 ) {
-	$sship = $words[4];
-      } else {
-	die "Bad MOSH SSH_CONNECTION string: $_\n";
-      }
-    } elsif ( m{^MOSH CONNECT } ) {
-      if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) ([A-Za-z0-9/+]{22})\s*$} ) {
-	last LINE;
-      } else {
-	die "Bad MOSH CONNECT string: $_\n";
-      }
-    } else {
-      if ( defined $port_request and $port_request =~ m{:} and m{Bad UDP port} ) {
-	$bad_udp_port_warning = 1;
-      }
-      print "$_\n";
-    }
-  }
-  waitpid $pid, 0;
-  close $pipe;
-
-  if ( not defined $ip ) {
-    if ( defined $sship ) {
-      warn "$0: Using remote IP address ${sship} from \$SSH_CONNECTION for hostname ${userhost}\n";
-      $ip = $sship;
-    } else {
-      die "$0: Did not find remote IP address (is SSH ProxyCommand disabled?).\n";
-    }
-  }
-
-  if ( not defined $key or not defined $port ) {
-    if ( $bad_udp_port_warning ) {
-      die "$0: Server does not support UDP port range option.\n";
-    }
-    die "$0: Did not find mosh server startup message. (Have you installed mosh on your server?)\n";
-  }
-
-  # Now start real mosh client
-  $ENV{ 'MOSH_KEY' } = $key;
-  $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
-  $ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
-  exec {$client} ("$client", "-# @cmdline |", $ip, $port);
 }
+# parent
+my ( $sship, $port, $key );
+my $bad_udp_port_warning = 0;
+LINE: while ( <$pipe> ) {
+  chomp;
+  if ( m{^MOSH IP } ) {
+    if ( defined $ip ) {
+      die "$0 error: detected attempt to redefine MOSH IP.\n";
+    }
+    ( $ip ) = m{^MOSH IP (\S+)\s*$} or die "Bad MOSH IP string: $_\n";
+  } elsif ( m{^MOSH SSH_CONNECTION } ) {
+    my @words = split;
+    if ( scalar @words == 6 ) {
+      $sship = $words[4];
+    } else {
+      die "Bad MOSH SSH_CONNECTION string: $_\n";
+    }
+  } elsif ( m{^MOSH CONNECT } ) {
+    if ( ( $port, $key ) = m{^MOSH CONNECT (\d+?) ([A-Za-z0-9/+]{22})\s*$} ) {
+      last LINE;
+    } else {
+      die "Bad MOSH CONNECT string: $_\n";
+    }
+  } else {
+    if ( defined $port_request and $port_request =~ m{:} and m{Bad UDP port} ) {
+      $bad_udp_port_warning = 1;
+    }
+    print "$_\n";
+  }
+}
+waitpid $pid, 0;
+close $pipe;
+
+if ( not defined $ip ) {
+  if ( defined $sship ) {
+    warn "$0: Using remote IP address ${sship} from \$SSH_CONNECTION for hostname ${userhost}\n";
+    $ip = $sship;
+  } else {
+    die "$0: Did not find remote IP address (is SSH ProxyCommand disabled?).\n";
+  }
+}
+
+if ( not defined $key or not defined $port ) {
+  if ( $bad_udp_port_warning ) {
+    die "$0: Server does not support UDP port range option.\n";
+  }
+  die "$0: Did not find mosh server startup message. (Have you installed mosh on your server?)\n";
+}
+
+# Now start real mosh client
+$ENV{ 'MOSH_KEY' } = $key;
+$ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
+$ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
+exec {$client} ("$client", "-# @cmdline |", $ip, $port);
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }
 
