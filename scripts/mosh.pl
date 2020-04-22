@@ -350,8 +350,7 @@ if ( $use_remote_ip eq 'local' ) {
   $userhost = "$user$ip";
 }
 
-# Construct exec arguments.
-
+# Construct server exec arguments.
 my @sshopts = ( '-n' );
 if ($ssh_pty) {
   push @sshopts, '-tt';
@@ -450,8 +449,13 @@ LINE: while ( <$pipe> ) {
     print "$_\n";
   }
 }
-waitpid $pid, 0;
-close $pipe;
+if ( not close $pipe ) {
+  if ( $! == 0 ) {
+    die_on_exitstatus($?, "server command", shell_quote(@exec_argv));
+  } else {
+    die("$0: error closing server pipe: $!\n")
+  }
+}
 
 if ( not defined $ip ) {
   if ( defined $sship ) {
@@ -545,4 +549,21 @@ sub resolvename {
     }
   }
   return @res;
+}
+
+sub die_on_exitstatus {
+  my ($exitstatus, $what_command, $exec_string) = @_;
+
+  if (POSIX::WIFSIGNALED($exitstatus)) {
+    my $termsig = POSIX::WTERMSIG($exitstatus);
+    die("$0: $what_command exited on signal $termsig: $exec_string\n" );
+  }
+  if (!POSIX::WIFEXITED($exitstatus)) {
+    die("$0: $what_command unexpectedly terminated with exit status $exitstatus: $exec_string\n");
+  }
+  my $exitcode = POSIX::WEXITSTATUS($exitstatus);
+  if ($exitcode != 0) {
+    die("$0: $what_command failed with exitstatus $exitcode: $exec_string\n");
+  }
+  return;
 }
