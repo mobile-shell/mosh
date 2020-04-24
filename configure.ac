@@ -513,7 +513,8 @@ AS_IF([test "$install_completion" != no],
      [if test "$prefix" = "NONE"; then
         completions="`pkg-config --variable=completionsdir bash-completion`"
       else
-        completions="`pkg-config --define-variable=prefix=$prefix --variable=completionsdir bash-completion`"
+        # bash-completion >= 2.10 uses datadir instead of prefix
+        completions="`pkg-config --define-variable=prefix=$prefix --define-variable=datadir=$datadir --variable=completionsdir bash-completion`"
       fi],
      [completions="${sysconfdir}/bash_completion.d"])
    AC_SUBST([completions])])
