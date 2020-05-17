@@ -13,8 +13,8 @@ language: cpp
 sudo: required
 dist: trusty
 
-# Use whatever Travis likes + DEPLOYMENT_TARGET=10.12
-# osx_image: xcode9.1
+# Travis' default is broken, select current latest.
+osx_image: xcode11.4
 
 # Linux dependencies
 addons:
