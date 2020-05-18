@@ -89,13 +89,20 @@ static void print_usage( FILE *file, const char *argv0 )
 static void print_colorcount( void )
 {
   /* check colors */
-  setupterm((char *)0, 1, (int *)0);
-
-  char colors_name[] = "colors";
-  int color_val = tigetnum( colors_name );
-  if ( color_val == -2 ) {
-    fprintf( stderr, "Invalid terminfo numeric capability: %s\n",
-	     colors_name );
+  int errret = -2;
+  int ret = setupterm((char *)0, 2, &errret);
+  int color_val = 256;
+  if ( ret != OK ) {
+    fprintf( stderr, "setupterm() failed (probably bad TERM variable or terminfo): ret = %d errret = %d\n", ret, errret );
+  } else {
+    const char *colors_name = "colors";
+    int colors = tigetnum( const_cast<char *>( colors_name ));
+    if ( colors == -2 ) {
+      fprintf( stderr, "Invalid terminfo numeric capability: %s\n",
+	       colors_name );
+    } else {
+      color_val = colors;
+    }
   }
 
   printf( "%d\n", color_val );
