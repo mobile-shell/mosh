@@ -461,8 +461,8 @@ namespace Terminal {
 
     void resize( int s_width, int s_height );
 
-    void reset_cell( Cell *c ) { c->reset( ds.get_background_rendition() ); }
-    void reset_row( Row *r ) { r->reset( ds.get_background_rendition() ); }
+    void reset_cell( Cell *c ) const { c->reset( ds.get_background_rendition() ); }
+    void reset_row( Row *r ) const { r->reset( ds.get_background_rendition() ); }
 
     void ring_bell( void ) { bell_count++; }
     unsigned int get_bell_count( void ) const { return bell_count; }

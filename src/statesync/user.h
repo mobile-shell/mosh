@@ -89,7 +89,7 @@ namespace Network {
     void apply_string( const string &diff );
     bool operator==( const UserStream &x ) const { return actions == x.actions; }
 
-    bool compare( const UserStream & ) { return false; }
+    bool compare( const UserStream & ) const { return false; }
   };
 }
 
