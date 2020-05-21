@@ -37,8 +37,14 @@ using namespace Terminal;
 using std::string;
 
 string UserInput::input( const Parser::UserByte *act,
-			 bool application_mode_cursor_keys )
+			 bool application_mode_cursor_keys,
+			 string & client_type,
+			 string & client_version )
 {
+  /* Transform incoming user bytes or capture information (e.g. if the
+     user bytes are carrying a response sequence from the client
+     terminal application) */
+
   /* The user will always be in application mode. If stm is not in
      application mode, convert user's cursor control function to an
      ANSI cursor control sequence */
@@ -46,35 +52,82 @@ string UserInput::input( const Parser::UserByte *act,
   /* We need to look ahead one byte in the SS3 state to see if
      the next byte will be A, B, C, or D (cursor control keys). */
 
-  /* This doesn't handle the 8-bit SS3 C1 control, which would be
-     two octets in UTF-8. Fortunately nobody seems to send this. */
+  /* This doesn't handle the 8-bit SS3 C1 control or CSI, which would
+     be two octets in UTF-8. Fortunately nobody seems to send this. */
 
   switch ( state ) {
   case Ground:
+    collector.assign( 1, act->c );
     if ( act->c == 0x1b ) { /* ESC */
       state = ESC;
+      return string();
     }
-    return string( &act->c, 1 );
+    return collector;
 
   case ESC:
+    collector.push_back( act->c );
     if ( act->c == 'O' ) { /* ESC O = 7-bit SS3 */
       state = SS3;
       return string();
     }
+    if ( act->c == '[' ) { /* ESC [ = 7-bit CSI */
+      state = CSI;
+      return string();
+    }
     state = Ground;
-    return string( &act->c, 1 );
+    return collector;
 
   case SS3:
-    state = Ground;
+    collector.push_back( act->c );
     if ( (!application_mode_cursor_keys)
 	 && (act->c >= 'A')
 	 && (act->c <= 'D') ) {
-      char translated_cursor[ 2 ] = { '[', act->c };
-      return string( translated_cursor, 2 );
-    } else {
-      char original_cursor[ 2 ] = { 'O', act->c };
-      return string( original_cursor, 2 );
+      char translated_cursor[ 3 ] = { 0x1b, '[', act->c };
+      return string( translated_cursor, 3 );
     }
+    state = Ground;
+    return collector;
+
+  case CSI:
+    collector.push_back( act->c );
+    if ( act->c == '>' ) {
+      ps.clear();
+      state = CSI_AB;
+      return string();
+    }
+    state = Ground;
+    return collector;
+
+  case CSI_AB:
+    collector.push_back( act->c );
+
+    /* A CSI followed by '>' must be response to a "send secondary
+       device attributes" request. It should contain three numeric
+       parameters and end in 'c'. Parse the parameters until the 'c'
+       is found. */
+    if ( act->c >= '0' && act->c <= '9' ) {
+      if ( ps.empty() )
+	ps.push_back("");
+      ps.back().push_back( act->c );
+      return string();
+    }
+    if ( act->c == ';' ) {
+      ps.push_back("");
+      return string();
+    }
+    if ( act->c == 'c' ) {
+      /* store the terminal type and version, then return to ground */
+      if ( ps.size() > 1 ) {
+	client_type = ps[0];
+	client_version = ps[1];
+      }
+      state = Ground;
+      return string();
+    }
+
+    /* Quit parsing the CSI function on any unknown character */
+    state = Ground;
+    return collector;
 
   default:
     assert( !"unexpected state" );

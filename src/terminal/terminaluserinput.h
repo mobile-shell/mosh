@@ -34,6 +34,7 @@
 #define TERMINALUSERINPUT_HPP
 
 #include <string>
+#include <vector>
 #include "parseraction.h"
 
 namespace Terminal {
@@ -42,19 +43,25 @@ namespace Terminal {
     enum UserInputState {
       Ground,
       ESC,
-      SS3
+      SS3,
+      CSI,
+      CSI_AB   /* CSI > (angle bracket) */
     };
 
   private:
     UserInputState state;
+    std::string collector; 	 /* characters seen since last ground state */
+    std::vector<std::string> ps; /* paramters parsed in CSI_AB state */
 
   public:
     UserInput()
-      : state( Ground )
+      : state( Ground ), collector( "" ), ps()
     {}
 
     std::string input( const Parser::UserByte *act,
-		       bool application_mode_cursor_keys );
+		       bool application_mode_cursor_keys,
+		       std::string & client_type,
+		       std::string & client_version);
 
     bool operator==( const UserInput &x ) const { return state == x.state; }
   };

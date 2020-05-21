@@ -437,6 +437,10 @@ bool STMClient::main( void )
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
 
+  /* send SDA request to user's terminal, response will be observed by
+     server terminal emulator */
+  swrite( STDOUT_FILENO, "\033[>0c" );
+
   while ( 1 ) {
     try {
       output_new_frame();

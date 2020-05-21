@@ -143,7 +143,30 @@ static Function func_CSI_DA( CSI, "c", CSI_DA );
 /* secondary device attributes */
 static void CSI_SDA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 {
-  dispatch->terminal_to_host.append( "\033[>1;10;0c" ); /* plain vt220 */
+  const string client_type = fb->get_client_type();
+  const string client_version = fb->get_client_version();
+
+  const char* response = "\033[>1;10;0c"; /* plain vt220 */
+
+  const char* modifier_keys_supported_response = "\033[>1;216;0c";
+
+  /* The xterm which responds with type '1' version '216' added
+     support for modifier key sequences. Here we detect when the
+     user's terminal supports them and respond with the required type
+     and version sequence to indicate that support */
+
+  if ( client_type == "77" ) {
+
+    /* minttty returns '77' as the type of the terminal and its own
+       verion field. Modifier key supports goes back at least as far
+       as version 500. */
+
+    if ( atoi( client_version.c_str() ) > 500 ) {
+      response = modifier_keys_supported_response;
+    }
+  }
+
+  dispatch->terminal_to_host.append( response );
 }
 
 static Function func_CSI_SDA( CSI, ">c", CSI_SDA );
@@ -641,3 +664,29 @@ static void CSI_SU( Framebuffer *fb, Dispatcher *dispatch )
 }
 
 static Function func_CSI_SU( CSI, "T", CSI_SU );
+
+/* resource values */
+static void CSI_RSRCV( Framebuffer *fb, Dispatcher *dispatch )
+{
+  const int resource = dispatch->getparam( 0, 0 );
+  const int value    = dispatch->getparam( 1, 0 );
+
+  switch ( dispatch->param_count() ) {
+  case 0:
+    /* no parameters means reset all */
+    fb->ds.mod_resources.reset();
+    break;
+
+  case 1:
+    /* 1 paramter means reset specific resource */
+    fb->ds.mod_resources.reset( resource );
+    break;
+
+  default:
+    /* 2 paramters means set specific resource */
+    fb->ds.mod_resources.set( resource, value );
+    break;
+  }
+}
+
+static Function func_CSI_RSRCV( CSI, ">m", CSI_RSRCV );
