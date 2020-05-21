@@ -42,6 +42,7 @@
 #include "user.h"
 #include "shared.h"
 #include "terminaloverlay.h"
+#include "multiplexer.h"
 
 class STMClient {
 private:
@@ -61,7 +62,7 @@ private:
 
   Terminal::Framebuffer local_framebuffer, new_state;
   Overlay::OverlayManager overlays;
-  typedef Network::Transport< Network::UserStream, Terminal::Complete > NetworkType;
+  typedef Network::Transport< Network::MultiplexerStream, Network::MultiplexerStream > NetworkType;
   typedef shared::shared_ptr< NetworkType > NetworkPointer;
   NetworkPointer network;
   Terminal::Display display;
@@ -122,7 +123,7 @@ public:
     }
     if ( predict_overwrite && !strcmp( predict_overwrite, "yes" ) ) {
       overlays.get_prediction_engine().set_predict_overwrite( true );
-    } 
+    }
   }
 
   void init( void );

@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+option optimize_for = LITE_RUNTIME;
+
+package StreamBuffers;
+
+message StreamMessage {
+  repeated string diffs = 1;
+}

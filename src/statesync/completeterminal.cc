@@ -47,7 +47,7 @@ string Complete::act( const string &str )
   for ( unsigned int i = 0; i < str.size(); i++ ) {
     /* parse octet into up to three actions */
     parser.input( str[ i ], actions );
-    
+
     /* apply actions to terminal and delete them */
     for ( Actions::iterator it = actions.begin();
 	  it != actions.end();
@@ -69,8 +69,9 @@ string Complete::act( const Action &act )
 }
 
 /* interface for Network::Transport */
-string Complete::diff_from( const Complete &existing ) const
+string Complete::diff_from( const Network::Stream &existingStream ) const
 {
+  const Complete &existing = dynamic_cast<const Complete&>(existingStream);
   HostBuffers::HostMessage output;
 
   if ( existing.get_echo_ack() != get_echo_ack() ) {
@@ -92,7 +93,7 @@ string Complete::diff_from( const Complete &existing ) const
       new_inst->MutableExtension( hostbytes )->set_hoststring( update );
     }
   }
-  
+
   return output.SerializeAsString();
 }
 
@@ -121,8 +122,9 @@ void Complete::apply_string( const string & diff )
   }
 }
 
-bool Complete::operator==( Complete const &x ) const
+bool Complete::operator==( Network::Stream const &xStream ) const
 {
+  const Complete &x = dynamic_cast<const Complete&>(xStream);
   //  assert( parser == x.parser ); /* parser state is irrelevant for us */
   return (terminal == x.terminal) && (echo_ack == x.echo_ack);
 }

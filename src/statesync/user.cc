@@ -41,8 +41,9 @@ using namespace Parser;
 using namespace Network;
 using namespace ClientBuffers;
 
-void UserStream::subtract( const UserStream *prefix )
+void UserStream::subtract( const Stream *prefixStream )
 {
+  const UserStream *prefix = dynamic_cast<const UserStream*>(prefixStream);
   // if we are subtracting ourself from ourself, just clear the deque
   if ( this == prefix ) {
     actions.clear();
@@ -58,8 +59,9 @@ void UserStream::subtract( const UserStream *prefix )
   }
 }
 
-string UserStream::diff_from( const UserStream &existing ) const
+string UserStream::diff_from( const Stream &existingStream ) const
 {
+  const UserStream &existing = dynamic_cast<const UserStream&>(existingStream);
   deque<UserEvent>::const_iterator my_it = actions.begin();
 
   for ( deque<UserEvent>::const_iterator i = existing.actions.begin();

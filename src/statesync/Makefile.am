@@ -3,4 +3,4 @@ AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXF
 
 noinst_LIBRARIES = libmoshstatesync.a
 
-libmoshstatesync_a_SOURCES = completeterminal.cc completeterminal.h user.cc user.h
+libmoshstatesync_a_SOURCES = completeterminal.cc completeterminal.h user.cc user.h multiplexer.cc multiplexer.h stream.h
