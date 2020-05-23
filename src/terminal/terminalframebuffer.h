@@ -53,7 +53,7 @@ namespace Terminal {
 
   class Renditions {
   public:
-    typedef enum { bold, faint, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
+    typedef enum { bold, faint, italic, underlined, blink, inverse, invisible, strikethrough, SIZE } attribute_type;
 
   private:
     static const uint64_t true_color_mask = 0x1000000;
