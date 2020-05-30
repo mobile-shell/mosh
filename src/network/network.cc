@@ -441,7 +441,12 @@ string Connection::recv( void )
       if ( (e.the_errno == EAGAIN)
 	   || (e.the_errno == EWOULDBLOCK) ) {
 	continue;
-      } else {
+      } else if (e.the_errno == ENOTCONN) {
+	hop_port();
+	socks.erase(it--);
+	continue;
+      }
+      else {
 	throw;
       }
     }
