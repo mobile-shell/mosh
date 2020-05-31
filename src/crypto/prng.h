@@ -65,7 +65,7 @@ class PRNG {
 
     randfile.read( static_cast<char *>( dest ), size );
     if ( !randfile ) {
-      throw CryptoException( "Could not read from " + std::string( rdev ) );
+      throw CryptoException( "Could not read from " + std::string( rdev ), true );
     }
   }
 
