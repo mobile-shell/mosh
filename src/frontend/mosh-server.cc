@@ -498,7 +498,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
       exit( 1 );
     }
 
-    if ( close( nullfd ) < 0 ) {
+    if ( nullfd <= STDERR_FILENO && close( nullfd ) < 0 ) {
       perror( "close" );
       exit( 1 );
     }

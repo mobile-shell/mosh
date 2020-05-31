@@ -88,29 +88,22 @@ Fragment::Fragment( const string &x )
   fragment_num &= 0x7FFF;
 }
 
-bool FragmentAssembly::add_fragment( Fragment &frag )
+bool FragmentAssembly::add_fragment( const Fragment &frag )
 {
-  /* see if this is a totally new packet */
-  if ( current_id != frag.id ) {
-    fragments.clear();
-    fragments.resize( frag.fragment_num + 1 );
-    fragments.at( frag.fragment_num ) = frag;
-    fragments_arrived = 1;
-    fragments_total = -1; /* unknown */
-    current_id = frag.id;
- } else { /* not a new packet */
-    /* see if we already have this fragment */
-    if ( (fragments.size() > frag.fragment_num)
-	 && (fragments.at( frag.fragment_num ).initialized) ) {
-      /* make sure new version is same as what we already have */
-      assert( fragments.at( frag.fragment_num ) == frag );
-    } else {
-      if ( (int)fragments.size() < frag.fragment_num + 1 ) {
-	fragments.resize( frag.fragment_num + 1 );
-      }
-      fragments.at( frag.fragment_num ) = frag;
-      fragments_arrived++;
+  /* see if this fragment is for this packet. */
+  fatal_assert( current_id == frag.id );
+
+  /* see if we already have this fragment */
+  if ( (fragments.size() > frag.fragment_num)
+       && (fragments.at( frag.fragment_num ).initialized) ) {
+    /* make sure new version is same as what we already have */
+    assert( fragments.at( frag.fragment_num ) == frag );
+  } else {
+    if ( (int)fragments.size() < frag.fragment_num + 1 ) {
+      fragments.resize( frag.fragment_num + 1 );
     }
+    fragments.at( frag.fragment_num ) = frag;
+    fragments_arrived++;
   }
 
   if ( frag.final ) {
@@ -119,17 +112,18 @@ bool FragmentAssembly::add_fragment( Fragment &frag )
     fragments.resize( fragments_total );
   }
 
-  if ( fragments_total != -1 ) {
-    assert( fragments_arrived <= fragments_total );
-  }
+  assert( fragments_total == -1 || fragments_arrived <= fragments_total );
 
+  last_received = Network::timestamp();
   /* see if we're done */
   return fragments_arrived == fragments_total;
 }
 
-Instruction FragmentAssembly::get_assembly( void )
+string FragmentAssembly::get_assembly( const Fragment &frag )
 {
-  assert( fragments_arrived == fragments_total );
+  if ( !add_fragment( frag )) {
+    return "";
+  }
 
   string encoded;
 
@@ -138,20 +132,46 @@ Instruction FragmentAssembly::get_assembly( void )
     encoded += fragments.at( i ).contents;
   }
 
-  Instruction ret;
-  fatal_assert( ret.ParseFromString( get_compressor().uncompress_str( encoded ) ) );
-
-  fragments.clear();
-  fragments_arrived = 0;
-  fragments_total = -1;
-
-  return ret;
+  return encoded;
 }
 
 bool Fragment::operator==( const Fragment &x ) const
 {
   return ( id == x.id ) && ( fragment_num == x.fragment_num ) && ( final == x.final )
     && ( initialized == x.initialized ) && ( contents == x.contents );
+}
+
+Defragmenter::Packets::iterator Defragmenter::get_packet( const Fragment &inst )
+{
+  uint64_t id = inst.id;
+  Packets::iterator packet = packets.find(id);
+  if ( packet == packets.end() ) {
+    /* Kill oldest packet to make room for new, if necessary. */
+    if ( packets.size() >= maxReassembly ) {
+      Packets::iterator oldest_packet = packets.begin();
+      for ( Packets::iterator i = packets.begin(); i != packets.end(); ++i) {
+	if ( i->second.last_received < oldest_packet->second.last_received ) {
+	  oldest_packet = i;
+	}
+      }
+      packets.erase(oldest_packet);
+    }
+    /* Add new packet. */
+    std::pair<Packets::iterator, bool> retval = packets.insert( Packets::value_type( id, FragmentAssembly( id ) ));
+    packet = retval.first;
+  }
+  fatal_assert( packet != packets.end() );
+  return packet;
+}
+
+string Defragmenter::get_assembly( const Fragment &frag )
+{
+  Packets::iterator packet = get_packet( frag );
+  string assembly = packet->second.get_assembly( frag );
+  if ( !assembly.empty() ) {
+    packets.erase( packet );
+  }
+  return assembly;
 }
 
 vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, size_t MTU )

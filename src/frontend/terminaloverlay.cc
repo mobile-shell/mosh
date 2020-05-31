@@ -159,6 +159,7 @@ void ConditionalCursorMove::apply( Framebuffer &fb, uint64_t confirmed_epoch ) c
 NotificationEngine::NotificationEngine()
   : last_word_from_server( timestamp() ),
     last_acked_state( timestamp() ),
+    server_addr(),
     escape_key_string(),
     message(),
     message_is_network_error( false ),
@@ -216,8 +217,8 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 
   double since_heard = (double)(now - last_word_from_server) / 1000.0;
   double since_ack = (double)(now - last_acked_state) / 1000.0;
-  const char server_message[] = "contact";
-  const char reply_message[] = "reply";
+  const char server_message[] = "contact with";
+  const char reply_message[] = "reply from";
 
   double time_elapsed = since_heard;
   const char *explanation = server_message;
@@ -235,17 +236,17 @@ void NotificationEngine::apply( Framebuffer &fb ) const
     return;
   }
   if ( message.empty() && time_expired ) {
-    swprintf( tmp, 128, L"mosh: Last %s %s ago.%s", explanation,
+    swprintf( tmp, 128, L"mosh: Last %s %s %s ago.%s", explanation, server_addr.c_str(),
 	      human_readable_duration( static_cast<int>( time_elapsed ),
 				       "seconds" ).c_str(),
 	      keystroke_str );
   } else if ( (!message.empty()) && (!time_expired) ) {
     swprintf( tmp, 128, L"mosh: %ls%s", message.c_str(), keystroke_str );
   } else {
-    swprintf( tmp, 128, L"mosh: %ls (%s without %s.)%s", message.c_str(),
+    swprintf( tmp, 128, L"mosh: %ls (%s without %s %s.)%s", message.c_str(),
 	      human_readable_duration( static_cast<int>( time_elapsed ),
 				       "s" ).c_str(),
-	      explanation, keystroke_str );
+	      explanation, server_addr.c_str(), keystroke_str );
   }
 
   wstring string_to_draw( tmp );
