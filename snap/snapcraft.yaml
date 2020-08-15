@@ -1,0 +1,49 @@
+name: m10l # you probably want to 'snapcraft register <name>'
+base: core18 # the base snap is the execution environment for this snap
+
+summary: Mobile-shell snap
+description: |
+  This is a snap of mobile-shell. Like a UDP SSH. See https://github.com/mobile-shell/mosh
+
+
+adopt-info: mosh-build
+confinement: strict # use 'strict' once you have the right plugs and slots
+
+apps:
+  mosh:
+    command: mosh
+    plugs: [network, home]
+  mosh-client:
+    command: mosh-client
+    plugs: [network, home]
+  mosh-server:
+    command: mosh-server
+    plugs: [network, home]
+
+parts:
+  mosh-build:
+    plugin: autotools
+    source: .
+    build-packages:
+        - perl
+        - perl-doc
+        - protobuf-compiler
+        - libncurses5-dev
+        - libprotobuf-dev
+        - libutempter-dev
+        - libssl-dev
+        - zlib1g-dev
+    stage-packages:
+        - perl
+        - perl-doc
+
+    override-pull: |
+        snapcraftctl pull
+        version="$(git describe --tags --long)"
+        snapcraftctl set-version "$version"
+        snapcraftctl set-grade devel
+    override-build: |
+        ./autogen.sh
+        ./configure --prefix=/
+        make
+        make install
