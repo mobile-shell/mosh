@@ -20,6 +20,7 @@ mosh-server \- server-side helper for mosh
 .SH SYNOPSIS
 .B mosh-server
 new
+[\-D]
 [\-s]
 [\-v]
 [\-i \fIIP\fP]
@@ -53,6 +54,10 @@ and the client's current IP address.
 
 The argument "new" must be first on the command line to use
 command-line options.
+
+.TP
+.B \-D
+stay in the foreground instead of forking into the background
 
 .TP
 .B \-s
