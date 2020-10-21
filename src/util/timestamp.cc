@@ -63,16 +63,14 @@ void freeze_timestamp( void )
 {
   // Try all our clock sources till we get something.  This could
   // break if a source only sometimes works in a given process.
-#if HAVE_CLOCK_GETTIME
+#if HAVE_CLOCK_GETTIME && !(defined(__APPLE__) || defined(__MACH__))
   // Preferred clock source-- portable, monotonic, (should be)
   // adjusted after system sleep
+  // 
+  // CLOCK_MONOTONIC is broken on OSX, see mosh github issue #1014
   struct timespec tp;
 
   if (
-#if defined(__APPLE__) && defined(__MACH__)
-      // Check for presence, for OS X SDK >= 10.12 and runtime < 10.12
-      &clock_gettime != NULL &&
-#endif
       clock_gettime( CLOCK_MONOTONIC, &tp ) == 0 ) {
     uint64_t millis = tp.tv_nsec / 1000000;
     millis += uint64_t( tp.tv_sec ) * 1000;
