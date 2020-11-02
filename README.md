@@ -56,8 +56,25 @@ Other features
    * Mosh leverages SSH to set up the connection and authenticate
      users. Mosh does not contain any privileged (root) code.
 
-Getting Mosh
-------------
+Getting Started
+---------------
+
+  On Ubuntu Linux
+    $ sudo apt-get install python-software-properties
+    $ sudo add-apt-repository ppa.keithw/mosh
+    $ sudo apt-get update
+    $ sudo apt-get install mosh
+
+  On fedora
+    yum install mosh
+
+  Get from git
+    $ git clone https://github.com/mobile-shell/mosh
+    $ cd mosh
+    $ ./autogen.sh
+    $ ./configure
+    $ make
+    # make install
 
   [The Mosh web site](https://mosh.org/#getting) has information about
   packages for many operating systems, as well as instructions for building
@@ -83,6 +100,18 @@ Usage
   `$PATH`, `mosh` accepts the arguments `--client=PATH` and `--server=PATH` to
   select alternate locations. More options are documented in the mosh(1) manual
   page.
+
+  
+  ##Selecting Mosh UDP port
+
+    If you are behind a NAT or port-forwarded enviroment use `-p` to manually a 
+    UDP port for mosh
+
+    $ mosh -p 1234 darth
+
+  ##Selecting SSH port
+
+    mosh --ssh="ssh -p 2222" figrindan
 
   There are [more examples](https://mosh.org/#usage) and a
   [FAQ](https://mosh.org/#faq) on the Mosh web site.
