@@ -13,8 +13,8 @@ language: cpp
 sudo: required
 dist: trusty
 
-# Use whatever Travis likes + DEPLOYMENT_TARGET=10.12
-# osx_image: xcode9.1
+# Travis' default is broken, select current latest.
+osx_image: xcode11.4
 
 # Linux dependencies
 addons:
@@ -27,6 +27,12 @@ addons:
     # Test suite needs these.
     - tmux
     - perl
+  homebrew:
+    packages:
+    # For build.
+    - protobuf
+    # Test suite.
+    - tmux
 
 before_install:
   # Get full repo for `git describe`
@@ -40,7 +46,7 @@ before_install:
         if test -n "${TRAVIS_TAG}"; then
           travis_wait 60 macosx/brew-deps.sh package_deps
         else
-          macosx/brew-deps.sh deps
+          : macosx/brew-deps.sh deps
         fi
     fi
 
