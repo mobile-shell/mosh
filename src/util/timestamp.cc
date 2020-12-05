@@ -48,6 +48,12 @@
 #include <stdio.h>
 #endif
 
+#ifdef CLOCK_MONOTONIC_RAW
+#define CLOCKTYPE CLOCK_MONOTONIC_RAW
+#else
+#define CLOCKTYPE CLOCK_MONOTONIC
+#endif
+
 static uint64_t millis_cache = -1;
 
 uint64_t frozen_timestamp( void )
@@ -73,7 +79,7 @@ void freeze_timestamp( void )
       // Check for presence, for OS X SDK >= 10.12 and runtime < 10.12
       &clock_gettime != NULL &&
 #endif
-      clock_gettime( CLOCK_MONOTONIC, &tp ) == 0 ) {
+      clock_gettime( CLOCKTYPE, &tp ) == 0 ) {
     uint64_t millis = tp.tv_nsec / 1000000;
     millis += uint64_t( tp.tv_sec ) * 1000;
 
