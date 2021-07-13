@@ -55,7 +55,7 @@ static void CSI_EL( Framebuffer *fb, Dispatcher *dispatch )
 {
   switch ( dispatch->getparam( 0, 0 ) ) {
   case 0: /* default: active position to end of line, inclusive */
-    clearline( fb, -1, fb->ds.get_cursor_col(), fb->ds.get_width() - 1 );    
+    clearline( fb, -1, fb->ds.get_cursor_col(), fb->ds.get_width() - 1 );
     break;
   case 1: /* start of screen to active position, inclusive */
     clearline( fb, -1, 0, fb->ds.get_cursor_col() );
@@ -257,7 +257,7 @@ static void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
   int param = dispatch->getparam( 0, 0 );
   switch ( param ) {
   case 0: /* clear this tab stop */
-    fb->ds.clear_tab( fb->ds.get_cursor_col() );    
+    fb->ds.clear_tab( fb->ds.get_cursor_col() );
     break;
   case 3: /* clear all tab stops */
     fb->ds.clear_default_tabs();
@@ -591,12 +591,22 @@ static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );
 /* xterm uses an Operating System Command to set the window title */
 void Dispatcher::OSC_dispatch( const Parser::OSC_End *act __attribute((unused)), Framebuffer *fb )
 {
-  /* handle osc copy clipboard sequence 52;c; */
+  /*
+   * Handle OSC copy clipboard sequence 52;c; and variants. Note: While we
+   * accept other options (including those emitted by tmux), mosh currently
+   * does not preserve those options across the connection.
+   **/
   if ( OSC_string.size() >= 5 && OSC_string[ 0 ] == L'5' &&
-       OSC_string[ 1 ] == L'2' && OSC_string[ 2 ] == L';' &&
-       OSC_string[ 3 ] == L'c' && OSC_string[ 4 ] == L';') {
+       OSC_string[ 1 ] == L'2' && OSC_string[ 2 ] == L';') {
+      // Consider at most the first 64 bytes for options.
+      size_t i = std::min<size_t>(64, OSC_string.size() - 1);
+      // Search string backwards until we find a ';', marking the end of
+      // options. This works since the clipboards contents are base64 encoded,
+      // and cannot contain ';' in the encoded form.
+      for (; i >= 2 && OSC_string[i] != ';'; i--) {}
+      i++;
       Terminal::Framebuffer::title_type clipboard(
-              OSC_string.begin() + 5, OSC_string.end() );
+              OSC_string.begin() + i, OSC_string.end() );
       fb->set_clipboard( clipboard );
   /* handle osc terminal title sequence */
   } else if ( OSC_string.size() >= 1 ) {
