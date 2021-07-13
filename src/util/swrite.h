@@ -33,6 +33,9 @@
 #ifndef SWRITE_HPP
 #define SWRITE_HPP
 
+#include <stdint.h>
+
 int swrite( int fd, const char *str, ssize_t len = -1 );
+int swrite_timeout( int fd, uint64_t timeout_ms, const char *str, ssize_t len = -1 );
 
 #endif

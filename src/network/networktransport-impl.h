@@ -130,6 +130,11 @@ void Transport<MyState, RemoteState>::recv( void )
       }
     }
 
+    /* Deliver out of band data */
+    if (inst.has_oob()) {
+      oob()->input(inst.oob());
+    }
+
     /* apply diff to reference state */
     TimestampedState<RemoteState> new_state = *reference_state;
     new_state.timestamp = timestamp();
