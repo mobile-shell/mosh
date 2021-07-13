@@ -13,8 +13,8 @@ Makefile.in
 /ar-lib
 /autom4te.cache
 /compile
-/config.h
-/config.h.in
+*config.h
+*config.h.in
 /config.h.in~
 /config.log
 /config.status
@@ -23,8 +23,8 @@ Makefile.in
 /install-sh
 /missing
 /mosh-*.tar.gz
-/stamp-h1
+*stamp-h1
 /test-driver
 /VERSION
 /scripts/mosh
-/version.h
+*version.h
