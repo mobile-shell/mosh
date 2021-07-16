@@ -121,6 +121,28 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     }
     frame.append( '\007' );
   }
+  /* has notification changed? */
+  if (f.get_notification() != frame.last_frame.get_notification()) {
+    frame.append( "\033]" );
+    const title_type &notification( f.get_notification() );
+    for ( title_type::const_iterator i = notification.begin();
+          i != notification.end();
+          i++ ) {
+      frame.append( *i );
+    }
+    frame.append( '\007' );
+  }
+  /* has sendfile changed? */
+  if (f.get_sendfile() != frame.last_frame.get_sendfile()) {
+    frame.append( "\033]1337;" );
+    const title_type &sendfile( f.get_sendfile() );
+    for ( title_type::const_iterator i = sendfile.begin();
+          i != sendfile.end();
+          i++ ) {
+      frame.append( *i );
+    }
+    frame.append( '\007' );
+  }
 
   /* has reverse video state changed? */
   if ( (!initialized)
