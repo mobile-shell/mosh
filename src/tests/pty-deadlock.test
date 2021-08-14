@@ -15,7 +15,7 @@
 . "$(dirname "$0")/e2e-test-subrs"
 PATH=$PATH:.:$srcdir
 # Top-level wrapper.
-if [ $# -eq 0 ]; then
+if [ "$#" -eq 0 ]; then
     e2e-test "$0" tmux baseline post
     exit
 fi
@@ -59,10 +59,10 @@ baseline()
 	:
     done &
     printpid=$!
-    (sleep 120; kill $$ $printpid) &
+    (sleep 120; kill "$$" "$printpid") &
     killpid=$!
     read -r x
-    kill $printpid
+    kill "$printpid"
     # Try and make sure the printer stops writing before the following printf
     sleep 1
     printf "\n=== normal exit ===\n"
@@ -70,7 +70,7 @@ baseline()
     # before we exit
     sleep 4
     # Kill the killer and exit normally.
-    kill $killpid
+    kill "$killpid"
 }
 
 post()
