@@ -112,10 +112,9 @@ Display::Display( bool use_environment )
 
     /* Check if we can set the window title and icon name.  terminfo does not
        have reliable information on this, so we hardcode a whitelist of
-       terminal type prefixes.  This is the list from Debian's default
-       screenrc, plus "screen" itself (which also covers tmux). */
+       terminal type prefixes. */
     static const char * const title_term_types[] = {
-      "xterm", "rxvt", "kterm", "Eterm", "screen"
+      "xterm", "rxvt", "kterm", "Eterm", "alacritty", "screen", "tmux"
     };
 
     has_title = false;
