@@ -48,7 +48,11 @@
 #include <stdio.h>
 #endif
 
-#ifdef CLOCK_MONOTONIC_RAW
+// On Apple systems CLOCK_MONOTONIC is unfortunately able to go
+// backwards in time. This breaks mosh when system is returning from
+// suspend as described in ticket #1014. To avoid this issue prefer
+// CLOCK_MONOTONIC_RAW on Apple systems when available.
+#if defined(__APPLE__) && defined(CLOCK_MONOTONIC_RAW)
 #define CLOCKTYPE CLOCK_MONOTONIC_RAW
 #else
 #define CLOCKTYPE CLOCK_MONOTONIC
