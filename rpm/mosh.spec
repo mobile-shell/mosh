@@ -1,21 +1,22 @@
 Name:		mosh
-Version:	1.2.5
+Version:	1.3.2
 Release:	1%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
 License:	GPLv3+
 Group:		Applications/Internet
 URL:		https://mosh.org/
-Source0:	https://github.com/downloads/keithw/mosh/mosh-%{version}.tar.gz
+%undefine       _disable_source_fetch
+Source0:	https://github.com/mobile-shell/mosh/archive/refs/tags/%{name}-%{version}.tar.gz
 
 BuildRequires:	protobuf-compiler
 BuildRequires:	protobuf-devel
 BuildRequires:	libutempter-devel
 BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
-BuildRequires:	openssl-devel
+BuildRequires:	openssl11-devel
 Requires:	openssh-clients
-Requires:	openssl
+Requires:	openssl11
 Requires:	perl-IO-Socket-IP
 
 %description
@@ -27,12 +28,17 @@ Mosh is a remote terminal application that supports:
 
 
 %prep
-%setup -q
+# Validate we're using the tarball we expect.
+SHA256="e7f69404816f1ca5b44762d010e406a56d18e133d31efd0783970de8d6c80ed4"
+test $(sha256sum ../SOURCES/%{name}-%{version}.tar.gz |cut -d " " -f 1) == "$SHA256"
+# Name is duplicated in release tag for 1.3.2
+%setup -q -n %{name}-%{name}-%{version}
 
 
 %build
 # Use upstream's more aggressive hardening instead of Fedora's defaults
 export CFLAGS="-g -O2" CXXFLAGS="-g -O2"
+./autogen.sh
 %configure --enable-compile-warnings=error
 make %{?_smp_mflags}
 
@@ -52,6 +58,10 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Oct 26 2021 Doug Chapman <dougch@amazon.com> - 1.3.2-1
+- Update to mosh 1.3.2
+- Use OpenSSL 1.1
+
 * Sun Jul 12 2015 John Hood <cgull@glup.org> - 1.2.5-1
 - Update to mosh 1.2.5
 
