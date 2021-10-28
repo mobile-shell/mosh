@@ -439,8 +439,8 @@ if ( $pid == 0 ) { # child
       print "$_\n";
     }
   }
-  waitpid $pid, 0;
   close $pipe;
+  waitpid $pid, 0;
 
   if ( not defined $ip ) {
     if ( defined $sship ) {
