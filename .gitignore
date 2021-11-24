@@ -7,15 +7,16 @@ Makefile
 Makefile.in
 .cproject
 .project
+compile_commands.json
 
 /INSTALL
 /aclocal.m4
 /ar-lib
 /autom4te.cache
 /compile
-/config.h
-/config.h.in
-/config.h.in~
+src/include/config.h
+src/include/config.h.in
+src/include/config.h.in~
 /config.log
 /config.status
 /configure
@@ -23,8 +24,8 @@ Makefile.in
 /install-sh
 /missing
 /mosh-*.tar.gz
-/stamp-h1
+src/include/stamp-h1
 /test-driver
 /VERSION
 /scripts/mosh
-/version.h
+src/include/version.h

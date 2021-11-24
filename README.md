@@ -159,6 +159,6 @@ More info
 
     <https://mailman.mit.edu/mailman/listinfo/mosh-users>
 
-  * `#mosh` channel on [Freenode IRC](https://freenode.net/)
+  * `#mosh` channel on [Libera Chat](https://libera.chat/)
 
-    https://webchat.freenode.net/?channels=mosh
+    https://web.libera.chat/#mosh
