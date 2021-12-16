@@ -1,0 +1,58 @@
+#!/bin/sh
+
+#
+# This is a regression test to ensure that Mosh does not spin
+# on updates that do not actually change the framebuffer.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline post
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    # Generate updates that don't change the screen
+    i=0
+    while [ $i -lt 10 ] && printf 'x\b' && sleep 1; do
+	i=$((i + 1))
+    done
+}
+
+post()
+{
+    # Extract server run time.
+    runtime=$(sed -E -n 's/.*@@@ runtime: (.*) @@@.*/\1/p' "$(basename "$0").d/baseline.tmux.log")
+
+    # If this system can't actually report runtime, bail.
+    if [ -z "$runtime" ] || [ "$runtime" -eq "-" ]; then
+	exit 0
+    fi
+
+    # If we ran for more than one second, fail.
+    seconds=${runtime##*:}
+    bigger=${runtime%:*}
+    onesec=$(echo "$seconds >= 1" | bc)
+    if [ "$onesec" -eq 1 ] || [ "$bigger" -ne 0 ]; then
+	exit 1
+    fi
+    exit 0
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

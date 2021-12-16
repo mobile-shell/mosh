@@ -31,102 +31,90 @@
 */
 
 #include <string.h>
-#include <openssl/bio.h>
-#include <openssl/evp.h>
+#include <stdlib.h>
 
 #include "fatal_assert.h"
+#include "base64.h"
+
+static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static const unsigned char reverse[] = {
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3e, 0xff, 0xff, 0xff, 0x3f,
+  0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+  0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+  0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+};
+
+/* Reverse maps from an ASCII char to a base64 sixbit value.  Returns > 0x3f on failure. */
+static unsigned char base64_char_to_sixbit(unsigned char c)
+{
+  return reverse[c];
+}
 
 bool base64_decode( const char *b64, const size_t b64_len,
-		    char *raw, size_t *raw_len )
+		    uint8_t *raw, size_t *raw_len )
 {
-  bool ret = false;
-
   fatal_assert( b64_len == 24 ); /* only useful for Mosh keys */
   fatal_assert( *raw_len == 16 );
 
-  /* initialize input/output */
-  BIO_METHOD *b64_method = BIO_f_base64();
-  fatal_assert( b64_method );
-
-  BIO *b64_bio = BIO_new( b64_method );
-  fatal_assert( b64_bio );
-
-  BIO_set_flags( b64_bio, BIO_FLAGS_BASE64_NO_NL );
-
-  BIO *mem_bio = BIO_new_mem_buf( (void *) b64, b64_len );
-  fatal_assert( mem_bio );
-
-  BIO *combined_bio = BIO_push( b64_bio, mem_bio );
-  fatal_assert( combined_bio );
-
-  fatal_assert( 1 == BIO_flush( combined_bio ) );
-  
-  /* read the string */
-  int bytes_read = BIO_read( combined_bio, raw, *raw_len );
-  if ( bytes_read <= 0 ) {
-    goto end;
+  uint32_t bytes = 0;
+  for (int i = 0; i < 22; i++) {
+    unsigned char sixbit = base64_char_to_sixbit(*(b64++));
+    if (sixbit > 0x3f) {
+      return false;
+    }
+    bytes <<= 6;
+    bytes |= sixbit;
+    /* write groups of 3 */
+    if (i % 4 == 3) {
+      raw[0] = bytes >> 16;
+      raw[1] = bytes >> 8;
+      raw[2] = bytes;
+      raw += 3;
+      bytes = 0;
+    }
   }
-
-  if ( bytes_read != (int)*raw_len ) {
-    goto end;
+  /* last byte of output */
+  *raw = bytes >> 4;
+  if (b64[0] != '=' || b64[1] != '=') {
+    return false;
   }
-
-  fatal_assert( 1 == BIO_flush( combined_bio ) );
-
-  /* check if there is more to read */
-  char extra[ 256 ];
-  bytes_read = BIO_read( combined_bio, extra, 256 );
-  if ( bytes_read > 0 ) {
-    goto end;
-  }
-
-  /* check if mem buf is empty */
-  if ( !BIO_eof( mem_bio ) ) {
-    goto end;
-  }
-
-  ret = true;
- end:
-  BIO_free_all( combined_bio );
-  return ret;
+  return true;
 }
 
-void base64_encode( const char *raw, const size_t raw_len,
+void base64_encode( const uint8_t *raw, const size_t raw_len,
 		    char *b64, const size_t b64_len )
 {
   fatal_assert( b64_len == 24 ); /* only useful for Mosh keys */
   fatal_assert( raw_len == 16 );
 
-  /* initialize input/output */
-  BIO_METHOD *b64_method = BIO_f_base64(), *mem_method = BIO_s_mem();
-  fatal_assert( b64_method );
-  fatal_assert( mem_method );
-
-  BIO *b64_bio = BIO_new( b64_method ), *mem_bio = BIO_new( mem_method );
-  fatal_assert( b64_bio );
-  fatal_assert( mem_bio );
-
-  BIO_set_flags( b64_bio, BIO_FLAGS_BASE64_NO_NL );
-
-  BIO *combined_bio = BIO_push( b64_bio, mem_bio );
-  fatal_assert( combined_bio );
+  /* first 15 bytes of input */
+  for (int i = 0; i < 5; i++) {
+    uint32_t bytes = (raw[0] << 16) | (raw[1] << 8) | raw[2];
+    b64[0] = table[(bytes >> 18) & 0x3f];
+    b64[1] = table[(bytes >> 12) & 0x3f];
+    b64[2] = table[(bytes >> 6) & 0x3f];
+    b64[3] = table[(bytes) & 0x3f];
+    raw += 3;
+    b64 += 4;
+  }
   
-  /* write the string */
-  int bytes_written = BIO_write( combined_bio, raw, raw_len  );
-  fatal_assert( bytes_written >= 0 );
-
-  fatal_assert( bytes_written == (int)raw_len );
-
-  fatal_assert( 1 == BIO_flush( combined_bio ) );
-
-  /* check if mem buf has desired length */
-  fatal_assert( BIO_pending( mem_bio ) == (int)b64_len );
-
-  char *mem_ptr;
-
-  BIO_get_mem_data( mem_bio, &mem_ptr );
-
-  memcpy( b64, mem_ptr, b64_len );
-
-  BIO_free_all( combined_bio );
+  /* last byte of input, last 4 of output */
+  uint8_t lastchar = *raw;
+  b64[0] = table[(lastchar >> 2) & 0x3f];
+  b64[1] = table[(lastchar << 4) & 0x3f];
+  b64[2] = '=';
+  b64[3] = '=';
 }

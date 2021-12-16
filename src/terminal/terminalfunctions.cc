@@ -31,6 +31,7 @@
 */
 
 #include <unistd.h>
+#include <algorithm>
 #include <string>
 #include <stdio.h>
 
@@ -50,7 +51,7 @@ static void clearline( Framebuffer *fb, int row, int start, int end )
 }
 
 /* erase in line */
-void CSI_EL( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_EL( Framebuffer *fb, Dispatcher *dispatch )
 {
   switch ( dispatch->getparam( 0, 0 ) ) {
   case 0: /* default: active position to end of line, inclusive */
@@ -62,13 +63,15 @@ void CSI_EL( Framebuffer *fb, Dispatcher *dispatch )
   case 2: /* all of line */
     fb->reset_row( fb->get_mutable_row( -1 ) );
     break;
+  default:
+    break;
   }
 }
 
 static Function func_CSI_EL( CSI, "K", CSI_EL );
 
 /* erase in display */
-void CSI_ED( Framebuffer *fb, Dispatcher *dispatch ) {
+static void CSI_ED( Framebuffer *fb, Dispatcher *dispatch ) {
   switch ( dispatch->getparam( 0, 0 ) ) {
   case 0: /* active position to end of screen, inclusive */
     clearline( fb, -1, fb->ds.get_cursor_col(), fb->ds.get_width() - 1 );
@@ -87,13 +90,15 @@ void CSI_ED( Framebuffer *fb, Dispatcher *dispatch ) {
       fb->reset_row( fb->get_mutable_row( y ) );
     }
     break;
+  default:
+    break;
   }
 }
 
 static Function func_CSI_ED( CSI, "J", CSI_ED );
 
 /* cursor movement -- relative and absolute */
-void CSI_cursormove( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_cursormove( Framebuffer *fb, Dispatcher *dispatch )
 {
   int num = dispatch->getparam( 0, 1 );
 
@@ -112,10 +117,11 @@ void CSI_cursormove( Framebuffer *fb, Dispatcher *dispatch )
     break;
   case 'H':
   case 'f':
-    int x = dispatch->getparam( 0, 1 );
-    int y = dispatch->getparam( 1, 1 );
-    fb->ds.move_row( x - 1 );
-    fb->ds.move_col( y - 1 );
+    fb->ds.move_row( dispatch->getparam( 0, 1 ) - 1 );
+    fb->ds.move_col( dispatch->getparam( 1, 1 ) - 1 );
+    break;
+  default:
+    break;
   }
 }
 
@@ -127,7 +133,7 @@ static Function func_CSI_cursormove_H( CSI, "H", CSI_cursormove );
 static Function func_CSI_cursormove_f( CSI, "f", CSI_cursormove );
 
 /* device attributes */
-void CSI_DA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
+static void CSI_DA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 {
   dispatch->terminal_to_host.append( "\033[?62c" ); /* plain vt220 */
 }
@@ -135,7 +141,7 @@ void CSI_DA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 static Function func_CSI_DA( CSI, "c", CSI_DA );
 
 /* secondary device attributes */
-void CSI_SDA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
+static void CSI_SDA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 {
   dispatch->terminal_to_host.append( "\033[>1;10;0c" ); /* plain vt220 */
 }
@@ -143,12 +149,12 @@ void CSI_SDA( Framebuffer *fb __attribute((unused)), Dispatcher *dispatch )
 static Function func_CSI_SDA( CSI, ">c", CSI_SDA );
 
 /* screen alignment diagnostic */
-void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   for ( int y = 0; y < fb->ds.get_height(); y++ ) {
     for ( int x = 0; x < fb->ds.get_width(); x++ ) {
       fb->reset_cell( fb->get_mutable_cell( y, x ) );
-      fb->get_mutable_cell( y, x )->contents.push_back( L'E' );
+      fb->get_mutable_cell( y, x )->append( 'E' );
     }
   }
 }
@@ -156,7 +162,7 @@ void Esc_DECALN( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Esc_DECALN( ESCAPE, "#8", Esc_DECALN );
 
 /* line feed */
-void Ctrl_LF( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_LF( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->move_rows_autoscroll( 1 );
 }
@@ -168,7 +174,7 @@ static Function func_Ctrl_VT( CONTROL, "\x0b", Ctrl_LF );
 static Function func_Ctrl_FF( CONTROL, "\x0c", Ctrl_LF );
 
 /* carriage return */
-void Ctrl_CR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_CR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.move_col( 0 );
 }
@@ -176,7 +182,7 @@ void Ctrl_CR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_CR( CONTROL, "\x0d", Ctrl_CR );
 
 /* backspace */
-void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.move_col( -1, true );
 }
@@ -184,7 +190,7 @@ void Ctrl_BS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_BS( CONTROL, "\x08", Ctrl_BS );
 
 /* reverse index -- like a backwards line feed */
-void Ctrl_RI( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_RI( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->move_rows_autoscroll( -1 );
 }
@@ -192,7 +198,7 @@ void Ctrl_RI( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_RI( CONTROL, "\x8D", Ctrl_RI );
 
 /* newline */
-void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.move_col( 0 );
   fb->move_rows_autoscroll( 1 );
@@ -201,9 +207,9 @@ void Ctrl_NEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_NEL( CONTROL, "\x85", Ctrl_NEL );
 
 /* horizontal tab */
-void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void HT_n( Framebuffer *fb, size_t count )
 {
-  int col = fb->ds.get_next_tab();
+  int col = fb->ds.get_next_tab( count );
   if ( col == -1 ) { /* no tabs, go to end of line */
     col = fb->ds.get_width() - 1;
   }
@@ -216,10 +222,29 @@ void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
   fb->ds.next_print_will_wrap = wrap_state_save;
 }
 
+static void Ctrl_HT( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+{
+  HT_n( fb, 1 );
+}
 static Function func_Ctrl_HT( CONTROL, "\x09", Ctrl_HT, false );
 
+static void CSI_CxT( Framebuffer *fb, Dispatcher *dispatch )
+{
+  int param = dispatch->getparam( 0, 1 );
+  if ( dispatch->get_dispatch_chars()[ 0 ] == 'Z' ) {
+    param = -param;
+  }
+  if ( param == 0 ) {
+    return;
+  }
+  HT_n( fb, param );
+}
+
+static Function func_CSI_CHT( CSI, "I", CSI_CxT, false );
+static Function func_CSI_CBT( CSI, "Z", CSI_CxT, false );
+
 /* horizontal tab set */
-void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.set_tab();
 }
@@ -227,7 +252,7 @@ void Ctrl_HTS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Ctrl_HTS( CONTROL, "\x88", Ctrl_HTS );
 
 /* tabulation clear */
-void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
 {
   int param = dispatch->getparam( 0, 0 );
   switch ( param ) {
@@ -239,6 +264,8 @@ void CSI_TBC( Framebuffer *fb, Dispatcher *dispatch )
     for ( int x = 0; x < fb->ds.get_width(); x++ ) {
       fb->ds.clear_tab( x );
     }
+    break;
+  default:
     break;
   }
 }
@@ -268,51 +295,51 @@ static bool *get_DEC_mode( int param, Framebuffer *fb ) {
     return &(fb->ds.auto_wrap_mode);
   case 25:
     return &(fb->ds.cursor_visible);
-  case 1000:           /* xterm mouse 1 (normal) */
-    return &(fb->ds.vt100_mouse);
-  case 1002:           /* xterm mouse 2 (inc. button drags) */
-    return &(fb->ds.xterm_mouse);
-  case 1005:           /* xterm UTF8 mouse */
-    return &(fb->ds.xterm_utf8_mouse);
-  case 1006:           /* xterm extended mouse */
-    return &(fb->ds.xterm_extended_mouse);
+  case 1004:           /* xterm mouse focus event */
+    return &(fb->ds.mouse_focus_event);
+  case 1007:           /* xterm mouse alternate scroll */
+    return &(fb->ds.mouse_alternate_scroll);
   case 2004: /* bracketed paste */
     return &(fb->ds.bracketed_paste);
+  default:
+    break;
   }
   return NULL;
 }
 
 /* helper for CSI_DECSM and CSI_DECRM */
-void set_if_available( bool *mode, bool value )
+static void set_if_available( bool *mode, bool value )
 {
   if ( mode ) { *mode = value; }
 }
 
 /* set private mode */
-void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DECSM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
     int param = dispatch->getparam( i, 0 );
-
-    if ( (param == 1000) || (param == 1002) ) {
-      /* we believe all mouse modes should be set to false
-	 when either of these two modes are enabled */
-      /* XXX can we cite something for this? -KJW 15Dec2014 */
-      set_if_available( get_DEC_mode( 1000, fb ), false );
-      set_if_available( get_DEC_mode( 1002, fb ), false );
-      set_if_available( get_DEC_mode( 1005, fb ), false );
-      set_if_available( get_DEC_mode( 1006, fb ), false );
+    if (param == 9 || (param >= 1000 && param <= 1003)) {
+      fb->ds.mouse_reporting_mode = (Terminal::DrawState::MouseReportingMode) param;
+    } else if (param == 1005 || param == 1006 || param == 1015) {
+      fb->ds.mouse_encoding_mode = (Terminal::DrawState::MouseEncodingMode) param;
+    } else {
+      set_if_available( get_DEC_mode( param, fb ), true );
     }
-
-    set_if_available( get_DEC_mode( param, fb ), true );
   }
 }
 
 /* clear private mode */
-void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DECRM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
-    set_if_available( get_DEC_mode( dispatch->getparam( i, 0 ), fb ), false );
+    int param = dispatch->getparam( i, 0 );
+    if (param == 9 || (param >= 1000 && param <= 1003)) {
+      fb->ds.mouse_reporting_mode = Terminal::DrawState::MOUSE_REPORTING_NONE;
+    } else if (param == 1005 || param == 1006 || param == 1015) {
+      fb->ds.mouse_encoding_mode = Terminal::DrawState::MOUSE_ENCODING_DEFAULT;
+    } else {
+      set_if_available( get_DEC_mode( param, fb ), false );
+    }
   }
 }
 
@@ -321,15 +348,14 @@ static Function func_CSI_DECSM( CSI, "?h", CSI_DECSM, false );
 static Function func_CSI_DECRM( CSI, "?l", CSI_DECRM, false );
 
 static bool *get_ANSI_mode( int param, Framebuffer *fb ) {
-  switch ( param ) {
-  case 4: /* insert/replace mode */
+  if ( param == 4 ) { /* insert/replace mode */
     return &(fb->ds.insert_mode);
   }
   return NULL;
 }
 
 /* set mode */
-void CSI_SM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_SM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
     bool *mode = get_ANSI_mode( dispatch->getparam( i, 0 ), fb );
@@ -340,7 +366,7 @@ void CSI_SM( Framebuffer *fb, Dispatcher *dispatch )
 }
 
 /* clear mode */
-void CSI_RM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_RM( Framebuffer *fb, Dispatcher *dispatch )
 {
   for ( int i = 0; i < dispatch->param_count(); i++ ) {
     bool *mode = get_ANSI_mode( dispatch->getparam( i, 0 ), fb );
@@ -354,7 +380,7 @@ static Function func_CSI_SM( CSI, "h", CSI_SM );
 static Function func_CSI_RM( CSI, "l", CSI_RM );
 
 /* set top and bottom margins */
-void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
 {
   int top = dispatch->getparam( 0, 1 );
   int bottom = dispatch->getparam( 1, fb->ds.get_height() );
@@ -373,45 +399,64 @@ void CSI_DECSTBM( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_DECSTMB( CSI, "r", CSI_DECSTBM );
 
 /* terminal bell */
-void Ctrl_BEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) ) {
+static void Ctrl_BEL( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) ) {
   fb->ring_bell();
 }
 
 static Function func_Ctrl_BEL( CONTROL, "\x07", Ctrl_BEL );
 
 /* select graphics rendition -- e.g., bold, blinking, etc. */
-void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_SGR( Framebuffer *fb, Dispatcher *dispatch )
 {
-  /* We need to special-case the handling of CSI [34]8 ; 5 ; Ps m,
-     because Ps of 0 in that case does not mean reset to default, even
-     though it means that otherwise (as usually renditions are applied
-     in order). */
-
-  if ( (dispatch->param_count() == 3)
-       && (dispatch->getparam( 0, -1 ) == 38)
-       && (dispatch->getparam( 1, -1 ) == 5) ) {
-    fb->ds.set_foreground_color( dispatch->getparam( 2, 0 ) );
-  } else if ( (dispatch->param_count() == 3)
-	      && (dispatch->getparam( 0, -1 ) == 48)
-	      && (dispatch->getparam( 1, -1 ) == 5) ) {
-    fb->ds.set_background_color( dispatch->getparam( 2, 0 ) );
-  } else {
-    for ( int i = 0; i < dispatch->param_count(); i++ ) {
-      int rendition = dispatch->getparam( i, 0 );
-      fb->ds.add_rendition( rendition );
+  for ( int i = 0; i < dispatch->param_count(); i++ ) {
+    int rendition = dispatch->getparam( i, 0 );
+    /* We need to special-case the handling of [34]8 ; 5 ; Ps,
+       because Ps of 0 in that case does not mean reset to default, even
+       though it means that otherwise (as usually renditions are applied
+       in order). */
+    if ((rendition == 38 || rendition == 48) &&
+	(dispatch->param_count() - i >= 3) &&
+	(dispatch->getparam( i+1, -1 ) == 5)) {
+      (rendition == 38) ?
+	fb->ds.set_foreground_color( dispatch->getparam( i+2, 0 ) ) :
+	fb->ds.set_background_color( dispatch->getparam( i+2, 0 ) );
+      i += 2;
+      continue;
     }
+
+    /* True color support: ESC[ ... [34]8;2;<r>;<g>;<b> ... m */
+    if ( (rendition == 38 || rendition == 48) &&
+         (dispatch->param_count() - i >= 5) &&
+         (dispatch->getparam( i+1, -1 ) == 2)) {
+      unsigned int red = dispatch->getparam(i+2, 0);
+      unsigned int green = dispatch->getparam(i+3, 0);
+      unsigned int blue = dispatch->getparam(i+4, 0);
+      unsigned int color;
+
+      color = Renditions::make_true_color( red, green, blue );
+
+      if ( rendition == 38 ) {
+        fb->ds.set_foreground_color( color );
+      } else {
+        fb->ds.set_background_color( color );
+      }
+      i += 4;
+      continue;
+    }
+
+    fb->ds.add_rendition( rendition );
   }
 }
 
 static Function func_CSI_SGR( CSI, "m", CSI_SGR, false ); /* changing renditions doesn't clear wrap flag */
 
 /* save and restore cursor */
-void Esc_DECSC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Esc_DECSC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.save_cursor();
 }
 
-void Esc_DECRC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Esc_DECRC( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->ds.restore_cursor();
 }
@@ -420,7 +465,7 @@ static Function func_Esc_DECSC( ESCAPE, "7", Esc_DECSC );
 static Function func_Esc_DECRC( ESCAPE, "8", Esc_DECRC );
 
 /* device status report -- e.g., cursor position (used by resize) */
-void CSI_DSR( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DSR( Framebuffer *fb, Dispatcher *dispatch )
 {
   int param = dispatch->getparam( 0, 0 );
 
@@ -435,19 +480,19 @@ void CSI_DSR( Framebuffer *fb, Dispatcher *dispatch )
 	      fb->ds.get_cursor_col() + 1 );
     dispatch->terminal_to_host.append( cpr );
     break;
+  default:
+    break;
   }
 }
 
 static Function func_CSI_DSR( CSI, "n", CSI_DSR );
 
 /* insert line */
-void CSI_IL( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_IL( Framebuffer *fb, Dispatcher *dispatch )
 {
   int lines = dispatch->getparam( 0, 1 );
 
-  for ( int i = 0; i < lines; i++ ) {
-    fb->insert_line( fb->ds.get_cursor_row() );
-  }
+  fb->insert_line( fb->ds.get_cursor_row(), lines );
 
   /* vt220 manual and Ecma-48 say to move to first column */
   /* but xterm and gnome-terminal don't */
@@ -457,13 +502,11 @@ void CSI_IL( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_IL( CSI, "L", CSI_IL );
 
 /* delete line */
-void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
 {
   int lines = dispatch->getparam( 0, 1 );
 
-  for ( int i = 0; i < lines; i++ ) {
-    fb->delete_line( fb->ds.get_cursor_row() );
-  }
+  fb->delete_line( fb->ds.get_cursor_row(), lines );
 
   /* same story -- xterm and gnome-terminal don't
      move to first column */
@@ -473,7 +516,7 @@ void CSI_DL( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_DL( CSI, "M", CSI_DL );
 
 /* insert characters */
-void CSI_ICH( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_ICH( Framebuffer *fb, Dispatcher *dispatch )
 {
   int cells = dispatch->getparam( 0, 1 );
 
@@ -485,7 +528,7 @@ void CSI_ICH( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_ICH( CSI, "@", CSI_ICH );
 
 /* delete character */
-void CSI_DCH( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_DCH( Framebuffer *fb, Dispatcher *dispatch )
 {
   int cells = dispatch->getparam( 0, 1 );
 
@@ -497,7 +540,7 @@ void CSI_DCH( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_DCH( CSI, "P", CSI_DCH );
 
 /* line position absolute */
-void CSI_VPA( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_VPA( Framebuffer *fb, Dispatcher *dispatch )
 {
   int row = dispatch->getparam( 0, 1 );
   fb->ds.move_row( row - 1 );
@@ -506,7 +549,7 @@ void CSI_VPA( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_VPA( CSI, "d", CSI_VPA );
 
 /* character position absolute */
-void CSI_HPA( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_HPA( Framebuffer *fb, Dispatcher *dispatch )
 {
   int col = dispatch->getparam( 0, 1 );
   fb->ds.move_col( col - 1 );
@@ -516,7 +559,7 @@ static Function func_CSI_CHA( CSI, "G", CSI_HPA ); /* ECMA-48 name: CHA */
 static Function func_CSI_HPA( CSI, "\x60", CSI_HPA ); /* ECMA-48 name: HPA */
 
 /* erase character */
-void CSI_ECH( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_ECH( Framebuffer *fb, Dispatcher *dispatch )
 {
   int num = dispatch->getparam( 0, 1 );
   int limit = fb->ds.get_cursor_col() + num - 1;
@@ -530,7 +573,7 @@ void CSI_ECH( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_ECH( CSI, "X", CSI_ECH );
 
 /* reset to initial state */
-void Esc_RIS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void Esc_RIS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->reset();
 }
@@ -538,7 +581,7 @@ void Esc_RIS( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_Esc_RIS( ESCAPE, "c", Esc_RIS );
 
 /* soft reset */
-void CSI_DECSTR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
+static void CSI_DECSTR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 {
   fb->soft_reset();
 }
@@ -546,9 +589,17 @@ void CSI_DECSTR( Framebuffer *fb, Dispatcher *dispatch __attribute((unused)) )
 static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );
 
 /* xterm uses an Operating System Command to set the window title */
-void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
+void Dispatcher::OSC_dispatch( const Parser::OSC_End *act __attribute((unused)), Framebuffer *fb )
 {
-  if ( OSC_string.size() >= 1 ) {
+  /* handle osc copy clipboard sequence 52;c; */
+  if ( OSC_string.size() >= 5 && OSC_string[ 0 ] == L'5' &&
+       OSC_string[ 1 ] == L'2' && OSC_string[ 2 ] == L';' &&
+       OSC_string[ 3 ] == L'c' && OSC_string[ 4 ] == L';') {
+      Terminal::Framebuffer::title_type clipboard(
+              OSC_string.begin() + 5, OSC_string.end() );
+      fb->set_clipboard( clipboard );
+  /* handle osc terminal title sequence */
+  } else if ( OSC_string.size() >= 1 ) {
     long cmd_num = -1;
     int offset = 0;
     if ( OSC_string[ 0 ] == L';' ) {
@@ -563,21 +614,20 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End *act, Framebuffer *fb )
       cmd_num = OSC_string[ 0 ] - L'0';
       offset = 2;
     }
-    bool set_icon = (cmd_num == 0 || cmd_num == 1);
-    bool set_title = (cmd_num == 0 || cmd_num == 2);
+    bool set_icon = cmd_num == 0 || cmd_num == 1;
+    bool set_title = cmd_num == 0 || cmd_num == 2;
     if ( set_icon || set_title ) {
       fb->set_title_initialized();
-      std::deque<wchar_t> newtitle( OSC_string.begin() + offset, OSC_string.end() );
+      int title_length = std::min(OSC_string.size(), (size_t)256);
+      Terminal::Framebuffer::title_type newtitle( OSC_string.begin() + offset, OSC_string.begin() + title_length );
       if ( set_icon )  { fb->set_icon_name( newtitle ); }
       if ( set_title ) { fb->set_window_title( newtitle ); }
-
-      act->handled = true;
     }
   }
 }
 
 /* scroll down or terminfo indn */
-void CSI_SD( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_SD( Framebuffer *fb, Dispatcher *dispatch )
 {
   fb->scroll( dispatch->getparam( 0, 1 ) );
 }
@@ -585,7 +635,7 @@ void CSI_SD( Framebuffer *fb, Dispatcher *dispatch )
 static Function func_CSI_SD( CSI, "S", CSI_SD );
 
 /* scroll up or terminfo rin */
-void CSI_SU( Framebuffer *fb, Dispatcher *dispatch )
+static void CSI_SU( Framebuffer *fb, Dispatcher *dispatch )
 {
   fb->scroll( -dispatch->getparam( 0, 1 ) );
 }

@@ -1,0 +1,54 @@
+#
+# Appveyor configuration file for CI build of Mosh on Windows (under Cygwin)
+#
+# For further details see http://www.appveyor.com
+#
+
+#
+# Custom environment variables
+#
+environment:
+    global:
+        CYG_ROOT: C:\cygwin64
+        CYG_MIRROR: http://cygwin.mirror.constant.com
+        CYG_CACHE: C:\cygwin64\var\cache\setup
+        CYG_BASH: C:\cygwin64\bin\bash
+
+cache:
+  - '%CYG_CACHE%'
+
+#
+# Do a shallow clone of the repo to speed up build
+#
+# clone_depth: 1
+
+# Initialisation prior to pulling the repository
+# Attempt to ensure we don't try to convert line endings to Win32 CRLF as this will cause build to fail
+init:
+    # - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+    - git config --global core.autocrlf input
+#
+# Install needed build dependencies
+# 
+install:
+    - '%CYG_ROOT%\setup-x86_64.exe --quiet-mode --no-shortcuts --upgrade-also --packages autoconf,autogen,automake,cygwin-devel,git,gcc-core,gcc-g++,libncurses-devel,libprotobuf-devel,libssl-devel,make,openssh,perl,perl_pods,pkg-config,tmux,zlib-devel'
+    - '%CYG_ROOT%\bin\cygcheck -dc'
+
+#
+# Mosh uses symlinks and other Unixisms in the work dir.  Fix by replacing it with a Cygwin checkout.
+#
+before_build:
+    - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && ./appveyor.sh before_build"'
+
+
+# Build and test, actually.
+build_script:
+    - 'echo Building...'
+    - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && ./appveyor.sh build_script"'
+#
+# Disable tests for now
+# 
+test: off
+
+# on_finish:
+#     - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && ./appveyor.sh wait"'

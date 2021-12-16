@@ -1,0 +1,44 @@
+#!/bin/sh
+
+#
+# This is a regression test for a bug seen where mosh-server's
+# round-trip verification failed if text was filled to column 80 on
+# frame N and then wrapped to the next line on frame N+1, because the
+# wrap flag used to be in the Cell class and caused miscompares
+# between cells.  It got moved to the Rows class where it makes more
+# sense.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline direct verify
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    printf '\033[H\033[J'
+
+    for x in $(seq 1 10); do
+	printf "abcdXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX1234"
+	sleepf
+	printf "ABCDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx5678"
+	sleepf
+    done
+    printf '\n'
+} 
+
+case $1 in
+    baseline|direct)
+	baseline;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

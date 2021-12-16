@@ -1,0 +1,91 @@
+#!/bin/sh
+
+#
+# Run mosh many times.  If run as repeat-with-stdin.test, also send
+# input constantly, to try and trigger a bug where mosh-server would
+# exit on OS X if input was received after the client session had
+# exited.
+#
+
+# 100 iterations runs in comparable time to other tests.
+: ${REPEAT_TEST_LOOPCOUNT:=100}
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    do_tmux=
+    case $(basename "$0" .test) in
+	repeat-with-input)
+	    do_tmux=tmux;;
+    esac
+    e2e-test "$0" baseline client server ${do_tmux}
+    exit
+fi
+
+# Run mosh repeatedly
+client()
+{
+    for i in $(seq 1 $REPEAT_TEST_LOOPCOUNT); do
+	(sleep 15; kill $$) &
+	killpid=$!
+	if ! "$@"; then
+	    printf "### iteration %d failed\n" "$i"
+	    kill $killpid
+	    exit 1
+	fi
+	kill $killpid
+    done
+}
+
+# e2e-test-server is slow because of its screen capture; this simple
+# wrapper is faster.
+server()
+{
+    shift
+    eval "$@"
+}
+
+# Constantly send keyboard input.
+tmux_commands()
+{
+    while printf "send-keys 0x0d\n" && sleepf; do
+	:
+    done
+}
+
+tmux_stdin()
+{
+    tmux_commands | "$@"
+    exit
+}
+
+baseline()
+{
+    printf "@@@ done\n"
+}
+
+post()
+{
+    if [ "$(grep -c "@@@ done" "$(basename "$0").d/baseline.tmux.log")" -lt $REPEAT_TEST_LOOPCOUNT ]; then
+	exit 1
+    fi
+}
+
+case $1 in
+    tmux)
+	shift;
+	tmux_stdin "$@";;
+    baseline)
+	baseline;;
+    client)
+	shift
+	client "$@";;
+    server)
+	shift
+	server "$@";;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

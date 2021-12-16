@@ -1,0 +1,21 @@
+#!/bin/sh
+
+. "$(dirname "$0")/e2e-test-subrs"
+if ! set_locale; then
+    echo "$0: no usable locale" >&2
+    exit 99
+fi
+
+set -eu
+out=$(
+    TERM=xterm \
+        ./inpty \
+        ../../scripts/mosh \
+        --client="../frontend/mosh-client" \
+        --server="$PWD/../frontend/mosh-server" \
+        --local --bind-server=127.0.0.1 127.0.0.1 \
+        -- printf 'he%s\n' llo)
+case "$out" in
+    *hello*) exit 0;;
+    *) exit 1;;
+esac

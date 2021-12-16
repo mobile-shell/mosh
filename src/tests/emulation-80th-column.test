@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#
+# This test validates the ancient VT100 behavior of positioning the
+# cursor at column 80 (and not wrapping) after 80 characters are
+# output, and behaving accordingly with subsequent cursor motion
+# commands (CR+LF in this state should not result in an extra blank
+# line).
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline post
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    # We need to control CR and LF individually for this test.
+    TERMIO=$(stty -g)
+    trap 'stty "$TERMIO"' EXIT
+    stty raw
+    printf '\033[H\033[J'
+    for lines in $(seq 1 25); do
+	for tencols in $(seq 1 8); do
+	    printf "EEEEEEEEEE"
+	done
+	printf "\r\n"
+    done
+}
+
+post()
+{
+    # If hidden 80th column is working properly, then the lines
+    # will have no blank lines in between and we should see 23
+    # of them.
+    if [ "$(grep -c "EEEEEEEEEE" "$(basename "$0").d/baseline.capture")" -ne 23 ]; then
+	exit 1
+    fi
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

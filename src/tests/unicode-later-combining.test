@@ -1,0 +1,62 @@
+#!/bin/sh
+
+#
+# This test is for the first Unicode issue described on the Mosh web
+# page, a combining character drawn on a cell after returning the
+# cursor to that cell.
+#
+# We print 'COMBINING CIRCUMFLEX ACCENT' (U+0302) onto an unused cell.
+# We expect Mosh to output U+0020, U+0302 for that character cell (or
+# possibly U+00A0, U+0302).
+#
+# XXX This test is fragile because it depends on tmux's unicode rendering.
+# The baseline and variant tests produce different (but valid) outputs
+# that are visually identical.  The variant test is not run or validated.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline post
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    printf 'abc\n\314\202\ndef\n'
+}
+
+variant()
+{
+    printf 'abc\n \314\202\ndef\n'
+}
+
+post()
+{
+    export LANG=C
+    if [ "$(tmux -V)" = "tmux 2.4" ]; then
+	skip "tmux 2.4 unicode combining bug breaks this test\n"
+    fi
+    if grep -q "$(printf '^\302\240\314\202$')" "$(basename "$0").d/baseline.capture"; then
+	exit 0
+    fi
+    exit 1
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    variant)
+	variant;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

@@ -59,7 +59,7 @@ namespace Terminal {
   class Function {
   public:
     Function() : function( NULL ), clears_wrap_state( true ) {}
-    Function( Function_Type type, std::string dispatch_chars,
+    Function( Function_Type type, const std::string & dispatch_chars,
 	      void (*s_function)( Framebuffer *, Dispatcher * ),
 	      bool s_clears_wrap_state = true );
     void (*function)( Framebuffer *, Dispatcher * );

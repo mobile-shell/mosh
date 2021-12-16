@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mobile-shell/mosh.svg?branch=master)](https://travis-ci.org/mobile-shell/mosh)
+
 Mosh: the mobile shell
 ======================
 
@@ -57,7 +59,7 @@ Other features
 Getting Mosh
 ------------
 
-  [The Mosh web site](http://mosh.mit.edu/#getting) has information about
+  [The Mosh web site](https://mosh.org/#getting) has information about
   packages for many operating systems, as well as instructions for building
   from source.
 
@@ -82,8 +84,8 @@ Usage
   select alternate locations. More options are documented in the mosh(1) manual
   page.
 
-  There are [more examples](http://mosh.mit.edu/#usage) and a
-  [FAQ](http://mosh.mit.edu/#faq) on the Mosh web site.
+  There are [more examples](https://mosh.org/#usage) and a
+  [FAQ](https://mosh.org/#faq) on the Mosh web site.
 
 How it works
 ------------
@@ -104,6 +106,7 @@ How it works
   To function, Mosh requires UDP datagrams to be passed between client
   and server. By default, `mosh` uses a port number between 60000 and
   61000, but the user can select a particular port with the -p option.
+  Please note that the -p option has no effect on the port used by SSH.
 
 Advice to distributors
 ----------------------
@@ -136,21 +139,26 @@ saving almost 200 kilobytes on disk). While Mosh is not especially CPU
 intensive and mostly sits idle when the user is not typing, we think
 the results suggest that `-O2` (the default) is preferable.
 
+Our Debian and Fedora packaging presents Mosh as a single package.
+Mosh has a Perl dependency that is only required for client use.  For
+some platforms, it may make sense to have separate mosh-server and
+mosh-client packages to allow mosh-server usage without Perl.
+
 More info
 ---------
 
   * Mosh Web site:
 
-    <http://mosh.mit.edu>
+    <https://mosh.org>
 
   * `mosh-devel@mit.edu` mailing list:
 
-    <http://mailman.mit.edu/mailman/listinfo/mosh-devel>
+    <https://mailman.mit.edu/mailman/listinfo/mosh-devel>
 
   * `mosh-users@mit.edu` mailing list:
 
-    <http://mailman.mit.edu/mailman/listinfo/mosh-users>
+    <https://mailman.mit.edu/mailman/listinfo/mosh-users>
 
-  * `#mosh` channel on [Freenode IRC](http://freenode.net/)
+  * `#mosh` channel on [Libera Chat](https://libera.chat/)
 
-    http://webchat.freenode.net/?channels=mosh
+    https://web.libera.chat/#mosh

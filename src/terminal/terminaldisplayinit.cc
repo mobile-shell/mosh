@@ -37,6 +37,7 @@
 #include "terminaldisplay.h"
 
 #include <string>
+#include <stdexcept>
 
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/curses.h>
@@ -61,35 +62,26 @@
 
 using namespace Terminal;
 
-bool Display::ti_flag( const char *capname ) const
+static bool ti_flag( const char *capname )
 {
   int val = tigetflag( const_cast<char *>( capname ) );
   if ( val == -1 ) {
-    throw std::string( "Invalid terminfo boolean capability " ) + capname;
+    throw std::invalid_argument( std::string( "Invalid terminfo boolean capability " ) + capname );
   }
   return val;
 }
 
-int Display::ti_num( const char *capname ) const
-{
-  int val = tigetnum( const_cast<char *>( capname ) );
-  if ( val == -2 ) {
-    throw std::string( "Invalid terminfo numeric capability " ) + capname;
-  }
-  return val;
-}
-
-const char *Display::ti_str( const char *capname ) const
+static const char *ti_str( const char *capname )
 {
   const char *val = tigetstr( const_cast<char *>( capname ) );
   if ( val == (const char *)-1 ) {
-    throw std::string( "Invalid terminfo string capability " ) + capname;
+    throw std::invalid_argument( std::string( "Invalid terminfo string capability " ) + capname );
   }
   return val;
 }
 
 Display::Display( bool use_environment )
-  : has_ech( true ), has_bce( true ), has_title( true ), posterize_colors( false ), smcup( NULL ), rmcup( NULL )
+  : has_ech( true ), has_bce( true ), has_title( true ), smcup( NULL ), rmcup( NULL )
 {
   if ( use_environment ) {
     int errret = -2;
@@ -98,16 +90,16 @@ Display::Display( bool use_environment )
     if ( ret != OK ) {
       switch ( errret ) {
       case 1:
-	throw std::string( "Terminal is hardcopy and cannot be used by curses applications." );
+	throw std::runtime_error( "Terminal is hardcopy and cannot be used by curses applications." );
 	break;
       case 0:
-	throw std::string( "Unknown terminal type." );
+	throw std::runtime_error( "Unknown terminal type." );
 	break;
       case -1:
-	throw std::string( "Terminfo database could not be found." );
+	throw std::runtime_error( "Terminfo database could not be found." );
 	break;
       default:
-	throw std::string( "Unknown terminfo error." );
+	throw std::runtime_error( "Unknown terminfo error." );
 	break;
       } 
     }
@@ -120,10 +112,9 @@ Display::Display( bool use_environment )
 
     /* Check if we can set the window title and icon name.  terminfo does not
        have reliable information on this, so we hardcode a whitelist of
-       terminal type prefixes.  This is the list from Debian's default
-       screenrc, plus "screen" itself (which also covers tmux). */
+       terminal type prefixes. */
     static const char * const title_term_types[] = {
-      "xterm", "rxvt", "kterm", "Eterm", "screen"
+      "xterm", "rxvt", "kterm", "Eterm", "alacritty", "screen", "tmux"
     };
 
     has_title = false;
@@ -139,12 +130,6 @@ Display::Display( bool use_environment )
         }
       }
     }
-
-    /* posterization disabled because server now only advertises
-       xterm-256color when client has colors = 256 */
-    /*
-    posterize_colors = ti_num( "colors" ) < 256;
-    */
 
     if ( !getenv( "MOSH_NO_TERM_INIT" ) ) {
       smcup = ti_str("smcup");

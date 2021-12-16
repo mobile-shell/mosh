@@ -1,0 +1,56 @@
+#!/bin/sh
+
+#
+# This test is for issue 539 on github.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline post
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    printf 'hello, wurld\033[Zo\n'
+    printf 'hello, wurld\033[2Zo\n'
+    printf 'hello, wurld\033[99Z9\n'
+    printf 'hello, wurld\033[It\n'
+    printf '\033[99I#\n'
+}
+
+post()
+{
+    # Basic previously-failing case.
+    if grep -q 'hello, wurldo' "$(basename "$0").d/baseline.capture"; then
+	exit 1
+    fi
+    if ! grep -q 'hello, world' "$(basename "$0").d/baseline.capture"; then
+	exit 99
+    fi
+    # New test cases for new code.
+    if ! grep -q 'oello, wurld' "$(basename "$0").d/baseline.capture" ||
+	    ! grep -q '9ello, wurld' "$(basename "$0").d/baseline.capture" ||
+	    ! grep -q 'hello, wurld    t' "$(basename "$0").d/baseline.capture" ||
+	    ! grep -E -q '^ {79}#$' "$(basename "$0").d/baseline.capture"; then
+	exit 1
+    fi
+    exit 0
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

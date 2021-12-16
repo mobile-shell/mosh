@@ -1,3 +1,5 @@
+completionsdir = @completions@
+dist_completions_DATA =
 nobase_dist_sysconf_DATA =
 
 if INSTALL_UFW
@@ -5,5 +7,5 @@ if INSTALL_UFW
 endif
 
 if INSTALL_COMPLETION
-  nobase_dist_sysconf_DATA += bash_completion.d/mosh
+  dist_completions_DATA += bash-completion/completions/mosh
 endif

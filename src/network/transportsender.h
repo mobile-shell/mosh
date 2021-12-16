@@ -43,11 +43,11 @@
 #include "transportfragment.h"
 #include "prng.h"
 
-using std::list;
-using std::pair;
-using namespace TransportBuffers;
-
 namespace Network {
+  using std::list;
+  using std::pair;
+  using namespace TransportBuffers;
+
   /* timing parameters */
   const int SEND_INTERVAL_MIN = 20; /* ms between frames */
   const int SEND_INTERVAL_MAX = 250; /* ms between frames */
@@ -64,9 +64,9 @@ namespace Network {
     void update_assumed_receiver_state( void );
     void attempt_prospective_resend_optimization( string &proposed_diff );
     void rationalize_states( void );
-    void send_to_receiver( string diff );
+    void send_to_receiver( const string & diff );
     void send_empty_ack( void );
-    void send_in_fragments( string diff, uint64_t new_num );
+    void send_in_fragments( const string & diff, uint64_t new_num );
     void add_sent_state( uint64_t the_timestamp, uint64_t num, MyState &state );
 
     /* state of sender */
@@ -91,7 +91,7 @@ namespace Network {
 
     void calculate_timers( void );
 
-    bool verbose;
+    unsigned int verbose;
     bool shutdown_in_progress;
     int shutdown_tries;
     uint64_t shutdown_start;
@@ -138,8 +138,13 @@ namespace Network {
     /* Misc. getters and setters */
     /* Cannot modify current_state while shutdown in progress */
     MyState &get_current_state( void ) { assert( !shutdown_in_progress ); return current_state; }
-    void set_current_state( const MyState &x ) { assert( !shutdown_in_progress ); current_state = x; }
-    void set_verbose( void ) { verbose = true; }
+    void set_current_state( const MyState &x )
+    {
+      assert( !shutdown_in_progress );
+      current_state = x;
+      current_state.reset_input();
+    }
+    void set_verbose( unsigned int s_verbose ) { verbose = s_verbose; }
 
     bool get_shutdown_in_progress( void ) const { return shutdown_in_progress; }
     bool get_shutdown_acknowledged( void ) const { return sent_states.front().num == uint64_t(-1); }

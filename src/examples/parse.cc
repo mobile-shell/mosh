@@ -42,7 +42,6 @@
 #include <wchar.h>
 #include <assert.h>
 #include <wctype.h>
-#include <iostream>
 #include <typeinfo>
 #include <termios.h>
 
@@ -50,6 +49,8 @@
 #include <pty.h>
 #elif HAVE_UTIL_H
 #include <util.h>
+#elif HAVE_LIBUTIL_H
+#include <libutil.h>
 #endif
 
 #include "parser.h"
@@ -61,9 +62,9 @@
 
 const size_t buf_size = 1024;
 
-void emulate_terminal( int fd );
-int copy( int src, int dest );
-int vt_parser( int fd, Parser::UTF8Parser *parser );
+static void emulate_terminal( int fd );
+static int copy( int src, int dest );
+static int vt_parser( int fd, Parser::UTF8Parser *parser );
 
 int main( int argc __attribute__((unused)),
 	  char *argv[] __attribute__((unused)),
@@ -133,7 +134,7 @@ int main( int argc __attribute__((unused)),
   return 0;
 }
 
-void emulate_terminal( int fd )
+static void emulate_terminal( int fd )
 {
   Parser::UTF8Parser parser;
 
@@ -156,15 +157,13 @@ void emulate_terminal( int fd )
       if ( vt_parser( fd, &parser ) < 0 ) {
 	return;
       }
-    } else if ( sel.error( STDIN_FILENO ) || sel.error( fd ) ) {
-      return;
     } else {
       fprintf( stderr, "select mysteriously woken up\n" );
     }
   }
 }
 
-int copy( int src, int dest )
+static int copy( int src, int dest )
 {
   char buf[ buf_size ];
 
@@ -179,7 +178,7 @@ int copy( int src, int dest )
   return swrite( dest, buf, bytes_read );
 }
 
-int vt_parser( int fd, Parser::UTF8Parser *parser )
+static int vt_parser( int fd, Parser::UTF8Parser *parser )
 {
   char buf[ buf_size ];
 
@@ -193,29 +192,29 @@ int vt_parser( int fd, Parser::UTF8Parser *parser )
   }
 
   /* feed to parser */
+  Parser::Actions actions;
   for ( int i = 0; i < bytes_read; i++ ) {
-    std::list<Parser::Action *> actions = parser->input( buf[ i ] );
-    for ( std::list<Parser::Action *>::iterator j = actions.begin();
+    parser->input( buf[ i ], actions );
+    for ( Parser::Actions::iterator j = actions.begin();
 	  j != actions.end();
 	  j++ ) {
 
-      Parser::Action *act = *j;
-      assert( act );
+      assert( *j );
+      Parser::Action &act = **j;
 
-      if ( act->char_present ) {
-	if ( iswprint( act->ch ) ) {
-	  printf( "%s(0x%02x=%lc) ", act->name().c_str(), (unsigned int)act->ch, act->ch );
+      if ( act.char_present ) {
+	if ( iswprint( act.ch ) ) {
+	  printf( "%s(0x%02x=%lc) ", act.name().c_str(), (unsigned int)act.ch, (wint_t)act.ch );
 	} else {
-	  printf( "%s(0x%02x) ", act->name().c_str(), (unsigned int)act->ch );
+	  printf( "%s(0x%02x) ", act.name().c_str(), (unsigned int)act.ch );
 	}
       } else {
-	printf( "[%s] ", act->name().c_str() );
+	printf( "[%s] ", act.name().c_str() );
       }
-
-      delete act;
 
       fflush( stdout );
     }
+    actions.clear();
   }
 
   return 0;

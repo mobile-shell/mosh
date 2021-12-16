@@ -34,13 +34,11 @@
 #include "terminaluserinput.h"
 
 using namespace Terminal;
-using namespace std;
+using std::string;
 
 string UserInput::input( const Parser::UserByte *act,
 			 bool application_mode_cursor_keys )
 {
-  act->handled = true;
-
   /* The user will always be in application mode. If stm is not in
      application mode, convert user's cursor control function to an
      ANSI cursor control sequence */
@@ -48,23 +46,23 @@ string UserInput::input( const Parser::UserByte *act,
   /* We need to look ahead one byte in the SS3 state to see if
      the next byte will be A, B, C, or D (cursor control keys). */
 
+  /* This doesn't handle the 8-bit SS3 C1 control, which would be
+     two octets in UTF-8. Fortunately nobody seems to send this. */
+
   switch ( state ) {
   case Ground:
     if ( act->c == 0x1b ) { /* ESC */
       state = ESC;
     }
     return string( &act->c, 1 );
-    break;
 
   case ESC:
     if ( act->c == 'O' ) { /* ESC O = 7-bit SS3 */
       state = SS3;
       return string();
-    } else {
-      state = Ground;
-      return string( &act->c, 1 );
     }
-    break;
+    state = Ground;
+    return string( &act->c, 1 );
 
   case SS3:
     state = Ground;
@@ -77,12 +75,10 @@ string UserInput::input( const Parser::UserByte *act,
       char original_cursor[ 2 ] = { 'O', act->c };
       return string( original_cursor, 2 );
     }
-    break;
+
+  default:
+    assert( !"unexpected state" );
+    state = Ground;
+    return string();
   }
-
-  /* This doesn't handle the 8-bit SS3 C1 control, which would be
-     two octets in UTF-8. Fortunately nobody seems to send this. */
-
-  assert( false );
-  return string();
 }

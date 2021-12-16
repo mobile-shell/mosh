@@ -95,7 +95,7 @@ string UserStream::diff_from( const UserStream &existing ) const
       }
       break;
     default:
-      assert( false );
+      assert( !"unexpected event type" );
       break;
     }
 
@@ -105,7 +105,7 @@ string UserStream::diff_from( const UserStream &existing ) const
   return output.SerializeAsString();
 }
 
-void UserStream::apply_string( string diff )
+void UserStream::apply_string( const string &diff )
 {
   ClientBuffers::UserMessage input;
   fatal_assert( input.ParseFromString( diff ) );
@@ -123,15 +123,16 @@ void UserStream::apply_string( string diff )
   }
 }
 
-const Parser::Action *UserStream::get_action( unsigned int i )
+const Parser::Action &UserStream::get_action( unsigned int i ) const
 {
   switch( actions[ i ].type ) {
   case UserByteType:
-    return &( actions[ i ].userbyte );
+    return actions[ i ].userbyte;
   case ResizeType:
-    return &( actions[ i ].resize );
+    return actions[ i ].resize;
   default:
-    assert( false );
-    return NULL;
+    assert( !"unexpected action type" );
+    static const Parser::Ignore nothing = Parser::Ignore();
+    return nothing;
   }
 }

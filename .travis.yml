@@ -1,0 +1,107 @@
+# This does Travis CI builds on Linux and OS X, and on a tag build,
+# also produces an OS X package.
+os:
+  - linux
+  - osx
+
+cache:
+  - apt
+
+language: cpp
+
+# Use the Ubuntu 14.04 build environment for Linux.
+sudo: required
+dist: trusty
+
+# Travis' default is broken, select current latest.
+osx_image: xcode11.4
+
+# Linux dependencies
+addons:
+  apt:
+    packages:
+    # For build.
+    - protobuf-compiler
+    - libprotobuf-dev
+    - libutempter-dev
+    # Test suite needs these.
+    - tmux
+    - perl
+  homebrew:
+    packages:
+    # For build.
+    - protobuf
+    # Test suite.
+    - tmux
+
+before_install:
+  # Get full repo for `git describe`
+  - git fetch --tags --unshallow
+  # OS X dependencies.  The package_deps step takes 15 minutes or so
+  # and is fairly quiet, so wrap it in travis_wait to keep it from
+  # being killed.
+  - |
+    if test osx = "${TRAVIS_OS_NAME}"; then
+      macosx/brew-deps.sh install &&
+        if test -n "${TRAVIS_TAG}"; then
+          travis_wait 60 macosx/brew-deps.sh package_deps
+        else
+          : macosx/brew-deps.sh deps
+        fi
+    fi
+
+# Use before_script to report the build configuration.
+before_script:
+  # Describe this system.
+  - id
+  - env
+  - git describe --long
+  - |
+    if test osx = "${TRAVIS_OS_NAME}" && test -n "${TRAVIS_TAG}"; then
+      rm -rf macosx/build-report "macosx/${TRAVIS_TAG}-osx-build-report.tbz" &&
+        mkdir macosx/build-report &&
+        cd macosx/build-report &&
+        ../brew-deps.sh describe &&
+        ../osx-xcode.sh describe &&
+        tar -cjf "../${TRAVIS_TAG}-osx-build-report.tbz" . &&
+        cd -
+    fi
+
+# 'make distcheck', and OS X package build on tag builds.
+script:
+  - |
+    if test osx = "${TRAVIS_OS_NAME}"; then
+      sysctl hw.ncpu
+    fi
+  - ./autogen.sh
+  - ./configure --enable-compile-warnings=error --enable-examples
+  - make distcheck VERBOSE=1 V=1
+  # Build OS X package for tags.
+  - |
+    if test osx = "${TRAVIS_OS_NAME}" && test -n "${TRAVIS_TAG}"; then
+      cd macosx &&
+        env ZERO_AR_DATE=1 MACOSX_DEPLOYMENT_TARGET=10.12 ./build.sh &&
+        shasum -a 256 "${TRAVIS_TAG}.pkg" "${TRAVIS_TAG}-osx-build-report.tbz" &&
+        cd -
+    fi
+# Deploy the OS X package and its build report to a GitHub release.
+deploy:
+  provider: releases
+  api_key:
+    secure: noQsHb/ycLHcyS7VwgpPfsH1KNaKd1YyjGwAobxIPTbeyP6fPk8hHiTW3rvgOyXTh4bs0SuZ5iMBsTYPJ1sgDSsICLZvIoZeD7F9tdkvlJCKKKNq4y+vJVS6kHOajD9nLV+pcexIB74QazBDnXscKNsrulk5rcD3rj75P1QKYXs=
+  # Save build artifacts.
+  skip_cleanup: true
+  # Using a shell variable in deploy.file is undocumented but seems to work.
+  file:
+    - macosx/${TRAVIS_TAG}.pkg
+    - macosx/${TRAVIS_TAG}-osx-build-report.tbz
+  on:
+    repo: mobile-shell/mosh
+    tags: true
+    condition: ${TRAVIS_OS_NAME} = osx
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#mosh"
+    skip_join: true

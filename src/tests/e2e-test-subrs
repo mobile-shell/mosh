@@ -1,0 +1,125 @@
+#!/bin/sh
+
+#
+# This is a library of subroutines mostly intended for test scripts.
+#
+
+fail()
+{
+    printf "$@" 2>&1
+    exit 99
+}
+
+skip()
+{
+    printf "$@" 2>&1
+    exit 77
+}
+
+sleepf()
+{
+    (sleep .1 || sleep 1) > /dev/null 2>&1
+}
+
+seq_function()
+{
+    if [ $# -lt 1 ] || [ $# -gt 3 ]; then
+	echo "bad args" >&2
+    fi
+    first=$1
+    incr=1
+    last=0
+    case $# in
+	3)
+	    incr=$2
+	    last=$3
+	    ;;
+	2)
+	    last=$2
+	    ;;
+	1)
+	    ;;
+    esac
+    while :; do
+	printf '%d\n' "$first"
+	first=$(( first + incr ))
+	if [ "$first" -gt "$last" ]; then
+	    break
+	fi
+    done
+}
+
+if ! seq 1 > /dev/null 2>&1; then
+    seq()
+    {
+	seq_function "$@"
+    }
+fi
+
+chr()
+{
+    printf '%b' "\\0$(printf %03o "$1")"
+}
+
+# If the locale is not set to a UTF-8 locale, set it to en_US.UTF-8
+# or C.UTF-8.
+set_locale()
+{
+    # Test for a usable locale.
+    if ./is-utf8-locale 2> /dev/null; then
+	return 0
+    fi
+    # Attempt to find/set a usable locale.
+    unset LANG LC_CTYPE LC_COLLATE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME LC_ALL
+    for i in en_US.UTF-8 en_US.utf8 C.UTF-8; do
+	if env LC_ALL=$i ./is-utf8-locale 2> /dev/null; then
+	    export LC_ALL=$i
+	    return 0
+	fi
+    done
+    # Fail.
+    return 1
+}
+
+# Tmux check.
+tmux_check()
+{
+    need_major="$1"; shift
+    need_minor="$1"; shift
+    # OpenBSD tmux does not have '-V'.
+    if [ "$(uname -s)" = "OpenBSD" ]; then
+	openbsd_major="$(uname -r)"
+	openbsd_major="${openbsd_major%%.*}"
+	if [ "${openbsd_major}" -ge 6 ]; then
+	    return 0
+	fi
+    fi
+    version=$(tmux -V)
+    if [ $? != 0 ]; then
+	error "tmux unavailable\n"
+	return 1
+    fi
+    if [ "$version" = "tmux master" ]; then
+	return 0
+    fi
+    version=${version##tmux }
+    version_major=${version%%.*}
+    version_minor=${version##*.}
+
+    if [ "$version_major" -lt "$need_major" ] ||
+	{ [ "$version_major" -eq "$need_major" ] && [ "$version_minor" -lt "$need_minor" ]; }; then
+	printf "tmux version %s too old\n" "$version" >&2
+	return 1
+    fi
+    # Finally, check that tmux actually works to some degree.
+    #
+    # Use a different socket name.  On Cygwin, this tmux server is
+    # slow to exit, and the actual test tmux can attach to it, causing
+    # problems with missing environment variables.
+    tmux_check_socket=$(mktemp -d /tmp/mosh-tmux-check.XXXXXXXX)
+    tmux -f /dev/null -S "${tmux_check_socket}/s" -C new-session true
+    rv=$?
+    rm ${tmux_check_socket}/s
+    rmdir ${tmux_check_socket}
+    return $rv
+}

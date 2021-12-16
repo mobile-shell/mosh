@@ -1,0 +1,83 @@
+#!/bin/sh
+
+#
+# This is a regression test for window resizing in Mosh.  Making it
+# happen is a little kludgy: we have to create other panes in tmux and
+# resize them.  But it works!
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" tmux baseline
+    exit
+fi
+
+tmux_resize_commands()
+{
+    hv=$1
+    shrink=$2
+    grow=$3
+    # Split the window into two panes.
+    printf "split-window -%s\n" "${hv}"
+    # Shrink the pane we created
+    for i in $(seq 1 10); do
+	sleepf
+	printf "resize-pane -%s\n" "${shrink}"
+    done
+    # And grow it
+    for i in $(seq 1 10); do
+	sleepf
+	printf "resize-pane -%s\n" "${grow}"
+    done
+    sleep 1
+    # Remove the pane we created.
+    printf "kill-pane\n"
+}
+
+tmux_commands()
+{
+    # An interactive shell is waiting for us in the mosh session.
+    # Start a full screen application that will redraw on window
+    # resize.
+    printf "send-keys 'less \"%s\"' 0x0d\n" "${srcdir}/e2e-test"
+    sleep 1
+    # we control the horizontal...
+    tmux_resize_commands v D U
+    sleep 1
+    # and the vertical.
+    tmux_resize_commands h L R
+    sleep 1
+    # Exit less.
+    printf "send-keys 'q'\n"
+    sleep 1
+    # Exit mosh session shell.
+    printf "send-keys 'exit 0' 0x0d\n"
+    # need to sleep extra long here, to let child commands complete,
+    # and not have tmux exit prematurely
+    sleep 5
+}
+
+tmux_stdin()
+{
+    tmux_commands | "$@"
+    exit
+}
+
+baseline()
+{
+    # Just start an interactive shell and wait.  The tmux action drives.
+    sh
+}
+
+case $1 in
+    tmux)
+	shift;
+	tmux_stdin "$@";;
+    baseline)
+	baseline;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

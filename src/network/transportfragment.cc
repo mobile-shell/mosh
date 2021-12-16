@@ -72,7 +72,7 @@ string Fragment::tostring( void )
   return ret;
 }
 
-Fragment::Fragment( string &x )
+Fragment::Fragment( const string &x )
   : id( -1 ), fragment_num( -1 ), final( false ), initialized( true ),
     contents()
 {
@@ -124,7 +124,7 @@ bool FragmentAssembly::add_fragment( Fragment &frag )
   }
 
   /* see if we're done */
-  return ( fragments_arrived == fragments_total );
+  return fragments_arrived == fragments_total;
 }
 
 Instruction FragmentAssembly::get_assembly( void )
@@ -148,14 +148,15 @@ Instruction FragmentAssembly::get_assembly( void )
   return ret;
 }
 
-bool Fragment::operator==( const Fragment &x )
+bool Fragment::operator==( const Fragment &x ) const
 {
   return ( id == x.id ) && ( fragment_num == x.fragment_num ) && ( final == x.final )
     && ( initialized == x.initialized ) && ( contents == x.contents );
 }
 
-vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, int MTU )
+vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, size_t MTU )
 {
+  MTU -= Fragment::frag_header_len;
   if ( (inst.old_num() != last_instruction.old_num())
        || (inst.new_num() != last_instruction.new_num())
        || (inst.ack_num() != last_instruction.ack_num())
@@ -182,9 +183,9 @@ vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, int MTU )
     string this_fragment;
     bool final = false;
 
-    if ( int( payload.size() + HEADER_LEN ) > MTU ) {
-      this_fragment = string( payload.begin(), payload.begin() + MTU - HEADER_LEN );
-      payload = string( payload.begin() + MTU - HEADER_LEN, payload.end() );
+    if ( payload.size() > MTU ) {
+      this_fragment = string( payload.begin(), payload.begin() + MTU );
+      payload = string( payload.begin() + MTU, payload.end() );
     } else {
       this_fragment = payload;
       payload.clear();

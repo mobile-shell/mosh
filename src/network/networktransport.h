@@ -63,7 +63,7 @@ namespace Network {
     uint64_t receiver_quench_timer;
     RemoteState last_receiver_state; /* the state we were in when user last queried state */
     FragmentAssembly fragments;
-    bool verbose;
+    unsigned int verbose;
 
   public:
     Transport( MyState &initial_state, RemoteState &initial_remote,
@@ -106,7 +106,7 @@ namespace Network {
 
     const std::vector< int > fds( void ) const { return connection.fds(); }
 
-    void set_verbose( void ) { sender.set_verbose(); verbose = true; }
+    void set_verbose( unsigned int s_verbose ) { sender.set_verbose( s_verbose ); verbose = s_verbose; }
 
     void set_send_delay( int new_delay ) { sender.set_send_delay( new_delay ); }
 
@@ -120,7 +120,7 @@ namespace Network {
     socklen_t get_remote_addr_len( void ) const { return connection.get_remote_addr_len(); }
     void update_remote_addr( Addr a ) { connection.update_remote_addr( a ); }
 
-    const NetworkException *get_send_exception( void ) const { return connection.get_send_exception(); }
+    std::string &get_send_error( void ) { return connection.get_send_error(); }
   };
 }
 

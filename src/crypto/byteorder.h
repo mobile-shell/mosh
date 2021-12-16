@@ -72,14 +72,14 @@
 
 inline uint64_t htobe64( uint64_t x ) {
   uint8_t xs[ 8 ] = {
-    ( x >> 56 ) & 0xFF,
-    ( x >> 48 ) & 0xFF,
-    ( x >> 40 ) & 0xFF,
-    ( x >> 32 ) & 0xFF,
-    ( x >> 24 ) & 0xFF,
-    ( x >> 16 ) & 0xFF,
-    ( x >>  8 ) & 0xFF,
-      x         & 0xFF };
+    static_cast<uint8_t>( ( x >> 56 ) & 0xFF ),
+    static_cast<uint8_t>( ( x >> 48 ) & 0xFF ),
+    static_cast<uint8_t>( ( x >> 40 ) & 0xFF ),
+    static_cast<uint8_t>( ( x >> 32 ) & 0xFF ),
+    static_cast<uint8_t>( ( x >> 24 ) & 0xFF ),
+    static_cast<uint8_t>( ( x >> 16 ) & 0xFF ),
+    static_cast<uint8_t>( ( x >>  8 ) & 0xFF ),
+    static_cast<uint8_t>( ( x       ) & 0xFF ) };
   union {
     const uint8_t  *p8;
     const uint64_t *p64;
@@ -106,8 +106,8 @@ inline uint64_t be64toh( uint64_t x ) {
 
 inline uint16_t htobe16( uint16_t x ) {
   uint8_t xs[ 2 ] = {
-    ( x >> 8 ) & 0xFF,
-      x        & 0xFF };
+    static_cast<uint8_t>( ( x >> 8 ) & 0xFF ),
+    static_cast<uint8_t>( ( x      ) & 0xFF ) };
   union {
     const uint8_t  *p8;
     const uint16_t *p16;

@@ -40,22 +40,18 @@
 
 const Parser::StateFamily Parser::family;
 
-static void append_or_delete( Parser::Action *act,
-			      std::list<Parser::Action *>&vec )
+static void append_or_delete( Parser::ActionPointer act,
+			      Parser::Actions &vec )
 {
   assert( act );
 
-  if ( typeid( *act ) != typeid( Parser::Ignore ) ) {
+  if ( !act->ignore() ) {
     vec.push_back( act );
-  } else {
-    delete act;
   }
 }
 
-std::list<Parser::Action *> Parser::Parser::input( wchar_t ch )
+void Parser::Parser::input( wchar_t ch, Actions &ret )
 {
-  std::list<Action *> ret;
-
   Transition tx = state->input( ch );
 
   if ( tx.next_state != NULL ) {
@@ -68,31 +64,33 @@ std::list<Parser::Action *> Parser::Parser::input( wchar_t ch )
     append_or_delete( tx.next_state->enter(), ret );
     state = tx.next_state;
   }
-
-  return ret;
 }
 
 Parser::UTF8Parser::UTF8Parser()
   : parser(), buf_len( 0 )
 {
   assert( BUF_SIZE >= (size_t)MB_CUR_MAX );
+  buf[0] = '\0';
 }
 
-std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
+void Parser::UTF8Parser::input( char c, Actions &ret )
 {
   assert( buf_len < BUF_SIZE );
+
+  /* 1-byte UTF-8 character, aka ASCII?  Cheat. */
+  if ( buf_len == 0 && static_cast<unsigned char>(c) <= 0x7f ) {
+    parser.input( static_cast<wchar_t>(c), ret );
+    return;
+  }
 
   buf[ buf_len++ ] = c;
 
   /* This function will only work in a UTF-8 locale. */
-
   wchar_t pwc;
-  mbstate_t ps;
-  memset( &ps, 0, sizeof( ps ) );
+  mbstate_t ps = mbstate_t();
 
   size_t total_bytes_parsed = 0;
   size_t orig_buf_len = buf_len;
-  std::list<Action *> ret;
 
   /* this routine is somewhat complicated in order to comply with
      Unicode 6.0, section 3.9, "Best Practices for using U+FFFD" */
@@ -103,9 +101,6 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
     size_t bytes_parsed = mbrtowc( &pwc, buf, buf_len, &ps );
 
     /* this returns 0 when n = 0! */
-
-    /* This function annoying returns a size_t so we have to check
-       the negative values first before the "> 0" branch */
 
     if ( bytes_parsed == 0 ) {
       /* character was NUL, accept and clear buffer */
@@ -129,19 +124,17 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
       /* can't parse incomplete multibyte character */
       total_bytes_parsed += buf_len;
       continue;
-    } else if ( bytes_parsed > 0 ) {
+    } else {
       /* parsed into pwc, accept */
       assert( bytes_parsed <= buf_len );
       memmove( buf, buf + bytes_parsed, buf_len - bytes_parsed );
       buf_len = buf_len - bytes_parsed;
-    } else {
-      throw std::string( "Unknown return value from mbrtowc" );
     }
 
     /* Cast to unsigned for checks, because some
        platforms (e.g. ARM) use uint32_t as wchar_t,
        causing compiler warning on "pwc > 0" check. */
-    uint64_t pwcheck = pwc;
+    const uint32_t pwcheck = pwc;
 
     if ( pwcheck > 0x10FFFF ) { /* outside Unicode range */
       pwc = (wchar_t) 0xFFFD;
@@ -156,13 +149,10 @@ std::list<Parser::Action *> Parser::UTF8Parser::input( char c )
       pwc = (wchar_t) 0xFFFD;
     }
 
-    std::list<Action *> vec = parser.input( pwc );
-    ret.insert( ret.end(), vec.begin(), vec.end() );
+    parser.input( pwc, ret );
 
     total_bytes_parsed += bytes_parsed;
   }
-
-  return ret;
 }
 
 Parser::Parser::Parser( const Parser &other )

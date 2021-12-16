@@ -33,120 +33,212 @@
 #ifndef TERMINALFB_HPP
 #define TERMINALFB_HPP
 
+#include <assert.h>
+#include <limits.h>
+#include <stdint.h>
+
 #include <vector>
 #include <deque>
 #include <string>
 #include <list>
-#include <assert.h>
+
+#include "shared.h"
 
 /* Terminal framebuffer */
 
 namespace Terminal {
+  using shared::shared_ptr;
+  using shared::make_shared;
+  typedef uint32_t color_type;
+
   class Renditions {
   public:
-    bool bold, italic, underlined, blink, inverse, invisible;
-    int foreground_color;
-    int background_color;
+    typedef enum { bold, faint, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
 
-    Renditions( int s_background );
+  private:
+    static const uint64_t true_color_mask = 0x1000000;
+    uint64_t foreground_color : 25;
+    uint64_t background_color : 25;
+    uint64_t attributes : 8;
+
+  public:
+    Renditions( color_type s_background );
     void set_foreground_color( int num );
     void set_background_color( int num );
-    void set_rendition( int num );
+    void set_rendition( color_type num );
     std::string sgr( void ) const;
 
-    void posterize( void );
+    static unsigned int make_true_color( unsigned int r, unsigned int g, unsigned int b ) {
+      return true_color_mask | (r << 16) | (g << 8) | b;
+    }
+
+    static bool is_true_color(unsigned int color) {
+      return (color & true_color_mask) != 0;
+    }
+
+    // unsigned int get_foreground_rendition() const { return foreground_color; }
+    unsigned int get_background_rendition() const { return background_color; }
 
     bool operator==( const Renditions &x ) const
     {
-      return (bold == x.bold) && (italic == x.italic) && (underlined == x.underlined)
-	&& (blink == x.blink) && (inverse == x.inverse)
-	&& (invisible == x.invisible) && (foreground_color == x.foreground_color)
-	&& (background_color == x.background_color);
+      return ( attributes == x.attributes )
+        && ( foreground_color == x.foreground_color )
+        && ( background_color == x.background_color );
     }
+    void set_attribute( attribute_type attr, bool val )
+    {
+      attributes = val ?
+	( attributes | (1 << attr) ) :
+	( attributes & ~(1 << attr) );
+    }
+    bool get_attribute( attribute_type attr ) const { return attributes & ( 1 << attr ); }
+    void clear_attributes() { attributes = 0; }
   };
 
   class Cell {
-  public:
-    std::vector<wchar_t> contents;
-    char fallback; /* first character is combining character */
-    int width;
+  private:
+    typedef std::string content_type; /* can be std::string, std::vector<uint8_t>, or __gnu_cxx::__vstring */
+    content_type contents;
     Renditions renditions;
-    bool wrap; /* if last cell, wrap to next line */
+    unsigned int wide : 1; /* 0 = narrow, 1 = wide */
+    unsigned int fallback : 1; /* first character is combining character */
+    unsigned int wrap : 1;
 
-    Cell( int background_color )
-      : contents(),
-	fallback( false ),
-	width( 1 ),
-	renditions( background_color ),
-	wrap( false )
-    {}
+  private:
+    Cell();
+  public:
+    Cell( color_type background_color );
 
-    Cell() /* default constructor required by C++11 STL */
-      : contents(),
-	fallback( false ),
-	width( 1 ),
-	renditions( 0 ),
-	wrap( false )
-    {
-      assert( false );
-    }
-
-    void reset( int background_color );
+    void reset( color_type background_color );
 
     bool operator==( const Cell &x ) const
     {
       return ( (contents == x.contents)
 	       && (fallback == x.fallback)
-	       && (width == x.width)
+	       && (wide == x.wide)
 	       && (renditions == x.renditions)
 	       && (wrap == x.wrap) );
     }
 
-    wchar_t debug_contents( void ) const;
+    bool operator!=( const Cell &x ) const { return !operator==( x ); }
+
+    /* Accessors for contents field */
+    std::string debug_contents( void ) const;
+
+    bool empty( void ) const { return contents.empty(); }
+    /* 32 seems like a reasonable limit on combining characters */
+    bool full( void ) const { return contents.size() >= 32; }
+    void clear( void ) { contents.clear(); }
 
     bool is_blank( void ) const
     {
+      // XXX fix.
       return ( contents.empty()
-	       || ( (contents.size() == 1) && ( (contents.front() == 0x20)
-						|| (contents.front() == 0xA0) ) ) );
+	       || contents == " "
+	       || contents == "\xC2\xA0" );
     }
 
-    bool contents_match ( const Cell& other ) const
+    bool contents_match ( const Cell &other ) const
     {
       return ( is_blank() && other.is_blank() )
              || ( contents == other.contents );
     }
 
     bool compare( const Cell &other ) const;
+
+    // Is this a printing ISO 8859-1 character?
+    static bool isprint_iso8859_1( const wchar_t c )
+    {
+      return ( c <= 0xff && c >= 0xa0 ) || ( c <= 0x7e && c >= 0x20 );
+    }
+
+   static void append_to_str( std::string &dest, const wchar_t c )
+    {
+      /* ASCII?  Cheat. */
+      if ( static_cast<uint32_t>(c) <= 0x7f ) {
+	dest.push_back( static_cast<char>(c) );
+	return;
+      }
+      static mbstate_t ps = mbstate_t();
+      char tmp[MB_LEN_MAX];
+      size_t ignore = wcrtomb(NULL, 0, &ps);
+      (void)ignore;
+      size_t len = wcrtomb(tmp, c, &ps);
+      dest.append( tmp, len );
+    }
+
+    void append( const wchar_t c )
+    {
+      /* ASCII?  Cheat. */
+      if ( static_cast<uint32_t>(c) <= 0x7f ) {
+	contents.push_back( static_cast<char>(c) );
+	return;
+      }
+      static mbstate_t ps = mbstate_t();
+      char tmp[MB_LEN_MAX];
+      size_t ignore = wcrtomb(NULL, 0, &ps);
+      (void)ignore;
+      size_t len = wcrtomb(tmp, c, &ps);
+      contents.insert( contents.end(), tmp, tmp+len );
+    }
+
+    void print_grapheme( std::string &output ) const
+    {
+      if ( contents.empty() ) {
+	output.append( 1, ' ' );
+	return;
+      }
+      /*
+       * cells that begin with combining character get combiner
+       * attached to no-break space
+       */
+      if ( fallback ) {
+	output.append( "\xC2\xA0" );
+      }
+      output.append( contents );
+    }
+
+    /* Other accessors */
+    const Renditions& get_renditions( void ) const { return renditions; }
+    Renditions& get_renditions( void ) { return renditions; }
+    void set_renditions( const Renditions& r ) { renditions = r; }
+    bool get_wide( void ) const { return wide; }
+    void set_wide( bool w ) { wide = w; }
+    unsigned int get_width( void ) const { return wide + 1; }
+    bool get_fallback( void ) const { return fallback; }
+    void set_fallback( bool f ) { fallback = f; }
+    bool get_wrap( void ) const { return wrap; }
+    void set_wrap( bool f ) { wrap = f; }
   };
 
   class Row {
   public:
     typedef std::vector<Cell> cells_type;
     cells_type cells;
+    // gen is a generation counter.  It can be used to quickly rule
+    // out the possibility of two rows being identical; this is useful
+    // in scrolling.
+    uint64_t gen;
 
-    Row( size_t s_width, int background_color )
-      : cells( s_width, Cell( background_color ) )
-    {}
+  private:
+    Row();
+  public:
+    Row( const size_t s_width, const color_type background_color );
 
-    Row() /* default constructor required by C++11 STL */
-      : cells( 1, Cell() )
-    {
-      assert( false );
-    }
+    void insert_cell( int col, color_type background_color );
+    void delete_cell( int col, color_type background_color );
 
-    void insert_cell( int col, int background_color );
-    void delete_cell( int col, int background_color );
-
-    void reset( int background_color );
+    void reset( color_type background_color );
 
     bool operator==( const Row &x ) const
     {
-      return ( cells == x.cells );
+      return ( gen == x.gen && cells == x.cells );
     }
 
-    bool get_wrap( void ) const { return cells.back().wrap; }
-    void set_wrap( bool w ) { cells.back().wrap = w; }
+    bool get_wrap( void ) const { return cells.back().get_wrap(); }
+    void set_wrap( bool w ) { cells.back().set_wrap( w ); }
+
+    uint64_t get_gen() const;
   };
 
   class SavedCursor {
@@ -190,10 +282,25 @@ namespace Terminal {
     bool cursor_visible;
     bool reverse_video;
     bool bracketed_paste;
-    bool vt100_mouse;
-    bool xterm_mouse;
-    bool xterm_extended_mouse; // aka SGR
-    bool xterm_utf8_mouse;
+
+    enum MouseReportingMode {
+      MOUSE_REPORTING_NONE = 0,
+      MOUSE_REPORTING_X10 = 9,
+      MOUSE_REPORTING_VT220 = 1000,
+      MOUSE_REPORTING_VT220_HILIGHT = 1001,
+      MOUSE_REPORTING_BTN_EVENT = 1002,
+      MOUSE_REPORTING_ANY_EVENT = 1003
+    } mouse_reporting_mode;
+
+    bool mouse_focus_event;       // 1004
+    bool mouse_alternate_scroll;  // 1007
+
+    enum MouseEncodingMode {
+      MOUSE_ENCODING_DEFAULT = 0,
+      MOUSE_ENCODING_UTF8 = 1005,
+      MOUSE_ENCODING_SGR = 1006,
+      MOUSE_ENCODING_URXVT = 1015
+    } mouse_encoding_mode;
 
     bool application_mode_cursor_keys;
 
@@ -213,21 +320,22 @@ namespace Terminal {
     void clear_tab( int col );
     void clear_default_tabs( void ) { default_tabs = false; }
     /* Default tabs can't be restored without resetting the draw state. */
-    int get_next_tab( void );
+    int get_next_tab( int count ) const;
 
     void set_scrolling_region( int top, int bottom );
 
     int get_scrolling_region_top_row( void ) const { return scrolling_region_top_row; }
     int get_scrolling_region_bottom_row( void ) const { return scrolling_region_bottom_row; }
 
-    int limit_top( void );
-    int limit_bottom( void );
+    int limit_top( void ) const;
+    int limit_bottom( void ) const;
 
     void set_foreground_color( int x ) { renditions.set_foreground_color( x ); }
     void set_background_color( int x ) { renditions.set_background_color( x ); }
-    void add_rendition( int x ) { renditions.set_rendition( x ); }
-    Renditions get_renditions( void ) const { return renditions; }
-    int get_background_rendition( void ) const { return renditions.background_color; }
+    void add_rendition( color_type x ) { renditions.set_rendition( x ); }
+    const Renditions& get_renditions( void ) const { return renditions; }
+    Renditions& get_renditions( void ) { return renditions; }
+    int get_background_rendition( void ) const { return renditions.get_background_rendition(); }
 
     void save_cursor( void );
     void restore_cursor( void );
@@ -243,76 +351,96 @@ namespace Terminal {
       return ( width == x.width ) && ( height == x.height ) && ( cursor_col == x.cursor_col )
 	&& ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible ) &&
 	( reverse_video == x.reverse_video ) && ( renditions == x.renditions ) &&
-  ( bracketed_paste == x.bracketed_paste ) && ( vt100_mouse == x.vt100_mouse ) &&
-  ( xterm_mouse == x.xterm_mouse ) && ( xterm_extended_mouse == x.xterm_extended_mouse ) && 
-  ( xterm_utf8_mouse == x.xterm_utf8_mouse );
+  ( bracketed_paste == x.bracketed_paste ) && ( mouse_reporting_mode == x.mouse_reporting_mode ) &&
+  ( mouse_focus_event == x.mouse_focus_event ) && ( mouse_alternate_scroll == x.mouse_alternate_scroll) &&
+  ( mouse_encoding_mode == x.mouse_encoding_mode );
     }
   };
 
   class Framebuffer {
+    // To minimize copying of rows and cells, we use shared_ptr to
+    // share unchanged rows between multiple Framebuffers.  If we
+    // write to a row in a Framebuffer and it is shared with other
+    // owners, we copy it first.  The shared_ptr naturally manages the
+    // usage of the actual rows themselves.
+    //
+    // We gain a couple of free extras by doing this:
+    //
+    // * A quick check for equality between rows in different
+    // Framebuffers is to simply compare the pointer values.  If they
+    // are equal, then the rows are obviously identical.
+    // * If no row is shared, the frame has not been modified.
+  public:
+    typedef std::vector<wchar_t> title_type;
+    typedef shared_ptr<Row> row_pointer;
+    typedef std::vector<row_pointer> rows_type; /* can be either std::vector or std::deque */
+
   private:
-    typedef std::deque<Row> rows_type;
     rows_type rows;
-    std::deque<wchar_t> icon_name;
-    std::deque<wchar_t> window_title;
+    title_type icon_name;
+    title_type window_title;
+    title_type clipboard;
     unsigned int bell_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
 
-    Row newrow( void ) { return Row( ds.get_width(), ds.get_background_rendition() ); }
+    row_pointer newrow( void )
+    {
+      const size_t w = ds.get_width();
+      const color_type c = ds.get_background_rendition();
+      return make_shared<Row>( w, c );
+    }
 
   public:
     Framebuffer( int s_width, int s_height );
+    Framebuffer( const Framebuffer &other );
+    Framebuffer &operator=( const Framebuffer &other );
     DrawState ds;
+
+    const rows_type &get_rows() const { return rows; }
 
     void scroll( int N );
     void move_rows_autoscroll( int rows );
 
-    const Row *get_row( int row ) const
+    inline const Row *get_row( int row ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
 
-      return &rows[ row ];
+      return rows.at( row ).get();
     }
 
-    inline const Cell *get_cell( void ) const
-    {
-      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
-    }
-
-    inline const Cell *get_cell( int row, int col ) const
+    inline const Cell *get_cell( int row = -1, int col = -1 ) const
     {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
 
-      return &rows[ row ].cells[ col ];
+      return &rows.at( row )->cells.at( col );
     }
 
     Row *get_mutable_row( int row )
     {
       if ( row == -1 ) row = ds.get_cursor_row();
-
-      return &rows[ row ];
+      row_pointer &mutable_row = rows.at( row );
+      // If the row is shared, copy it.
+      if (!mutable_row.unique()) {
+	mutable_row = make_shared<Row>( *mutable_row );
+      }
+      return mutable_row.get();
     }
 
-    inline Cell *get_mutable_cell( void )
-    {
-      return &rows[ ds.get_cursor_row() ].cells[ ds.get_cursor_col() ];
-    }
-
-    inline Cell *get_mutable_cell( int row, int col )
+    Cell *get_mutable_cell( int row = -1, int col = -1 )
     {
       if ( row == -1 ) row = ds.get_cursor_row();
       if ( col == -1 ) col = ds.get_cursor_col();
 
-      return &rows[ row ].cells[ col ];
+      return &get_mutable_row( row )->cells.at( col );
     }
 
     Cell *get_combining_cell( void );
 
-    void apply_renditions_to_current_cell( void );
+    void apply_renditions_to_cell( Cell *cell );
 
-    void insert_line( int before_row );
-    void delete_line( int row );
+    void insert_line( int before_row, int count );
+    void delete_line( int row, int count );
 
     void insert_cell( int row, int col );
     void delete_cell( int row, int col );
@@ -322,26 +450,26 @@ namespace Terminal {
 
     void set_title_initialized( void ) { title_initialized = true; }
     bool is_title_initialized( void ) const { return title_initialized; }
-    void set_icon_name( const std::deque<wchar_t> &s ) { icon_name = s; }
-    void set_window_title( const std::deque<wchar_t> &s ) { window_title = s; }
-    const std::deque<wchar_t> & get_icon_name( void ) const { return icon_name; }
-    const std::deque<wchar_t> & get_window_title( void ) const { return window_title; }
+    void set_icon_name( const title_type &s ) { icon_name = s; }
+    void set_window_title( const title_type &s ) { window_title = s; }
+    void set_clipboard( const title_type &s ) { clipboard = s; }
+    const title_type & get_icon_name( void ) const { return icon_name; }
+    const title_type & get_window_title( void ) const { return window_title; }
+    const title_type & get_clipboard( void ) const { return clipboard; }
 
-    void prefix_window_title( const std::deque<wchar_t> &s );
+    void prefix_window_title( const title_type &s );
 
     void resize( int s_width, int s_height );
 
     void reset_cell( Cell *c ) { c->reset( ds.get_background_rendition() ); }
     void reset_row( Row *r ) { r->reset( ds.get_background_rendition() ); }
 
-    void posterize( void );
-
     void ring_bell( void ) { bell_count++; }
     unsigned int get_bell_count( void ) const { return bell_count; }
 
     bool operator==( const Framebuffer &x ) const
     {
-      return ( rows == x.rows ) && ( window_title == x.window_title ) && ( bell_count == x.bell_count ) && ( ds == x.ds );
+      return ( rows == x.rows ) && ( window_title == x.window_title ) && ( clipboard  == x.clipboard ) && ( bell_count == x.bell_count ) && ( ds == x.ds );
     }
   };
 }

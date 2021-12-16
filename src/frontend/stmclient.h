@@ -40,6 +40,7 @@
 #include "completeterminal.h"
 #include "networktransport.h"
 #include "user.h"
+#include "shared.h"
 #include "terminaloverlay.h"
 
 class STMClient {
@@ -59,17 +60,20 @@ private:
 
   struct winsize window_size;
 
-  Terminal::Framebuffer *local_framebuffer, *new_state;
+  Terminal::Framebuffer local_framebuffer, new_state;
   Overlay::OverlayManager overlays;
-  Network::Transport< Network::UserStream, Terminal::Complete > *network;
+  typedef Network::Transport< Network::UserStream, Terminal::Complete > NetworkType;
+  typedef shared::shared_ptr< NetworkType > NetworkPointer;
+  NetworkPointer network;
   Terminal::Display display;
 
   std::wstring connecting_notification;
   bool repaint_requested, lf_entered, quit_sequence_started;
   bool clean_shutdown;
+  unsigned int verbose;
 
   void main_init( void );
-  bool process_network_input( void );
+  void process_network_input( void );
   bool process_user_input( int fd );
   bool process_resize( void );
 
@@ -84,22 +88,24 @@ private:
   void resume( void ); /* restore state after SIGCONT */
 
 public:
-  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, const char *s_name )
-    : ip( s_ip ), port( s_port ), key( s_key ), name( s_name ),
+  STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, unsigned int s_verbose, const char *predict_overwrite, const char *s_name )
+    : ip( s_ip ? s_ip : "" ), port( s_port ? s_port : "" ),
+    key( s_key ? s_key : "" ), name( s_name? s_name : "" ),
     escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
     escape_requires_lf( false ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(),
       window_size(),
-      local_framebuffer( NULL ),
-      new_state( NULL ),
+      local_framebuffer( 1, 1 ),
+      new_state( 1, 1 ),
       overlays(),
-      network( NULL ),
+      network(),
       display( true ), /* use TERM environment var to initialize display */
       connecting_notification(),
       repaint_requested( false ),
       lf_entered( false ),
       quit_sequence_started( false ),
-      clean_shutdown( false )
+      clean_shutdown( false ),
+      verbose( s_verbose )
   {
     if ( predict_mode ) {
       if ( !strcmp( predict_mode, "always" ) ) {
@@ -115,26 +121,14 @@ public:
 	exit( 1 );
       }
     }
+    if ( predict_overwrite && !strcmp( predict_overwrite, "yes" ) ) {
+      overlays.get_prediction_engine().set_predict_overwrite( true );
+    } 
   }
 
   void init( void );
   void shutdown( void );
-  void main( void );
-
-  ~STMClient()
-  {
-    if ( local_framebuffer != NULL ) {
-      delete local_framebuffer;
-    }
-
-    if ( new_state != NULL ) {
-      delete new_state;
-    }
-
-    if ( network != NULL ) {
-      delete network;
-    }
-  }
+  bool main( void );
 
   /* unused */
   STMClient( const STMClient & );

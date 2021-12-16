@@ -36,8 +36,9 @@
 #include "user.h"
 #include "fatal_assert.h"
 #include "pty_compat.h"
-#include "networktransport.cc"
+#include "networktransport-impl.h"
 #include "select.h"
+#include "shared.h"
 
 using namespace Network;
 
@@ -49,9 +50,8 @@ int main( int argc, char *argv[] )
   char *port;
 
   UserStream me, remote;
-
-  Transport<UserStream, UserStream> *n;
-
+  typedef shared::shared_ptr<Transport<UserStream, UserStream> > NetworkPointer;
+  Transport<UserStream, UserStream> *raw_n;
   try {
     if ( argc > 1 ) {
       server = false;
@@ -61,15 +61,15 @@ int main( int argc, char *argv[] )
       ip = argv[ 2 ];
       port = argv[ 3 ];
       
-      n = new Transport<UserStream, UserStream>( me, remote, key, ip, port );
+      raw_n = new Transport<UserStream, UserStream>( me, remote, key, ip, port );
     } else {
-      n = new Transport<UserStream, UserStream>( me, remote, NULL, NULL );
+      raw_n = new Transport<UserStream, UserStream>( me, remote, NULL, NULL );
     }
-  } catch ( const CryptoException &e ) {
-    fprintf( stderr, "Fatal error: %s\n", e.text.c_str() );
+  } catch ( const std::exception &e ) {
+    fprintf( stderr, "Fatal startup error: %s\n", e.what() );
     exit( 1 );
   }
-
+  NetworkPointer n( raw_n );
   fprintf( stderr, "Port bound is %s, key is %s\n", n->port().c_str(), n->get_key().c_str() );
 
   if ( server ) {
@@ -97,8 +97,8 @@ int main( int argc, char *argv[] )
 	    last_num = n->get_remote_state_num();
 	  }
 	}
-      } catch ( const CryptoException &e ) {
-	fprintf( stderr, "Cryptographic error: %s\n", e.text.c_str() );
+      } catch ( const std::exception &e ) {
+	fprintf( stderr, "Server error: %s\n", e.what() );
       }
     }
   } else {
@@ -154,20 +154,13 @@ int main( int argc, char *argv[] )
 	    /* we only read one socket each run */
 	    network_ready_to_read = true;
 	  }
-
-	  if ( sel.error( *it ) ) {
-	    break;
-	  }
 	}
 
 	if ( network_ready_to_read ) {
 	  n->recv();
 	}
-      } catch ( const NetworkException &e ) {
-	fprintf( stderr, "%s: %s\r\n", e.function.c_str(), strerror( e.the_errno ) );
-	break;
-      } catch ( const CryptoException &e ) {
-	fprintf( stderr, "Cryptographic error: %s\n", e.text.c_str() );
+      } catch ( const std::exception &e ) {
+	fprintf( stderr, "Client error: %s\n", e.what() );
       }
     }
 
@@ -176,6 +169,4 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }    
   }
-
-  delete n;
 }

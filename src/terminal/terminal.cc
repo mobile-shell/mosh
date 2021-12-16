@@ -37,7 +37,6 @@
 #include <typeinfo>
 
 #include "terminal.h"
-#include "swrite.h"
 
 using namespace Terminal;
 
@@ -61,11 +60,15 @@ void Emulator::print( const Parser::Print *act )
 {
   assert( act->char_present );
 
-  int chwidth = act->ch == L'\0' ? -1 : wcwidth( act->ch );
+  const wchar_t ch = act->ch;
+
+  /*
+   * Check for printing ISO 8859-1 first, it's a cheap way to detect
+   * some common narrow characters.
+   */
+  const int chwidth = ch == L'\0' ? -1 : ( Cell::isprint_iso8859_1( ch ) ? 1 : wcwidth( ch ));
 
   Cell *this_cell = fb.get_mutable_cell();
-
-  Cell *combining_cell = fb.get_combining_cell(); /* can be null if we were resized */
 
   switch ( chwidth ) {
   case 1: /* normal character */
@@ -74,6 +77,7 @@ void Emulator::print( const Parser::Print *act )
       fb.get_mutable_row( -1 )->set_wrap( true );
       fb.ds.move_col( 0 );
       fb.move_rows_autoscroll( 1 );
+      this_cell = NULL;
     } else if ( fb.ds.auto_wrap_mode
 		&& (chwidth == 2)
 		&& (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
@@ -86,55 +90,59 @@ void Emulator::print( const Parser::Print *act )
 	 because a wide char was wrapped to the next line. */
       fb.ds.move_col( 0 );
       fb.move_rows_autoscroll( 1 );
+      this_cell = NULL;
     }
 
     if ( fb.ds.insert_mode ) {
       for ( int i = 0; i < chwidth; i++ ) {
 	fb.insert_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
       }
+      this_cell = NULL;
     }
 
-    this_cell = fb.get_mutable_cell();
+    if (!this_cell) {
+      this_cell = fb.get_mutable_cell();
+    }
 
     fb.reset_cell( this_cell );
-    this_cell->contents.push_back( act->ch );
-    this_cell->width = chwidth;
-    fb.apply_renditions_to_current_cell();
+    this_cell->append( ch );
+    this_cell->set_wide( chwidth == 2 ); /* chwidth had better be 1 or 2 here */
+    fb.apply_renditions_to_cell( this_cell );
 
-    if ( chwidth == 2 ) { /* erase overlapped cell */
-      if ( fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) {
-	fb.reset_cell( fb.get_mutable_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 ) );
-      }
+    if ( chwidth == 2
+      && fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) { /* erase overlapped cell */
+      fb.reset_cell( fb.get_mutable_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 ) );
     }
 
     fb.ds.move_col( chwidth, true, true );
 
-    act->handled = true;
     break;
   case 0: /* combining character */
-    if ( combining_cell == NULL ) { /* character is now offscreen */
-      act->handled = true;
-      break;
-    }
+    {
+      Cell *combining_cell = fb.get_combining_cell(); /* can be null if we were resized */
+      if ( combining_cell == NULL ) { /* character is now offscreen */
+	break;
+      }
 
-    if ( combining_cell->contents.size() == 0 ) {
-      /* cell starts with combining character */
-      assert( this_cell == combining_cell );
-      assert( combining_cell->width == 1 );
-      combining_cell->fallback = true;
-      fb.ds.move_col( 1, true, true );
+      if ( combining_cell->empty() ) {
+	/* cell starts with combining character */
+	/* ... but isn't necessarily the target for a new
+	   base character [e.g. start of line], if the
+	   combining character has been cleared with
+	   a sequence like ED ("J") or EL ("K") */
+	assert( !combining_cell->get_wide() );
+	combining_cell->set_fallback( true );
+	fb.ds.move_col( 1, true, true );
+      }
+      if ( !combining_cell->full() ) {
+	combining_cell->append( ch );
+      }
     }
-
-    if ( combining_cell->contents.size() < 16 ) {
-      /* seems like a reasonable limit on combining characters */
-      combining_cell->contents.push_back( act->ch );
-    }
-    act->handled = true;
     break;
   case -1: /* unprintable character */
     break;
   default:
-    assert( false );
+    assert( !"unexpected character width from wcwidth()" );
     break;
   }
 }
@@ -171,5 +179,5 @@ void Emulator::resize( size_t s_width, size_t s_height )
 bool Emulator::operator==( Emulator const &x ) const
 {
   /* dispatcher and user are irrelevant for us */
-  return ( fb == x.fb );
+  return fb == x.fb;
 }

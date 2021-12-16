@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(srcdir)/../util $(OPENSSL_CFLAGS)
+AM_CPPFLAGS = -I$(srcdir)/../util $(CRYPTO_CFLAGS)
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
 
 noinst_LIBRARIES = libmoshcrypto.a

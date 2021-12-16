@@ -31,9 +31,9 @@
 */
 
 #include "config.h"
+#include "version.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "stmclient.h"
@@ -70,15 +70,23 @@
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
 
-void usage( const char *argv0 ) {
-  fprintf( stderr, "mosh-client (%s)\n", PACKAGE_STRING );
-  fprintf( stderr, "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n" );
-  fprintf( stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\n" );
-
-  fprintf( stderr, "Usage: %s IP PORT [HOSTNAME]\n       %s -c\n", argv0, argv0 );
+static void print_version( FILE *file )
+{
+  fputs( "mosh-client (" PACKAGE_STRING ") [build " BUILD_VERSION "]\n"
+	 "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n"
+	 "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+	 "This is free software: you are free to change and redistribute it.\n"
+	 "There is NO WARRANTY, to the extent permitted by law.\n", file );
 }
 
-void print_colorcount( void )
+static void print_usage( FILE *file, const char *argv0 )
+{
+  print_version( file );
+  fprintf( file, "\nUsage: %s [-# 'ARGS'] IP PORT [HOSTNAME]\n"
+	   "       %s -c\n", argv0, argv0 );
+}
+
+static void print_colorcount( void )
 {
   /* check colors */
   setupterm((char *)0, 1, (int *)0);
@@ -93,8 +101,13 @@ void print_colorcount( void )
   printf( "%d\n", color_val );
 }
 
+#ifdef NACL
+int mosh_main( int argc, char *argv[] )
+#else
 int main( int argc, char *argv[] )
+#endif
 {
+  unsigned int verbose = 0;
   /* For security, make sure we don't dump core */
   Crypto::disable_dumping_core();
 
@@ -102,15 +115,32 @@ int main( int argc, char *argv[] )
   fatal_assert( argc > 0 );
 
   /* Get arguments */
+  for ( int i = 1; i < argc; i++ ) {
+    if ( 0 == strcmp( argv[ i ], "--help" ) ) {
+      print_usage( stdout, argv[ 0 ] );
+      exit( 0 );
+    }
+    if ( 0 == strcmp( argv[ i ], "--version" ) ) {
+      print_version( stdout );
+      exit( 0 );
+    }
+  }
+
   int opt;
-  while ( (opt = getopt( argc, argv, "c" )) != -1 ) {
+  while ( (opt = getopt( argc, argv, "#:cv" )) != -1 ) {
     switch ( opt ) {
+    case '#':
+      // Ignore the original arguments to mosh wrapper
+      break;
     case 'c':
       print_colorcount();
       exit( 0 );
       break;
+    case 'v':
+      verbose++;
+      break;
     default:
-      usage( argv[ 0 ] );
+      print_usage( stderr, argv[ 0 ] );
       exit( 1 );
       break;
     }
@@ -119,7 +149,7 @@ int main( int argc, char *argv[] )
   char *ip, *desired_port, *name;
 
   if ((argc - optind > 3) || ( argc - optind < 2 )) {
-    usage( argv[ 0 ] );
+    print_usage( stderr, argv[ 0 ] );
     exit( 1 );
   }
 
@@ -137,14 +167,14 @@ int main( int argc, char *argv[] )
   if ( desired_port
        && ( strspn( desired_port, "0123456789" ) != strlen( desired_port ) ) ) {
     fprintf( stderr, "%s: Bad UDP port (%s)\n\n", argv[ 0 ], desired_port );
-    usage( argv[ 0 ] );
+    print_usage( stderr, argv[ 0 ] );
     exit( 1 );
   }
 
   /* Read key from environment */
   char *env_key = getenv( "MOSH_KEY" );
   if ( env_key == NULL ) {
-    fprintf( stderr, "MOSH_KEY environment variable not found.\n" );
+    fputs( "MOSH_KEY environment variable not found.\n", stderr );
     exit( 1 );
   }
 
@@ -152,11 +182,11 @@ int main( int argc, char *argv[] )
   char *predict_mode = getenv( "MOSH_PREDICTION_DISPLAY" );
   /* can be NULL */
 
-  char *key = strdup( env_key );
-  if ( key == NULL ) {
-    perror( "strdup" );
-    exit( 1 );
-  }
+  /* Read prediction insertion preference */
+  char *predict_overwrite = getenv( "MOSH_PREDICTION_OVERWRITE" );
+  /* can be NULL */
+
+  string key( env_key );
 
   if ( unsetenv( "MOSH_KEY" ) < 0 ) {
     perror( "unsetenv" );
@@ -166,31 +196,33 @@ int main( int argc, char *argv[] )
   /* Adopt native locale */
   set_native_locale();
 
+  bool success = false;
   try {
-    STMClient client( ip, desired_port, key, predict_mode , name);
+    STMClient client( ip, desired_port, key.c_str(), predict_mode, verbose, predict_overwrite, name );
     client.init();
 
     try {
-      client.main();
+      success = client.main();
     } catch ( ... ) {
       client.shutdown();
       throw;
     }
 
     client.shutdown();
-  } catch ( const Network::NetworkException& e ) {
-    fprintf( stderr, "Network exception: %s: %s\r\n",
-	     e.function.c_str(), strerror( e.the_errno ) );
-  } catch ( const Crypto::CryptoException& e ) {
+  } catch ( const Network::NetworkException &e ) {
+    fprintf( stderr, "Network exception: %s\r\n",
+	     e.what() );
+    success = false;
+  } catch ( const Crypto::CryptoException &e ) {
     fprintf( stderr, "Crypto exception: %s\r\n",
-	     e.text.c_str() );
-  } catch ( const std::string& s ) {
-    fprintf( stderr, "Error: %s\r\n", s.c_str() );
+	     e.what() );
+    success = false;
+  } catch ( const std::exception &e ) {
+    fprintf( stderr, "Error: %s\r\n", e.what() );
+    success = false;
   }
 
-  printf( "\n[mosh is exiting.]\n" );
+  printf( "[mosh is exiting.]\n" );
 
-  free( key );
-
-  return 0;
+  return !success;
 }

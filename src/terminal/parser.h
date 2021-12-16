@@ -37,7 +37,6 @@
    http://www.vt100.net/emu/dec_ansi_parser */
 
 #include <wchar.h>
-#include <list>
 #include <string.h>
 
 #include "parsertransition.h"
@@ -59,14 +58,13 @@ namespace Parser {
     Parser & operator=( const Parser & );
     ~Parser() {}
 
-    std::list<Action *> input( wchar_t ch );
+    void input( wchar_t ch, Actions &actions );
 
-    bool operator==( const Parser &x ) const
+    void reset_input( void )
     {
-      return state == x.state;
+      state = &family.s_Ground;
     }
 
-    bool is_grounded( void ) const { return state == &family.s_Ground; }
   };
 
   static const size_t BUF_SIZE = 8;
@@ -81,14 +79,14 @@ namespace Parser {
   public:
     UTF8Parser();
 
-    std::list<Action *> input( char c );
+    void input( char c, Actions &actions );
 
-    bool operator==( const UTF8Parser &x ) const
+    void reset_input( void )
     {
-      return parser == x.parser;
+      parser.reset_input();
+      buf[0] = '\0';
+      buf_len = 0;
     }
-
-    bool is_grounded( void ) const { return parser.is_grounded(); }
   };
 }
 

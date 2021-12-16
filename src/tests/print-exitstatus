@@ -1,0 +1,33 @@
+#!/usr/bin/env perl
+
+#
+# Print exitstatus on stderr.
+#
+use warnings;
+use strict;
+
+my $rc = system(@ARGV);
+if ($? == -1) {
+    die "system failed: %!\n";
+}
+if ($? == 0) {
+    $rc = 0;
+} elsif ($? >= 256) {
+    $rc = $? >> 8;
+} else {
+    $rc = ($? & 127) | 128;
+}
+print STDERR "@@@ exitstatus: ${rc} @@@\n";
+# Now look for it in log file.
+my $grepfilename = $ENV{'MOSH_E2E_TEST'} . ".tmux.log";
+for my $i (1..600) {
+    open(my $grepfile, "<", $grepfilename) or die;
+    while (<$grepfile>) {
+	chomp;
+	/@@@ exitstatus: .* @@@/ && goto gotit;
+    }
+    close($grepfile);
+    sleep .1;
+}
+ gotit:
+exit $rc;

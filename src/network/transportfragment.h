@@ -39,19 +39,16 @@
 
 #include "transportinstruction.pb.h"
 
-using std::vector;
-using std::string;
-using namespace TransportBuffers;
-
 namespace Network {
-  static const int HEADER_LEN = 66;
+  using std::vector;
+  using std::string;
+  using namespace TransportBuffers;
 
   class Fragment
   {
-  private:
+  public:
     static const size_t frag_header_len = sizeof( uint64_t ) + sizeof( uint16_t );
 
-  public:
     uint64_t id;
     uint16_t fragment_num;
     bool final;
@@ -64,16 +61,16 @@ namespace Network {
       : id( -1 ), fragment_num( -1 ), final( false ), initialized( false ), contents()
     {}
 
-    Fragment( uint64_t s_id, uint16_t s_fragment_num, bool s_final, string s_contents )
+    Fragment( uint64_t s_id, uint16_t s_fragment_num, bool s_final, const string & s_contents )
       : id( s_id ), fragment_num( s_fragment_num ), final( s_final ), initialized( true ),
 	contents( s_contents )
     {}
 
-    Fragment( string &x );
+    Fragment( const string &x );
 
     string tostring( void );
 
-    bool operator==( const Fragment &x );
+    bool operator==( const Fragment &x ) const;
   };
 
   class FragmentAssembly
@@ -94,7 +91,7 @@ namespace Network {
   private:
     uint64_t next_instruction_id;
     Instruction last_instruction;
-    int last_MTU;
+    size_t last_MTU;
 
   public:
     Fragmenter() : next_instruction_id( 0 ), last_instruction(), last_MTU( -1 )
@@ -102,7 +99,7 @@ namespace Network {
       last_instruction.set_old_num( -1 );
       last_instruction.set_new_num( -1 );
     }
-    vector<Fragment> make_fragments( const Instruction &inst, int MTU );
+    vector<Fragment> make_fragments( const Instruction &inst, size_t MTU );
     uint64_t last_ack_sent( void ) const { return last_instruction.ack_num(); }
   };
   

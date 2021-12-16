@@ -30,14 +30,14 @@
     also delete it here.
 */
 
-#include <iostream>
+#ifndef NETWORK_TRANSPORT_IMPL_HPP
+#define NETWORK_TRANSPORT_IMPL_HPP
 
 #include "networktransport.h"
 
-#include "transportsender.cc"
+#include "transportsender-impl.h"
 
 using namespace Network;
-using namespace std;
 
 template <class MyState, class RemoteState>
 Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState &initial_remote,
@@ -48,7 +48,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     receiver_quench_timer( 0 ),
     last_receiver_state( initial_remote ),
     fragments(),
-    verbose( false )
+    verbose( 0 )
 {
   /* server */
 }
@@ -62,7 +62,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
     receiver_quench_timer( 0 ),
     last_receiver_state( initial_remote ),
     fragments(),
-    verbose( false )
+    verbose( 0 )
 {
   /* client */
 }
@@ -202,3 +202,5 @@ string Transport<MyState, RemoteState>::get_remote_diff( void )
 
   return ret;
 }
+
+#endif

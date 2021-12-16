@@ -1,3 +1,5 @@
 /mosh-package.pmdoc
 /Mosh*.pkg
-/prefix
+/prefix*/
+/Distribution
+/Resources/

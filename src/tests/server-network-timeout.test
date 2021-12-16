@@ -1,0 +1,114 @@
+#!/bin/sh
+
+#
+# This test checks for operation of the MOSH_SERVER_NETWORK_TMOUT variable.
+# It does this by
+# * setting the variable
+# * killing the client (and its network traffic)
+# * waiting server-side, for the server to die
+# If it is killed, the test is successful.
+# If it survives that long and the server is still around, the test fails.
+# The client waits a bit longer than the server so that status can be collected
+# properly.
+#
+
+TIMEOUT=10
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" client baseline
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+
+client()
+{
+    case "$myname" in
+	server-network-timeout)
+	    export MOSH_SERVER_NETWORK_TMOUT=$TIMEOUT;;
+	server-signal-timeout)
+	    export MOSH_SERVER_SIGNAL_TMOUT=$TIMEOUT;;
+	*)
+	    fail "unexpected test name %s\n" "$myname"
+    esac
+    shift
+    # Print this early, because the server is expected to die before
+    # the normal time this is sent by e2e-test-server.
+    printf "@@@ server complete @@@\n" >&2
+    # Run mosh SUT.
+    eval "$@"
+    # The client may be murdered.  We need to expect that...
+    retval=$?
+    case $retval in
+	0|1)
+	    fail "mosh-client had a normal exit\n";; # test condition failed
+	9|137|265)
+	    # Aha, signal 9.  Wait.
+	    sleep $(( TIMEOUT + 12 ))
+	    exit 0
+	    ;;
+	*)
+	    fail "unknown client wrapper failure, retval=%d\n" $retval
+	    ;;
+    esac
+    fail "client wrapper shouldnt get here\n"
+}
+baseline()
+{
+    # check for our wonderful variable
+    if [ -z "$MOSH_SERVER_NETWORK_TMOUT" ] && [ -z "$MOSH_SERVER_SIGNAL_TMOUT" ]; then
+	env
+	fail "Variable unset\n"
+    fi
+    # check for our client
+    if [ -z "$MOSH_CLIENT_PID" ]; then
+	env
+	fail "Client pid unavailable\n"
+    fi
+    if ! kill -0 "$MOSH_CLIENT_PID"; then
+	fail "mosh client is unexpectedly missing\n"
+    fi
+
+    # Set up for good return and cleanup on being killed
+    trap "echo got killed >&2; sleep 1; exit 0" HUP TERM
+    sleep 1
+    
+    # Kill the client, to stop network traffic.
+    kill -KILL "$MOSH_CLIENT_PID"
+    case "$myname" in
+	server-network-timeout)
+	    # Just wait.  This is the hardest part.
+	    sleep $(( TIMEOUT + 7 ))
+	    ;;
+	server-signal-timeout)
+	    # Wait for the timeout to expire.
+	    sleep $(( TIMEOUT + 2 ))
+	    # Tell the server to go away.
+	    kill -USR1 "$MOSH_SERVER_PID"
+	    sleep 5
+	    ;;
+	*)
+	    fail "unexpected test name %s\n" "$myname"
+    esac
+    # If we're still alive and the server is too, the test failed.
+    # XXX the server is getting killed and we're getting here anyway.
+    # Exit with error only if server is still around.
+    sleep 1
+    ! kill -0 "$MOSH_SERVER_PID"
+    exit
+}
+
+myname="$(basename "$0" .test)"
+
+case $1 in
+    baseline|variant)
+	baseline;;
+    client)
+	client "$@";;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

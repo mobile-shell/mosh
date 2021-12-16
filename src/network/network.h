@@ -41,6 +41,8 @@
 #include <math.h>
 #include <vector>
 #include <assert.h>
+#include <exception>
+#include <string.h>
 
 #include "crypto.h"
 
@@ -53,12 +55,18 @@ namespace Network {
   uint16_t timestamp16( void );
   uint16_t timestamp_diff( uint16_t tsnew, uint16_t tsold );
 
-  class NetworkException {
+  class NetworkException : public std::exception {
   public:
     string function;
     int the_errno;
-    NetworkException( string s_function, int s_errno ) : function( s_function ), the_errno( s_errno ) {}
-    NetworkException() : function( "<none>" ), the_errno( 0 ) {}
+  private:
+    string my_what;
+  public:
+    NetworkException( string s_function="<none>", int s_errno=0)
+      : function( s_function ), the_errno( s_errno ),
+        my_what(function + ": " + strerror(the_errno)) {}
+    const char *what() const throw () { return my_what.c_str(); }
+    ~NetworkException() throw () {}
   };
 
   enum Direction {
@@ -68,20 +76,20 @@ namespace Network {
 
   class Packet {
   public:
-    uint64_t seq;
+    const uint64_t seq;
     Direction direction;
     uint16_t timestamp, timestamp_reply;
     string payload;
     
-    Packet( uint64_t s_seq, Direction s_direction,
-	    uint16_t s_timestamp, uint16_t s_timestamp_reply, string s_payload )
-      : seq( s_seq ), direction( s_direction ),
+    Packet( Direction s_direction,
+	    uint16_t s_timestamp, uint16_t s_timestamp_reply, const string & s_payload )
+      : seq( Crypto::unique() ), direction( s_direction ),
 	timestamp( s_timestamp ), timestamp_reply( s_timestamp_reply ), payload( s_payload )
     {}
     
-    Packet( string coded_packet, Session *session );
+    Packet( const Message & message );
     
-    string tostring( Session *session );
+    Message toMessage( void );
   };
 
   union Addr {
@@ -93,7 +101,35 @@ namespace Network {
 
   class Connection {
   private:
-    static const int DEFAULT_SEND_MTU = 1300;
+    /*
+     * For IPv4, guess the typical (minimum) header length;
+     * fragmentation is not dangerous, just inefficient.
+     */
+    static const int IPV4_HEADER_LEN = 20 /* base IP header */
+      + 8 /* UDP */;
+    /*
+     * For IPv6, we don't want to ever have MTU issues, so make a
+     * conservative guess about header size.
+     */
+    static const int IPV6_HEADER_LEN = 40 /* base IPv6 header */
+      + 16 /* 2 minimum-sized extension headers */
+      + 8 /* UDP */;
+    /* Application datagram MTU. For constructors and fallback. */
+    static const int DEFAULT_SEND_MTU = 500;
+    /*
+     * IPv4 MTU. Don't use full Ethernet-derived MTU,
+     * mobile networks have high tunneling overhead.
+     *
+     * As of July 2016, VPN traffic over Amtrak Acela wifi seems to be
+     * dropped if tunnelled packets are 1320 bytes or larger.  Use a
+     * 1280-byte IPv4 MTU for now.
+     *
+     * We may have to implement ICMP-less PMTUD (RFC 4821) eventually.
+     */
+    static const int DEFAULT_IPV4_MTU = 1280;
+    /* IPv6 MTU. Use the guaranteed minimum to avoid fragmentation. */
+    static const int DEFAULT_IPV6_MTU = 1280;
+
     static const uint64_t MIN_RTO = 50; /* ms */
     static const uint64_t MAX_RTO = 1000; /* ms */
 
@@ -131,7 +167,7 @@ namespace Network {
 
     bool server;
 
-    int MTU;
+    int MTU; /* application datagram MTU */
 
     Base64Key key;
     Session session;
@@ -139,7 +175,6 @@ namespace Network {
     void setup( void );
 
     Direction direction;
-    uint64_t next_seq;
     uint16_t saved_timestamp;
     uint64_t saved_timestamp_received_at;
     uint64_t expected_receiver_seq;
@@ -152,12 +187,10 @@ namespace Network {
     double SRTT;
     double RTTVAR;
 
-    /* Exception from send(), to be delivered if the frontend asks for it,
-       without altering control flow. */
-    bool have_send_exception;
-    NetworkException send_exception;
+    /* Error from send()/sendto(). */
+    string send_error;
 
-    Packet new_packet( string &s_payload );
+    Packet new_packet( const string &s_payload );
 
     void hop_port( void );
 
@@ -165,13 +198,18 @@ namespace Network {
 
     void prune_sockets( void );
 
-    string recv_one( int sock_to_recv, bool nonblocking );
+    string recv_one( int sock_to_recv );
+
+    void set_MTU( int family );
 
   public:
+    /* Network transport overhead. */
+    static const int ADDED_BYTES = 8 /* seqno/nonce */ + 4 /* timestamps */;
+
     Connection( const char *desired_ip, const char *desired_port ); /* server */
     Connection( const char *key_str, const char *ip, const char *port ); /* client */
 
-    void send( string s );
+    void send( const string & s );
     string recv( void );
     const std::vector< int > fds( void ) const;
     int get_MTU( void ) const { return MTU; }
@@ -188,9 +226,9 @@ namespace Network {
 
     void update_remote_addr( Addr a ) { remote_addr = a; }
 
-    const NetworkException *get_send_exception( void ) const
+    string &get_send_error( void )
     {
-      return have_send_exception ? &send_exception : NULL;
+      return send_error;
     }
 
     void set_last_roundtrip_success( uint64_t s_success ) { last_roundtrip_success = s_success; }

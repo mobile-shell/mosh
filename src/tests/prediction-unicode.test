@@ -1,0 +1,97 @@
+#!/bin/sh
+
+#
+# This is a regression test for a bug seen where mosh-client's
+# prediction code would sometimes show "gück" when "glück" was typed.
+# mosh-client would output a predicted Unicode input character
+# first as an 8-bit character containing the lowest 8 bits of the
+# Unicode code point, then redraw it correctly with its UTF-8 sequence
+# when the prediction is validated.  For many accented Latin
+# characters, the 8-bit character is an illegal UTF-8 code sequence.
+# Most terminal emulators will output the Unicode replacement
+# character, which is only visible until validation.  urxvt, however,
+# draws no character and does not change the cursor location on an
+# illegal UTF-8 sequence, causing this bug to be visible as ongoing
+# display corruption.  A subset of wide characters (including CJK)
+# will show display corruption with all terminal emulators, because a
+# narrow replacement character will be drawn when a wide character
+# should have been.
+#
+# tmux draws a replacement character for invalid UTF-8, and we
+# depend on that in this test.
+#
+# Another similar failing case is typing "faĩl".  In this case the "ĩ"
+# would be predicted as ")" before being replaced by the
+# correct character.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" tmux baseline mosh-args post
+    exit
+fi
+
+tmux_commands()
+{
+    for x in $(seq 1 5); do
+	for y in $(seq 1 5); do 
+	    for i in "gl" ü "ck fa" ĩ "l "; do
+		printf "send-keys '%s'\n" "$i"
+		sleepf
+	    done
+	done
+	printf "send-keys 0x0d\n"
+    done
+    printf "send-keys 0x0d\n"
+    sleep 1
+    printf "send-keys 0x04\n"
+    # Unreliable on Cygwin under load, it seems.
+    sleep 1
+    printf "send-keys 0x04\n"
+    # This will get killed by SIGPIPE.
+    while printf "show-options\n" && sleep 1; do
+	:
+    done
+} 
+
+tmux_stdin()
+{
+    tmux_commands | "$@"
+    exit
+}
+
+baseline()
+{
+    # Just receive and toss input in canonical mode.
+    cat > /dev/null
+}
+
+post()
+{
+    # Look for bad output: ')' or \374
+    (
+	unset LC_ALL
+	unset LC_CTYPE
+	unset LANGUAGE
+	! env LANG=C egrep -q "%output %0 (\)|$(printf \\374))" "$(basename "$0").d/baseline.tmux.log"
+	# Implicit exitcode return.
+    )
+    return $?
+}
+
+case $1 in
+    tmux)
+	shift;
+	tmux_stdin "$@";;
+    baseline)
+	baseline;;
+    mosh-args)
+	printf "%s\n" "--predict=always";;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

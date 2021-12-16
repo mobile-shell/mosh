@@ -1,0 +1,46 @@
+#!/bin/sh
+
+#
+# This is a regression test for a crash seen in my development
+# of performance code for Mosh, involving insert/delete line.
+# It does insert/delete line from 0 to 2 more than the window height
+# 24 in this test environment).
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    printf '\033[H\033[J'
+    for dir in L M; do
+	for i in $(seq 0 2) $(seq 22 26); do
+	    printf '%d\r' "$i"
+	    printf '\033[%d%s' "$i" "$dir"
+	    # On the one hand, we'd like to test that this works
+	    # properly on both client and server, which requires
+	    # delays so that each iteration percolates to the client
+	    # by itself.  On the other hand, that makes the test take
+	    # a long time.  Compromise on .1 second.
+	    sleepf
+	done
+    done
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

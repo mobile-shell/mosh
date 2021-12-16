@@ -20,6 +20,7 @@ mosh-client \- client-side helper for mosh
 .SH SYNOPSIS
 MOSH_KEY=KEY
 .B mosh-client 
+[\-v]
 IP PORT
 .br
 .B mosh-client 
@@ -27,7 +28,7 @@ IP PORT
 .br
 .SH DESCRIPTION
 \fBmosh-client\fP is a helper program for the 
-.BR mosh(1)
+.BR mosh (1)
 remote terminal application.
 
 \fBmosh\fP itself is a setup script that establishes an SSH
@@ -49,12 +50,45 @@ directly.
 With the \-c option, \fBmosh-client\fP instead prints the number of colors
 of the terminal given by the TERM environment variable.
 
+The \-v option will print some debugging information on standard
+error.  More instances of this flag will result in more debugging
+information.  If standard error is not redirected from the terminal,
+the display will be corrupted and quickly become unusable.
+
+.SH ENVIRONMENT VARIABLES
+
+.TP
+.B MOSH_KEY
+This variable must be set, and must contain a Base64-encoded cryptographic key from
+.BR mosh-server (1).
+
+.TP
+.B MOSH_ESCAPE_KEY
+See
+.BR mosh (1).
+
+.TP
+.B MOSH_PREDICTION_DISPLAY
+Controls local echo as described in
+.BR mosh (1).
+
+.TP
+.B MOSH_PREDICTION_OVERWRITE
+Controls local echo insert/overwrite as described in
+.BR mosh (1).
+
+.TP
+.B MOSH_TITLE_NOPREFIX
+See
+.BR mosh (1).
+
+
 .SH SEE ALSO
 .BR mosh (1),
 .BR mosh-server (1).
 
 Project home page:
-.I http://mosh.mit.edu
+.I https://mosh.org
 
 .br
 .SH AUTHOR

@@ -32,17 +32,26 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "terminalframebuffer.h"
 
 using namespace Terminal;
 
-void Cell::reset( int background_color )
+Cell::Cell( color_type background_color )
+  : contents(),
+    renditions( background_color ),
+    wide( false ),
+    fallback( false ),
+    wrap( false )
+{}
+
+void Cell::reset( color_type background_color )
 {
   contents.clear();
-  fallback = false;
-  width = 1;
   renditions = Renditions( background_color );
+  wide = false;
+  fallback = false;
   wrap = false;
 }
 
@@ -62,34 +71,49 @@ DrawState::DrawState( int s_width, int s_height )
     renditions( 0 ), save(),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true ),
     insert_mode( false ), cursor_visible( true ), reverse_video( false ),
-    bracketed_paste( false ), vt100_mouse( false ), xterm_mouse( false ), 
-    xterm_extended_mouse( false ), xterm_utf8_mouse( false ), application_mode_cursor_keys( false )
+    bracketed_paste( false ), mouse_reporting_mode( MOUSE_REPORTING_NONE ), mouse_focus_event( false ),
+    mouse_alternate_scroll( false ), mouse_encoding_mode( MOUSE_ENCODING_DEFAULT ), application_mode_cursor_keys( false )
 {
   reinitialize_tabs( 0 );
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows( s_height, Row( s_width, 0 ) ), icon_name(), window_title(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
+  : rows(), icon_name(), window_title(), clipboard(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
+  const size_t w = s_width;
+  const color_type c = 0;
+  rows = rows_type(s_height, row_pointer(make_shared<Row>( w, c )));
+}
+
+Framebuffer::Framebuffer( const Framebuffer &other )
+  : rows( other.rows ), icon_name( other.icon_name ), window_title( other.window_title ),
+    clipboard( other.clipboard ), bell_count( other.bell_count ),
+    title_initialized( other.title_initialized ), ds( other.ds )
+{
+}
+
+Framebuffer & Framebuffer::operator=( const Framebuffer &other )
+{
+  if ( this != &other ) {
+    rows = other.rows;
+    icon_name =  other.icon_name;
+    window_title = other.window_title;
+    clipboard = other.clipboard;
+    bell_count = other.bell_count;
+    title_initialized = other.title_initialized;
+    ds = other.ds;
+  }
+  return *this;
 }
 
 void Framebuffer::scroll( int N )
 {
   if ( N >= 0 ) {
-    for ( int i = 0; i < N; i++ ) {
-      delete_line( ds.get_scrolling_region_top_row() );
-      ds.move_row( -1, true );
-    }
+    delete_line( ds.get_scrolling_region_top_row(), N );
   } else {
-    N = -N;
-
-    for ( int i = 0; i < N; i++ ) {
-      rows.insert( rows.begin() + ds.get_scrolling_region_top_row(), newrow() );
-      rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
-      ds.move_row( 1, true );
-    }
+    insert_line( ds.get_scrolling_region_top_row(), -N );
   }
 }
 
@@ -153,9 +177,13 @@ void Framebuffer::move_rows_autoscroll( int rows )
   }
 
   if ( ds.get_cursor_row() + rows > ds.get_scrolling_region_bottom_row() ) {
-    scroll( ds.get_cursor_row() + rows - ds.get_scrolling_region_bottom_row() );
+    int N = ds.get_cursor_row() + rows - ds.get_scrolling_region_bottom_row();
+    scroll( N );
+    ds.move_row( -N, true );
   } else if ( ds.get_cursor_row() + rows < ds.get_scrolling_region_top_row() ) {
-    scroll( ds.get_cursor_row() + rows - ds.get_scrolling_region_top_row() );
+    int N = ds.get_cursor_row() + rows - ds.get_scrolling_region_top_row();
+    scroll( N );
+    ds.move_row( -N, true );
   }
 
   ds.move_row( rows, true );
@@ -170,7 +198,7 @@ Cell *Framebuffer::get_combining_cell( void )
     return NULL;
   } /* can happen if a resize came in between */
 
-  return &rows[ ds.get_combining_char_row() ].cells[ ds.get_combining_char_col() ];
+  return get_mutable_cell( ds.get_combining_char_row(), ds.get_combining_char_col() );
 }
 
 void DrawState::set_tab( void )
@@ -183,14 +211,22 @@ void DrawState::clear_tab( int col )
   tabs[ col ] = false;
 }
 
-int DrawState::get_next_tab( void )
+int DrawState::get_next_tab( int count ) const
 {
-  for ( int i = cursor_col + 1; i < width; i++ ) {
-    if ( tabs[ i ] ) {
+  if ( count >= 0 ) {
+    for ( int i = cursor_col + 1; i < width; i++ ) {
+      if ( tabs[ i ] && --count == 0 ) {
+	return i;
+      }
+    }
+    return -1;
+  }
+  for ( int i = cursor_col - 1; i > 0; i-- ) {
+    if ( tabs[ i ] && ++count == 0 ) {
       return i;
     }
   }
-  return -1;
+  return 0;
 }
 
 void DrawState::set_scrolling_region( int top, int bottom )
@@ -215,19 +251,22 @@ void DrawState::set_scrolling_region( int top, int bottom )
   }
 }
 
-int DrawState::limit_top( void )
+int DrawState::limit_top( void ) const
 {
   return origin_mode ? scrolling_region_top_row : 0;
 }
 
-int DrawState::limit_bottom( void )
+int DrawState::limit_bottom( void ) const
 {
   return origin_mode ? scrolling_region_bottom_row : height - 1;
 }
 
-void Framebuffer::apply_renditions_to_current_cell( void )
+void Framebuffer::apply_renditions_to_cell( Cell *cell )
 {
-  get_mutable_cell()->renditions = ds.get_renditions();
+  if (!cell) {
+    cell = get_mutable_cell();
+  }
+  cell->set_renditions( ds.get_renditions() );
 }
 
 SavedCursor::SavedCursor()
@@ -258,41 +297,71 @@ void DrawState::restore_cursor( void )
   new_grapheme();
 }
 
-void Framebuffer::insert_line( int before_row )
+void Framebuffer::insert_line( int before_row, int count )
 {
   if ( (before_row < ds.get_scrolling_region_top_row())
        || (before_row > ds.get_scrolling_region_bottom_row() + 1) ) {
     return;
   }
 
-  rows.insert( rows.begin() + before_row, newrow() );
-  rows.erase( rows.begin() + ds.get_scrolling_region_bottom_row() + 1 );
+  int scroll = ds.get_scrolling_region_bottom_row() + 1 - before_row;
+  if ( count < scroll ) {
+    scroll = count;
+  }
+
+  if ( scroll == 0 ) {
+    return;
+  }
+
+  // delete old rows
+  rows_type::iterator start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - scroll;
+  rows.erase( start, start + scroll );
+  // insert new rows
+  start = rows.begin() + before_row;
+  rows.insert( start, scroll, newrow());
 }
 
-void Framebuffer::delete_line( int row )
+void Framebuffer::delete_line( int row, int count )
 {
   if ( (row < ds.get_scrolling_region_top_row())
        || (row > ds.get_scrolling_region_bottom_row()) ) {
     return;
   }
 
-  int insertbefore = ds.get_scrolling_region_bottom_row() + 1;
-  if ( insertbefore == ds.get_height() ) {
-    rows.push_back( newrow() );
-  } else {
-    rows.insert( rows.begin() + insertbefore, newrow() );
+  int scroll = ds.get_scrolling_region_bottom_row() + 1 - row;
+  if ( count < scroll ) {
+    scroll = count;
   }
 
-  rows.erase( rows.begin() + row );
+  if ( scroll == 0 ) {
+    return;
+  }
+
+  // delete old rows
+  rows_type::iterator start = rows.begin() + row;
+  rows.erase( start, start + scroll );
+  // insert a block of dummy rows
+  start = rows.begin() + ds.get_scrolling_region_bottom_row() + 1 - scroll;
+  rows.insert( start, scroll, newrow());
 }
 
-void Row::insert_cell( int col, int background_color )
+Row::Row( const size_t s_width, const color_type background_color )
+  : cells( s_width, Cell( background_color ) ), gen( get_gen() )
+{}
+
+uint64_t Row::get_gen() const
+{
+  static uint64_t gen_counter = 0;
+  return gen_counter++;
+}
+
+void Row::insert_cell( int col, color_type background_color )
 {
   cells.insert( cells.begin() + col, Cell( background_color ) );
   cells.pop_back();
 }
 
-void Row::delete_cell( int col, int background_color )
+void Row::delete_cell( int col, color_type background_color )
 {
   cells.push_back( Cell( background_color ) );
   cells.erase( cells.begin() + col );
@@ -300,20 +369,21 @@ void Row::delete_cell( int col, int background_color )
 
 void Framebuffer::insert_cell( int row, int col )
 {
-  rows[ row ].insert_cell( col, ds.get_background_rendition() );
+  get_mutable_row( row )->insert_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::delete_cell( int row, int col )
 {
-  rows[ row ].delete_cell( col, ds.get_background_rendition() );
+  get_mutable_row( row )->delete_cell( col, ds.get_background_rendition() );
 }
 
 void Framebuffer::reset( void )
 {
   int width = ds.get_width(), height = ds.get_height();
   ds = DrawState( width, height );
-  rows = std::deque<Row>( height, newrow() );
+  rows = rows_type( height, newrow() );
   window_title.clear();
+  clipboard.clear();
   /* do not reset bell_count */
 }
 
@@ -328,34 +398,29 @@ void Framebuffer::soft_reset( void )
   ds.clear_saved_cursor();
 }
 
-void Framebuffer::posterize( void )
-{
-  for ( rows_type::iterator i = rows.begin();
-        i != rows.end();
-        i++ ) {
-    for ( Row::cells_type::iterator j = i->cells.begin();
-          j != i->cells.end();
-          j++ ) {
-      j->renditions.posterize();
-    }
-  }
-}
-
 void Framebuffer::resize( int s_width, int s_height )
 {
   assert( s_width > 0 );
   assert( s_height > 0 );
 
-  rows.resize( s_height, newrow() );
-
-  for ( rows_type::iterator i = rows.begin();
-	i != rows.end();
-	i++ ) {
-    i->set_wrap( false );
-    i->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
-  }
-
+  int oldheight = ds.get_height();
+  int oldwidth = ds.get_width();
   ds.resize( s_width, s_height );
+
+  row_pointer blankrow( newrow());
+  if ( oldheight != s_height ) {
+    rows.resize( s_height, blankrow );
+  }
+  if (oldwidth == s_width) {
+    return;
+  }
+  for ( rows_type::iterator i = rows.begin();
+	i != rows.end() && *i != blankrow;
+	i++ ) {
+    *i = make_shared<Row>( **i );
+    (*i)->set_wrap( false );
+    (*i)->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
+  }
 }
 
 void DrawState::resize( int s_width, int s_height )
@@ -388,17 +453,16 @@ void DrawState::resize( int s_width, int s_height )
   }
 }
 
-Renditions::Renditions( int s_background )
-  : bold( false ), italic( false ), underlined( false ), blink( false ),
-    inverse( false ), invisible( false ), foreground_color( 0 ),
-    background_color( s_background )
+Renditions::Renditions( color_type s_background )
+  : foreground_color( 0 ), background_color( s_background ),
+    attributes( 0 )
 {}
 
 /* This routine cannot be used to set a color beyond the 16-color set. */
-void Renditions::set_rendition( int num )
+void Renditions::set_rendition( color_type num )
 {
   if ( num == 0 ) {
-    bold = italic = underlined = blink = inverse = invisible = false;
+    clear_attributes();
     foreground_color = background_color = 0;
     return;
   }
@@ -425,13 +489,15 @@ void Renditions::set_rendition( int num )
     return;
   }
 
+  bool value = num < 9;
   switch ( num ) {
-  case 1: case 22: bold = (num == 1); break;
-  case 3: case 23: italic = (num == 3); break;
-  case 4: case 24: underlined = (num == 4); break;
-  case 5: case 25: blink = (num == 5); break;
-  case 7: case 27: inverse = (num == 7); break;
-  case 8: case 28: invisible = (num == 8); break;
+  case 1: case 22: set_attribute(bold, value); break;
+  case 3: case 23: set_attribute(italic, value); break;
+  case 4: case 24: set_attribute(underlined, value); break;
+  case 5: case 25: set_attribute(blink, value); break;
+  case 7: case 27: set_attribute(inverse, value); break;
+  case 8: case 28: set_attribute(invisible, value); break;
+  default: break; /* ignore unknown rendition */
   }
 }
 
@@ -439,6 +505,8 @@ void Renditions::set_foreground_color( int num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     foreground_color = 30 + num;
+  } else if ( is_true_color( num ) ) {
+    foreground_color = num;
   }
 }
 
@@ -446,108 +514,58 @@ void Renditions::set_background_color( int num )
 {
   if ( (0 <= num) && (num <= 255) ) {
     background_color = 40 + num;
+  } else if ( is_true_color( num ) ) {
+    background_color = num;
   }
 }
 
 std::string Renditions::sgr( void ) const
 {
   std::string ret;
+  char col[64];
 
   ret.append( "\033[0" );
-  if ( bold ) ret.append( ";1" );
-  if ( italic ) ret.append( ";3" );
-  if ( underlined ) ret.append( ";4" );
-  if ( blink ) ret.append( ";5" );
-  if ( inverse ) ret.append( ";7" );
-  if ( invisible ) ret.append( ";8" );
+  if ( get_attribute( bold ) ) ret.append( ";1" );
+  if ( get_attribute( italic ) ) ret.append( ";3" );
+  if ( get_attribute( underlined ) ) ret.append( ";4" );
+  if ( get_attribute( blink ) ) ret.append( ";5" );
+  if ( get_attribute( inverse ) ) ret.append( ";7" );
+  if ( get_attribute( invisible ) ) ret.append( ";8" );
 
-  if ( foreground_color
-       && (foreground_color <= 37) ) {
-    /* ANSI foreground color */
-    char col[ 8 ];
-    snprintf( col, 8, ";%d", foreground_color );
+  if ( foreground_color ) {
+    if ( is_true_color( foreground_color ) ) {
+      snprintf( col, sizeof( col ), ";38;2;%u;%u;%u",
+		(foreground_color >> 16) & 0xff,
+		(foreground_color >> 8) & 0xff,
+		foreground_color & 0xff);
+    } else if ( foreground_color > 37 ) { /* use 256-color set */
+      snprintf( col, sizeof( col ), ";38;5;%u", foreground_color - 30 );
+    } else { /* ANSI foreground color */
+      snprintf( col, sizeof( col ), ";%u", static_cast<unsigned int>( foreground_color ) );
+    }
     ret.append( col );
   }
-
-  if ( background_color
-       && (background_color <= 47) ) {
-    char col[ 8 ];
-    snprintf( col, 8, ";%d", background_color );
+  if ( background_color ) {
+    if ( is_true_color( background_color ) ) {
+      snprintf( col, sizeof( col ), ";48;2;%u;%u;%u",
+		(background_color >> 16) & 0xff,
+		(background_color >> 8) & 0xff,
+		background_color & 0xff);
+    } else if ( background_color > 47 ) { /* use 256-color set */
+      snprintf( col, sizeof( col ), ";48;5;%u", background_color - 40 );
+    } else { /* ANSI background color */
+      snprintf( col, sizeof( col ), ";%u", static_cast<unsigned int>( background_color ) );
+    }
     ret.append( col );
   }
-
   ret.append( "m" );
-
-  if ( foreground_color > 37 ) { /* use 256-color set */
-    char col[ 64 ];
-    snprintf( col, 64, "\033[38;5;%dm", foreground_color - 30 );
-    ret.append( col );
-  }
-
-  if ( background_color > 47 ) { /* use 256-color set */
-    char col[ 64 ];
-    snprintf( col, 64, "\033[48;5;%dm", background_color - 40 );
-    ret.append( col );
-  }
 
   return ret;
 }
 
-/* Reduce 256 "standard" colors to the 8 ANSI colors. */
-
-/* Terminal emulators generally agree on the (R',G',B') values of the
-   "standard" 256-color palette beyond #15, but for the first 16
-   colors there is disagreement. Most terminal emulators are roughly
-   self-consistent, except on Ubuntu's gnome-terminal where "ANSI
-   blue" (#4) has been replaced with the aubergine system-wide
-   color. See
-   https://lists.ubuntu.com/archives/ubuntu-devel/2011-March/032726.html
-
-   Terminal emulators that advertise "xterm" are inconsistent on the
-   handling of initc to change the contents of a cell in the color
-   palette. On RIS (reset to initial state) or choosing reset from
-   the user interface, xterm resets all entries, but gnome-terminal
-   only resets entries beyond 16. (rxvt doesn't reset any entries,
-   and Terminal.app ignores initc.) On initc, xterm applies changes
-   immediately (but slowly), but gnome-terminal's changes are only
-   prospective unless the user resizes the terminal.
-
-   mosh ignores initc for now, despite advertising xterm-256color. */
-
-/* Table mapping common color cube for [16 .. 255]
-   to xterm's system colors (0 .. 7) with closest
-   CIE deltaE(2000). */
-static const char standard_posterization[] = {
-  0, 1, 2, 3, 4, 5, 6, 7, 7, 1, 2, 3, 4, 5, 6, 7,
-  0, 4, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4, 2, 6, 6, 6,
-  6, 4, 2, 2, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 2, 2,
-  2, 2, 6, 6, 1, 4, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4,
-  2, 2, 6, 6, 4, 5, 2, 2, 6, 6, 6, 6, 2, 2, 2, 6,
-  6, 6, 2, 2, 2, 2, 6, 6, 1, 5, 5, 4, 4, 4, 1, 1,
-  5, 5, 5, 5, 3, 3, 7, 5, 5, 5, 2, 2, 2, 6, 7, 7,
-  2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 6, 6, 1, 5, 5, 5,
-  5, 5, 1, 1, 5, 5, 5, 5, 3, 1, 7, 5, 5, 5, 3, 3,
-  3, 7, 7, 7, 3, 3, 2, 7, 6, 7, 3, 2, 2, 2, 6, 6,
-  1, 5, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5, 3, 1, 1, 5,
-  5, 5, 3, 3, 7, 7, 7, 7, 3, 3, 3, 7, 7, 7, 3, 3,
-  3, 3, 7, 7, 1, 1, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5,
-  1, 1, 1, 5, 5, 5, 3, 7, 7, 7, 7, 7, 3, 3, 3, 7,
-  7, 7, 3, 3, 3, 3, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 1, 1, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7 };
-
-void Renditions::posterize( void )
+void Row::reset( color_type background_color )
 {
-  if ( foreground_color ) {
-    foreground_color = 30 + standard_posterization[ foreground_color - 30 ];
-  }
-
-  if ( background_color ) {
-    background_color = 40 + standard_posterization[ background_color - 40 ];
-  }
-}
-
-void Row::reset( int background_color )
-{
+  gen = get_gen();
   for ( cells_type::iterator i = cells.begin();
 	i != cells.end();
 	i++ ) {
@@ -555,53 +573,71 @@ void Row::reset( int background_color )
   }
 }
 
-void Framebuffer::prefix_window_title( const std::deque<wchar_t> &s )
+void Framebuffer::prefix_window_title( const title_type &s )
 {
   if ( icon_name == window_title ) {
     /* preserve equivalence */
-    for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
-          i != s.rend();
-          i++ ) {
-      icon_name.push_front( *i );
-    }
+    icon_name.insert(icon_name.begin(), s.begin(), s.end() );
   }
-
-  for ( std::deque<wchar_t>::const_reverse_iterator i = s.rbegin();
-        i != s.rend();
-        i++ ) {
-    window_title.push_front( *i );
-  }
+  window_title.insert(window_title.begin(), s.begin(), s.end() );
 }
 
-wchar_t Cell::debug_contents( void ) const
+std::string Cell::debug_contents( void ) const
 {
   if ( contents.empty() ) {
-    return '_';
-  } else {
-    return contents.front();
+    return "'_' ()";
   }
+  std::string chars( 1, '\'' );
+  print_grapheme( chars );
+  chars.append( "' [" );
+  const char *lazycomma = "";
+  char buf[64];
+  for ( content_type::const_iterator i = contents.begin();
+	i < contents.end();
+	i++ ) {
+
+    snprintf( buf, sizeof buf, "%s0x%02x", lazycomma, static_cast<uint8_t>(*i) );
+    chars.append( buf );
+    lazycomma = ", ";
+  }
+  chars.append( "]" );
+  return chars;
 }
 
 bool Cell::compare( const Cell &other ) const
 {
   bool ret = false;
 
-  if ( !contents_match( other ) ) {
+  std::string grapheme, other_grapheme;
+
+  print_grapheme( grapheme );
+  other.print_grapheme( other_grapheme );
+
+  if ( grapheme != other_grapheme ) {
     ret = true;
-    fprintf( stderr, "Contents: %lc vs. %lc\n",
-	     debug_contents(), other.debug_contents() );
+  fprintf( stderr, "Graphemes: '%s' vs. '%s'\n",
+	   grapheme.c_str(), other_grapheme.c_str() );
+  }
+
+  if ( !contents_match( other ) ) {
+    // ret = true;
+    fprintf( stderr, "Contents: %s (%ld) vs. %s (%ld)\n",
+	     debug_contents().c_str(),
+	     static_cast<long int>( contents.size() ),
+	     other.debug_contents().c_str(),
+	     static_cast<long int>( other.contents.size() ) );
   }
 
   if ( fallback != other.fallback ) {
-    ret = true;
+    // ret = true;
     fprintf( stderr, "fallback: %d vs. %d\n",
 	     fallback, other.fallback );
   }
 
-  if ( width != other.width ) {
+  if ( wide != other.wide ) {
     ret = true;
     fprintf( stderr, "width: %d vs. %d\n",
-	     width, other.width );
+	     wide, other.wide );
   }
 
   if ( !(renditions == other.renditions) ) {

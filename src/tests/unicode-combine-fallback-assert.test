@@ -1,0 +1,35 @@
+#!/bin/sh
+
+#
+# This test is for Github issue 667
+# https://github.com/mobile-shell/mosh/issues/667
+# where mosh will assert when a combining character is printed on a
+# just-cleared cell.
+#
+# It just sends the offending output to mosh and expects it to not die.
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    printf '0\033[1J\xcc\xb4'
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

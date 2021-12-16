@@ -46,6 +46,7 @@
 #include "prng.h"
 #include "fatal_assert.h"
 #include "test_utils.h"
+#include "shared.h"
 
 #define KEY_LEN   16
 #define NONCE_LEN 12
@@ -55,27 +56,28 @@ using Crypto::AlignedBuffer;
 
 bool verbose = false;
 
-bool equal( const AlignedBuffer &a, const AlignedBuffer &b ) {
+static bool equal( const AlignedBuffer &a, const AlignedBuffer &b ) {
   return ( a.len() == b.len() )
     && !memcmp( a.data(), b.data(), a.len() );
 }
 
-AlignedBuffer *get_ctx( const AlignedBuffer &key ) {
+typedef shared::shared_ptr< AlignedBuffer > AlignedPointer;
+
+static AlignedBuffer *get_ctx( const AlignedBuffer &key ) {
   AlignedBuffer *ctx_buf = new AlignedBuffer( ae_ctx_sizeof() );
   fatal_assert( ctx_buf );
   fatal_assert( AE_SUCCESS == ae_init( (ae_ctx *)ctx_buf->data(), key.data(), key.len(), NONCE_LEN, TAG_LEN ) );
   return ctx_buf;
 }
 
-void scrap_ctx( AlignedBuffer *ctx_buf ) {
-  fatal_assert( AE_SUCCESS == ae_clear( (ae_ctx *)ctx_buf->data() ) );
-  delete ctx_buf;
+static void scrap_ctx( AlignedBuffer &ctx_buf ) {
+  fatal_assert( AE_SUCCESS == ae_clear( (ae_ctx *)ctx_buf.data() ) );
 }
 
-void test_encrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
-                   const AlignedBuffer &plaintext, const AlignedBuffer &assoc,
-                   const AlignedBuffer &expected_ciphertext ) {
-  AlignedBuffer *ctx_buf = get_ctx( key );
+static void test_encrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
+			  const AlignedBuffer &plaintext, const AlignedBuffer &assoc,
+			  const AlignedBuffer &expected_ciphertext ) {
+  AlignedPointer ctx_buf( get_ctx( key ) );
   ae_ctx *ctx = (ae_ctx *)ctx_buf->data();
 
   AlignedBuffer observed_ciphertext( plaintext.len() + TAG_LEN );
@@ -94,14 +96,14 @@ void test_encrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
   fatal_assert( ret == int( expected_ciphertext.len() ) );
   fatal_assert( equal( expected_ciphertext, observed_ciphertext ) );
 
-  scrap_ctx( ctx_buf );
+  scrap_ctx( *ctx_buf );
 }
 
-void test_decrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
-                   const AlignedBuffer &ciphertext, const AlignedBuffer &assoc,
-                   const AlignedBuffer &expected_plaintext,
-                   bool valid ) {
-  AlignedBuffer *ctx_buf = get_ctx( key );
+static void test_decrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
+			  const AlignedBuffer &ciphertext, const AlignedBuffer &assoc,
+			  const AlignedBuffer &expected_plaintext,
+			  bool valid ) {
+  AlignedPointer ctx_buf( get_ctx( key ) );
   ae_ctx *ctx = (ae_ctx *)ctx_buf->data();
 
   AlignedBuffer observed_plaintext( ciphertext.len() - TAG_LEN );
@@ -126,13 +128,13 @@ void test_decrypt( const AlignedBuffer &key, const AlignedBuffer &nonce,
     fatal_assert( ret == AE_INVALID );
   }
 
-  scrap_ctx( ctx_buf );
+  scrap_ctx( *ctx_buf );
 }
 
-void test_vector( const char *key_p, const char *nonce_p,
-                  size_t assoc_len,      const char *assoc_p,
-                  size_t plaintext_len,  const char *plaintext_p,
-                  size_t ciphertext_len, const char *ciphertext_p ) {
+static void test_vector( const char *key_p, const char *nonce_p,
+			 size_t assoc_len,      const char *assoc_p,
+			 size_t plaintext_len,  const char *plaintext_p,
+			 size_t ciphertext_len, const char *ciphertext_p ) {
 
   AlignedBuffer key       ( KEY_LEN,        key_p );
   AlignedBuffer nonce     ( NONCE_LEN,      nonce_p );
@@ -172,7 +174,7 @@ void test_vector( const char *key_p, const char *nonce_p,
 #define TEST_VECTOR( _key, _nonce, _assoc, _pt, _ct ) \
   test_vector( _key, _nonce, sizeof(_assoc)-1, _assoc, sizeof(_pt)-1, _pt, sizeof(_ct)-1, _ct )
 
-void test_all_vectors( void ) {
+static void test_all_vectors( void ) {
   /* Test vectors from http://tools.ietf.org/html/draft-krovetz-ocb-03#appendix-A */
 
   const char ietf_key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F";
@@ -463,12 +465,12 @@ void test_all_vectors( void ) {
 /* http://tools.ietf.org/html/draft-krovetz-ocb-03#appendix-A
    also specifies an iterative test algorithm, which we implement here. */
 
-void test_iterative( void ) {
+static void test_iterative( void ) {
   /* Key is always all zeros */
   AlignedBuffer key( KEY_LEN );
   memset( key.data(), 0, KEY_LEN );
 
-  AlignedBuffer *ctx_buf = get_ctx( key );
+  AlignedPointer ctx_buf( get_ctx( key ) );
   ae_ctx *ctx = (ae_ctx *)ctx_buf->data();
 
   AlignedBuffer nonce( NONCE_LEN );
@@ -531,8 +533,6 @@ void test_iterative( void ) {
   AlignedBuffer correct( TAG_LEN, "\xB2\xB4\x1C\xBF\x9B\x05\x03\x7D\xA7\xF1\x6C\x24\xA3\x5C\x1C\x94" );
   fatal_assert( equal( out, correct ) );
 
-  scrap_ctx( ctx_buf );
-
   if ( verbose ) {
     printf( "iterative PASSED\n\n" );
   }
@@ -544,8 +544,12 @@ int main( int argc, char *argv[] )
     verbose = true;
   }
 
-  test_all_vectors();
-  test_iterative();
-
+  try {
+    test_all_vectors();
+    test_iterative();
+  } catch ( const std::exception &e ) {
+    fprintf( stderr, "Error: %s\r\n", e.what() );
+    return 1;
+  }
   return 0;
 }

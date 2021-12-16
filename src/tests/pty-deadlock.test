@@ -1,0 +1,94 @@
+#!/bin/sh
+
+#
+# This is a regression test for a BSD pty bug in Mosh.  On
+# FreeBSD/OpenBSD/OS X, a pty master can block on read() after
+# select() has informed us that there is data available, if a ^S is
+# written to the pty master between the select() and the read().
+#
+# Unfortunately, everything attached to the pty gets stuck when this
+# happens.  If this tests fails, you will need to do some manual
+# cleanup with kill -9.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" tmux baseline post
+    exit
+fi
+
+tmux_commands()
+{
+    # An interactive shell is waiting for us in the mosh session.
+    # Start test...
+    sleep 2
+    printf "send-keys 0x0d\n"
+    sleep 5
+    # Stop output...
+    printf "send-keys 0x13\n"
+    sleep 10
+    # Restart output...
+    printf "send-keys 0x11\n"
+    sleep 10
+    # And stop the test script, so it produces its exit messge.
+    printf "send-keys 0x0d\n"
+    # This will get killed by SIGPIPE.
+    while printf "show-options\n" && sleep 1; do
+	:
+    done
+}
+
+tmux_stdin()
+{
+    tmux_commands | "$@"
+    exit
+}
+
+baseline()
+{
+    # Make a lot of noise on stdout to keep mosh busy, and exit
+    # with a distinctive message when we get a CR.  Exit after 10s in any case.
+    blat=$(for i in $(seq 1 100); do
+	       printf 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz\n'
+	   done)
+    read -r x
+    while printf '%s' "$blat"; do
+	:
+    done &
+    printpid=$!
+    (sleep 120; kill $$ $printpid) &
+    killpid=$!
+    read -r x
+    kill $printpid
+    # Try and make sure the printer stops writing before the following printf
+    sleep 1
+    printf "\n=== normal exit ===\n"
+    # Let tty queues drain, so the exit message gets to mosh-client
+    # before we exit
+    sleep 4
+    # Kill the killer and exit normally.
+    kill $killpid
+}
+
+post()
+{
+    if grep -q '=== normal exit ===' "$(basename "$0").d/baseline.capture"; then
+	exit 0
+    fi
+    exit 1
+}
+
+case $1 in
+    tmux)
+	shift;
+	tmux_stdin "$@";;
+    baseline)
+	baseline;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac

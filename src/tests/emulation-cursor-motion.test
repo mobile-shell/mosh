@@ -1,0 +1,58 @@
+#!/bin/sh
+
+#
+# This test exercises a particular optimization involving small cursor
+# motions in Mosh.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline direct verify
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    printf '\033[H\033[J'
+
+    while read -r x y text; do
+	printf '\033[%d;%dH%s' "$y" "$x" "$text"
+	sleepf
+    done <<EOF
+1 1 A
+10 1 B
+1 2 C
+1 4 D
+10 4 E
+1 7 F
+1 11 G
+10 11 H
+1 16 I
+2 16 J
+1 22 K
+60 23 L
+59 23 M
+57 23 N
+54 23 O
+50 23 P
+45 23 Q
+39 23 R
+32 23 S
+1 24 done
+EOF
+} 
+
+case $1 in
+    baseline|direct)
+	baseline;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac
