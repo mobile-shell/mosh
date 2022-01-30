@@ -42,7 +42,9 @@ AC_ARG_ENABLE([compile-warnings],
        PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
        ;;
      error)
-       WARNING_CXXFLAGS="-Wall -Werror"
+       # remove -Wno-c++17-extensions once protocolbuffers/protobuf#9181 is
+       # resolved
+       WARNING_CXXFLAGS="-Wall -Werror -Wno-c++17-extensions"
        PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
        ;;
      distcheck)
