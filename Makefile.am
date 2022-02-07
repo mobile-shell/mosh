@@ -15,7 +15,7 @@ AM_DISTCHECK_CONFIGURE_FLAGS += --enable-compile-warnings=distcheck --enable-exa
 # AX_CODE_COVERAGE configuration
 
 # Remove everything outside of this repository
-CODE_COVERAGE_IGNORE_PATTERN = "/usr/include/*" "/usr/lib/*" "*/src/tests/*"
+CODE_COVERAGE_IGNORE_PATTERN = "/usr/include/*" "/usr/lib/*" "*/src/tests/*" "*/src/protobufs/*"
 
 # Ensure coverage is relative to the top of the repository
 CODE_COVERAGE_DIRECTORY = $(abs_top_builddir)
