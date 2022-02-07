@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../terminal -I../protobufs $(protobuf_CFLAGS)
-AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
+AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
 
 noinst_LIBRARIES = libmoshstatesync.a
 

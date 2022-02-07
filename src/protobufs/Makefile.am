@@ -1,7 +1,7 @@
 source = userinput.proto hostinput.proto transportinstruction.proto
 
 AM_CPPFLAGS = $(protobuf_CFLAGS)
-AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS) -Wno-error
+AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS) -Wno-error
 
 SUFFIXES = .proto .pb.cc
 
