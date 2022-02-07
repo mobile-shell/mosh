@@ -1,8 +1,24 @@
+# Work around inconsistency in AX_CODE_COVERAGE defining
+# AM_DISTCHECK_CONFIGURE_FLAGS only in some branches
+if !CODE_COVERAGE_ENABLED
+AM_DISTCHECK_CONFIGURE_FLAGS =
+endif
+
+include $(top_srcdir)/aminclude_static.am
+
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = scripts src man conf
 EXTRA_DIST = autogen.sh ocb-license.html README.md COPYING.iOS
 BUILT_SOURCES = VERSION
-AM_DISTCHECK_CONFIGURE_FLAGS = --enable-compile-warnings=distcheck --enable-examples --enable-syslog
+AM_DISTCHECK_CONFIGURE_FLAGS += --enable-compile-warnings=distcheck --enable-examples --enable-syslog
+
+# AX_CODE_COVERAGE configuration
+
+# Remove everything outside of this repository
+CODE_COVERAGE_IGNORE_PATTERN = "/usr/include/*" "/usr/lib/*" "*/src/tests/*"
+
+# Ensure coverage is relative to the top of the repository
+CODE_COVERAGE_DIRECTORY = $(abs_top_builddir)
 
 # non-Automake defines
 CPPCHECK_FLAGS = --enable=all --template=gcc --force # -j8 disables unused function checking.

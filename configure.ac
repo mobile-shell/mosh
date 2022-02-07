@@ -3,12 +3,13 @@
 
 AC_PREREQ([2.61])
 AC_INIT([mosh], [1.3.2], [mosh-devel@mit.edu])
-AM_INIT_AUTOMAKE([foreign std-options -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign std-options -Wall -Werror -Wno-portability])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([src/include/config.h])
 AC_LANG([C++])
+AX_CODE_COVERAGE
 
 # Checks for programs.
 AC_PROG_CC([cc gcc clang])

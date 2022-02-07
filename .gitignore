@@ -2,12 +2,20 @@
 *.o
 *.pb.cc
 *.pb.h
+*~
 .deps
 Makefile
 Makefile.in
 .cproject
 .project
 compile_commands.json
+aminclude_static.am
+
+# Coverage artifacts
+*.gcda
+*.gcno
+*-coverage.info
+*-coverage
 
 /INSTALL
 /aclocal.m4
