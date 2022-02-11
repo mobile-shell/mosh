@@ -159,6 +159,13 @@ AC_ARG_ENABLE([completion],
   [install_completion="no"])
 AM_CONDITIONAL([INSTALL_COMPLETION], [test x"$install_completion" != xno])
 
+# Handle --disable-agent-forwarding
+AC_ARG_ENABLE(agent-forwarding,
+              AS_HELP_STRING([--disable-agent-forwarding],
+                             [disable ssh agent forwarding in compile time]),
+              , enable_agent_forwarding=yes)
+
+# Syslog
 AC_ARG_ENABLE([syslog],
   [AS_HELP_STRING([--enable-syslog], [Enable connection logging in mosh-server @<:@no@:>@])],
   [enable_syslog="$enableval"],
@@ -221,6 +228,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 
 # Checks for header files.
 AC_CHECK_HEADERS(m4_normalize([
+  errno.h
   fcntl.h
   langinfo.h
   limits.h
@@ -248,7 +256,10 @@ AC_CHECK_HEADERS([endian.h sys/endian.h])
 AC_CHECK_HEADERS([utmpx.h])
 AC_CHECK_HEADERS([termio.h])
 AC_CHECK_HEADERS([sys/uio.h])
+AC_CHECK_HEADERS([sys/un.h])
+AC_CHECK_HEADERS([sys/types.h])
 AC_CHECK_HEADERS([memory tr1/memory])
+AC_LANG_PUSH(C++)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -471,6 +482,11 @@ AC_CHECK_DECL([IUTF8],
   [AC_MSG_WARN([No IUTF8 termios mode; character-erase of multibyte character sequence probably does not work properly in canonical mode on this platform.])],
   [[#include <termios.h>]])
 
+if test "$enable_agent_forwarding" = "yes"; then
+  AC_DEFINE([SUPPORT_AGENT_FORWARDING], [], [
+    Define to enable support for SSH agent forwarding])
+fi
+
 # Checks for protobuf
 PKG_CHECK_MODULES([protobuf], [protobuf])
 
@@ -530,6 +546,7 @@ AC_CONFIG_FILES([
   src/protobufs/Makefile
   src/statesync/Makefile
   src/terminal/Makefile
+  src/agent/Makefile
   src/util/Makefile
   scripts/Makefile
   src/examples/Makefile

@@ -115,6 +115,11 @@ OpenSSH command to remotely execute mosh-server on remote machine (default: "ssh
 An alternate ssh port can be specified with, \fIe.g.\fP, \-\-ssh="ssh \-p 2222".
 
 .TP
+.B \-\-forward-agent
+Enable ssh authentication agent forwarding. If you use this, please be
+aware of the security implications.
+
+.TP
 .B \-\-ssh-pty\fP
 .B \-\-no-ssh-pty\fP
 Enable or disable ssh's use of a pty when connecting to a remote host.
@@ -137,6 +142,10 @@ intervening control character keystrokes.
 .TP
 .B \-a
 Synonym for \-\-predict=always
+
+.TP
+.B \-A
+Synonym for \-\-forward-agent
 
 .TP
 .B \-n

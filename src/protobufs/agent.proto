@@ -1,0 +1,8 @@
+option optimize_for = LITE_RUNTIME;
+
+package AgentBuffers;
+
+message Instruction {
+  required uint64 agent_id = 1;
+  optional bytes agent_data = 2;
+}
