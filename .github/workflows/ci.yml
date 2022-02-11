@@ -1,0 +1,34 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-18.04, ubuntu-20.04]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: "setup linux build environment"
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: sudo apt install -y protobuf-compiler libprotobuf-dev libutempter-dev autoconf automake
+
+    - name: "setup macos build environment"
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: brew install protobuf automake
+
+    - name: "generate build scripts"
+      run: ./autogen.sh
+
+    - name: "configure"
+      run: ./configure --enable-compile-warnings=error --enable-examples
+
+    - name: "build"
+      run: make V=1
+
+    - name: "test"
+      run: make V=1 check

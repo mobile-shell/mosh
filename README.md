@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mobile-shell/mosh.svg?branch=master)](https://travis-ci.org/mobile-shell/mosh)
+[![ci](https://github.com/mobile-shell/mosh/actions/workflows/ci.yml/badge.svg)](https://github.com/mobile-shell/mosh/actions/workflows/ci.yml)
 
 Mosh: the mobile shell
 ======================
