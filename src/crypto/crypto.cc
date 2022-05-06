@@ -132,7 +132,25 @@ Base64Key::Base64Key( string printable_key )
 
 Base64Key::Base64Key()
 {
-  PRNG().fill( key, sizeof( key ) );
+  const char* override = getenv("MOSH_OVERRIDE_KEY_FROM_FILE");
+  if (override) {
+      FILE* f = fopen(override, "rt");
+      if (!f) { perror("fopen"); abort(); }
+      size_t n = 0;
+      char* line = NULL;
+      auto sz = getline(&line, &n, f);
+      if (!line) { perror("getline"); abort(); }
+      if (!sz) { abort(); }
+      if (line[sz-1]=='\n') line[sz-1] = 0;
+      if (sz>1 && line[sz-2]=='\r') line[sz-2] = 0;
+      std::string printable_key = line;
+      Base64Key k = printable_key;
+      memcpy(this->key, k.key, sizeof(k.key));
+      free(line);
+      fclose(f);
+  } else {
+      PRNG().fill( key, sizeof( key ) );
+  }
 }
 
 Base64Key::Base64Key(PRNG &prng)
