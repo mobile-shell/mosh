@@ -38,6 +38,10 @@ detaches from the terminal, and waits for the \fBmosh-client\fP to
 establish a connection. It will exit if no client has contacted
 it within 60 seconds.
 
+There is no way to configure the encryption key because of
+reusing MOSH_KEY would allow cryptographic attacks.
+The randomness is essential for security.
+
 By default, \fBmosh-server\fP binds to a port between 60000 and
 61000 and executes the user's login shell.
 
