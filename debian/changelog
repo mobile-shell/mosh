@@ -1,3 +1,19 @@
+mosh (1.3.2-2.2) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Lower warning level to distcheck to solve build against OpenSSL 3.0 with
+    permitted deprecated declarations. (Closes: #1005718)
+
+ -- Nicholas Guriev <guriev-ns@ya.ru>  Sat, 28 May 2022 10:01:51 +0300
+
+mosh (1.3.2-2.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Add upstream fix for FTBFS with gcc 8, thanks to Reiner Herrmann.
+    (Closes: #897813)
+
+ -- Adrian Bunk <bunk@debian.org>  Wed, 08 Aug 2018 20:45:44 +0300
+
 mosh (1.3.2-2) unstable; urgency=medium
 
   * Fix "mosh FTBFS with gcc 7" <remove default constructors>
