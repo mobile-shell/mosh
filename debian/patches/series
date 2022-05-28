@@ -1,1 +1,2 @@
 0001-Fix-Debian-GCC7-FTBFS-remove-default-constructors.patch
+0001-Fix-gcc8-snprintf-truncation-warning.patch

@@ -1,0 +1,24 @@
+From 2a5b5410b2a96d656544803809de109f474901f2 Mon Sep 17 00:00:00 2001
+From: John Hood <cgull@glup.org>
+Date: Wed, 11 Apr 2018 18:10:59 -0400
+Subject: Fix gcc8 snprintf truncation warning.
+
+---
+ src/frontend/mosh-server.cc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/frontend/mosh-server.cc b/src/frontend/mosh-server.cc
+index 7918c74..567252f 100644
+--- a/src/frontend/mosh-server.cc
++++ b/src/frontend/mosh-server.cc
+@@ -764,8 +764,8 @@ static void serve( int host_fd, Terminal
+ 	      throw NetworkException( std::string( "serve: getnameinfo: " ) + gai_strerror( errcode ), 0 );
+ 	    }
+ 
+-	    char tmp[ 64 ];
+-	    snprintf( tmp, 64, "%s via mosh [%d]", host, getpid() );
++	    char tmp[ 64 + NI_MAXHOST ];
++	    snprintf( tmp, 64 + NI_MAXHOST, "%s via mosh [%d]", host, getpid() );
+ 	    utempter_add_record( host_fd, tmp );
+ 
+ 	    connected_utmp = true;

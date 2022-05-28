@@ -22,7 +22,7 @@ override_dh_auto_configure:
 		--disable-silent-rules \
 		--enable-ufw \
 		--enable-completion \
-		--enable-compile-warnings=error
+		--enable-compile-warnings=distcheck
 
 override_dh_perl:
 	# mosh only uses Perl modules in perl-base.
