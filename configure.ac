@@ -68,6 +68,41 @@ AC_ARG_ENABLE([compile-warnings],
 AC_SUBST([WARNING_CXXFLAGS])
 AC_SUBST([PICKY_CXXFLAGS])
 
+# Check for fuzzing support before the flag wrapper, because if
+# requested and missing the functionality is entirely nonexistent.
+MISC_CXXFLAGS=""
+AC_ARG_ENABLE([fuzzing],
+  [AS_HELP_STRING([--enable-fuzzing],
+    [Enable compiler and linker options to enable fuzz testing @<:@no/yes/libfuzzer@:>@])],
+  [case "$enableval" in
+    no)
+      ;;
+    '' | yes | libfuzzer)
+      AX_CHECK_COMPILE_FLAG([-fsanitize=fuzzer],
+        [FUZZING_CFLAGS="$FUZZING_CFLAGS -fsanitize=fuzzer"], [
+        AC_MSG_ERROR([Fuzzing requested, but compiler support not present])], [-Werror])
+      ;;
+    *)
+     AC_MSG_ERROR(["Unknown argument '$enableval' to --enable-fuzzing])
+     ;;
+  esac],
+  [])
+AC_SUBST([FUZZING_CFLAGS])
+AC_SUBST([MISC_CXXFLAGS])
+
+AC_ARG_ENABLE([asan],
+  [AS_HELP_STRING([--enable-asan],
+    [Enable compiler and linker options to enable AddressSanitizer @<:@no@:>@])],
+  [asan="$enableval"],
+  [asan="no"])
+
+AS_IF([test x"$asan" != x"no"], [
+  AX_CHECK_COMPILE_FLAG([-fsanitize=address,leak],
+  [MISC_CXXFLAGS="$MISC_CXXFLAGS -fsanitize=address,leak"], [
+  AC_MSG_ERROR([ASAN requested, but compiler support not present])], [-Werror])
+])
+AC_SUBST([MISC_CXXFLAGS])
+
 # We want to check for compiler flag support, but there is no way to make
 # clang's "argument unused" warning fatal.  So we invoke the compiler through a
 # wrapper script that greps for this message.
@@ -119,7 +154,6 @@ AC_SUBST([HARDEN_CFLAGS])
 AC_SUBST([HARDEN_LDFLAGS])
 
 # Also check for a few non-hardening-related flags.
-MISC_CXXFLAGS=""
 AX_CHECK_COMPILE_FLAG([-fno-default-inline],
   [MISC_CXXFLAGS="$MISC_CXXFLAGS -fno-default-inline"], [], [-Werror])
 AX_CHECK_COMPILE_FLAG([-pipe],
@@ -526,6 +560,7 @@ AC_CONFIG_FILES([
   src/Makefile
   src/crypto/Makefile
   src/frontend/Makefile
+  src/fuzz/Makefile
   src/include/Makefile
   src/network/Makefile
   src/protobufs/Makefile
