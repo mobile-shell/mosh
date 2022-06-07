@@ -98,8 +98,9 @@ License: GPL-3+ with Autoconf exception
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
 
-Files: src/crypto/ocb.cc
+Files: src/crypto/ocb_internal.cc src/crypto/ocb_openssl.cc
 Copyright: 2011 Ted Krovetz
+           2022 Google LLC
 License: ISC
  Permission to use, copy, modify, and/or distribute this software for any
  purpose with or without fee is hereby granted, provided that the above

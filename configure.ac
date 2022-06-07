@@ -399,6 +399,10 @@ case "${with_crypto_library}" in
     ;;
 esac
 
+AM_CONDITIONAL([CRYPTO_LIBRARY_OPENSSL], [test x$with_crypto_library = xopenssl])
+AM_CONDITIONAL([CRYPTO_LIBRARY_NETTLE], [test x$with_crypto_library = xnettle])
+AM_CONDITIONAL([CRYPTO_LIBRARY_APPLE], [test x$with_crypto_library = xapple-common-crypto])
+
 AC_ARG_ENABLE([static-crypto],
   [AS_HELP_STRING([--enable-static-crypto], [Link crypto library statically @<:@no@:>@])],
   [], [enable_static_crypto="$enable_static_libraries"])
