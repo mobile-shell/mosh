@@ -4,7 +4,7 @@ AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXF
 noinst_LIBRARIES = libmoshcrypto.a
 
 OCB_SRCS = ae.h
-if CRYPTO_LIBRARY_OPENSSL
+if USE_AES_OCB_FROM_OPENSSL
 OCB_SRCS += ocb_openssl.cc
 else
 OCB_SRCS += ocb_internal.cc

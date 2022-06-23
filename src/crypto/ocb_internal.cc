@@ -26,10 +26,11 @@
 
 #include "config.h"
 
-/* This module implements the ae.h interface for Apple Common Crypto and
-/  Nettle.                                                                 */
-#if !defined(USE_APPLE_COMMON_CRYPTO_AES) && !defined(USE_NETTLE_AES)
-#error ocb_internal.cc only works with Apple Common Crypto or Nettle
+/* This module implements the ae.h interface for OpenSSL, Apple Common
+/  Crypto, and Nettle.                                                     */
+#if !defined(USE_OPENSSL_AES) && !defined(USE_APPLE_COMMON_CRYPTO_AES) && \
+    !defined(USE_NETTLE_AES)
+#error ocb_internal.cc only works with OpenSSL, Apple Common Crypto, or Nettle
 #endif
 
 /* ----------------------------------------------------------------------- */
@@ -62,6 +63,7 @@
 #if 0
 #define USE_APPLE_COMMON_CRYPTO_AES       0
 #define USE_NETTLE_AES       0
+#define USE_OPENSSL_AES      1  /* http://openssl.org                      */
 #endif
 
 /* During encryption and decryption, various "L values" are required.
@@ -352,8 +354,31 @@
 /* AES - Code uses OpenSSL API. Other implementations get mapped to it.    */
 /* ----------------------------------------------------------------------- */
 
+/*---------------*/
+#if USE_OPENSSL_AES
+/*---------------*/
+
+#include <openssl/aes.h>                            /* http://openssl.org/ */
+
+/* How to ECB encrypt an array of blocks, in place                         */
+static inline void AES_ecb_encrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	while (nblks) {
+		--nblks;
+		AES_encrypt((unsigned char *)(blks+nblks), (unsigned char *)(blks+nblks), key);
+	}
+}
+
+static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *key) {
+	while (nblks) {
+		--nblks;
+		AES_decrypt((unsigned char *)(blks+nblks), (unsigned char *)(blks+nblks), key);
+	}
+}
+
+#define BPI 4  /* Number of blocks in buffer per ECB call */
+
 /*-------------------*/
-#if USE_APPLE_COMMON_CRYPTO_AES
+#elif USE_APPLE_COMMON_CRYPTO_AES
 /*-------------------*/
 
 #include <fatal_assert.h>
@@ -1319,4 +1344,8 @@ int main()
     validate();
     return 0;
 }
+#endif
+
+#if USE_OPENSSL_AES
+char infoString[] = "OCB3 (OpenSSL)";
 #endif

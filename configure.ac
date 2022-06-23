@@ -365,7 +365,7 @@ AC_ARG_WITH(
   [AS_HELP_STRING([--with-crypto-library=library], [build with the given crypto library, TYPE=openssl|nettle|apple-common-crypto @<:@default=openssl@:>@])],
   [
     case "${withval}" in
-      openssl|nettle|apple-common-crypto) ;;
+      openssl|openssl-with-internal-ocb|openssl-with-openssl-ocb|nettle|apple-common-crypto) ;;
       *) AC_MSG_ERROR([bad value ${withval} for --with-crypto-library]) ;;
     esac
   ],
@@ -373,35 +373,49 @@ AC_ARG_WITH(
 )
 
 dnl Checks for chosen crypto library
+PKG_CHECK_MODULES([OpenSSL], [openssl],
+  [have_openssl=yes
+    AC_CHECK_LIB([crypto], [AES_encrypt], [have_deprecated_openssl_aes=yes])
+    AC_CHECK_LIB([crypto], [EVP_aes_128_ocb], [have_evp_aes_ocb=yes])],
+  [:])
+PKG_CHECK_MODULES([Nettle], [nettle], [have_nettle=yes], [:])
+AS_CASE([$with_crypto_library],
+  [openssl*],
+    [AS_IF([test "x$have_openssl" != xyes],
+       [AC_MSG_ERROR([OpenSSL crypto library not found])])
+     AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])
+     AC_SUBST([CRYPTO_CFLAGS], ["$OpenSSL_CFLAGS"])
+     AC_SUBST([CRYPTO_LIBS], ["$OpenSSL_LDFLAGS -lcrypto"])])
 case "${with_crypto_library}" in
-  openssl)
-    PKG_CHECK_MODULES([CRYPTO], [openssl],
-      [AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])],
-      [AX_CHECK_LIBRARY([CRYPTO], [openssl/aes.h], [crypto],
-        [AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])
-          AC_SUBST([CRYPTO_CFLAGS], ["$CRYPTO_CPPFLAGS"])
-          AC_SUBST([CRYPTO_LIBS], ["$CRYPTO_LDFLAGS -lcrypto"])],
-        [AC_MSG_ERROR([OpenSSL crypto library not found])])])
-        ;;
+  openssl|openssl-with-internal-ocb)
+    AS_IF([test "x$have_deprecated_openssl_aes" != xyes],
+      [AC_MSG_ERROR([found OpenSSL without AES support])])
+    AM_CONDITIONAL([USE_AES_OCB_FROM_OPENSSL], [false])
+    human_readable_cryptography_description='internal OCB, OpenSSL AES'
+    ;;
+  openssl-with-openssl-ocb)
+    AS_IF([test "x$have_evp_aes_ocb" != xyes],
+      [AC_MSG_ERROR([found OpenSSL without AES-OCB support])])
+    AM_CONDITIONAL([USE_AES_OCB_FROM_OPENSSL], [true])
+    human_readable_cryptography_description='OpenSSL OCB, OpenSSL AES'
+    ;;
   nettle)
-    PKG_CHECK_MODULES([CRYPTO], [nettle],
-      [],
+    AS_IF([test "x$have_nettle" != xyes],
       [AC_MSG_ERROR([Nettle crypto library not found])])
     AC_DEFINE([USE_NETTLE_AES], [1], [Use Nettle library])
+    AC_SUBST([CRYPTO_CFLAGS], ["$Nettle_CFLAGS"])
+    AC_SUBST([CRYPTO_LIBS], ["$Nettle_LDFLAGS"])
+    AM_CONDITIONAL([USE_AES_OCB_FROM_OPENSSL], [false])
+    human_readable_cryptography_description='internal OCB, Nettle AES'
     ;;
   apple-common-crypto)
-    dnl Common Crypto is in Apple's standard paths and base libraries.
-    dnl So just check for presence of the header.
-    AC_CHECK_HEADERS([CommonCrypto/CommonCrypto.h],
-      [],
+    AS_IF([test "x$ac_cv_header_CommonCrypto_CommonCrypto_h" != xyes],
       [AC_MSG_ERROR([Apple Common Crypto header not found])])
     AC_DEFINE([USE_APPLE_COMMON_CRYPTO_AES], [1], [Use Apple Common Crypto library])
+    AM_CONDITIONAL([USE_AES_OCB_FROM_OPENSSL], [false])
+    human_readable_cryptography_description='internal OCB, Apple Common Crypto AES'
     ;;
 esac
-
-AM_CONDITIONAL([CRYPTO_LIBRARY_OPENSSL], [test x$with_crypto_library = xopenssl])
-AM_CONDITIONAL([CRYPTO_LIBRARY_NETTLE], [test x$with_crypto_library = xnettle])
-AM_CONDITIONAL([CRYPTO_LIBRARY_APPLE], [test x$with_crypto_library = xapple-common-crypto])
 
 AC_ARG_ENABLE([static-crypto],
   [AS_HELP_STRING([--enable-static-crypto], [Link crypto library statically @<:@no@:>@])],
@@ -585,4 +599,5 @@ AC_MSG_NOTICE([c++ compiler:        $CXX])
 AC_MSG_NOTICE([Warning CXXFLAGS:    $WARNING_CXXFLAGS])
 AC_MSG_NOTICE([Picky CXXFLAGS:      $PICKY_CXXFLAGS])
 AC_MSG_NOTICE([Harden CFLAGS:       $HARDEN_CFLAGS])
+AC_MSG_NOTICE([Cryptography:        $human_readable_cryptography_description])
 AC_MSG_NOTICE([ =============================])
