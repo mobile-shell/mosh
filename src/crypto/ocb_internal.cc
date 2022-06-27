@@ -388,11 +388,6 @@ typedef struct {
 	CCCryptorRef ref;
 	uint8_t b[4096];
 } AES_KEY;
-#if (OCB_KEY_LEN == 0)
-#define ROUNDS(ctx) ((ctx)->rounds)
-#else
-#define ROUNDS(ctx) (6+OCB_KEY_LEN/4)
-#endif
 
 static inline void AES_set_encrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
 {
@@ -473,11 +468,6 @@ static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *ke
 #include <nettle/aes.h>
 
 typedef struct aes_ctx AES_KEY;
-#if (OCB_KEY_LEN == 0)
-#define ROUNDS(ctx) ((ctx)->rounds)
-#else
-#define ROUNDS(ctx) (6+OCB_KEY_LEN/4)
-#endif
 
 static inline void AES_set_encrypt_key(unsigned char *handle, const int bits, AES_KEY *key)
 {
