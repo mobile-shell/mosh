@@ -385,7 +385,7 @@ AS_CASE([$with_crypto_library],
        [AC_MSG_ERROR([OpenSSL crypto library not found])])
      AC_DEFINE([USE_OPENSSL_AES], [1], [Use OpenSSL library])
      AC_SUBST([CRYPTO_CFLAGS], ["$OpenSSL_CFLAGS"])
-     AC_SUBST([CRYPTO_LIBS], ["$OpenSSL_LDFLAGS -lcrypto"])])
+     AC_SUBST([CRYPTO_LIBS], ["$OpenSSL_LIBS -lcrypto"])])
 case "${with_crypto_library}" in
   openssl|openssl-with-internal-ocb)
     AS_IF([test "x$have_deprecated_openssl_aes" != xyes],
@@ -404,7 +404,7 @@ case "${with_crypto_library}" in
       [AC_MSG_ERROR([Nettle crypto library not found])])
     AC_DEFINE([USE_NETTLE_AES], [1], [Use Nettle library])
     AC_SUBST([CRYPTO_CFLAGS], ["$Nettle_CFLAGS"])
-    AC_SUBST([CRYPTO_LIBS], ["$Nettle_LDFLAGS"])
+    AC_SUBST([CRYPTO_LIBS], ["$Nettle_LIBS"])
     AM_CONDITIONAL([USE_AES_OCB_FROM_OPENSSL], [false])
     human_readable_cryptography_description='internal OCB, Nettle AES'
     ;;
