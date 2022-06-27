@@ -364,6 +364,10 @@ namespace ocb_aes {
 
 typedef AES_KEY KEY;
 
+static KEY *KEY_new() { return new KEY; }
+
+static void KEY_delete(KEY *key) { delete key; }
+
 static void set_encrypt_key(const unsigned char *user_key, int bits, KEY *key) {
 	AES_set_encrypt_key(user_key, bits, key);
 }
@@ -412,6 +416,10 @@ typedef struct {
 	CCCryptorRef ref;
 	uint8_t b[4096];
 } KEY;
+
+static KEY *KEY_new() { return new KEY; }
+
+static void KEY_delete(KEY *key) { delete key; }
 
 static void set_encrypt_key(const unsigned char *handle, const int bits, KEY *key)
 {
@@ -497,6 +505,10 @@ namespace ocb_aes {
 
 typedef struct aes_ctx KEY;
 
+static KEY *KEY_new() { return new KEY; }
+
+static void KEY_delete(KEY *key) { delete key; }
+
 static void set_encrypt_key(const unsigned char *handle, const int bits, KEY *key)
 {
 	nettle_aes_set_encrypt_key(key, bits/8, (const uint8_t *)handle);
@@ -557,8 +569,8 @@ struct _ae_ctx {
 	uint64_t KtopStr[3];                   /* Register correct, each item  */
     uint32_t ad_blocks_processed;
     uint32_t blocks_processed;
-    ocb_aes::KEY decrypt_key;
-    ocb_aes::KEY encrypt_key;
+    ocb_aes::KEY *decrypt_key;
+    ocb_aes::KEY *encrypt_key;
     #if (OCB_TAG_LEN == 0)
     unsigned tag_len;
     #endif
@@ -600,6 +612,8 @@ static block getL(const ae_ctx *ctx, unsigned tz)
 
 int ae_clear (ae_ctx *ctx) /* Zero ae_ctx and undo initialization          */
 {
+	ocb_aes::KEY_delete(ctx->encrypt_key);
+	ocb_aes::KEY_delete(ctx->decrypt_key);
 	memset(ctx, 0, sizeof(ae_ctx));
 	return AE_SUCCESS;
 }
@@ -616,12 +630,15 @@ int ae_init(ae_ctx *ctx, const void *key, int key_len, int nonce_len, int tag_le
     if (nonce_len != 12)
     	return AE_NOT_SUPPORTED;
 
+    ctx->decrypt_key = ocb_aes::KEY_new();
+    ctx->encrypt_key = ocb_aes::KEY_new();
+
     /* Initialize encryption & decryption keys */
     #if (OCB_KEY_LEN > 0)
     key_len = OCB_KEY_LEN;
     #endif
-    ocb_aes::set_encrypt_key(reinterpret_cast<const unsigned char *>(key), key_len*8, &ctx->encrypt_key);
-    ocb_aes::set_decrypt_key(reinterpret_cast<const unsigned char *>(key), static_cast<int>(key_len*8), &ctx->decrypt_key);
+    ocb_aes::set_encrypt_key(reinterpret_cast<const unsigned char *>(key), key_len*8, ctx->encrypt_key);
+    ocb_aes::set_decrypt_key(reinterpret_cast<const unsigned char *>(key), static_cast<int>(key_len*8), ctx->decrypt_key);
 
     /* Zero things that need zeroing */
     ctx->cached_Top = ctx->ad_checksum = zero_block();
@@ -629,7 +646,7 @@ int ae_init(ae_ctx *ctx, const void *key, int key_len, int nonce_len, int tag_le
 
     /* Compute key-dependent values */
     ocb_aes::encrypt(reinterpret_cast<unsigned char *>(&ctx->cached_Top),
-                            reinterpret_cast<unsigned char *>(&ctx->Lstar), &ctx->encrypt_key);
+                            reinterpret_cast<unsigned char *>(&ctx->Lstar), ctx->encrypt_key);
     tmp_blk = swap_if_le(ctx->Lstar);
     tmp_blk = double_block(tmp_blk);
     ctx->Ldollar = swap_if_le(tmp_blk);
@@ -666,7 +683,7 @@ static block gen_offset_from_nonce(ae_ctx *ctx, const void *nonce)
 	tmp.u8[15] = tmp.u8[15] & 0xc0;        /* Zero low 6 bits of nonce */
 	if ( unequal_blocks(tmp.bl,ctx->cached_Top) )   { /* Cached?       */
 		ctx->cached_Top = tmp.bl;          /* Update cache, KtopStr    */
-		ocb_aes::encrypt(tmp.u8, (unsigned char *)&ctx->KtopStr, &ctx->encrypt_key);
+		ocb_aes::encrypt(tmp.u8, (unsigned char *)&ctx->KtopStr, ctx->encrypt_key);
 		if (little.endian) {               /* Make Register Correct    */
 			ctx->KtopStr[0] = bswap64(ctx->KtopStr[0]);
 			ctx->KtopStr[1] = bswap64(ctx->KtopStr[1]);
@@ -714,7 +731,7 @@ static void process_ad(ae_ctx *ctx, const void *ad, int ad_len, int final)
 				ad_offset = xor_block(oa[6], getL(ctx, tz));
 				ta[7] = xor_block(ad_offset, adp[7]);
 			#endif
-			ocb_aes::ecb_encrypt_blks(ta, BPI, &ctx->encrypt_key);
+			ocb_aes::ecb_encrypt_blks(ta, BPI, ctx->encrypt_key);
 			ad_checksum = xor_block(ad_checksum, ta[0]);
 			ad_checksum = xor_block(ad_checksum, ta[1]);
 			ad_checksum = xor_block(ad_checksum, ta[2]);
@@ -775,7 +792,7 @@ static void process_ad(ae_ctx *ctx, const void *ad, int ad_len, int final)
 				ta[k] = xor_block(ad_offset, tmp.bl);
 				++k;
 			}
-			ocb_aes::ecb_encrypt_blks(ta, k, &ctx->encrypt_key);
+			ocb_aes::ecb_encrypt_blks(ta, k, ctx->encrypt_key);
 			switch (k) {
 				#if (BPI == 8)
 				case 8: ad_checksum = xor_block(ad_checksum, ta[7]);
@@ -872,7 +889,7 @@ int ae_encrypt(ae_ctx     *  ctx,
 				ta[7] = xor_block(oa[7], ptp[7]);
 				checksum = xor_block(checksum, ptp[7]);
 			#endif
-			ocb_aes::ecb_encrypt_blks(ta, BPI, &ctx->encrypt_key);
+			ocb_aes::ecb_encrypt_blks(ta, BPI, ctx->encrypt_key);
 			ctp[0] = xor_block(ta[0], oa[0]);
 			ctp[1] = xor_block(ta[1], oa[1]);
 			ctp[2] = xor_block(ta[2], oa[2]);
@@ -944,7 +961,7 @@ int ae_encrypt(ae_ctx     *  ctx,
 		}
         offset = xor_block(offset, ctx->Ldollar);      /* Part of tag gen */
         ta[k] = xor_block(offset, checksum);           /* Part of tag gen */
-		ocb_aes::ecb_encrypt_blks(ta, k + 1, &ctx->encrypt_key);
+		ocb_aes::ecb_encrypt_blks(ta, k + 1, ctx->encrypt_key);
 		offset = xor_block(ta[k], ctx->ad_checksum);   /* Part of tag gen */
 		if (remaining) {
 			--k;
@@ -1085,7 +1102,7 @@ int ae_decrypt(ae_ctx     *ctx,
 				oa[7] = xor_block(oa[6], getL(ctx, ntz(block_num)));
 				ta[7] = xor_block(oa[7], ctp[7]);
 			#endif
-			ocb_aes::ecb_decrypt_blks(ta,BPI,&ctx->decrypt_key);
+			ocb_aes::ecb_decrypt_blks(ta,BPI,ctx->decrypt_key);
 			ptp[0] = xor_block(ta[0], oa[0]);
 			checksum = xor_block(checksum, ptp[0]);
 			ptp[1] = xor_block(ta[1], oa[1]);
@@ -1150,7 +1167,7 @@ int ae_decrypt(ae_ctx     *ctx,
 			if (remaining) {
 				block pad;
 				offset = xor_block(offset,ctx->Lstar);
-				ocb_aes::encrypt(reinterpret_cast<unsigned char *>(&offset), tmp.u8, &ctx->encrypt_key);
+				ocb_aes::encrypt(reinterpret_cast<unsigned char *>(&offset), tmp.u8, ctx->encrypt_key);
 				pad = tmp.bl;
 				memcpy(tmp.u8,ctp+k,remaining);
 				tmp.bl = xor_block(tmp.bl, pad);
@@ -1159,7 +1176,7 @@ int ae_decrypt(ae_ctx     *ctx,
 				checksum = xor_block(checksum, tmp.bl);
 			}
 		}
-		ocb_aes::ecb_decrypt_blks(ta,k,&ctx->decrypt_key);
+		ocb_aes::ecb_decrypt_blks(ta,k,ctx->decrypt_key);
 		switch (k) {
 			#if (BPI == 8)
 			case 7: ptp[6] = xor_block(ta[6], oa[6]);
@@ -1188,7 +1205,7 @@ int ae_decrypt(ae_ctx     *ctx,
 		/* Calculate expected tag */
         offset = xor_block(offset, ctx->Ldollar);
         tmp.bl = xor_block(offset, checksum);
-		ocb_aes::encrypt(tmp.u8, tmp.u8, &ctx->encrypt_key);
+		ocb_aes::encrypt(tmp.u8, tmp.u8, ctx->encrypt_key);
 		tmp.bl = xor_block(tmp.bl, ctx->ad_checksum); /* Full tag */
 
 		/* Compare with proposed tag, change ct_len if invalid */
