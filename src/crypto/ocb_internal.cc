@@ -467,6 +467,9 @@ static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *ke
 #elif USE_NETTLE_AES
 /*-------------------*/
 
+// TODO(Issue 1202): Stop using deprecated nettle APIs
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <nettle/aes.h>
 
 typedef struct aes_ctx AES_KEY;
@@ -501,6 +504,8 @@ static inline void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *ke
 }
 
 #define BPI 4  /* Number of blocks in buffer per ECB call */
+
+#pragma GCC diagnostic pop
 
 #else
 #error "No AES implementation selected."

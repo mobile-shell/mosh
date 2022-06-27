@@ -9,13 +9,18 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-18.04, ubuntu-20.04]
+        crypto: [auto]
+        include:
+          - crypto: nettle
+            os: ubuntu-20.04
+        
 
     steps:
     - uses: actions/checkout@v2
 
     - name: "setup linux build environment"
       if: ${{ startsWith(matrix.os, 'ubuntu') }}
-      run: sudo apt install -y protobuf-compiler libprotobuf-dev libutempter-dev autoconf automake
+      run: sudo apt install -y protobuf-compiler libprotobuf-dev libutempter-dev autoconf automake nettle-dev
 
     - name: "setup macos build environment"
       if: ${{ startsWith(matrix.os, 'macos') }}
@@ -24,8 +29,8 @@ jobs:
     - name: "generate build scripts"
       run: ./autogen.sh
 
-    - name: "configure"
-      run: ./configure --enable-compile-warnings=error --enable-examples
+    - name: ${{ format('configure (crypto {0})', matrix.crypto) }}
+      run: ./configure --enable-compile-warnings=error --enable-examples ${{ (matrix.crypto != 'auto' && format('--with-crypto-library={0}', matrix.crypto)) || '' }}
 
     - name: "build"
       run: make V=1
