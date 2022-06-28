@@ -85,6 +85,8 @@
 /* ----------------------------------------------------------------------- */
 
 #include "ae.h"
+#include "crypto.h"
+#include "fatal_assert.h"
 #include <stdlib.h>
 #include <string.h>
 #if defined(HAVE_STRINGS_H)
@@ -96,6 +98,8 @@
 #include <sys/types.h>
 #include <sys/endian.h>
 #endif
+
+#include <new>
 
 /* Define standard sized integers                                          */
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
@@ -358,30 +362,94 @@
 #if USE_OPENSSL_AES
 /*---------------*/
 
-#include <openssl/aes.h>                            /* http://openssl.org/ */
+#include <openssl/evp.h>                            /* http://openssl.org/ */
 
 namespace ocb_aes {
 
-typedef AES_KEY KEY;
+typedef EVP_CIPHER_CTX KEY;
 
-static KEY *KEY_new() { return new KEY; }
+enum { BLOCK_SIZE = 16 };
 
-static void KEY_delete(KEY *key) { delete key; }
+static KEY *KEY_new() {
+	KEY *key = EVP_CIPHER_CTX_new();
+	if (key == NULL) {
+		throw std::bad_alloc();
+	}
+	return key;
+}
+
+static void KEY_delete(KEY *key) { EVP_CIPHER_CTX_free(key); }
 
 static void set_encrypt_key(const unsigned char *user_key, int bits, KEY *key) {
-	AES_set_encrypt_key(user_key, bits, key);
+	// Do not copy and paste this code! It is far too low-level to be
+	// general-purpose. If you're looking for an example of using AEAD
+	// through OpenSSL's EVP_CIPHER API, have a look at ocb_openssl.cc
+	// instead.
+	//
+	// This function and the others in this section replicate the behavior of
+	// OpenSSL's deprecated AES_* primitives. Those primitives implemented AES
+	// without any block cipher mode--that is, in ECB mode. Normally, using ECB
+	// mode anywhere would be questionable, but it's safe here because it's
+	// being used to implement a higher-level cryptographic mode (OCB mode),
+	// which is in turn used by Mosh.
+
+	fatal_assert(bits == 128);
+	if (EVP_EncryptInit_ex(key, EVP_aes_128_ecb(), /*impl=*/NULL, user_key, /*iv=*/NULL) != 1 ||
+			EVP_CIPHER_CTX_set_padding(key, false) != 1) {
+		throw Crypto::CryptoException("Could not initialize AES encryption context.");
+	}
 }
 
 static void set_decrypt_key(const unsigned char *user_key, int bits, KEY *key) {
-	AES_set_decrypt_key(user_key, bits, key);
+	// Do not copy and paste this code! See notes in set_encrypt_key.
+	fatal_assert(bits == 128);
+	if (EVP_DecryptInit_ex(key, EVP_aes_128_ecb(), /*impl=*/NULL, user_key, /*iv=*/NULL) != 1 ||
+			EVP_CIPHER_CTX_set_padding(key, false) != 1) {
+		throw Crypto::CryptoException("Could not initialize AES decryption context.");
+	}
 }
 
 static void encrypt(const unsigned char *in, unsigned char *out, KEY *key) {
-	return AES_encrypt(in, out, key);
+	// Even though the functions in this section use ECB mode (which is
+	// stateless), OpenSSL still requires calls to EncryptInit and
+	// EncryptFinal. Since ECB mode has no IV and they key is unchanged,
+	// every parameter to this function can be NULL (which OpenSSL
+	// interprets as "don't change this").
+	if (EVP_EncryptInit_ex(key, /*type=*/NULL, /*impl=*/NULL, /*key=*/NULL, /*iv=*/NULL) != 1) {
+		throw Crypto::CryptoException("Could not start AES encryption operation.");
+	}
+
+	int len;
+	if (EVP_EncryptUpdate(key, out, &len, in, BLOCK_SIZE) != 1) {
+		throw Crypto::CryptoException("Could not AES-encrypt block.");
+	}
+
+	int total_len = len;
+	if (EVP_EncryptFinal_ex(key, out + total_len, &len) != 1) {
+		throw Crypto::CryptoException("Could not finish AES encryption operation.");
+	}
+	total_len += len;
+	fatal_assert(total_len == BLOCK_SIZE);
 }
 
 static void decrypt(const unsigned char *in, unsigned char *out, KEY *key) {
-	return AES_decrypt(in, out, key);
+	// See notes in encrypt about EncryptInit and EncryptFinal; the same
+	// notes apply to DecryptInit and DecryptFinal here.
+	if (EVP_DecryptInit_ex(key, /*type=*/NULL, /*impl=*/NULL, /*key=*/NULL, /*iv=*/NULL) != 1) {
+		throw Crypto::CryptoException("Could not start AES decryption operation.");
+	}
+
+	int len;
+	if (EVP_DecryptUpdate(key, out, &len, in, BLOCK_SIZE) != 1) {
+		throw Crypto::CryptoException("Could not AES-decrypt block.");
+	}
+
+	int total_len = len;
+	if (EVP_DecryptFinal_ex(key, out + total_len, &len) != 1) {
+		throw Crypto::CryptoException("Could not finish AES decryption operation.");
+	}
+	total_len += len;
+	fatal_assert(total_len == BLOCK_SIZE);
 }
 
 /* How to ECB encrypt an array of blocks, in place                         */
@@ -407,7 +475,6 @@ static void ecb_decrypt_blks(block *blks, unsigned nblks, KEY *key) {
 #elif USE_APPLE_COMMON_CRYPTO_AES
 /*-------------------*/
 
-#include <fatal_assert.h>
 #include <CommonCrypto/CommonCryptor.h>
 
 namespace ocb_aes {
@@ -497,7 +564,6 @@ static void ecb_decrypt_blks(block *blks, unsigned nblks, KEY *key) {
 /*-------------------*/
 
 #include <nettle/aes.h>
-#include <fatal_assert.h>
 
 namespace ocb_aes {
 
