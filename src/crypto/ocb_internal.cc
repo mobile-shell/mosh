@@ -496,14 +496,12 @@ static void ecb_decrypt_blks(block *blks, unsigned nblks, KEY *key) {
 #elif USE_NETTLE_AES
 /*-------------------*/
 
-// TODO(Issue 1202): Stop using deprecated nettle APIs
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <nettle/aes.h>
+#include <fatal_assert.h>
 
 namespace ocb_aes {
 
-typedef struct aes_ctx KEY;
+typedef struct aes128_ctx KEY;
 
 static KEY *KEY_new() { return new KEY; }
 
@@ -511,33 +509,33 @@ static void KEY_delete(KEY *key) { delete key; }
 
 static void set_encrypt_key(const unsigned char *handle, const int bits, KEY *key)
 {
-	nettle_aes_set_encrypt_key(key, bits/8, (const uint8_t *)handle);
+	fatal_assert(bits == 128);
+	nettle_aes128_set_encrypt_key(key, (const uint8_t *)handle);
 }
 static void set_decrypt_key(const unsigned char *handle, const int bits, KEY *key)
 {
-	nettle_aes_set_decrypt_key(key, bits/8, (const uint8_t *)handle);
+	fatal_assert(bits == 128);
+	nettle_aes128_set_decrypt_key(key, (const uint8_t *)handle);
 }
 static void encrypt(unsigned char *src, unsigned char *dst, KEY *key) {
-	nettle_aes_encrypt(key, AES_BLOCK_SIZE, dst, src);
+	nettle_aes128_encrypt(key, AES_BLOCK_SIZE, dst, src);
 }
 #if 0
 /* unused */
 static void decrypt(unsigned char *src, unsigned char *dst, KEY *key) {
-	nettle_aes_decrypt(key, AES_BLOCK_SIZE, dst, src);
+	nettle_aes128_decrypt(key, AES_BLOCK_SIZE, dst, src);
 }
 #endif
 static void ecb_encrypt_blks(block *blks, unsigned nblks, KEY *key) {
-	nettle_aes_encrypt(key, nblks * AES_BLOCK_SIZE, (unsigned char*)blks, (unsigned char*)blks);
+	nettle_aes128_encrypt(key, nblks * AES_BLOCK_SIZE, (unsigned char*)blks, (unsigned char*)blks);
 }
 static void ecb_decrypt_blks(block *blks, unsigned nblks, KEY *key) {
-	nettle_aes_decrypt(key, nblks * AES_BLOCK_SIZE, (unsigned char*)blks, (unsigned char*)blks);
+	nettle_aes128_decrypt(key, nblks * AES_BLOCK_SIZE, (unsigned char*)blks, (unsigned char*)blks);
 }
 
 }  // namespace ocb_aes
 
 #define BPI 4  /* Number of blocks in buffer per ECB call */
-
-#pragma GCC diagnostic pop
 
 #else
 #error "No AES implementation selected."
