@@ -74,7 +74,8 @@ MISC_CXXFLAGS=""
 AC_ARG_ENABLE([fuzzing],
   [AS_HELP_STRING([--enable-fuzzing],
     [Enable compiler and linker options to enable fuzz testing @<:@no/yes/libfuzzer@:>@])],
-  [case "$enableval" in
+  [fuzzing="$enableval"
+   case "$enableval" in
     no)
       ;;
     '' | yes | libfuzzer)
@@ -86,9 +87,10 @@ AC_ARG_ENABLE([fuzzing],
      AC_MSG_ERROR(["Unknown argument '$enableval' to --enable-fuzzing])
      ;;
   esac],
-  [])
+  [fuzzing="no"])
 AC_SUBST([FUZZING_CFLAGS])
 AC_SUBST([MISC_CXXFLAGS])
+AM_CONDITIONAL([ENABLE_FUZZING], [test x"$fuzzing" != xno])
 
 AC_ARG_ENABLE([asan],
   [AS_HELP_STRING([--enable-asan],
