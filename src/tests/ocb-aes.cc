@@ -536,6 +536,7 @@ static void test_iterative( void ) {
   if ( verbose ) {
     printf( "iterative PASSED\n\n" );
   }
+  scrap_ctx( *ctx_buf );
 }
 
 int main( int argc, char *argv[] )
