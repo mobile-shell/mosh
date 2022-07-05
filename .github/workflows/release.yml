@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      # This syntax is globs, not regex, so it's matching any tag that
+      # contains the prefix "mosh-" and the 3 version elements.
+      - "mosh-*.*.*"
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+
+    steps:
+    - uses: actions/checkout@v2
+
+
+    - name: "ensure version bumped"
+      run: |
+        expected_tag=$(echo ${{ github.ref }} | cut -d'/' -f3)
+        have_tag=$(sed -n 's/AC_INIT(\[[^]]*\], \[\([^]]*\)\].*/\1/p' <configure.ac)
+        echo "Expected tag <$expected_tag>, got <$have_tag>"
+        [[ "$expected_tag" != "$have_tag" ]] && exit 1
+
+    - name: "setup linux build environment"
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: sudo apt install -y protobuf-compiler libprotobuf-dev libutempter-dev autoconf automake nettle-dev
+
+    - name: "setup macos build environment"
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: brew install protobuf automake
+
+    - name: "generate build scripts"
+      run: ./autogen.sh
+
+    - name: "configure"
+      run: ./configure --enable-compile-warnings=error --enable-examples
+
+    - name: "build"
+      run: make V=1
+
+    - name: "test"
+      run: make V=1 distcheck -j
+
+    - name: "Upload Release"
+      # v1 aka v0.1.14 as of 2022-07-05; pinned to avoid potential code injection
+      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+      with:
+        # Action always creates releases in "draft" mode, and requires
+        # a maintainer to publish them
+        draft: True
+        prerelease: contains(github.ref, 'rc')
+        generate_release_notes: True
+        files: |
+          mosh-*.tar.gz
