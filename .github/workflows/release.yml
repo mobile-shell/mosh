@@ -13,11 +13,10 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-20.04, macos-latest]
 
     steps:
     - uses: actions/checkout@v2
-
 
     - name: "ensure version bumped"
       run: |
@@ -34,17 +33,42 @@ jobs:
       if: ${{ startsWith(matrix.os, 'macos') }}
       run: brew install protobuf automake
 
+    - name: "describe macos build environment"
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        BUILD_TAG=$(echo ${{ github.ref }} | cut -d'/' -f3)
+        mkdir macosx/build-report &&
+        pushd macosx/build-report &&
+        ../brew-deps.sh describe &&
+        ../osx-xcode.sh describe &&
+        tar -cjf "../${BUILD_TAG}-osx-build-report.tbz" . &&
+        popd
+
     - name: "generate build scripts"
       run: ./autogen.sh
 
     - name: "configure"
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
       run: ./configure --enable-compile-warnings=error --enable-examples
 
     - name: "build"
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
       run: make V=1
 
     - name: "test"
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
       run: make V=1 distcheck -j
+    
+    - name: "unshallow git repository for git describe"
+      if: ${{ startsWith(matrix.os, 'macos') }}     
+      run: git fetch --tags --unshallow
+      
+    - name: "macOS package build"
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        pushd macosx &&
+        env ZERO_AR_DATE=1 MACOSX_DEPLOYMENT_TARGET=10.12 ./build.sh &&
+        popd
 
     - name: "Upload Release"
       # v1 aka v0.1.14 as of 2022-07-05; pinned to avoid potential code injection
@@ -57,3 +81,6 @@ jobs:
         generate_release_notes: True
         files: |
           mosh-*.tar.gz
+          macosx/*.pkg
+          macosx/*-osx-build-report.tbz
+
