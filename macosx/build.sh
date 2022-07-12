@@ -39,7 +39,8 @@ echo "Building into prefix..."
 #
 PREFIX="$(pwd)/prefix"
 
-ARCHS=" ppc ppc64 i386 x86_64"
+HOST="x86_64-apple-macosx${MACOSX_DEPLOYMENT_TARGET}"
+ARCH_TRIPLES="x86_64-apple-macosx arm64-apple-macos"
 
 pushd .. > /dev/null
 
@@ -52,16 +53,18 @@ fi
 #
 # Build archs one by one.
 #
-for arch in $ARCHS; do
+for triple in $ARCH_TRIPLES; do
+    arch=$(echo $triple | cut -d- -f1)
     echo "Building for ${arch}..."
     prefix="${PREFIX}_${arch}"
     rm -rf "${prefix}"
     mkdir "${prefix}"
-    if ./configure --prefix="${prefix}/local" \
+    if ./configure --prefix="${prefix}/local" --build="${triple}${MACOSX_DEPLOYMENT_TARGET}"\
+		   --host="${HOST}" \
 		   CC="cc -arch ${arch}" CPP="cc -arch ${arch} -E" CXX="c++ -arch ${arch}" \
 		   TINFO_LIBS=-lncurses &&
 	    make clean &&
-	    make install -j8 &&
+	    make install -j8 V=1 &&
 	    rm -f "${prefix}/etc"
     then
 	# mosh-client built with Xcode 3.1.2 bus-errors if the binary is stripped.
