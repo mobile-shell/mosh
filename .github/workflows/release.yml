@@ -8,12 +8,44 @@ on:
       - "mosh-*.*.*"
 
 jobs:
+  macports-cache:
+    runs-on: macos-12
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: "Install gtar wrapper"
+      run: |
+        sudo mv /usr/local/bin/gtar /usr/local/bin/gtar.orig
+        sudo cp macosx/gtar /usr/local/bin/gtar
+        sudo chmod +x /usr/local/bin/gtar
+
+    - name: Cache macports
+      id: cache-macports
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-macports
+      with:
+        path: /opt/local
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('macosx/port-deps.sh') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: "setup MacPorts environment"
+      run: |
+        curl -L "https://github.com/macports/macports-base/releases/download/v2.7.2/MacPorts-2.7.2-12-Monterey.pkg" --output macports.pkg
+        sudo installer -pkg macports.pkg -target /
+        ./macosx/port-deps.sh deps
+
   release:
+    needs: macports-cache
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-latest]
+        os: [ubuntu-20.04, macos-12]
 
     steps:
     - uses: actions/checkout@v2
@@ -21,17 +53,34 @@ jobs:
     - name: "ensure version bumped"
       run: |
         expected_tag=$(echo ${{ github.ref }} | cut -d'/' -f3)
-        have_tag=$(sed -n 's/AC_INIT(\[[^]]*\], \[\([^]]*\)\].*/\1/p' <configure.ac)
+        have_tag="mosh-$(sed -n 's/AC_INIT(\[[^]]*\], \[\([^]]*\)\].*/\1/p' <configure.ac)"
         echo "Expected tag <$expected_tag>, got <$have_tag>"
-        [[ "$expected_tag" != "$have_tag" ]] && exit 1
+        if [[ "$expected_tag" != "$have_tag" ]]; then exit 1; fi
 
     - name: "setup linux build environment"
       if: ${{ startsWith(matrix.os, 'ubuntu') }}
       run: sudo apt install -y protobuf-compiler libprotobuf-dev libutempter-dev autoconf automake nettle-dev
 
-    - name: "setup macos build environment"
+    - name: "Install gtar wrapper"
       if: ${{ startsWith(matrix.os, 'macos') }}
-      run: brew install protobuf automake
+      run: |
+        sudo mv /usr/local/bin/gtar /usr/local/bin/gtar.orig
+        sudo cp macosx/gtar /usr/local/bin/gtar
+        sudo chmod +x /usr/local/bin/gtar
+
+    - name: Restore macports cache
+      id: cache-macports
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-macports
+      with:
+        path: /opt/local
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('macosx/port-deps.sh') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
 
     - name: "describe macos build environment"
       if: ${{ startsWith(matrix.os, 'macos') }}
@@ -39,13 +88,13 @@ jobs:
         BUILD_TAG=$(echo ${{ github.ref }} | cut -d'/' -f3)
         mkdir macosx/build-report &&
         pushd macosx/build-report &&
-        ../brew-deps.sh describe &&
+        ../port-deps.sh describe &&
         ../osx-xcode.sh describe &&
         tar -cjf "../${BUILD_TAG}-osx-build-report.tbz" . &&
         popd
 
     - name: "generate build scripts"
-      run: ./autogen.sh
+      run: PATH=/opt/local/bin:$PATH ./autogen.sh
 
     - name: "configure"
       if: ${{ startsWith(matrix.os, 'ubuntu') }}
@@ -58,16 +107,16 @@ jobs:
     - name: "test"
       if: ${{ startsWith(matrix.os, 'ubuntu') }}
       run: make V=1 distcheck -j
-    
+
     - name: "unshallow git repository for git describe"
-      if: ${{ startsWith(matrix.os, 'macos') }}     
+      if: ${{ startsWith(matrix.os, 'macos') }}
       run: git fetch --tags --unshallow
-      
+
     - name: "macOS package build"
       if: ${{ startsWith(matrix.os, 'macos') }}
       run: |
         pushd macosx &&
-        env ZERO_AR_DATE=1 MACOSX_DEPLOYMENT_TARGET=10.12 ./build.sh &&
+        env ZERO_AR_DATE=1 MACOSX_DEPLOYMENT_TARGET=11.0 PATH=/opt/local/bin:$PATH ./build.sh &&
         popd
 
     - name: "Upload Release"
@@ -83,4 +132,3 @@ jobs:
           mosh-*.tar.gz
           macosx/*.pkg
           macosx/*-osx-build-report.tbz
-
