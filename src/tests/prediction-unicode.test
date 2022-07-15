@@ -76,7 +76,7 @@ post()
 	unset LC_ALL
 	unset LC_CTYPE
 	unset LANGUAGE
-	! env LANG=C egrep -q "%output %0 (\)|$(printf \\374))" "$(basename "$0").d/baseline.tmux.log"
+	! env LANG=C grep -E -q "%output %0 (\)|$(printf \\374))" "$(basename "$0").d/baseline.tmux.log"
 	# Implicit exitcode return.
     )
     return $?
