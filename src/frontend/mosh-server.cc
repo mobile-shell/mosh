@@ -807,7 +807,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	    #ifdef HAVE_UTEMPTER
 	    utempter_remove_record( host_fd );
 	    char tmp[ 64 + NI_MAXHOST ];
-	    snprintf( tmp, 64 + NI_MAXHOST, "%s via mosh [%d]", host, getpid() );
+	    snprintf( tmp, 64 + NI_MAXHOST, "%s via mosh [%ld]", host, static_cast<long int>( getpid() ) );
 	    utempter_add_record( host_fd, tmp );
 
 	    connected_utmp = true;
@@ -899,7 +899,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	utempter_remove_record( host_fd );
 
 	char tmp[ 64 ];
-	snprintf( tmp, 64, "mosh [%d]", getpid() );
+	snprintf( tmp, 64, "mosh [%ld]", static_cast<long int>( getpid() ) );
 	utempter_add_record( host_fd, tmp );
 
 	connected_utmp = false;

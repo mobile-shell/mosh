@@ -533,28 +533,40 @@ std::string Renditions::sgr( void ) const
   if ( get_attribute( invisible ) ) ret.append( ";8" );
 
   if ( foreground_color ) {
+    // Since foreground_color is a 25-bit field, it is promoted to an int when
+    // manipulated. (See [conv.prom] in various C++ standards, e.g.,
+    // https://timsong-cpp.github.io/cppwp/n4659/conv.prom#5.) The correct
+    // printf format specifier is thus %d.
     if ( is_true_color( foreground_color ) ) {
-      snprintf( col, sizeof( col ), ";38;2;%u;%u;%u",
+      snprintf( col, sizeof( col ), ";38;2;%d;%d;%d",
 		(foreground_color >> 16) & 0xff,
 		(foreground_color >> 8) & 0xff,
 		foreground_color & 0xff);
     } else if ( foreground_color > 37 ) { /* use 256-color set */
-      snprintf( col, sizeof( col ), ";38;5;%u", foreground_color - 30 );
+      snprintf( col, sizeof( col ), ";38;5;%d", foreground_color - 30 );
     } else { /* ANSI foreground color */
-      snprintf( col, sizeof( col ), ";%u", static_cast<unsigned int>( foreground_color ) );
+      // Unfortunately, some versions of GCC (notably including GCC 9.3) give
+      // -Wformat warnings when relying on [conv.prom] to promote
+      // foreground_color in calls to printf. Explicitly promote it to silence
+      // the warning.
+      int fg = foreground_color;
+      snprintf( col, sizeof( col ), ";%d", fg );
     }
     ret.append( col );
   }
   if ( background_color ) {
+    // See comment above about bit-field promotion; it applies here as well.
     if ( is_true_color( background_color ) ) {
-      snprintf( col, sizeof( col ), ";48;2;%u;%u;%u",
+      snprintf( col, sizeof( col ), ";48;2;%d;%d;%d",
 		(background_color >> 16) & 0xff,
 		(background_color >> 8) & 0xff,
 		background_color & 0xff);
     } else if ( background_color > 47 ) { /* use 256-color set */
-      snprintf( col, sizeof( col ), ";48;5;%u", background_color - 40 );
+      snprintf( col, sizeof( col ), ";48;5;%d", background_color - 40 );
     } else { /* ANSI background color */
-      snprintf( col, sizeof( col ), ";%u", static_cast<unsigned int>( background_color ) );
+      // See comment above about explicit promotion; it applies here as well.
+      int bg = background_color;
+      snprintf( col, sizeof( col ), ";%d", bg );
     }
     ret.append( col );
   }
@@ -630,12 +642,17 @@ bool Cell::compare( const Cell &other ) const
 
   if ( fallback != other.fallback ) {
     // ret = true;
+    // Since fallback is a 1-bit field, it is promoted to an int when
+    // manipulated. (See [conv.prom] in various C++ standards, e.g.,
+    // https://timsong-cpp.github.io/cppwp/n4659/conv.prom#5.) The correct
+    // printf format specifier is thus %d.
     fprintf( stderr, "fallback: %d vs. %d\n",
 	     fallback, other.fallback );
   }
 
   if ( wide != other.wide ) {
     ret = true;
+    // See comment above about bit-field promotion; it applies here as well.
     fprintf( stderr, "width: %d vs. %d\n",
 	     wide, other.wide );
   }
@@ -647,6 +664,7 @@ bool Cell::compare( const Cell &other ) const
 
   if ( wrap != other.wrap ) {
     ret = true;
+    // See comment above about bit-field promotion; it applies here as well.
     fprintf( stderr, "wrap: %d vs. %d\n",
 	     wrap, other.wrap );
   }
