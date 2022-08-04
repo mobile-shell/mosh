@@ -126,7 +126,7 @@ jobs:
         # Action always creates releases in "draft" mode, and requires
         # a maintainer to publish them
         draft: True
-        prerelease: contains(github.ref, 'rc')
+        prerelease: ${{ contains(github.ref, 'rc') }}
         generate_release_notes: True
         files: |
           mosh-*.tar.gz
