@@ -110,7 +110,7 @@ jobs:
 
     - name: "unshallow git repository for git describe"
       if: ${{ startsWith(matrix.os, 'macos') }}
-      run: git fetch --tags --unshallow
+      run: git fetch --tags --unshallow -f
 
     - name: "macOS package build"
       if: ${{ startsWith(matrix.os, 'macos') }}
