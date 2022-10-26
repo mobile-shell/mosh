@@ -27,6 +27,14 @@ if [ "$(basename "$0")" = emulation-attributes-bce.test ] &&
     exit 77
 fi
 
+# tmux 3.3a has a behavior change in how BCE is handled, which has
+# been reverted: https://github.com/tmux/tmux/issues/3339
+if [ "$(basename "$0")" = emulation-attributes-bce.test ] &&
+   tmux_check 3 3a && ! tmux_check 3 3b; then
+    printf "tmux 3.3a has incompatible BCE behavior\n" >&2
+    exit 77
+fi
+
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
     e2e-test "$0" baseline direct verify
