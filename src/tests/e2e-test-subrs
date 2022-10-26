@@ -81,6 +81,19 @@ set_locale()
     return 1
 }
 
+# Given two versions, return success if the first version is less than
+# or equal to the second version.
+versionlte()
+{
+    [  "$1" = "$(printf "$1\n$2\n" | sort -V | head -n1)" ]
+}
+versionlt() {
+    if [ "$1" = "$2" ]; then
+	return 1
+    fi
+    versionlte "$1" "$2"
+}
+
 # Tmux check.
 tmux_check()
 {
@@ -103,11 +116,8 @@ tmux_check()
 	return 0
     fi
     version=${version##tmux }
-    version_major=${version%%.*}
-    version_minor=${version##*.}
 
-    if [ "$version_major" -lt "$need_major" ] ||
-	{ [ "$version_major" -eq "$need_major" ] && [ "$version_minor" -lt "$need_minor" ]; }; then
+    if versionlt "$version" "$need_major.$need_minor"; then
 	printf "tmux version %s too old\n" "$version" >&2
 	return 1
     fi
