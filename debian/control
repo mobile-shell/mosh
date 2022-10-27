@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Keith Winstein <keithw@mit.edu>
 Uploaders: Alex Chernyakhovsky <achernya@debian.org>, Benjamin Barenblat <bbaren@debian.org>
 Build-Depends: debhelper-compat (= 12), protobuf-compiler, libprotobuf-dev, pkg-config, libutempter-dev, zlib1g-dev, libncurses5-dev, libssl-dev, bash-completion, locales, tmux, less
-Standards-Version: 4.1.0.0
+Standards-Version: 4.6.1
 Homepage: https://mosh.org
 Vcs-Git: https://github.com/mobile-shell/mosh.git
 Vcs-Browser: https://github.com/mobile-shell/mosh
