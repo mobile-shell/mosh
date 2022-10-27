@@ -322,7 +322,7 @@ PKG_CHECK_MODULES([TINFO], [tinfo],
         AC_SUBST([TINFO_LIBS], ["$TINFO_LDFLAGS -ltinfo"])],)])])
 
 # Then try to find it in a specific install dir
-AC_ARG_WITH(curses, [AC_HELP_STRING([--with-curses=DIR], [Where curses is installed])],
+AC_ARG_WITH(curses, [AS_HELP_STRING([--with-curses=DIR], [Where curses is installed])],
     [if test $withval != yes; then
         cv_curses=$withval
     fi
