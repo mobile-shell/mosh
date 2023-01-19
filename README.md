@@ -147,6 +147,22 @@ mosh-client packages to allow mosh-server usage without Perl.
 Notes for developers
 --------------------
 
+To start contributing to Mosh, install the following dependencies:
+
+```
+$ sudo apt install -y protobuf-compiler libprotobuf-dev libutempter-dev autoconf automake nettle-dev
+$ brew install protobuf automake
+```
+
+Once you have forked the repository, run the following to build and test Mosh:
+
+```
+$ ./autogen.sh
+$ ./configure
+$ make
+$ make check
+```
+
 Mosh supports producing code coverage reports by tests, but this feature is
 disabled by default. To enable it, make sure `lcov` is installed on your
 system. Then, configure and run tests:
