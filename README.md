@@ -152,15 +152,15 @@ To start contributing to Mosh, install the following dependencies:
 Debian, Windows Subsystem for Linux:
 
 ```
-$ sudo apt install -y build-essential debhelper-compat protobuf-compiler \
+$ sudo apt install -y build-essential protobuf-compiler \
     libprotobuf-dev pkg-config libutempter-dev zlib1g-dev libncurses5-dev \
-    libssl-dev bash-completion locales tmux less
+    libssl-dev bash-completion tmux less
 ```
 
 MacOS:
 
 ```
-$ brew install protobuf automake zlib openssl bash tmux less
+$ brew install protobuf automake
 ```
 
 Once you have forked the repository, run the following to build and test Mosh:
