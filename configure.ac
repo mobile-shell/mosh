@@ -381,7 +381,10 @@ PKG_CHECK_MODULES([OpenSSL], [openssl],
   [have_openssl=yes
     AC_CHECK_LIB([crypto], [AES_encrypt], [have_deprecated_openssl_aes=yes])
     AC_CHECK_LIB([crypto], [EVP_aes_128_ocb], [have_evp_aes_ocb=yes])],
-  [:])
+  [AX_CHECK_LIBRARY([crypto], [openssl/aes.h], [crypto],
+    [have_openssl=yes
+      AC_CHECK_LIB([crypto], [AES_encrypt], [have_deprecated_openssl_aes=yes])
+      AC_CHECK_LIB([crypto], [EVP_aes_128_ocb], [have_evp_aes_ocb=yes])])])
 PKG_CHECK_MODULES([Nettle], [nettle], [have_nettle=yes], [:])
 AS_CASE([$with_crypto_library],
   [openssl*],
