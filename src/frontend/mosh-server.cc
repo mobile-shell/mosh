@@ -88,6 +88,7 @@
 #include "select.h"
 #include "timestamp.h"
 #include "fatal_assert.h"
+#include "multiplexer.h"
 
 #ifndef _PATH_BSHELL
 #define _PATH_BSHELL "/bin/sh"
@@ -95,9 +96,10 @@
 
 #include "networktransport-impl.h"
 
-typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConnection;
+typedef Network::Transport< Network::MultiplexerStream, Network::MultiplexerStream > ServerConnection;
 
 static void serve( int host_fd,
+		   Network::MultiplexerStream &local,
 		   Terminal::Complete &terminal,
 		   ServerConnection &network,
 		   long network_timeout,
@@ -421,11 +423,14 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
   /* open parser and terminal */
   Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
+  Network::MultiplexerStream local({&terminal});
 
   /* open network */
   Network::UserStream blank;
+  Network::MultiplexerStream remote({&blank});
+
   typedef shared::shared_ptr<ServerConnection> NetworkPointer;
-  NetworkPointer network( new ServerConnection( terminal, blank, desired_ip, desired_port ) );
+  NetworkPointer network( new ServerConnection( local, remote, desired_ip, desired_port ) );
 
   network->set_verbose( verbose );
   Select::set_verbose( verbose );
@@ -621,7 +626,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
 #endif
 
     try {
-      serve( master, terminal, *network, network_timeout, network_signaled_timeout );
+      serve( master, local, terminal, *network, network_timeout, network_signaled_timeout );
     } catch ( const Network::NetworkException &e ) {
       fprintf( stderr, "Network exception: %s\n",
 	       e.what() );
@@ -645,7 +650,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
   return 0;
 }
 
-static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &network, long network_timeout, long network_signaled_timeout )
+static void serve( int host_fd, Network::MultiplexerStream &local, Terminal::Complete &terminal, ServerConnection &network, long network_timeout, long network_signaled_timeout )
 {
   /* scale timeouts */
   const uint64_t network_timeout_ms = static_cast<uint64_t>( network_timeout ) * 1000;
@@ -728,14 +733,14 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
       if ( sel.read( network_fd ) ) {
 	/* packet received from the network */
 	network.recv();
-	
+
 	/* is new user input available for the terminal? */
 	if ( network.get_remote_state_num() != last_remote_num ) {
 	  last_remote_num = network.get_remote_state_num();
 
-	  
+
 	  Network::UserStream us;
-	  us.apply_string( network.get_remote_diff() );
+	  us.apply_string( Network::MultiplexerStream::diffForStream(0, network.get_remote_diff()) );
 	  /* apply userstream to terminal */
 	  for ( size_t i = 0; i < us.size(); i++ ) {
 	    const Parser::Action &action = us.get_action( i );
@@ -771,7 +776,9 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
 	  /* update client with new state of terminal */
 	  if ( !network.shutdown_in_progress() ) {
-	    network.set_current_state( terminal );
+	    terminal.reset_input();
+	    local.set(0, &terminal);
+	    network.set_current_state( local );
 	  }
 	  #if defined(HAVE_SYSLOG) || defined(HAVE_UTEMPTER)
 	  #ifdef HAVE_UTEMPTER
@@ -828,12 +835,12 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  }
 	}
       }
-      
+
       if ( (!network.shutdown_in_progress()) && sel.read( host_fd ) ) {
 	/* input from the host needs to be fed to the terminal */
 	const int buf_size = 16384;
 	char buf[ buf_size ];
-	
+
 	/* fill buffer if possible */
 	ssize_t bytes_read = read( host_fd, buf, buf_size );
 
@@ -843,9 +850,11 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  network.start_shutdown();
 	} else {
 	  terminal_to_host += terminal.act( string( buf, bytes_read ) );
-	
+
 	  /* update client with new state of terminal */
-	  network.set_current_state( terminal );
+	  terminal.reset_input();
+	  local.set(0, &terminal);
+	  network.set_current_state( local );
 	}
       }
 
@@ -858,7 +867,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
       if ( network_timeout_ms &&
 	   network_timeout_ms <= time_since_remote_state ) {
 	idle_shutdown = true;
-	fprintf( stderr, "Network idle for %llu seconds.\n", 
+	fprintf( stderr, "Network idle for %llu seconds.\n",
 		 static_cast<unsigned long long>( time_since_remote_state / 1000 ) );
       }
       if ( sel.signal( SIGUSR1 )
@@ -876,7 +885,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 	  break;
 	}
       }
-      
+
       /* quit if our shutdown has been acknowledged */
       if ( network.shutdown_in_progress() && network.shutdown_acknowledged() ) {
 	break;
@@ -894,7 +903,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       #ifdef HAVE_UTEMPTER
       /* update utmp if has been more than 30 seconds since heard from client */
-      if ( connected_utmp 
+      if ( connected_utmp
 	   && time_since_remote_state > 30000 ) {
 	utempter_remove_record( host_fd );
 
@@ -908,7 +917,9 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       if ( terminal.set_echo_ack( now ) && !network.shutdown_in_progress() ) {
 	/* update client with new echo ack */
-	network.set_current_state( terminal );
+	terminal.reset_input();
+	local.set(0, &terminal);
+	network.set_current_state( local );
       }
 
       if ( !network.get_remote_state_num()

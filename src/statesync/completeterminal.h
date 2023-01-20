@@ -38,11 +38,12 @@
 
 #include "parser.h"
 #include "terminal.h"
+#include "stream.h"
 
 /* This class represents the complete terminal -- a UTF8Parser feeding Actions to an Emulator. */
 
 namespace Terminal {
-  class Complete {
+  class Complete : public Network::Stream {
   private:
     Parser::UTF8Parser parser;
     Terminal::Emulator terminal;
@@ -62,7 +63,6 @@ namespace Terminal {
   public:
     Complete( size_t width, size_t height ) : parser(), terminal( width, height ), display( false ),
 					      actions(), input_history(), echo_ack( 0 ) {}
-    
     std::string act( const std::string &str );
     std::string act( const Parser::Action &act );
 
@@ -74,11 +74,14 @@ namespace Terminal {
     int wait_time( uint64_t now ) const;
 
     /* interface for Network::Transport */
-    void subtract( const Complete * ) const {}
-    std::string diff_from( const Complete &existing ) const;
+    void subtract( const Network::Stream * ) {}
+    std::string diff_from( const Network::Stream &existing ) const;
     std::string init_diff( void ) const;
     void apply_string( const std::string & diff );
-    bool operator==( const Complete &x ) const;
+    bool operator==( const Network::Stream &x ) const;
+    Stream* copy() const {
+      return new Complete(*this);
+    }
 
     bool compare( const Complete &other ) const;
   };
