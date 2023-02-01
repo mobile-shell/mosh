@@ -489,14 +489,20 @@ void Renditions::set_rendition( color_type num )
     return;
   }
 
-  bool value = num < 9;
+  bool value = num < 10;
   switch ( num ) {
-  case 1: case 22: set_attribute(bold, value); break;
+  case 1: set_attribute(bold, value); break;
+  case 2: set_attribute(faint, value); break;
+  case 22:
+          set_attribute(bold, value);
+          set_attribute(faint, value);
+          break;
   case 3: case 23: set_attribute(italic, value); break;
   case 4: case 24: set_attribute(underlined, value); break;
   case 5: case 25: set_attribute(blink, value); break;
   case 7: case 27: set_attribute(inverse, value); break;
   case 8: case 28: set_attribute(invisible, value); break;
+  case 9: case 29: set_attribute(strikethrough, value); break;
   default: break; /* ignore unknown rendition */
   }
 }
@@ -526,11 +532,13 @@ std::string Renditions::sgr( void ) const
 
   ret.append( "\033[0" );
   if ( get_attribute( bold ) ) ret.append( ";1" );
+  if ( get_attribute( faint ) ) ret.append( ";2" );
   if ( get_attribute( italic ) ) ret.append( ";3" );
   if ( get_attribute( underlined ) ) ret.append( ";4" );
   if ( get_attribute( blink ) ) ret.append( ";5" );
   if ( get_attribute( inverse ) ) ret.append( ";7" );
   if ( get_attribute( invisible ) ) ret.append( ";8" );
+  if ( get_attribute( strikethrough ) ) ret.append( ";9" );
 
   if ( foreground_color ) {
     // Since foreground_color is a 25-bit field, it is promoted to an int when
