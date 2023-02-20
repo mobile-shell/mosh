@@ -30,62 +30,66 @@
     also delete it here.
 */
 
-#ifndef PRNG_HPP
-#define PRNG_HPP
+#include "config.h"
 
-#include <string>
-#include <stdint.h>
-#include <fstream>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-#include "crypto.h"
-
-/* Read random bytes from /dev/urandom.
-
-   We rely on stdio buffering for efficiency. */
-
-static const char rdev[] = "/dev/urandom";
-
-using namespace Crypto;
-
-class PRNG {
- private:
-  std::ifstream randfile;
-
-  /* unimplemented to satisfy -Weffc++ */
-  PRNG( const PRNG & );
-  PRNG & operator=( const PRNG & );
-
- public:
-  PRNG() : randfile( rdev, std::ifstream::in | std::ifstream::binary ) {}
-
-  void fill( void *dest, size_t size ) {
-    if ( 0 == size ) {
-      return;
-    }
-
-    randfile.read( static_cast<char *>( dest ), size );
-    if ( !randfile ) {
-      throw CryptoException( "Could not read from " + std::string( rdev ), true );
-    }
-  }
-
-  uint8_t uint8() {
-    uint8_t x;
-    fill( &x, 1 );
-    return x;
-  }
-
-  uint32_t uint32() {
-    uint32_t x;
-    fill( &x, 4 );
-    return x;
-  }
-
-  uint64_t uint64() {
-    uint64_t x;
-    fill( &x, 8 );
-    return x;
-  }
-};
-
+#ifdef HAVE_PATHS_H
+#include <paths.h>
 #endif
+
+#include <cstring>
+
+#include "stdfds.h"
+
+#ifndef _PATH_DEVNULL
+#define _PATH_DEVNULL "/dev/null"
+#endif
+
+void open_stdfds()
+{
+  /* Make sure all standard i/o fds are open on something. */
+  for ( int fd = 0; fd <= STDERR_FILENO; fd++) {
+    if ( ::fcntl( fd, F_GETFD ) < 0 ) {
+      if ( ::open( _PATH_DEVNULL, O_RDWR ) != fd ) {
+	/* given the circumstances, even writing an error may fail */
+	const char* stdErr = "cannot open standard file descriptor\n";
+	if ( ::write( STDERR_FILENO, stdErr, strlen(stdErr) ) < static_cast<ssize_t>( strlen(stdErr) ) ) {
+	  ::abort();
+	}
+	::exit(1);
+      }
+    }
+  }
+}
+
+void detach_stdfds()
+{
+  /* Necessary to properly detach on old versions of sshd (e.g. RHEL/CentOS 5.0). */
+  int nullfd;
+
+  nullfd = ::open( _PATH_DEVNULL, O_RDWR );
+  if ( nullfd == -1 ) {
+    ::perror( "open" );
+    ::exit( 1 );
+  }
+
+  if ( ::dup2 ( nullfd, STDIN_FILENO ) < 0 ||
+       ::dup2 ( nullfd, STDOUT_FILENO ) < 0 ||
+       ::dup2 ( nullfd, STDERR_FILENO ) < 0 ) {
+    ::perror( "dup2" );
+    ::exit( 1 );
+  }
+
+  if ( nullfd > STDERR_FILENO && ::close( nullfd ) < 0 ) {
+    /*
+     * This goes to /dev/null, but do it anyway, because it will
+     * show up on system call traces.
+     */
+    ::perror( "close" );
+    ::exit( 1 );
+  }
+}

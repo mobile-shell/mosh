@@ -40,6 +40,7 @@
 #include "crypto.h"
 #include "locale_utils.h"
 #include "fatal_assert.h"
+#include "stdfds.h"
 
 /* These need to be included last because of conflicting defines. */
 /*
@@ -108,6 +109,9 @@ int main( int argc, char *argv[] )
 #endif
 {
   unsigned int verbose = 0;
+  /* Make sure all standard i/o fds are open on something. */
+  open_stdfds();
+
   /* For security, make sure we don't dump core */
   Crypto::disable_dumping_core();
 
