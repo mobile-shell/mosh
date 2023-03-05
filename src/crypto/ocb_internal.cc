@@ -24,7 +24,7 @@
 / Comments are welcome: Ted Krovetz <ted@krovetz.net> - Dedicated to Laurel K
 /------------------------------------------------------------------------- */
 
-#include "config.h"
+#include "src/include/config.h"
 
 /* This module implements the ae.h interface for OpenSSL, Apple Common
 /  Crypto, and Nettle.                                                     */
@@ -84,9 +84,9 @@
 /* Includes and compiler specific definitions                              */
 /* ----------------------------------------------------------------------- */
 
-#include "ae.h"
-#include "crypto.h"
-#include "fatal_assert.h"
+#include "src/crypto/ae.h"
+#include "src/crypto/crypto.h"
+#include "src/util/fatal_assert.h"
 #include <stdlib.h>
 #include <string.h>
 #if defined(HAVE_STRINGS_H)

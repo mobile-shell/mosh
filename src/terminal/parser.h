@@ -40,7 +40,7 @@
 #include <string.h>
 
 #include "parsertransition.h"
-#include "parseraction.h"
+#include "src/terminal/parseraction.h"
 #include "parserstate.h"
 #include "parserstatefamily.h"
 

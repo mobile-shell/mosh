@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "crypto.h"
+#include "src/crypto/crypto.h"
 
 static void dos_detected( const char *expression, const char *file, int line, const char *function )
 {

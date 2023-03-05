@@ -33,7 +33,7 @@
 #ifndef PTY_COMPAT_HPP
 #define PTY_COMPAT_HPP
 
-#include "config.h"
+#include "src/include/config.h"
 
 #ifndef HAVE_FORKPTY
 #  define forkpty my_forkpty

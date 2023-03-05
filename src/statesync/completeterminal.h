@@ -36,8 +36,8 @@
 #include <list>
 #include <stdint.h>
 
-#include "parser.h"
-#include "terminal.h"
+#include "src/terminal/parser.h"
+#include "src/terminal/terminal.h"
 
 /* This class represents the complete terminal -- a UTF8Parser feeding Actions to an Emulator. */
 

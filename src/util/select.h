@@ -39,8 +39,8 @@
 #include <sys/select.h>
 #include <assert.h>
 
-#include "fatal_assert.h"
-#include "timestamp.h"
+#include "src/util/fatal_assert.h"
+#include "src/util/timestamp.h"
 
 /* Convenience wrapper for pselect(2).
 

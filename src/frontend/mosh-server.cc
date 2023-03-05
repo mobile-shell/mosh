@@ -30,8 +30,8 @@
     also delete it here.
 */
 
-#include "config.h"
-#include "version.h"
+#include "src/include/config.h"
+#include "src/include/version.h"
 
 #include <err.h>
 #include <errno.h>
@@ -79,21 +79,21 @@
 #include <libutil.h>
 #endif
 
-#include "completeterminal.h"
-#include "swrite.h"
-#include "user.h"
-#include "fatal_assert.h"
-#include "locale_utils.h"
-#include "pty_compat.h"
-#include "select.h"
-#include "timestamp.h"
-#include "fatal_assert.h"
+#include "src/statesync/completeterminal.h"
+#include "src/util/swrite.h"
+#include "src/statesync/user.h"
+#include "src/util/fatal_assert.h"
+#include "src/util/locale_utils.h"
+#include "src/util/pty_compat.h"
+#include "src/util/select.h"
+#include "src/util/timestamp.h"
+#include "src/util/fatal_assert.h"
 
 #ifndef _PATH_BSHELL
 #define _PATH_BSHELL "/bin/sh"
 #endif
 
-#include "networktransport-impl.h"
+#include "src/network/networktransport-impl.h"
 
 typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConnection;
 

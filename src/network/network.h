@@ -44,7 +44,7 @@
 #include <exception>
 #include <string.h>
 
-#include "crypto.h"
+#include "src/crypto/crypto.h"
 
 using namespace Crypto;
 

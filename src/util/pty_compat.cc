@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include "config.h"
+#include "src/include/config.h"
 
 #if !defined(HAVE_FORKPTY) || !defined(HAVE_CFMAKERAW)
 #include <stdio.h>
@@ -42,7 +42,7 @@
 #include <sys/stropts.h>
 #include <termios.h>
 
-#include "pty_compat.h"
+#include "src/util/pty_compat.h"
 
 #ifndef HAVE_FORKPTY
 pid_t my_forkpty( int *amaster, char *name,

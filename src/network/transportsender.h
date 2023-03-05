@@ -37,11 +37,11 @@
 #include <string>
 #include <list>
 
-#include "network.h"
-#include "transportinstruction.pb.h"
+#include "src/network/network.h"
+#include "src/protobufs/transportinstruction.pb.h"
 #include "transportstate.h"
 #include "transportfragment.h"
-#include "prng.h"
+#include "src/crypto/prng.h"
 
 namespace Network {
   using std::list;

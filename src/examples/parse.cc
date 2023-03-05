@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include "config.h"
+#include "src/include/config.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -53,12 +53,12 @@
 #include <libutil.h>
 #endif
 
-#include "parser.h"
-#include "swrite.h"
-#include "locale_utils.h"
-#include "fatal_assert.h"
-#include "pty_compat.h"
-#include "select.h"
+#include "src/terminal/parser.h"
+#include "src/util/swrite.h"
+#include "src/util/locale_utils.h"
+#include "src/util/fatal_assert.h"
+#include "src/util/pty_compat.h"
+#include "src/util/select.h"
 
 const size_t buf_size = 1024;
 

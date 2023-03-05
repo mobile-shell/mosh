@@ -36,7 +36,7 @@
 #include <typeinfo>
 #include <limits.h>
 
-#include "terminaloverlay.h"
+#include "src/frontend/terminaloverlay.h"
 
 using namespace Overlay;
 

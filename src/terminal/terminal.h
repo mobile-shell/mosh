@@ -38,8 +38,8 @@
 #include <vector>
 #include <deque>
 
-#include "parseraction.h"
-#include "terminalframebuffer.h"
+#include "src/terminal/parseraction.h"
+#include "src/terminal/terminalframebuffer.h"
 #include "terminaldispatcher.h"
 #include "terminaluserinput.h"
 #include "terminaldisplay.h"

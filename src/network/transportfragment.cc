@@ -32,11 +32,11 @@
 
 #include <assert.h>
 
-#include "byteorder.h"
+#include "src/crypto/byteorder.h"
 #include "transportfragment.h"
-#include "transportinstruction.pb.h"
+#include "src/protobufs/transportinstruction.pb.h"
 #include "compressor.h"
-#include "fatal_assert.h"
+#include "src/util/fatal_assert.h"
 
 using namespace Network;
 using namespace TransportBuffers;

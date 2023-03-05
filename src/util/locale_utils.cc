@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include "config.h"
+#include "src/include/config.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -43,7 +43,7 @@
 #include <langinfo.h>
 #endif
 
-#include "locale_utils.h"
+#include "src/util/locale_utils.h"
 
 
 const std::string LocaleVar::str( void ) const

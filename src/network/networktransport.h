@@ -39,8 +39,8 @@
 #include <list>
 #include <vector>
 
-#include "network.h"
-#include "transportsender.h"
+#include "src/network/network.h"
+#include "src/network/transportsender.h"
 #include "transportfragment.h"
 
 

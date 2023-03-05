@@ -37,7 +37,7 @@
 #include <vector>
 #include <string>
 
-#include "transportinstruction.pb.h"
+#include "src/protobufs/transportinstruction.pb.h"
 
 namespace Network {
   using std::vector;

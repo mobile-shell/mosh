@@ -36,7 +36,7 @@
 #include <string>
 #include <vector>
 
-#include "shared.h"
+#include "src/util/shared.h"
 
 namespace Terminal {
   class Emulator;

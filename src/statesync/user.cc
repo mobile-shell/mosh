@@ -33,9 +33,9 @@
 #include <assert.h>
 #include <typeinfo>
 
-#include "user.h"
-#include "fatal_assert.h"
-#include "userinput.pb.h"
+#include "src/statesync/user.h"
+#include "src/util/fatal_assert.h"
+#include "src/protobufs/userinput.pb.h"
 
 using namespace Parser;
 using namespace Network;

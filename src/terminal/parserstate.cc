@@ -32,7 +32,7 @@
 
 #include "parserstate.h"
 #include "parserstatefamily.h"
-#include "shared.h"
+#include "src/util/shared.h"
 
 using namespace Parser;
 

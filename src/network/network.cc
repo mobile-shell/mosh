@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include "config.h"
+#include "src/include/config.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -44,13 +44,13 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "dos_assert.h"
-#include "fatal_assert.h"
-#include "byteorder.h"
-#include "network.h"
-#include "crypto.h"
+#include "src/util/dos_assert.h"
+#include "src/util/fatal_assert.h"
+#include "src/crypto/byteorder.h"
+#include "src/network/network.h"
+#include "src/crypto/crypto.h"
 
-#include "timestamp.h"
+#include "src/util/timestamp.h"
 
 #ifndef MSG_DONTWAIT
 #define MSG_DONTWAIT MSG_NONBLOCK

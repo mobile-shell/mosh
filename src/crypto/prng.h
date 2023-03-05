@@ -37,7 +37,7 @@
 #include <stdint.h>
 #include <fstream>
 
-#include "crypto.h"
+#include "src/crypto/crypto.h"
 
 /* Read random bytes from /dev/urandom.
 

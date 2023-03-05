@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include "config.h"
+#include "src/include/config.h"
 
 #include <errno.h>
 #include <locale.h>
@@ -52,12 +52,12 @@
 #include <util.h>
 #endif
 
-#include "swrite.h"
-#include "completeterminal.h"
-#include "user.h"
-#include "terminaloverlay.h"
-#include "locale_utils.h"
-#include "fatal_assert.h"
+#include "src/util/swrite.h"
+#include "src/statesync/completeterminal.h"
+#include "src/statesync/user.h"
+#include "src/frontend/terminaloverlay.h"
+#include "src/util/locale_utils.h"
+#include "src/util/fatal_assert.h"
 
 const int ITERATIONS = 100000;
 

@@ -36,7 +36,7 @@
 #include <unistd.h>
 #include <typeinfo>
 
-#include "terminal.h"
+#include "src/terminal/terminal.h"
 
 using namespace Terminal;
 

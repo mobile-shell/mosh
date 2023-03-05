@@ -37,8 +37,8 @@
 #include <stdlib.h>
 
 #include "terminaldispatcher.h"
-#include "parseraction.h"
-#include "terminalframebuffer.h"
+#include "src/terminal/parseraction.h"
+#include "src/terminal/terminalframebuffer.h"
 
 using namespace Terminal;
 

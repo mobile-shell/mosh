@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include "config.h"
+#include "src/include/config.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -52,8 +52,8 @@
 #include <libutil.h>
 #endif
 
-#include "pty_compat.h"
-#include "swrite.h"
+#include "src/util/pty_compat.h"
+#include "src/util/swrite.h"
 
 int main( int argc, char *argv[] )
 {

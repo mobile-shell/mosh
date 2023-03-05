@@ -30,10 +30,10 @@
     also delete it here.
 */
 
-#include "completeterminal.h"
-#include "fatal_assert.h"
+#include "src/statesync/completeterminal.h"
+#include "src/util/fatal_assert.h"
 
-#include "hostinput.pb.h"
+#include "src/protobufs/hostinput.pb.h"
 
 #include <limits.h>
 

@@ -33,10 +33,10 @@
 #ifndef TERMINAL_OVERLAY_HPP
 #define TERMINAL_OVERLAY_HPP
 
-#include "terminalframebuffer.h"
-#include "network.h"
-#include "transportsender.h"
-#include "parser.h"
+#include "src/terminal/terminalframebuffer.h"
+#include "src/network/network.h"
+#include "src/network/transportsender.h"
+#include "src/terminal/parser.h"
 
 #include <vector>
 #include <limits.h>
