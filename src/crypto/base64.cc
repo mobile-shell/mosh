@@ -33,8 +33,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "fatal_assert.h"
-#include "base64.h"
+#include "src/util/fatal_assert.h"
+#include "src/crypto/base64.h"
 
 static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

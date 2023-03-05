@@ -42,7 +42,7 @@
 #include <string>
 #include <list>
 
-#include "shared.h"
+#include "src/util/shared.h"
 
 /* Terminal framebuffer */
 

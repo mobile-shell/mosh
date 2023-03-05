@@ -38,7 +38,7 @@
 #include <string>
 #include <assert.h>
 
-#include "parseraction.h"
+#include "src/terminal/parseraction.h"
 
 namespace Network {
   using std::deque;

@@ -34,7 +34,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "crypto.h"
+#include "src/crypto/crypto.h"
 
 using namespace Crypto;
 

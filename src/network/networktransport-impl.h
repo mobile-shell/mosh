@@ -33,7 +33,7 @@
 #ifndef NETWORK_TRANSPORT_IMPL_HPP
 #define NETWORK_TRANSPORT_IMPL_HPP
 
-#include "networktransport.h"
+#include "src/network/networktransport.h"
 
 #include "transportsender-impl.h"
 

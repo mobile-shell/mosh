@@ -34,7 +34,7 @@
 #define TERMINALUSERINPUT_HPP
 
 #include <string>
-#include "parseraction.h"
+#include "src/terminal/parseraction.h"
 
 namespace Terminal {
   class UserInput {

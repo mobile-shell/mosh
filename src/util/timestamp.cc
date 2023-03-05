@@ -30,9 +30,9 @@
     also delete it here.
 */
 
-#include "config.h"
+#include "src/include/config.h"
 
-#include "timestamp.h"
+#include "src/util/timestamp.h"
 
 #include <errno.h>
 

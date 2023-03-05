@@ -33,7 +33,7 @@
 /* This is in its own file because otherwise the ncurses #defines
    alias our own variable names. */
 
-#include "config.h"
+#include "src/include/config.h"
 #include "terminaldisplay.h"
 
 #include <string>

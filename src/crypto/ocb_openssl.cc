@@ -1,5 +1,5 @@
-#include "config.h"
-#include "ae.h"
+#include "src/include/config.h"
+#include "src/crypto/ae.h"
 
 #include <cstring>
 #include <openssl/crypto.h>

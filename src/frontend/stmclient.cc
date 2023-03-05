@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include "config.h"
+#include "src/include/config.h"
 
 #include <err.h>
 #include <errno.h>
@@ -52,16 +52,16 @@
 #endif
 
 #include "stmclient.h"
-#include "swrite.h"
-#include "completeterminal.h"
-#include "user.h"
-#include "fatal_assert.h"
-#include "locale_utils.h"
-#include "pty_compat.h"
-#include "select.h"
-#include "timestamp.h"
+#include "src/util/swrite.h"
+#include "src/statesync/completeterminal.h"
+#include "src/statesync/user.h"
+#include "src/util/fatal_assert.h"
+#include "src/util/locale_utils.h"
+#include "src/util/pty_compat.h"
+#include "src/util/select.h"
+#include "src/util/timestamp.h"
 
-#include "networktransport-impl.h"
+#include "src/network/networktransport-impl.h"
 
 using std::wstring;
 

@@ -41,12 +41,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "ae.h"
-#include "crypto.h"
-#include "prng.h"
-#include "fatal_assert.h"
+#include "src/crypto/ae.h"
+#include "src/crypto/crypto.h"
+#include "src/crypto/prng.h"
+#include "src/util/fatal_assert.h"
 #include "test_utils.h"
-#include "shared.h"
+#include "src/util/shared.h"
 
 #define KEY_LEN   16
 #define NONCE_LEN 12

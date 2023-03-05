@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "terminalframebuffer.h"
+#include "src/terminal/terminalframebuffer.h"
 
 using namespace Terminal;
 

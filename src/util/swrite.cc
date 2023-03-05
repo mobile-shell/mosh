@@ -34,7 +34,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "swrite.h"
+#include "src/util/swrite.h"
 
 int swrite( int fd, const char *str, ssize_t len )
 {

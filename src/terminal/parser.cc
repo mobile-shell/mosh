@@ -36,7 +36,7 @@
 #include <wchar.h>
 #include <stdint.h>
 
-#include "parser.h"
+#include "src/terminal/parser.h"
 
 const Parser::StateFamily Parser::family;
 

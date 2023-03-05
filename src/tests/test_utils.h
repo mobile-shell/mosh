@@ -35,7 +35,7 @@
 
 #include <string>
 
-#include "crypto.h"
+#include "src/crypto/crypto.h"
 
 #define DUMP_NAME_FMT "%-10s "
 

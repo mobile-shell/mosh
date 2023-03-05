@@ -38,11 +38,11 @@
 #include <sys/resource.h>
 #include <fstream>
 
-#include "byteorder.h"
-#include "crypto.h"
-#include "base64.h"
-#include "fatal_assert.h"
-#include "prng.h"
+#include "src/crypto/byteorder.h"
+#include "src/crypto/crypto.h"
+#include "src/crypto/base64.h"
+#include "src/util/fatal_assert.h"
+#include "src/crypto/prng.h"
 
 using namespace Crypto;
 

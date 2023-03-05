@@ -33,12 +33,12 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include "user.h"
-#include "fatal_assert.h"
-#include "pty_compat.h"
-#include "networktransport-impl.h"
-#include "select.h"
-#include "shared.h"
+#include "src/statesync/user.h"
+#include "src/util/fatal_assert.h"
+#include "src/util/pty_compat.h"
+#include "src/network/networktransport-impl.h"
+#include "src/util/select.h"
+#include "src/util/shared.h"
 
 using namespace Network;
 

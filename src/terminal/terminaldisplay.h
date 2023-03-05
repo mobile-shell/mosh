@@ -33,7 +33,7 @@
 #ifndef TERMINALDISPLAY_HPP
 #define TERMINALDISPLAY_HPP
 
-#include "terminalframebuffer.h"
+#include "src/terminal/terminalframebuffer.h"
 
 namespace Terminal {
   /* variables used within a new_frame */

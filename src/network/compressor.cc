@@ -33,7 +33,7 @@
 #include <zlib.h>
 
 #include "compressor.h"
-#include "dos_assert.h"
+#include "src/util/dos_assert.h"
 
 using namespace Network;
 using std::string;

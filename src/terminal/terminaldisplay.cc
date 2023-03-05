@@ -33,7 +33,7 @@
 #include <stdio.h>
 
 #include "terminaldisplay.h"
-#include "terminalframebuffer.h"
+#include "src/terminal/terminalframebuffer.h"
 
 using namespace Terminal;
 

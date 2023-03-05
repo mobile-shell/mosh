@@ -35,7 +35,7 @@
 
 #include <stdlib.h>
 
-#include "parseraction.h"
+#include "src/terminal/parseraction.h"
 
 namespace Parser {
   class State;

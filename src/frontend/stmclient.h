@@ -37,11 +37,11 @@
 #include <termios.h>
 #include <string>
 
-#include "completeterminal.h"
-#include "networktransport.h"
-#include "user.h"
-#include "shared.h"
-#include "terminaloverlay.h"
+#include "src/statesync/completeterminal.h"
+#include "src/network/networktransport.h"
+#include "src/statesync/user.h"
+#include "src/util/shared.h"
+#include "src/frontend/terminaloverlay.h"
 
 class STMClient {
 private:

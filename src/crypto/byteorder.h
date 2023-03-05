@@ -33,7 +33,7 @@
 #ifndef BYTEORDER_HPP
 #define BYTEORDER_HPP
 
-#include "config.h"
+#include "src/include/config.h"
 
 #if HAVE_DECL_BE64TOH || HAVE_DECL_BETOH64
 

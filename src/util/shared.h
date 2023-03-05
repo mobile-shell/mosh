@@ -33,7 +33,7 @@
 #ifndef SHARED_HPP
 #define SHARED_HPP
 
-#include "config.h"
+#include "src/include/config.h"
 
 #ifdef HAVE_MEMORY
 #include <memory>

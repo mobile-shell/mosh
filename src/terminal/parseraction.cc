@@ -33,8 +33,8 @@
 #include <stdio.h>
 #include <wctype.h>
 
-#include "parseraction.h"
-#include "terminal.h"
+#include "src/terminal/parseraction.h"
+#include "src/terminal/terminal.h"
 
 using namespace Parser;
 

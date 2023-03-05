@@ -36,7 +36,7 @@
 #include <cstdlib>
 #include <set>
 
-#include "network.h"
+#include "src/network/network.h"
 
 int main()
 {
