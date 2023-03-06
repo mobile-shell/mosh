@@ -4,7 +4,7 @@ if BUILD_CLIENT
 endif
 CLEANFILES = $(bin_SCRIPTS)
 
-mosh:	mosh.pl ../VERSION Makefile
+mosh:	mosh.pl ../VERSION.stamp Makefile
 	perl -Mdiagnostics -c $(srcdir)/mosh.pl
-	@sed -e "s/\@VERSION\@/`cat ../VERSION`/" -e "s/\@PACKAGE_STRING\@/@PACKAGE_STRING@/" $(srcdir)/mosh.pl > mosh
+	@sed -e "s/\@VERSION\@/`cat ../VERSION.stamp`/" -e "s/\@PACKAGE_STRING\@/@PACKAGE_STRING@/" $(srcdir)/mosh.pl > mosh
 	@chmod a+x mosh

@@ -102,7 +102,7 @@ perl -wlpi -e 's{#!/usr/bin/env perl}{#!/usr/bin/perl}' "$PREFIX/local/bin/mosh"
 
 popd > /dev/null
 
-PACKAGE_VERSION=$(cat ../VERSION)
+PACKAGE_VERSION=$(cat ../VERSION.stamp)
 
 OUTFILE="$PACKAGE_VERSION.pkg"
 
