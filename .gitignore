@@ -35,5 +35,6 @@ src/include/config.h.in~
 src/include/stamp-h1
 /test-driver
 /VERSION
+/VERSION.stamp
 /scripts/mosh
 src/include/version.h
