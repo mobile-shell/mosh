@@ -34,6 +34,7 @@
 #define NETWORK_TRANSPORT_IMPL_HPP
 
 #include "networktransport.h"
+#include "compressor.h"
 
 #include "transportsender-impl.h"
 
@@ -73,9 +74,11 @@ void Transport<MyState, RemoteState>::recv( void )
   string s( connection.recv() );
   Fragment frag( s );
 
-  if ( fragments.add_fragment( frag ) ) { /* complete packet */
-    Instruction inst = fragments.get_assembly();
-
+  string assembly = fragments.get_assembly( frag );
+  
+  if ( !assembly.empty() ) { /* have a complete packet */
+    Instruction inst;
+    fatal_assert( inst.ParseFromString( get_compressor().uncompress_str( assembly ) ) );
     if ( inst.protocol_version() != MOSH_PROTOCOL_VERSION ) {
       throw NetworkException( "mosh protocol version mismatch", 0 );
     }
