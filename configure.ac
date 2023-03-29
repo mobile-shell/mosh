@@ -26,6 +26,10 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AS_IF([pkg-config --atleast-version 3.6.0 protobuf],
   [AX_CXX_COMPILE_STDCXX([11])])
 
+# If current protobuf 4.22+ update the requires to C++14.
+AS_IF([pkg-config --atleast-version 4.22.0 protobuf],
+  [AX_CXX_COMPILE_STDCXX([14])])
+
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""
 DISTCHECK_CXXFLAGS=""
@@ -310,6 +314,10 @@ AC_CHECK_FUNCS(m4_normalize([
   pselect
   pledge
   ]))
+
+AS_IF([pkg-config --atleast-version 4.22.0 protobuf],
+  [PKG_CHECK_MODULES([ABSL_LOG_INTERNAL_CHECK_OP], [absl_log_internal_check_op],[],
+     [AC_MSG_ERROR([Missing abseil-cpp library.])])])
 
 # Start by trying to find the needed tinfo parts by pkg-config
 PKG_CHECK_MODULES([TINFO], [tinfo],
