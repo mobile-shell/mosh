@@ -18,13 +18,17 @@ AC_PROG_RANLIB
 AC_PATH_PROG([PROTOC], [protoc], [])
 AS_IF([test x"$PROTOC" = x],
   [AC_MSG_ERROR([cannot find protoc, the Protocol Buffers compiler])])
+PKG_PROG_PKG_CONFIG
 
 # automake 1.12 seems to require this, but automake 1.11 doesn't recognize it
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 # Protobuf 3.6+ requires C++11.
-AS_IF([pkg-config --atleast-version 3.6.0 protobuf],
-  [AX_CXX_COMPILE_STDCXX([11])])
+AC_MSG_CHECKING([whether protobuf requires C++11])
+PKG_CHECK_EXISTS([protobuf >= 3.6.0],
+  [AC_MSG_RESULT([yes])
+   AX_CXX_COMPILE_STDCXX([11])],
+  [AC_MSG_RESULT([no])])
 
 WARNING_CXXFLAGS=""
 PICKY_CXXFLAGS=""
