@@ -32,6 +32,7 @@
 
 #include "config.h"
 
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 #ifdef HAVE_SYS_UIO_H
@@ -39,10 +40,20 @@
 #endif
 #include <netdb.h>
 #include <netinet/in.h>
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef _WIN32
+#include <map>
+#include "winsock2.h"
+#include "windows.h"
+#include "mswsock.h"
+
+#include <io.h>
+#endif
 
 #include "dos_assert.h"
 #include "fatal_assert.h"
@@ -53,7 +64,11 @@
 #include "timestamp.h"
 
 #ifndef MSG_DONTWAIT
+#ifndef _WIN32
 #define MSG_DONTWAIT MSG_NONBLOCK
+#else
+#define MSG_DONTWAIT 0
+#endif
 #endif
 
 #ifndef AI_NUMERICSERV
@@ -65,6 +80,22 @@ using namespace Crypto;
 
 const uint64_t DIRECTION_MASK = uint64_t(1) << 63;
 const uint64_t SEQUENCE_MASK = uint64_t(-1) ^ DIRECTION_MASK;
+
+#ifdef _WIN32
+int dup_socket(int fd) {
+    WSAPROTOCOL_INFO info = {};
+
+    int rc = WSADuplicateSocket(fd, GetCurrentProcessId(), &info);
+    if(rc != 0)
+        return -1;
+
+    SOCKET sock = WSASocket(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO, &info, 0, 0);
+    if(sock == INVALID_SOCKET)
+        return -1;
+
+    return (int)sock;
+}
+#endif
 
 /* Read in packet */
 Packet::Packet( const Message & message )
@@ -149,11 +180,21 @@ void Connection::prune_sockets( void )
 }
 
 Connection::Socket::Socket( int family )
+#ifndef _WIN32
   : _fd( socket( family, SOCK_DGRAM, 0 ) )
+#else
+  : _fd( WSASocket( family, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED) )
+#endif
 {
+  #ifndef _WIN32
   if ( _fd < 0 ) {
     throw NetworkException( "socket", errno );
   }
+  #else
+  if (_fd == INVALID_SOCKET)  {
+    throw WSAException( "WSASocket", WSAGetLastError() );
+  }
+  #endif
 
   /* Disable path MTU discovery */
 #ifdef HAVE_IP_MTU_DISCOVER
@@ -163,11 +204,24 @@ Connection::Socket::Socket( int family )
   }
 #endif
 
+  #ifdef _WIN32
+  u_long mode = 1;
+  if(ioctlsocket(_fd, FIONBIO, &mode) == INVALID_SOCKET) {
+      throw WSAException("ioctlsocket", WSAGetLastError());
+  }
+  #endif
+
   //  int dscp = 0x92; /* OS X does not have IPTOS_DSCP_AF42 constant */
   int dscp = 0x02; /* ECN-capable transport only */
+  #ifndef _WIN32
   if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, sizeof dscp ) < 0 ) {
     //    perror( "setsockopt( IP_TOS )" );
   }
+  #else
+  if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, (const char*)&dscp, sizeof dscp ) < 0 ) {
+        perror( "setsockopt( IP_TOS )" );
+  }
+  #endif
 
   /* request explicit congestion notification on received datagrams */
 #ifdef HAVE_IP_RECVTOS
@@ -211,13 +265,28 @@ void Connection::set_MTU( int family )
   }
 }
 
+#ifdef _WIN32
+/* called before any other calls to socketio_ functions */
+int
+socketio_initialize()
+{
+    WSADATA wsaData = { 0 };
+    return WSAStartup(MAKEWORD(2, 2), &wsaData);
+}
+#endif
+
 class AddrInfo {
 public:
   struct addrinfo *res;
   AddrInfo( const char *node, const char *service,
 	    const struct addrinfo *hints ) :
     res( NULL ) {
+    #ifndef _WIN32
     int errcode = getaddrinfo( node, service, hints, &res );
+    #else
+    int errcode = socketio_initialize();
+    errcode = getaddrinfo( node, service, hints, &res );
+    #endif
     if ( errcode != 0 ) {
       throw NetworkException( std::string( "Bad IP address (" ) + (node != NULL ? node : "(null)") + "): " + gai_strerror( errcode ), 0 );
     }
@@ -325,8 +394,13 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
 
     if ( local_addr.sa.sa_family == AF_INET6
       && memcmp(&local_addr.sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any)) == 0 ) {
+      #ifndef _WIN32
       const int off = 0;
       if ( setsockopt( sock(), IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off) ) ) {
+      #else
+      const char* off = "0";
+      if ( setsockopt( sock(), IPPROTO_IPV6, IPV6_V6ONLY, off, sizeof(off) ) ) {
+      #endif
         perror( "setsockopt( IPV6_V6ONLY, off )" );
       }
     }
@@ -438,12 +512,17 @@ string Connection::recv( void )
     try {
       payload = recv_one( it->fd());
     } catch ( NetworkException & e ) {
+      #ifndef _WIN32
       if ( (e.the_errno == EAGAIN)
 	   || (e.the_errno == EWOULDBLOCK) ) {
 	continue;
       } else {
 	throw;
       }
+      #else
+      // TODO(MaxRis): Allow certain socket read failures (error codes between Windows and Linux don't match)
+      continue;
+      #endif
     }
 
     /* succeeded */
@@ -453,31 +532,76 @@ string Connection::recv( void )
   throw NetworkException( "No packet received" );
 }
 
+#ifdef _WIN32
+std::map<int, LPFN_WSARECVMSG> recvMsgMap;
+#endif
+
 string Connection::recv_one( int sock_to_recv )
 {
   /* receive source address, ECN, and payload in msghdr structure */
   Addr packet_remote_addr;
+  #ifndef _WIN32
   struct msghdr header;
   struct iovec msg_iovec;
+  #else
+  GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
+  LPFN_WSARECVMSG WSARecvMsg = nullptr;
+  WSAMSG msg;
+  WSABUF WSABuf;
+  DWORD received_len = 0;
+  int nResult = 0;
+
+  WSARecvMsg = recvMsgMap[sock_to_recv];
+  if (!WSARecvMsg) {
+      nResult = WSAIoctl(sock_to_recv, SIO_GET_EXTENSION_FUNCTION_POINTER,
+               &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
+               &WSARecvMsg, sizeof WSARecvMsg,
+               &received_len, NULL, NULL);
+      if (nResult == SOCKET_ERROR) {
+          int errorCode = WSAGetLastError();
+          WSARecvMsg = NULL;
+          return "";
+      }
+      recvMsgMap[sock_to_recv] = WSARecvMsg;
+  }
+  #endif
 
   char msg_payload[ Session::RECEIVE_MTU ];
   char msg_control[ Session::RECEIVE_MTU ];
 
   /* receive source address */
+  #ifndef _WIN32
   header.msg_name = &packet_remote_addr;
   header.msg_namelen = sizeof packet_remote_addr;
+  #else
+  msg.name = &packet_remote_addr.sa;
+  msg.namelen = sizeof packet_remote_addr.sa;
+  #endif
 
   /* receive payload */
+  #ifndef _WIN32
   msg_iovec.iov_base = msg_payload;
   msg_iovec.iov_len = sizeof msg_payload;
   header.msg_iov = &msg_iovec;
   header.msg_iovlen = 1;
+  #else
+  WSABuf.buf = msg_payload;
+  WSABuf.len = sizeof msg_payload;
+  msg.lpBuffers = &WSABuf;
+  msg.dwBufferCount = 1;
+  #endif
 
   /* receive explicit congestion notification */
+  #ifndef _WIN32
   header.msg_control = msg_control;
   header.msg_controllen = sizeof msg_control;
+  #else
+  msg.Control.len = sizeof msg_control;
+  msg.Control.buf = msg_control;
+  #endif
 
   /* receive flags */
+  #ifndef _WIN32
   header.msg_flags = 0;
 
   ssize_t received_len = recvmsg( sock_to_recv, &header, MSG_DONTWAIT );
@@ -489,10 +613,27 @@ string Connection::recv_one( int sock_to_recv )
   if ( header.msg_flags & MSG_TRUNC ) {
     throw NetworkException( "Received oversize datagram", errno );
   }
+  #else
+  msg.dwFlags = 0;
+
+  nResult = WSARecvMsg(sock_to_recv, &msg, &received_len, NULL, NULL);
+  if (nResult == SOCKET_ERROR) {
+      throw WSAException( "WSARecvMsg", WSAGetLastError() );
+  }
+
+  if ( received_len < 0 ) {
+    throw WSAException( "recvmsg", WSAGetLastError() );
+  }
+
+  if ( msg.dwFlags & MSG_TRUNC ) {
+    throw WSAException( "Received oversize datagram", WSAGetLastError() );
+  }
+  #endif
 
   /* receive ECN */
   bool congestion_experienced = false;
 
+  #ifndef _WIN32
   struct cmsghdr *ecn_hdr = CMSG_FIRSTHDR( &header );
   if ( ecn_hdr
        && ecn_hdr->cmsg_level == IPPROTO_IP
@@ -507,6 +648,32 @@ string Connection::recv_one( int sock_to_recv )
 
     congestion_experienced = (*ecn_octet_p & 0x03) == 0x03;
   }
+  #else
+  WSACMSGHDR *pCMsgHdr = WSA_CMSG_FIRSTHDR(&msg);
+  /*IN_PKTINFO *pPktInfo = nullptr;
+  if (pCMsgHdr) {
+      switch (pCMsgHdr->cmsg_type) {
+          case IP_PKTINFO: {
+
+                  //CSocketAddressIn DestinationAddress;
+                  pPktInfo = (IN_PKTINFO *)WSA_CMSG_DATA(pCMsgHdr);
+                  //DestinationAddress.SetHostAddress(pPktInfo->ipi_addr.S_un.S_addr);
+                  //DestinationAddress.GetAddress(Address);
+                  //cout << "Destination address: " << Address
+                  //    << ", interface index: " << pPktInfo->ipi_ifindex << '\n';
+                  }
+              break;
+          default:
+              //cout << "Unknown message type: " << pCMsgHdr->cmsg_type
+              //    << "; level: " << pCMsgHdr->cmsg_level << '\n';
+              break;
+          }
+  }
+
+  if (!pPktInfo) {
+      return "";
+  }*/
+  #endif
 
   Packet p( session.decrypt( msg_payload, received_len ) );
 
@@ -556,10 +723,18 @@ string Connection::recv_one( int sock_to_recv )
   last_heard = timestamp();
 
   if ( server && /* only client can roam */
+       #ifndef _WIN32
        ( remote_addr_len != header.msg_namelen ||
+       #else
+       ( remote_addr_len != msg.namelen ||
+       #endif
 	 memcmp( &remote_addr, &packet_remote_addr, remote_addr_len ) != 0 ) ) {
     remote_addr = packet_remote_addr;
+    #ifndef _WIN32
     remote_addr_len = header.msg_namelen;
+    #else
+    remote_addr_len = msg.namelen;
+    #endif
     char host[ NI_MAXHOST ], serv[ NI_MAXSERV ];
     int errcode = getnameinfo( &remote_addr.sa, remote_addr_len,
 			       host, sizeof( host ), serv, sizeof( serv ),
@@ -633,11 +808,19 @@ uint64_t Connection::timeout( void ) const
 
 Connection::Socket::~Socket()
 {
+  #ifndef _WIN32
   fatal_assert ( close( _fd ) == 0 );
+  #else
+  fatal_assert ( closesocket( _fd ) == 0 );
+  #endif
 }
 
 Connection::Socket::Socket( const Socket & other )
+#ifndef _WIN32
   : _fd( dup( other._fd ) )
+#else
+  : _fd( dup_socket( other._fd ) )
+#endif
 {
   if ( _fd < 0 ) {
     throw NetworkException( "socket", errno );
@@ -646,6 +829,7 @@ Connection::Socket::Socket( const Socket & other )
 
 Connection::Socket & Connection::Socket::operator=( const Socket & other )
 {
+    //TODO: This will not work on Windows because dup2() and dup() cannot be used for socket handles on that OS.
   if ( dup2( other._fd, _fd ) < 0 ) {
     throw NetworkException( "socket", errno );
   }

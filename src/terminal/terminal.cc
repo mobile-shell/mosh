@@ -56,6 +56,15 @@ void Emulator::execute( const Parser::Execute *act )
   dispatch.dispatch( CONTROL, act, &fb );
 }
 
+#ifdef _WIN32
+// TODO: wcwidth is not available on Windows (should provide character width)
+namespace {
+int wcwidth(wchar_t c) {
+    return 1;
+}
+}
+#endif
+
 void Emulator::print( const Parser::Print *act )
 {
   assert( act->char_present );

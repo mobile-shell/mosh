@@ -179,6 +179,15 @@ static std::string human_readable_duration( int num_seconds, const std::string &
   return tmp;
 }
 
+#ifdef _WIN32
+// TODO: wcwidth is not available on Windows (should provide character width)
+namespace {
+int wcwidth(wchar_t c) {
+    return 1;
+}
+}
+#endif
+
 void NotificationEngine::apply( Framebuffer &fb ) const
 {
   uint64_t now = timestamp();

@@ -15,5 +15,5 @@ if BUILD_SERVER
   bin_PROGRAMS += mosh-server
 endif
 
-mosh_client_SOURCES = mosh-client.cc stmclient.cc stmclient.h terminaloverlay.cc terminaloverlay.h
+mosh_client_SOURCES = mosh-client.cc stmclient.cc stmclient.h terminaloverlay.cc terminaloverlay.h tncon.cc tncon.h
 mosh_server_SOURCES = mosh-server.cc

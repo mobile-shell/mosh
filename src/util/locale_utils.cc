@@ -69,6 +69,7 @@ const LocaleVar get_ctype( void )
 
 const char *locale_charset( void )
 {
+#if HAVE_LANGINFO_H
   static const char ASCII_name[] = "US-ASCII";
 
   /* Produce more pleasant name of US-ASCII */
@@ -79,6 +80,9 @@ const char *locale_charset( void )
   }
 
   return ret;
+#else
+  return NULL;
+#endif
 }
 
 bool is_utf8_locale( void ) {
@@ -109,6 +113,7 @@ void set_native_locale( void ) {
 }
 
 void clear_locale_variables( void ) {
+  #if HAVE_LANGINFO_H
   unsetenv( "LANG" );
   unsetenv( "LANGUAGE" );
   unsetenv( "LC_CTYPE" );
@@ -124,4 +129,5 @@ void clear_locale_variables( void ) {
   unsetenv( "LC_MEASUREMENT" );
   unsetenv( "LC_IDENTIFICATION" );
   unsetenv( "LC_ALL" );
+  #endif
 }

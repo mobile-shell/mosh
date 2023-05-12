@@ -181,10 +181,12 @@ int main( int argc, char *argv[] )
 
   string key( env_key );
 
+  #ifndef _WIN32
   if ( unsetenv( "MOSH_KEY" ) < 0 ) {
     perror( "unsetenv" );
     exit( 1 );
   }
+  #endif
 
   /* Adopt native locale */
   set_native_locale();

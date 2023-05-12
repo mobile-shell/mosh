@@ -33,8 +33,10 @@
 #ifndef STM_CLIENT_HPP
 #define STM_CLIENT_HPP
 
+#ifndef _WIN32
 #include <sys/ioctl.h>
 #include <termios.h>
+#endif
 #include <string>
 
 #include "completeterminal.h"
@@ -55,9 +57,13 @@ private:
   bool escape_requires_lf;
   std::wstring escape_key_help;
 
+  #ifndef _WIN32
   struct termios saved_termios, raw_termios;
 
   struct winsize window_size;
+  #else
+  CONSOLE_SCREEN_BUFFER_INFO window_size;
+  #endif
 
   Terminal::Framebuffer local_framebuffer, new_state;
   Overlay::OverlayManager overlays;
@@ -70,6 +76,13 @@ private:
   bool repaint_requested, lf_entered, quit_sequence_started;
   bool clean_shutdown;
   unsigned int verbose;
+
+  #ifdef _WIN32
+  DWORD input_mode_attributes_saved = 0;
+  DWORD output_mode_attributes_saved = 0;
+  unsigned int input_cp_saved = 0;
+  unsigned int output_cp_saved = 0;
+  #endif
 
   void main_init( void );
   void process_network_input( void );
@@ -86,13 +99,20 @@ private:
 
   void resume( void ); /* restore state after SIGCONT */
 
+  #ifdef _WIN32
+  void enterRawConsoleMode();
+  void exitRawConsoleMode();
+  #endif
+
 public:
   STMClient( const char *s_ip, const char *s_port, const char *s_key, const char *predict_mode, unsigned int s_verbose, const char *predict_overwrite )
     : ip( s_ip ? s_ip : "" ), port( s_port ? s_port : "" ),
     key( s_key ? s_key : "" ),
     escape_key( 0x1E ), escape_pass_key( '^' ), escape_pass_key2( '^' ),
     escape_requires_lf( false ), escape_key_help( L"?" ),
+      #ifndef _WIN32
       saved_termios(), raw_termios(),
+      #endif
       window_size(),
       local_framebuffer( 1, 1 ),
       new_state( 1, 1 ),

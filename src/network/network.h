@@ -35,8 +35,14 @@
 
 #include <stdint.h>
 #include <deque>
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#else
+#include "winsock2.h"
+#include "ws2ipdef.h"
+#include "ws2tcpip.h"
+#endif
 #include <string>
 #include <math.h>
 #include <vector>
@@ -59,7 +65,11 @@ namespace Network {
   public:
     string function;
     int the_errno;
+  #ifndef _WIN32
   private:
+  #else
+  protected:
+  #endif
     string my_what;
   public:
     NetworkException( string s_function="<none>", int s_errno=0)
@@ -68,6 +78,16 @@ namespace Network {
     const char *what() const throw () { return my_what.c_str(); }
     ~NetworkException() throw () {}
   };
+
+  #ifdef _WIN32
+  class WSAException : public NetworkException {
+  public:
+      WSAException(string s_function, int wsaError) : NetworkException(s_function, 0) {
+          //TODO: use FormatMessage() to get correct error message
+          my_what = function + ": Error " + std::to_string(wsaError);
+      }
+  };
+  #endif
 
   enum Direction {
     TO_SERVER = 0,

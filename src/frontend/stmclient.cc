@@ -32,16 +32,22 @@
 
 #include "config.h"
 
+#ifndef _WIN32
 #include <err.h>
+#endif
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <sys/ioctl.h>
+#endif
 #include <sys/types.h>
+#ifndef _WIN32
 #include <pwd.h>
+#endif
 #include <signal.h>
 #include <time.h>
 
@@ -63,15 +69,29 @@
 
 #include "networktransport-impl.h"
 
+#ifdef _WIN32
+#include "tncon.h"
+
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x4
+#endif
+
+#ifndef DISABLE_NEWLINE_AUTO_RETURN
+#define DISABLE_NEWLINE_AUTO_RETURN 0x8
+#endif
+#endif
+
 using std::wstring;
 
 void STMClient::resume( void )
 {
   /* Restore termios state */
+  #ifndef _WIN32
   if ( tcsetattr( STDIN_FILENO, TCSANOW, &raw_termios ) < 0 ) {
       perror( "tcsetattr" );
       exit( 1 );
   }
+  #endif
 
   /* Put terminal in application-cursor-key mode */
   swrite( STDOUT_FILENO, display.open().c_str() );
@@ -82,6 +102,7 @@ void STMClient::resume( void )
 
 void STMClient::init( void )
 {
+  #ifndef _WIN32
   if ( !is_utf8_locale() ) {
     LocaleVar native_ctype = get_ctype();
     string native_charset( locale_charset() );
@@ -117,6 +138,9 @@ void STMClient::init( void )
       perror( "tcsetattr" );
       exit( 1 );
   }
+  #else
+  enterRawConsoleMode();
+  #endif
 
   /* Put terminal in application-cursor-key mode */
   swrite( STDOUT_FILENO, display.open().c_str() );
@@ -209,10 +233,12 @@ void STMClient::shutdown( void )
   /* Restore terminal and terminal-driver state */
   swrite( STDOUT_FILENO, display.close().c_str() );
   
+  #ifndef _WIN32
   if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
     perror( "tcsetattr" );
     exit( 1 );
   }
+  #endif
 
   if ( still_connecting() ) {
     fprintf( stderr, "\nmosh did not make a successful connection to %s:%s.\n"
@@ -223,6 +249,9 @@ void STMClient::shutdown( void )
     fputs( "\n\nmosh did not shut down cleanly. Please note that the\n"
 	   "mosh-server process may still be running on the server.\n", stderr );
   }
+  #ifdef _WIN32
+  exitRawConsoleMode();
+  #endif
 }
 
 void STMClient::main_init( void )
@@ -233,9 +262,12 @@ void STMClient::main_init( void )
   sel.add_signal( SIGINT );
   sel.add_signal( SIGHUP );
   sel.add_signal( SIGPIPE );
+  #ifndef _WIN32
   sel.add_signal( SIGCONT );
+  #endif
 
   /* get initial window size */
+  #ifndef _WIN32
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
     perror( "ioctl TIOCGWINSZ" );
     return;
@@ -243,6 +275,18 @@ void STMClient::main_init( void )
 
   /* local state */
   local_framebuffer = Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
+  #else
+  int result = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &window_size);
+  if (!result) {
+      DWORD errorCode = GetLastError();
+      return;
+  }
+
+  int visibleWidth = window_size.srWindow.Right - window_size.srWindow.Left + 1;
+  int visibleHeight = window_size.srWindow.Bottom - window_size.srWindow.Top + 1;
+  /* local state */
+  local_framebuffer = Terminal::Framebuffer( visibleWidth, visibleHeight );
+  #endif
   new_state = Terminal::Framebuffer( 1, 1 );
 
   /* initialize screen */
@@ -251,13 +295,21 @@ void STMClient::main_init( void )
 
   /* open network */
   Network::UserStream blank;
+  #ifndef _WIN32
   Terminal::Complete local_terminal( window_size.ws_col, window_size.ws_row );
+  #else
+  Terminal::Complete local_terminal( visibleWidth, visibleHeight );
+  #endif
   network = NetworkPointer( new NetworkType( blank, local_terminal, key.c_str(), ip.c_str(), port.c_str() ) );
 
   network->set_send_delay( 1 ); /* minimal delay on outgoing keystrokes */
 
   /* tell server the size of the terminal */
+  #ifndef _WIN32
   network->get_current_state().push_back( Parser::Resize( window_size.ws_col, window_size.ws_row ) );
+  #else
+  network->get_current_state().push_back( Parser::Resize( visibleWidth, visibleHeight ) );
+  #endif
 
   /* be noisy as necessary */
   network->set_verbose( verbose );
@@ -306,6 +358,7 @@ bool STMClient::process_user_input( int fd )
   char buf[ buf_size ];
 
   /* fill buffer if possible */
+  #ifndef _WIN32
   ssize_t bytes_read = read( fd, buf, buf_size );
   if ( bytes_read == 0 ) { /* EOF */
     return false;
@@ -313,6 +366,14 @@ bool STMClient::process_user_input( int fd )
     perror( "read" );
     return false;
   }
+  #else
+  HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+  DWORD bytes_read = 0;
+
+  auto resizeCallback = [this]() { process_resize(); };
+
+  bytes_read = ReadConsoleForTermEmul(inputHandle, buf, buf_size, resizeCallback);
+  #endif
 
   NetworkType &net = *network;
 
@@ -346,17 +407,21 @@ bool STMClient::process_user_input( int fd )
 	/* Restore terminal and terminal-driver state */
 	swrite( STDOUT_FILENO, display.close().c_str() );
 
+        #ifndef _WIN32
 	if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
 	  perror( "tcsetattr" );
 	  exit( 1 );
 	}
+        #endif
 
 	fputs( "\n\033[37;44m[mosh is suspended.]\033[m\n", stdout );
 
 	fflush( NULL );
 
+        #ifndef _WIN32
 	/* actually suspend */
 	kill( 0, SIGSTOP );
+        #endif
 
 	resume();
       } else if ( (the_byte == escape_pass_key) || (the_byte == escape_pass_key2) ) {
@@ -400,13 +465,27 @@ bool STMClient::process_user_input( int fd )
 bool STMClient::process_resize( void )
 {
   /* get new size */
+    #ifndef _WIN32
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
     perror( "ioctl TIOCGWINSZ" );
     return false;
   }
+    #else
+    int result = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &window_size);
+    if(!result) {
+        return false;
+    }
+
+    int visibleWidth = window_size.srWindow.Right - window_size.srWindow.Left + 1;
+    int visibleHeight = window_size.srWindow.Bottom - window_size.srWindow.Top + 1;
+    #endif
   
   /* tell remote emulator */
+    #ifndef _WIN32
   Parser::Resize res( window_size.ws_col, window_size.ws_row );
+    #else
+    Parser::Resize res(visibleWidth, visibleHeight);
+    #endif
   
   if ( !network->shutdown_in_progress() ) {
     network->get_current_state().push_back( res );
@@ -419,6 +498,71 @@ bool STMClient::process_resize( void )
 
   return true;
 }
+
+#ifdef _WIN32
+void STMClient::enterRawConsoleMode()
+{
+    HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD dwInputMode;
+
+    GetConsoleMode(hInput, &dwInputMode);
+
+    input_mode_attributes_saved = dwInputMode;
+    dwInputMode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT);
+    dwInputMode |= ENABLE_WINDOW_INPUT;
+
+    if( !SetConsoleMode(hInput, dwInputMode) ) {
+        fatal_assert(!"SetConsoleMode() error");
+        exit(1);
+    }
+
+    HANDLE hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwOutputMode;
+
+    GetConsoleMode(hOutput, &dwOutputMode);
+
+    output_mode_attributes_saved = dwOutputMode;
+    dwOutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
+    if( !SetConsoleMode(hOutput, dwOutputMode) ) {
+        fatal_assert(!"SetConsoleMode() error");
+        exit(1);
+    }
+
+    output_cp_saved = GetConsoleOutputCP();
+    BOOL rc = SetConsoleOutputCP(CP_UTF8);
+    if(!rc) {
+        fprintf(stderr, "SetConsoleOutputCP error: 0x%.8X\n", GetLastError());
+        exit(1);
+    }
+
+    input_cp_saved = GetConsoleCP();
+    rc = SetConsoleCP(CP_UTF8);
+    if(!rc) {
+        fprintf(stderr, "SetConsoleCP error: 0x%.8X\n", GetLastError());
+        exit(1);
+    }
+}
+
+void STMClient::exitRawConsoleMode()
+{
+    SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), output_mode_attributes_saved);
+    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), input_mode_attributes_saved);
+
+    if (output_cp_saved) {
+        if(!SetConsoleOutputCP(output_cp_saved)) {
+            fprintf(stderr, "SetConsoleOutputCP error: 0x%.8X\n", GetLastError());
+            exit(1);
+        }
+    }
+
+    if (input_cp_saved) {
+        if(!SetConsoleCP(input_cp_saved)) {
+            fprintf(stderr, "SetConsoleCP error: 0x%.8X\n", GetLastError());
+            exit(1);
+        }
+    }
+}
+#endif
 
 bool STMClient::main( void )
 {
@@ -437,6 +581,10 @@ bool STMClient::main( void )
   /* prepare to poll for events */
   Select &sel = Select::get_instance();
 
+  #ifdef _WIN32
+  HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+  #endif
+
   while ( 1 ) {
     try {
       output_new_frame();
@@ -450,6 +598,7 @@ bool STMClient::main( void )
 
       /* poll for events */
       /* network->fd() can in theory change over time */
+      #ifndef _WIN32
       sel.clear_fds();
       std::vector< int > fd_list( network->fds() );
       for ( std::vector< int >::const_iterator it = fd_list.begin();
@@ -458,6 +607,14 @@ bool STMClient::main( void )
 	sel.add_fd( *it );
       }
       sel.add_fd( STDIN_FILENO );
+      #else
+      sel.clear_handles();
+      std::vector< int > fd_list( network->fds() );
+      for ( std::vector< int >::const_iterator it = fd_list.begin(); it != fd_list.end(); it++ ) {
+          sel.add_socket(*it);
+      }
+      sel.add_waitable_handle( inputHandle );
+      #endif
 
       int active_fds = sel.select( wait_time );
       if ( active_fds < 0 ) {
@@ -470,7 +627,11 @@ bool STMClient::main( void )
       for ( std::vector< int >::const_iterator it = fd_list.begin();
 	    it != fd_list.end();
 	    it++ ) {
+          #ifndef _WIN32
 	if ( sel.read( *it ) ) {
+          #else
+        if ( sel.isSocketReady( *it ) ) {
+          #endif
 	  /* packet received from the network */
 	  /* we only read one socket each run */
 	  network_ready_to_read = true;
@@ -481,6 +642,7 @@ bool STMClient::main( void )
 	process_network_input();
       }
     
+      #ifndef _WIN32
       if ( sel.read( STDIN_FILENO ) && !process_user_input( STDIN_FILENO ) ) { /* input from the user needs to be fed to the network */
 	if ( !network->has_remote_addr() ) {
 	  break;
@@ -497,6 +659,18 @@ bool STMClient::main( void )
       if ( sel.signal( SIGCONT ) ) {
 	resume();
       }
+      #else
+      DWORD inputEventCount = 0;
+      GetNumberOfConsoleInputEvents(inputHandle, &inputEventCount);
+      if ( inputEventCount && !process_user_input(0)/*sel.read( STDIN_FILENO ) && !process_user_input( STDIN_FILENO )*/ ) { // input from the user needs to be fed to the network
+          if (!network->has_remote_addr()) {
+              break;
+          } else if (!network->shutdown_in_progress()) {
+              overlays.get_notification_engine().set_notification_string(wstring(L"Exiting..."), true);
+              network->start_shutdown();
+          }
+      }
+      #endif
 
       if ( sel.signal( SIGTERM )
            || sel.signal( SIGINT )
