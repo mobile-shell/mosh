@@ -138,10 +138,76 @@ void Parser::UTF8Parser::input( char c, Actions &ret )
       if ((pwcheck >= 0xD800) && (pwcheck <= 0xDFFF))
       { /* surrogate code point */
         /*
-          OS X unfortunately allows these sequences without EILSEQ, but
-          they are ill-formed UTF-8 and we shouldn't repeat them to the
-          user's terminal.
-        */
+        A surrogate code point is a Unicode code point in the range 
+        U+D800…U+DFFF. It is reserved by UTF-16 for a pair of 
+        surrogate code units (a high surrogate followed by a low 
+        surrogate) to "substitute" a supplementary character.
+
+        For example, the Unicode code point U+1F339 (🌹) is a 
+        supplementary character, which is encoded in UTF-16 as two 
+        surrogate code units: 0xD83C (high surrogate) and 0xDF39 
+        (low surrogate).
+
+        🌹 is represented in UTF-8 as 0xF0 0x9F 0x8C 0xB9. UTF-8 
+        is a variable-length character encoding, defined to encode 
+        code points as 1 to 4 bytes, depending on the number of 
+        significant binary bits in the code point value.
+
+        Supplementary characters in Unicode are those assigned to 
+        code points from U+10000 to U+10FFFF. In UTF-8, these 
+        characters are all 4 bytes long. Therefore, there are no 
+        Unicode supplementary characters longer than 4 bytes.
+
+        The relationship between surrogate code units and 
+        supplementary characters is as follows: supplementary 
+        characters are those outside the Basic Multilingual Plane 
+        (BMP), while surrogates are UTF-16 code values. In UTF-16, 
+        a pair of surrogates (a high surrogate and a low surrogate) 
+        is required to represent a supplementary character. The 
+        range of high surrogates is U+D800 to U+DBFF, and the range 
+        of low surrogates is U+DC00 to U+DFFF.
+
+        I did an experiment in the MSYS2 environment. The emoji 
+        character 📁 occupies 2 `wchar_t` or 4 `char`. The emoji 
+        character ✏️ occupies 2 `wchar_t` or 6 `char`. I 
+        organized my findings into a table, where the Display 
+        column indicates whether it can be displayed normally, the 
+        mbrtowc column shows the number of characters required and 
+        the number of wide characters output by calling the mbrtowc 
+        function. The pwccheck column is whether pwccheck is ok in 
+        the code.
+
+        | Emoji | Platform | `wchar_t` | `char` | Display | mbrtowc | pwccheck |
+        | ----- | -------- | --------- | ------ | ------- | ------- | -------- |
+        | 📁   | MSYS2    | 2         | 4      | ❌      | 3→1     | ❌      |
+        | ✏️   | MSYS2    | 2         | 6      | ✔️      | 3→1     | ✔️      |
+        | ❌   | MSYS2    | 1         | 3      | ✔️      | 3→1     | ✔️      |
+        | 📁   | CentOS   | 1         | 4      | ✔️      | 4→1     | ✔️      |
+        | ✏️   | CentOS   | 2         | 6      | ✔️      | 3→1     | ✔️      |
+        | ❌   | CentOS   | 1         | 3      | ✔️      | 3→1     | ✔️      |
+
+        Let’s summarize this table. Since the conversion process 
+        is done gradually from small to large, we will encounter 
+        this situation: after trying to convert a 3-character 
+        length string to a wide character, it is located at a 
+        surrogate code point, which is a surrogate code unit.
+
+        So there is a problem here. The mbrtowc function converted 
+        the first three characters of a Unicode supplementary 
+        character, and got a wide character, which is the leading 
+        code unit of the surrogate pair for the supplementary 
+        character. This causes the remaining one character to be 
+        impossible to convert to the correct data. This might be a 
+        problem with mbrtowc under MSYS2, possibly because the 
+        length of wchar_t on Windows is 2. According to the 
+        background knowledge provided by Bing, a supplementary 
+        character must be composed of 4 characters. Therefore, this 
+        place should process 4 characters together and convert them 
+        to 2 wide characters.
+
+        Since the conversion process is from 4 characters to 2 wide 
+        characters, we need to use the mbstowcs series of functions.
+         */
         if (buf_len == 3 && bytes_parsed == 3) {
           total_bytes_parsed += buf_len;
           continue;
@@ -155,6 +221,11 @@ void Parser::UTF8Parser::input( char c, Actions &ret )
             bytes_parsed = buf_len;
           }
         }
+        /*
+          OS X unfortunately allows these sequences without EILSEQ, but
+          they are ill-formed UTF-8 and we shouldn't repeat them to the
+          user's terminal.
+        */
         pwc = (wchar_t)0xFFFD;
       }
 
