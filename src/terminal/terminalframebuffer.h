@@ -182,6 +182,11 @@ namespace Terminal {
       contents.insert( contents.end(), tmp, tmp+len );
     }
 
+    void append( const std::string & in )
+    {
+      contents.append(in);
+    }
+
     void print_grapheme( std::string &output ) const
     {
       if ( contents.empty() ) {

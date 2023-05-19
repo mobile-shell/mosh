@@ -125,33 +125,53 @@ void Parser::UTF8Parser::input( char c, Actions &ret )
       total_bytes_parsed += buf_len;
       continue;
     } else {
+      /* Cast to unsigned for checks, because some
+         platforms (e.g. ARM) use uint32_t as wchar_t,
+         causing compiler warning on "pwc > 0" check. */
+      const uint32_t pwcheck = pwc;
+
+      if (pwcheck > 0x10FFFF)
+      { /* outside Unicode range */
+        pwc = (wchar_t)0xFFFD;
+      }
+
+      if ((pwcheck >= 0xD800) && (pwcheck <= 0xDFFF))
+      { /* surrogate code point */
+        /*
+          OS X unfortunately allows these sequences without EILSEQ, but
+          they are ill-formed UTF-8 and we shouldn't repeat them to the
+          user's terminal.
+        */
+        if (buf_len == 3 && bytes_parsed == 3) {
+          total_bytes_parsed += buf_len;
+          continue;
+        }
+
+        if (buf_len == 4 && bytes_parsed == 3) {
+          wchar_t wstr[8];
+          buf[buf_len] = '\0';
+          size_t r = std::mbstowcs(wstr, buf, buf_len);
+          if (r == 2) {
+            bytes_parsed = buf_len;
+          }
+        }
+        pwc = (wchar_t)0xFFFD;
+      }
+
       /* parsed into pwc, accept */
       assert( bytes_parsed <= buf_len );
       memmove( buf, buf + bytes_parsed, buf_len - bytes_parsed );
       buf_len = buf_len - bytes_parsed;
     }
 
-    /* Cast to unsigned for checks, because some
-       platforms (e.g. ARM) use uint32_t as wchar_t,
-       causing compiler warning on "pwc > 0" check. */
-    const uint32_t pwcheck = pwc;
-
-    if ( pwcheck > 0x10FFFF ) { /* outside Unicode range */
-      pwc = (wchar_t) 0xFFFD;
-    }
-
-    if ( (pwcheck >= 0xD800) && (pwcheck <= 0xDFFF) ) { /* surrogate code point */
-      /*
-	OS X unfortunately allows these sequences without EILSEQ, but
-	they are ill-formed UTF-8 and we shouldn't repeat them to the
-	user's terminal.
-      */
-      pwc = (wchar_t) 0xFFFD;
-    }
-
     parser.input( pwc, ret );
 
     total_bytes_parsed += bytes_parsed;
+
+    if (bytes_parsed >= 4) {
+      auto c = dynamic_cast<Print*>(ret.back().get());
+      c->raw.append(buf, bytes_parsed);
+    }
   }
 }
 

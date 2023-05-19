@@ -69,6 +69,7 @@ namespace Parser {
   };
   class Print : public Action {
   public:
+    std::string raw;
     std::string name( void ) { return std::string( "Print" ); }
     void act_on_terminal( Terminal::Emulator *emu ) const;
   };
