@@ -41,23 +41,23 @@
 using namespace Network;
 using namespace TransportBuffers;
 
-static string network_order_string( uint16_t host_order )
+static std::string network_order_string( uint16_t host_order )
 {
   uint16_t net_int = htobe16( host_order );
-  return string( (char *)&net_int, sizeof( net_int ) );
+  return std::string( (char *)&net_int, sizeof( net_int ) );
 }
 
-static string network_order_string( uint64_t host_order )
+static std::string network_order_string( uint64_t host_order )
 {
   uint64_t net_int = htobe64( host_order );
-  return string( (char *)&net_int, sizeof( net_int ) );
+  return std::string( (char *)&net_int, sizeof( net_int ) );
 }
 
-string Fragment::tostring( void )
+std::string Fragment::tostring( void )
 {
   assert( initialized );
 
-  string ret;
+  std::string ret;
   
   ret += network_order_string( id );
 
@@ -72,12 +72,12 @@ string Fragment::tostring( void )
   return ret;
 }
 
-Fragment::Fragment( const string &x )
+Fragment::Fragment( const std::string &x )
   : id( -1 ), fragment_num( -1 ), final( false ), initialized( true ),
     contents()
 {
   fatal_assert( x.size() >= frag_header_len );
-  contents = string( x.begin() + frag_header_len, x.end() );
+  contents = std::string( x.begin() + frag_header_len, x.end() );
 
   uint64_t data64;
   uint16_t *data16 = (uint16_t *)x.data();
@@ -131,7 +131,7 @@ Instruction FragmentAssembly::get_assembly( void )
 {
   assert( fragments_arrived == fragments_total );
 
-  string encoded;
+  std::string encoded;
 
   for ( int i = 0; i < fragments_total; i++ ) {
     assert( fragments.at( i ).initialized );
@@ -154,7 +154,7 @@ bool Fragment::operator==( const Fragment &x ) const
     && ( initialized == x.initialized ) && ( contents == x.contents );
 }
 
-vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, size_t MTU )
+std::vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, size_t MTU )
 {
   MTU -= Fragment::frag_header_len;
   if ( (inst.old_num() != last_instruction.old_num())
@@ -175,17 +175,17 @@ vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, size_t MTU
   last_instruction = inst;
   last_MTU = MTU;
 
-  string payload = get_compressor().compress_str( inst.SerializeAsString() );
+  std::string payload = get_compressor().compress_str( inst.SerializeAsString() );
   uint16_t fragment_num = 0;
-  vector<Fragment> ret;
+  std::vector<Fragment> ret;
 
   while ( !payload.empty() ) {
-    string this_fragment;
+    std::string this_fragment;
     bool final = false;
 
     if ( payload.size() > MTU ) {
-      this_fragment = string( payload.begin(), payload.begin() + MTU );
-      payload = string( payload.begin() + MTU, payload.end() );
+      this_fragment = std::string( payload.begin(), payload.begin() + MTU );
+      payload = std::string( payload.begin() + MTU, payload.end() );
     } else {
       this_fragment = payload;
       payload.clear();

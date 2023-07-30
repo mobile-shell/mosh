@@ -44,8 +44,6 @@
 namespace Overlay {
   using namespace Terminal;
   using namespace Network;
-  using std::deque;
-  using std::wstring;
 
   enum Validity {
     Pending,
@@ -139,8 +137,8 @@ namespace Overlay {
   private:
     uint64_t last_word_from_server;
     uint64_t last_acked_state;
-    string escape_key_string;
-    wstring message;
+    std::string escape_key_string;
+    std::wstring message;
     bool message_is_network_error;
     uint64_t message_expiration;
     bool show_quit_keystroke;
@@ -152,12 +150,12 @@ namespace Overlay {
   public:
     void adjust_message( void );
     void apply( Framebuffer &fb ) const;
-    const wstring &get_notification_string( void ) const { return message; }
+    const std::wstring &get_notification_string( void ) const { return message; }
     void server_heard( uint64_t s_last_word ) { last_word_from_server = s_last_word; }
     void server_acked( uint64_t s_last_acked ) { last_acked_state = s_last_acked; }
     int wait_time( void ) const;
 
-    void set_notification_string( const wstring &s_message, bool permanent = false, bool s_show_quit_keystroke = true )
+    void set_notification_string( const std::wstring &s_message, bool permanent = false, bool s_show_quit_keystroke = true )
     {
       message = s_message;
       if ( permanent ) {
@@ -169,7 +167,7 @@ namespace Overlay {
       show_quit_keystroke = s_show_quit_keystroke;
     }
 
-    void set_escape_key_string( const string &s_name )
+    void set_escape_key_string( const std::string &s_name )
     {
       char tmp[ 128 ];
       snprintf( tmp, sizeof tmp, " [To quit: %s .]", s_name.c_str() );
@@ -312,7 +310,7 @@ namespace Overlay {
   public:
     void apply( Framebuffer &fb ) const { fb.prefix_window_title( prefix ); }
     TitleEngine() : prefix() {}
-    void set_prefix( const wstring &s );
+    void set_prefix( const std::wstring &s );
   };
 
   /* the overlay manager */
@@ -328,7 +326,7 @@ namespace Overlay {
     NotificationEngine & get_notification_engine( void ) { return notifications; }
     PredictionEngine & get_prediction_engine( void ) { return predictions; }
 
-    void set_title_prefix( const wstring &s ) { title.set_prefix( s ); }
+    void set_title_prefix( const std::wstring &s ) { title.set_prefix( s ); }
 
     OverlayManager() : notifications(), predictions(), title() {}
 

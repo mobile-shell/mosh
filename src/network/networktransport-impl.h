@@ -70,7 +70,7 @@ Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState 
 template <class MyState, class RemoteState>
 void Transport<MyState, RemoteState>::recv( void )
 {
-  string s( connection.recv() );
+  std::string s( connection.recv() );
   Fragment frag( s );
 
   if ( fragments.add_fragment( frag ) ) { /* complete packet */
@@ -86,7 +86,7 @@ void Transport<MyState, RemoteState>::recv( void )
     connection.set_last_roundtrip_success( sender.get_sent_state_acked_timestamp() );
 
     /* first, make sure we don't already have the new state */
-    for ( typename list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
+    for ( typename std::list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
 	  i != received_states.end();
 	  i++ ) {
       if ( inst.new_num() == i->num ) {
@@ -96,7 +96,7 @@ void Transport<MyState, RemoteState>::recv( void )
     
     /* now, make sure we do have the old state */
     bool found = 0;
-    typename list< TimestampedState<RemoteState> >::iterator reference_state = received_states.begin();
+    typename std::list< TimestampedState<RemoteState> >::iterator reference_state = received_states.begin();
     while ( reference_state != received_states.end() ) {
       if ( inst.old_num() == reference_state->num ) {
 	found = true;
@@ -140,7 +140,7 @@ void Transport<MyState, RemoteState>::recv( void )
     }
 
     /* Insert new state in sorted place */
-    for ( typename list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
+    for ( typename std::list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
 	  i != received_states.end();
 	  i++ ) {
       if ( i->num > new_state.num ) {
@@ -170,9 +170,9 @@ void Transport<MyState, RemoteState>::recv( void )
 template <class MyState, class RemoteState>
 void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwaway_num )
 {
-  typename list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
+  typename std::list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
   while ( i != received_states.end() ) {
-    typename list< TimestampedState<RemoteState> >::iterator inext = i;
+    typename std::list< TimestampedState<RemoteState> >::iterator inext = i;
     inext++;
     if ( i->num < throwaway_num ) {
       received_states.erase( i );
@@ -184,15 +184,15 @@ void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwawa
 }
 
 template <class MyState, class RemoteState>
-string Transport<MyState, RemoteState>::get_remote_diff( void )
+std::string Transport<MyState, RemoteState>::get_remote_diff( void )
 {
   /* find diff between last receiver state and current remote state, then rationalize states */
 
-  string ret( received_states.back().state.diff_from( last_receiver_state ) );
+  std::string ret( received_states.back().state.diff_from( last_receiver_state ) );
 
   const RemoteState *oldest_receiver_state = &received_states.front().state;
 
-  for ( typename list< TimestampedState<RemoteState> >::reverse_iterator i = received_states.rbegin();
+  for ( typename std::list< TimestampedState<RemoteState> >::reverse_iterator i = received_states.rbegin();
 	i != received_states.rend();
 	i++ ) {
     i->state.subtract( oldest_receiver_state );

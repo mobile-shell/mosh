@@ -59,7 +59,7 @@ namespace Network {
     void process_throwaway_until( uint64_t throwaway_num );
 
     /* simple receiver */
-    list< TimestampedState<RemoteState> > received_states;
+    std::list< TimestampedState<RemoteState> > received_states;
     uint64_t receiver_quench_timer;
     RemoteState last_receiver_state; /* the state we were in when user last queried state */
     FragmentAssembly fragments;
@@ -81,7 +81,7 @@ namespace Network {
     void recv( void );
 
     /* Find diff between last receiver state and current remote state, then rationalize states. */
-    string get_remote_diff( void );
+    std::string get_remote_diff( void );
 
     /* Shut down other side of connection. */
     /* Illegal to change current_state after this. */
@@ -95,7 +95,7 @@ namespace Network {
     bool counterparty_shutdown_ack_sent( void ) const { return sender.get_counterparty_shutdown_acknowledged(); }
 
     std::string port( void ) const { return connection.port(); }
-    string get_key( void ) const { return connection.get_key(); }
+    std::string get_key( void ) const { return connection.get_key(); }
 
     MyState &get_current_state( void ) { return sender.get_current_state(); }
     void set_current_state( const MyState &x ) { sender.set_current_state( x ); }

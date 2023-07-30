@@ -56,7 +56,7 @@ int main( int argc, char *argv[] )
 
     /* Encrypt message */
 
-    string ciphertext = session.encrypt( Message( nonce, input.str() ) );
+    std::string ciphertext = session.encrypt( Message( nonce, input.str() ) );
 
     std::cerr << "Key: " << key.printable_key() << std::endl;
 

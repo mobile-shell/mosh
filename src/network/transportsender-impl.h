@@ -167,7 +167,7 @@ void TransportSender<MyState>::tick( void )
 
   /* Determine if a new diff or empty ack needs to be sent */
     
-  string diff = current_state.diff_from( assumed_receiver_state->state );
+  std::string diff = current_state.diff_from( assumed_receiver_state->state );
 
   attempt_prospective_resend_optimization( diff );
 
@@ -236,7 +236,7 @@ void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t 
 }
 
 template <class MyState>
-void TransportSender<MyState>::send_to_receiver( const string & diff )
+void TransportSender<MyState>::send_to_receiver( const std::string & diff )
 {
   uint64_t new_num;
   if ( current_state == sent_states.back().state ) { /* previously sent */
@@ -275,7 +275,7 @@ void TransportSender<MyState>::update_assumed_receiver_state( void )
      transmitted recently enough ago */
   assumed_receiver_state = sent_states.begin();
 
-  typename list< TimestampedState<MyState> >::iterator i = sent_states.begin();
+  typename std::list< TimestampedState<MyState> >::iterator i = sent_states.begin();
   i++;
 
   while ( i != sent_states.end() ) {
@@ -298,7 +298,7 @@ void TransportSender<MyState>::rationalize_states( void )
 
   current_state.subtract( known_receiver_state );
 
-  for ( typename list< TimestampedState<MyState> >::reverse_iterator i = sent_states.rbegin();
+  for ( typename std::list< TimestampedState<MyState> >::reverse_iterator i = sent_states.rbegin();
 	i != sent_states.rend();
 	i++ ) {
     i->state.subtract( known_receiver_state );
@@ -306,18 +306,18 @@ void TransportSender<MyState>::rationalize_states( void )
 }
 
 template <class MyState>
-const string TransportSender<MyState>::make_chaff( void )
+const std::string TransportSender<MyState>::make_chaff( void )
 {
   const size_t CHAFF_MAX = 16;
   const size_t chaff_len = prng.uint8() % (CHAFF_MAX + 1);
 
   char chaff[ CHAFF_MAX ];
   prng.fill( chaff, chaff_len );
-  return string( chaff, chaff_len );
+  return std::string( chaff, chaff_len );
 }
 
 template <class MyState>
-void TransportSender<MyState>::send_in_fragments( const string & diff, uint64_t new_num )
+void TransportSender<MyState>::send_in_fragments( const std::string & diff, uint64_t new_num )
 {
   Instruction inst;
 
@@ -333,10 +333,10 @@ void TransportSender<MyState>::send_in_fragments( const string & diff, uint64_t 
     shutdown_tries++;
   }
 
-  vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU()
-							  - Network::Connection::ADDED_BYTES
-							  - Crypto::Session::ADDED_BYTES );
-  for ( vector<Fragment>::iterator i = fragments.begin();
+  std::vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->get_MTU()
+							       - Network::Connection::ADDED_BYTES
+							       - Crypto::Session::ADDED_BYTES );
+  for ( std::vector<Fragment>::iterator i = fragments.begin();
         i != fragments.end();
         i++ ) {
     connection->send( i->tostring() );
@@ -404,13 +404,13 @@ void TransportSender<MyState>::set_ack_num( uint64_t s_ack_num )
 /* Investigate diff against known receiver state instead */
 /* Mutates proposed_diff */
 template <class MyState>
-void TransportSender<MyState>::attempt_prospective_resend_optimization( string &proposed_diff )
+void TransportSender<MyState>::attempt_prospective_resend_optimization( std::string &proposed_diff )
 {
   if ( assumed_receiver_state == sent_states.begin() ) {
     return;
   }
 
-  string resend_diff = current_state.diff_from( sent_states.front().state );
+  std::string resend_diff = current_state.diff_from( sent_states.front().state );
 
   /* We do a prophylactic resend if it would make the diff shorter,
      or if it would lengthen it by no more than 100 bytes and still be

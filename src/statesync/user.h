@@ -41,10 +41,6 @@
 #include "src/terminal/parseraction.h"
 
 namespace Network {
-  using std::deque;
-  using std::list;
-  using std::string;
-
   enum UserEventType {
     UserByteType = 0,
     ResizeType = 1
@@ -70,7 +66,7 @@ namespace Network {
   class UserStream
   {
   private:
-    deque<UserEvent> actions;
+    std::deque<UserEvent> actions;
     
   public:
     UserStream() : actions() {}
@@ -84,9 +80,9 @@ namespace Network {
     
     /* interface for Network::Transport */
     void subtract( const UserStream *prefix );
-    string diff_from( const UserStream &existing ) const;
-    string init_diff( void ) const { return diff_from( UserStream() ); };
-    void apply_string( const string &diff );
+    std::string diff_from( const UserStream &existing ) const;
+    std::string init_diff( void ) const { return diff_from( UserStream() ); };
+    void apply_string( const std::string &diff );
     bool operator==( const UserStream &x ) const { return actions == x.actions; }
 
     bool compare( const UserStream & ) { return false; }
