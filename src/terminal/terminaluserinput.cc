@@ -30,7 +30,8 @@
     also delete it here.
 */
 
-#include <assert.h>
+#include <cassert>
+
 #include "terminaluserinput.h"
 
 using namespace Terminal;

@@ -30,9 +30,10 @@
     also delete it here.
 */
 
+#include <cstdio>
+#include <cstring>
+
 #include <unistd.h>
-#include <string.h>
-#include <stdio.h>
 
 #include "src/util/swrite.h"
 

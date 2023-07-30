@@ -33,10 +33,11 @@
 #ifndef STM_CLIENT_HPP
 #define STM_CLIENT_HPP
 
-#include <sys/ioctl.h>
-#include <termios.h>
 #include <string>
 #include <memory>
+
+#include <sys/ioctl.h>
+#include <termios.h>
 
 #include "src/statesync/completeterminal.h"
 #include "src/network/networktransport.h"

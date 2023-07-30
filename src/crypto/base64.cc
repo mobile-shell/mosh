@@ -30,8 +30,8 @@
     also delete it here.
 */
 
-#include <string.h>
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "src/util/fatal_assert.h"
 #include "src/crypto/base64.h"

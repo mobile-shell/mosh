@@ -34,15 +34,14 @@
 #define TRANSPORT_SENDER_IMPL_HPP
 
 #include <algorithm>
+#include <climits>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <list>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 
 #include "src/network/transportsender.h"
 #include "transportfragment.h"
-
-#include <limits.h>
 
 using namespace Network;
 

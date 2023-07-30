@@ -33,16 +33,15 @@
 #ifndef NETWORK_TRANSPORT_HPP
 #define NETWORK_TRANSPORT_HPP
 
-#include <string>
-#include <signal.h>
-#include <time.h>
+#include <csignal>
+#include <ctime>
 #include <list>
+#include <string>
 #include <vector>
 
 #include "src/network/network.h"
 #include "src/network/transportsender.h"
 #include "transportfragment.h"
-
 
 namespace Network {
   template <class MyState, class RemoteState>

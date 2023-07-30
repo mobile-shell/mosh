@@ -33,10 +33,10 @@
 #ifndef TERMINAL_CPP
 #define TERMINAL_CPP
 
-#include <wchar.h>
-#include <stdio.h>
-#include <vector>
+#include <cstdio>
+#include <cwchar>
 #include <deque>
+#include <vector>
 
 #include "src/terminal/parseraction.h"
 #include "src/terminal/terminalframebuffer.h"

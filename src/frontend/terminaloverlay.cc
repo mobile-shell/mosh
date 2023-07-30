@@ -31,10 +31,10 @@
 */
 
 #include <algorithm>
-#include <wchar.h>
+#include <climits>
+#include <cwchar>
 #include <list>
 #include <typeinfo>
-#include <limits.h>
 
 #include "src/frontend/terminaloverlay.h"
 

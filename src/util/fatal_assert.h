@@ -33,8 +33,8 @@
 #ifndef FATAL_ASSERT_HPP
 #define FATAL_ASSERT_HPP
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 static void fatal_error( const char *expression, const char *file, int line, const char *function )
 {

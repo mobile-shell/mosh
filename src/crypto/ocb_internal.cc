@@ -87,8 +87,8 @@
 #include "src/crypto/ae.h"
 #include "src/crypto/crypto.h"
 #include "src/util/fatal_assert.h"
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #if defined(HAVE_STRINGS_H)
 #include <strings.h>
 #endif

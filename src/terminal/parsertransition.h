@@ -33,7 +33,7 @@
 #ifndef PARSERTRANSITION_HPP
 #define PARSERTRANSITION_HPP
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "src/terminal/parseraction.h"
 

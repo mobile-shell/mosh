@@ -34,10 +34,10 @@
    messages, interspersed with some random bad ciphertexts which we need to
    reject. */
 
-#include <stdio.h>
+#include <cstdio>
 
 #define __STDC_FORMAT_MACROS
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "src/crypto/crypto.h"
 #include "src/crypto/prng.h"

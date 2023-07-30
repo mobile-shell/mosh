@@ -57,8 +57,8 @@
 #else
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 using namespace Terminal;
 

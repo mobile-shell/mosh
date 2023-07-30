@@ -30,10 +30,10 @@
     also delete it here.
 */
 
+#include <memory>
+
 #include <termios.h>
 #include <unistd.h>
-
-#include <memory>
 
 #include "src/statesync/user.h"
 #include "src/util/fatal_assert.h"

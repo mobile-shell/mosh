@@ -32,18 +32,19 @@
 
 #include "src/include/config.h"
 
+#include <cerrno>
+#include <clocale>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+
 #include <err.h>
-#include <errno.h>
-#include <locale.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <pwd.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <pwd.h>
-#include <signal.h>
-#include <time.h>
+#include <unistd.h>
 
 #if HAVE_PTY_H
 #include <pty.h>

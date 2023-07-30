@@ -33,10 +33,9 @@
 #ifndef TERMINALFB_HPP
 #define TERMINALFB_HPP
 
-#include <assert.h>
-#include <limits.h>
-#include <stdint.h>
-
+#include <cassert>
+#include <climits>
+#include <cstdint>
 #include <deque>
 #include <list>
 #include <memory>

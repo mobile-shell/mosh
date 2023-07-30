@@ -33,8 +33,8 @@
 #ifndef DOS_ASSERT_HPP
 #define DOS_ASSERT_HPP
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include "src/crypto/crypto.h"
 

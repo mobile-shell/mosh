@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "test_utils.h"
 

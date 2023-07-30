@@ -33,9 +33,9 @@
 #ifndef TRANSPORT_FRAGMENT_HPP
 #define TRANSPORT_FRAGMENT_HPP
 
-#include <stdint.h>
-#include <vector>
+#include <cstdint>
 #include <string>
+#include <vector>
 
 #include "src/protobufs/transportinstruction.pb.h"
 
