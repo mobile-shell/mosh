@@ -45,8 +45,6 @@ namespace Overlay {
   using namespace Terminal;
   using namespace Network;
   using std::deque;
-  using std::list;
-  using std::vector;
   using std::wstring;
 
   enum Validity {
@@ -99,8 +97,8 @@ namespace Overlay {
     Cell replacement;
     bool unknown;
 
-    vector<Cell> original_contents; /* we don't give credit for correct predictions
-				       that match the original contents */
+    std::vector<Cell> original_contents; /* we don't give credit for correct predictions
+				            that match the original contents */
 
     void apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const;
     Validity get_validity( const Framebuffer &fb, int row, uint64_t early_ack, uint64_t late_ack ) const;
@@ -128,7 +126,7 @@ namespace Overlay {
   public:
     int row_num;
 
-    typedef vector<ConditionalOverlayCell> overlay_cells_type;
+    using overlay_cells_type = std::vector<ConditionalOverlayCell>;
     overlay_cells_type overlay_cells;
 
     void apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const;
@@ -215,13 +213,13 @@ namespace Overlay {
     char last_byte;
     Parser::UTF8Parser parser;
 
-    typedef list<ConditionalOverlayRow> overlays_type;
+    using overlays_type = std::list<ConditionalOverlayRow>;
     overlays_type overlays;
 
-    typedef list<ConditionalCursorMove> cursors_type;
+    using cursors_type = std::list<ConditionalCursorMove>;
     cursors_type cursors;
 
-    typedef ConditionalOverlayRow::overlay_cells_type overlay_cells_type;
+    using overlay_cells_type = ConditionalOverlayRow::overlay_cells_type;
 
     uint64_t local_frame_sent, local_frame_acked, local_frame_late_acked;
 

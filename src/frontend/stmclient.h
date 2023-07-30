@@ -61,7 +61,7 @@ private:
 
   Terminal::Framebuffer local_framebuffer, new_state;
   Overlay::OverlayManager overlays;
-  typedef Network::Transport< Network::UserStream, Terminal::Complete > NetworkType;
+  using NetworkType = Network::Transport<Network::UserStream, Terminal::Complete>;
   using NetworkPointer = std::shared_ptr<NetworkType>;
   NetworkPointer network;
   Terminal::Display display;

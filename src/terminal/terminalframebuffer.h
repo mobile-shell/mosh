@@ -46,7 +46,7 @@
 /* Terminal framebuffer */
 
 namespace Terminal {
-  typedef uint32_t color_type;
+  using color_type = uint32_t;
 
   class Renditions {
   public:

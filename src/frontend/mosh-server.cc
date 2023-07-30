@@ -95,7 +95,7 @@
 
 #include "src/network/networktransport-impl.h"
 
-typedef Network::Transport< Terminal::Complete, Network::UserStream > ServerConnection;
+using ServerConnection = Network::Transport<Terminal::Complete, Network::UserStream>;
 
 static void serve( int host_fd,
 		   Terminal::Complete &terminal,

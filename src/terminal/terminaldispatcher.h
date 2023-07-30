@@ -66,7 +66,7 @@ namespace Terminal {
     bool clears_wrap_state;
   };
 
-  typedef std::map<std::string, Function> dispatch_map_t;
+  using dispatch_map_t = std::map<std::string, Function>;
 
   class DispatchRegistry {
   public:

@@ -68,7 +68,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   if ( f.get_bell_count() != frame.last_frame.get_bell_count() ) {
     frame.append( '\007' );
   }
-  typedef Terminal::Framebuffer::title_type title_type;
+  using title_type = Terminal::Framebuffer::title_type;
 
   /* has icon name or window title changed? */
   if ( has_title && f.is_title_initialized() &&
