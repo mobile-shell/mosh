@@ -74,7 +74,7 @@ namespace Network {
 
     MyState current_state;
 
-    typedef list< TimestampedState<MyState> > sent_states_type;
+    using sent_states_type = std::list<TimestampedState<MyState>>;
     sent_states_type sent_states;
     /* first element: known, acknowledged receiver state */
     /* last element: last sent state */

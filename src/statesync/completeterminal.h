@@ -53,7 +53,7 @@ namespace Terminal {
     // outside calls to act() to keep horrible things from happening.
     Parser::Actions actions;
 
-    typedef std::list< std::pair<uint64_t, uint64_t> > input_history_type;
+    using input_history_type = std::list<std::pair<uint64_t, uint64_t>>;
     input_history_type input_history;
     uint64_t echo_ack;
 

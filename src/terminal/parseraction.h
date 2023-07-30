@@ -59,7 +59,7 @@ namespace Parser {
   };
 
   using ActionPointer = std::shared_ptr<Action>;
-  typedef std::vector<ActionPointer> Actions;
+  using Actions = std::vector<ActionPointer>;
 
   class Ignore : public Action {
   public:
