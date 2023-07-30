@@ -84,7 +84,7 @@ Framebuffer::Framebuffer( int s_width, int s_height )
   assert( s_width > 0 );
   const size_t w = s_width;
   const color_type c = 0;
-  rows = rows_type(s_height, row_pointer(make_shared<Row>( w, c )));
+  rows = rows_type(s_height, row_pointer(std::make_shared<Row>( w, c )));
 }
 
 Framebuffer::Framebuffer( const Framebuffer &other )
@@ -417,7 +417,7 @@ void Framebuffer::resize( int s_width, int s_height )
   for ( rows_type::iterator i = rows.begin();
 	i != rows.end() && *i != blankrow;
 	i++ ) {
-    *i = make_shared<Row>( **i );
+    *i = std::make_shared<Row>( **i );
     (*i)->set_wrap( false );
     (*i)->cells.resize( s_width, Cell( ds.get_background_rendition() ) );
   }

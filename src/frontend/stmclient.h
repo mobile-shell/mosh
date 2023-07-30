@@ -36,11 +36,11 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <string>
+#include <memory>
 
 #include "src/statesync/completeterminal.h"
 #include "src/network/networktransport.h"
 #include "src/statesync/user.h"
-#include "src/util/shared.h"
 #include "src/frontend/terminaloverlay.h"
 
 class STMClient {
@@ -62,7 +62,7 @@ private:
   Terminal::Framebuffer local_framebuffer, new_state;
   Overlay::OverlayManager overlays;
   typedef Network::Transport< Network::UserStream, Terminal::Complete > NetworkType;
-  typedef shared::shared_ptr< NetworkType > NetworkPointer;
+  using NetworkPointer = std::shared_ptr<NetworkType>;
   NetworkPointer network;
   Terminal::Display display;
 

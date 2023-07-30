@@ -160,7 +160,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
   /* Extend rows if we've gotten a resize and new is wider than old */
   if ( frame.last_frame.ds.get_width() < f.ds.get_width() ) {
     for ( Framebuffer::rows_type::iterator p = rows.begin(); p != rows.end(); p++ ) {
-      *p = make_shared<Row>( **p );
+      *p = std::make_shared<Row>( **p );
       (*p)->cells.resize( f.ds.get_width(), Cell( f.ds.get_background_rendition() ) );
     }
   }
@@ -169,7 +169,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     // get a proper blank row
     const size_t w = f.ds.get_width();
     const color_type c = 0;
-    blank_row = make_shared<Row>( w, c );
+    blank_row = std::make_shared<Row>( w, c );
     rows.resize( f.ds.get_height(), blank_row );
   }
 
@@ -215,7 +215,7 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
 	if ( blank_row.get() == NULL ) {
 	  const size_t w = f.ds.get_width();
 	  const color_type c = 0;
-	  blank_row = make_shared<Row>( w, c );
+	  blank_row = std::make_shared<Row>( w, c );
 	}
 	frame.update_rendition( initial_rendition(), true );
 

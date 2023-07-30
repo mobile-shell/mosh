@@ -30,9 +30,10 @@
     also delete it here.
 */
 
+#include <memory>
+
 #include "parserstate.h"
 #include "parserstatefamily.h"
-#include "src/util/shared.h"
 
 using namespace Parser;
 
@@ -42,7 +43,7 @@ Transition State::anywhere_rule( wchar_t ch ) const
        || ((0x80 <= ch) && (ch <= 0x8F))
        || ((0x91 <= ch) && (ch <= 0x97))
        || (ch == 0x99) || (ch == 0x9A) ) {
-    return Transition( shared::make_shared<Execute>(), &family->s_Ground );
+    return Transition( std::make_shared<Execute>(), &family->s_Ground );
   } else if ( ch == 0x9C ) {
     return Transition( &family->s_Ground );
   } else if ( ch == 0x1B ) {
@@ -93,11 +94,11 @@ static bool GLGR ( wchar_t ch )
 Transition Ground::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
-    return Transition( shared::make_shared< Execute >() );
+    return Transition( std::make_shared<Execute>() );
   }
 
   if ( GLGR( ch ) ) {
-    return Transition( shared::make_shared< Print >() );
+    return Transition( std::make_shared<Print>() );
   }
 
   return Transition();
@@ -105,17 +106,17 @@ Transition Ground::input_state_rule( wchar_t ch ) const
 
 ActionPointer Escape::enter( void ) const
 {
-  return shared::make_shared< Clear >();
+  return std::make_shared<Clear>();
 }
 
 Transition Escape::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
-    return Transition( shared::make_shared< Execute >() );
+    return Transition( std::make_shared<Execute>() );
   }
 
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
-    return Transition( shared::make_shared< Collect >(), &family->s_Escape_Intermediate );
+    return Transition( std::make_shared<Collect>(), &family->s_Escape_Intermediate );
   }
 
   if ( ( (0x30 <= ch) && (ch <= 0x4F) )
@@ -124,7 +125,7 @@ Transition Escape::input_state_rule( wchar_t ch ) const
        || ( ch == 0x5A )
        || ( ch == 0x5C )
        || ( (0x60 <= ch) && (ch <= 0x7E) ) ) {
-    return Transition( shared::make_shared< Esc_Dispatch >(), &family->s_Ground );
+    return Transition( std::make_shared<Esc_Dispatch>(), &family->s_Ground );
   }
 
   if ( ch == 0x5B ) {
@@ -149,15 +150,15 @@ Transition Escape::input_state_rule( wchar_t ch ) const
 Transition Escape_Intermediate::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
-    return Transition( shared::make_shared< Execute >() );
+    return Transition( std::make_shared<Execute>() );
   }
 
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
-    return Transition( shared::make_shared< Collect >() );
+    return Transition( std::make_shared<Collect>() );
   }
 
   if ( (0x30 <= ch) && (ch <= 0x7E) ) {
-    return Transition( shared::make_shared< Esc_Dispatch >(), &family->s_Ground );
+    return Transition( std::make_shared<Esc_Dispatch>(), &family->s_Ground );
   }
 
   return Transition();
@@ -165,26 +166,26 @@ Transition Escape_Intermediate::input_state_rule( wchar_t ch ) const
 
 ActionPointer CSI_Entry::enter( void ) const
 {
-  return shared::make_shared< Clear >();
+  return std::make_shared<Clear>();
 }
 
 Transition CSI_Entry::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
-    return Transition( shared::make_shared< Execute >() );
+    return Transition( std::make_shared<Execute>() );
   }
 
   if ( (0x40 <= ch) && (ch <= 0x7E) ) {
-    return Transition( shared::make_shared< CSI_Dispatch >(), &family->s_Ground );
+    return Transition( std::make_shared<CSI_Dispatch>(), &family->s_Ground );
   }
 
   if ( ( (0x30 <= ch) && (ch <= 0x39) )
        || ( ch == 0x3B ) ) {
-    return Transition( shared::make_shared< Param >(), &family->s_CSI_Param );
+    return Transition( std::make_shared<Param>(), &family->s_CSI_Param );
   }
 
   if ( (0x3C <= ch) && (ch <= 0x3F) ) {
-    return Transition( shared::make_shared< Collect >(), &family->s_CSI_Param );
+    return Transition( std::make_shared<Collect>(), &family->s_CSI_Param );
   }
 
   if ( ch == 0x3A ) {
@@ -192,7 +193,7 @@ Transition CSI_Entry::input_state_rule( wchar_t ch ) const
   }
 
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
-    return Transition( shared::make_shared< Collect >(), &family->s_CSI_Intermediate );
+    return Transition( std::make_shared<Collect>(), &family->s_CSI_Intermediate );
   }
 
   return Transition();
@@ -201,11 +202,11 @@ Transition CSI_Entry::input_state_rule( wchar_t ch ) const
 Transition CSI_Param::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
-    return Transition( shared::make_shared< Execute >() );
+    return Transition( std::make_shared<Execute>() );
   }
 
   if ( ( (0x30 <= ch) && (ch <= 0x39) ) || ( ch == 0x3B ) ) {
-    return Transition( shared::make_shared< Param >() );
+    return Transition( std::make_shared<Param>() );
   }
 
   if ( ( ch == 0x3A ) || ( (0x3C <= ch) && (ch <= 0x3F) ) ) {
@@ -213,11 +214,11 @@ Transition CSI_Param::input_state_rule( wchar_t ch ) const
   }
 
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
-    return Transition( shared::make_shared< Collect >(), &family->s_CSI_Intermediate );
+    return Transition( std::make_shared<Collect>(), &family->s_CSI_Intermediate );
   }
 
   if ( (0x40 <= ch) && (ch <= 0x7E) ) {
-    return Transition( shared::make_shared< CSI_Dispatch >(), &family->s_Ground );
+    return Transition( std::make_shared<CSI_Dispatch>(), &family->s_Ground );
   }
 
   return Transition();
@@ -226,15 +227,15 @@ Transition CSI_Param::input_state_rule( wchar_t ch ) const
 Transition CSI_Intermediate::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
-    return Transition( shared::make_shared< Execute >() );
+    return Transition( std::make_shared<Execute>() );
   }
 
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
-    return Transition( shared::make_shared< Collect >() );
+    return Transition( std::make_shared<Collect>() );
   }
 
   if ( (0x40 <= ch) && (ch <= 0x7E) ) {
-    return Transition( shared::make_shared< CSI_Dispatch >(), &family->s_Ground );
+    return Transition( std::make_shared<CSI_Dispatch>(), &family->s_Ground );
   }
 
   if ( (0x30 <= ch) && (ch <= 0x3F) ) {
@@ -247,7 +248,7 @@ Transition CSI_Intermediate::input_state_rule( wchar_t ch ) const
 Transition CSI_Ignore::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) ) {
-    return Transition( shared::make_shared< Execute >() );
+    return Transition( std::make_shared<Execute>() );
   }
 
   if ( (0x40 <= ch) && (ch <= 0x7E) ) {
@@ -259,13 +260,13 @@ Transition CSI_Ignore::input_state_rule( wchar_t ch ) const
 
 ActionPointer DCS_Entry::enter( void ) const
 {
-  return shared::make_shared< Clear >();
+  return std::make_shared<Clear>();
 }
 
 Transition DCS_Entry::input_state_rule( wchar_t ch ) const
 {
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
-    return Transition( shared::make_shared< Collect >(), &family->s_DCS_Intermediate );
+    return Transition( std::make_shared<Collect>(), &family->s_DCS_Intermediate );
   }
 
   if ( ch == 0x3A ) {
@@ -273,11 +274,11 @@ Transition DCS_Entry::input_state_rule( wchar_t ch ) const
   }
 
   if ( ( (0x30 <= ch) && (ch <= 0x39) ) || ( ch == 0x3B ) ) {
-    return Transition( shared::make_shared< Param >(), &family->s_DCS_Param );
+    return Transition( std::make_shared<Param>(), &family->s_DCS_Param );
   }
 
   if ( (0x3C <= ch) && (ch <= 0x3F) ) {
-    return Transition( shared::make_shared< Collect >(), &family->s_DCS_Param );
+    return Transition( std::make_shared<Collect>(), &family->s_DCS_Param );
   }
 
   if ( (0x40 <= ch) && (ch <= 0x7E) ) {
@@ -290,7 +291,7 @@ Transition DCS_Entry::input_state_rule( wchar_t ch ) const
 Transition DCS_Param::input_state_rule( wchar_t ch ) const
 {
   if ( ( (0x30 <= ch) && (ch <= 0x39) ) || ( ch == 0x3B ) ) {
-    return Transition( shared::make_shared< Param >() );
+    return Transition( std::make_shared<Param>() );
   }
 
   if ( ( ch == 0x3A ) || ( (0x3C <= ch) && (ch <= 0x3F) ) ) {
@@ -298,7 +299,7 @@ Transition DCS_Param::input_state_rule( wchar_t ch ) const
   }
 
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
-    return Transition( shared::make_shared< Collect >(), &family->s_DCS_Intermediate );
+    return Transition( std::make_shared<Collect>(), &family->s_DCS_Intermediate );
   }
 
   if ( (0x40 <= ch) && (ch <= 0x7E) ) {
@@ -311,7 +312,7 @@ Transition DCS_Param::input_state_rule( wchar_t ch ) const
 Transition DCS_Intermediate::input_state_rule( wchar_t ch ) const
 {
   if ( (0x20 <= ch) && (ch <= 0x2F) ) {
-    return Transition( shared::make_shared< Collect >() );
+    return Transition( std::make_shared<Collect>() );
   }
 
   if ( (0x40 <= ch) && (ch <= 0x7E) ) {
@@ -327,18 +328,18 @@ Transition DCS_Intermediate::input_state_rule( wchar_t ch ) const
 
 ActionPointer DCS_Passthrough::enter( void ) const
 {
-  return shared::make_shared< Hook >();
+  return std::make_shared<Hook>();
 }
 
 ActionPointer DCS_Passthrough::exit( void ) const
 {
-  return shared::make_shared< Unhook >();
+  return std::make_shared<Unhook>();
 }
 
 Transition DCS_Passthrough::input_state_rule( wchar_t ch ) const
 {
   if ( C0_prime( ch ) || ( (0x20 <= ch) && (ch <= 0x7E) ) ) {
-    return Transition( shared::make_shared< Put >() );
+    return Transition( std::make_shared<Put>() );
   }
 
   if ( ch == 0x9C ) {
@@ -359,18 +360,18 @@ Transition DCS_Ignore::input_state_rule( wchar_t ch ) const
 
 ActionPointer OSC_String::enter( void ) const
 {
-  return shared::make_shared< OSC_Start >();
+  return std::make_shared<OSC_Start>();
 }
 
 ActionPointer OSC_String::exit( void ) const
 {
-  return shared::make_shared< OSC_End >();
+  return std::make_shared<OSC_End>();
 }
 
 Transition OSC_String::input_state_rule( wchar_t ch ) const
 {
   if ( (0x20 <= ch) && (ch <= 0x7F) ) {
-    return Transition( shared::make_shared< OSC_Put >() );
+    return Transition( std::make_shared<OSC_Put>() );
   }
 
   if ( (ch == 0x9C) || (ch == 0x07) ) { /* 0x07 is xterm non-ANSI variant */

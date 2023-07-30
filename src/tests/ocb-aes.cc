@@ -40,13 +40,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <memory>
 
 #include "src/crypto/ae.h"
 #include "src/crypto/crypto.h"
 #include "src/crypto/prng.h"
 #include "src/util/fatal_assert.h"
 #include "test_utils.h"
-#include "src/util/shared.h"
 
 #define KEY_LEN   16
 #define NONCE_LEN 12
@@ -61,7 +61,7 @@ static bool equal( const AlignedBuffer &a, const AlignedBuffer &b ) {
     && !memcmp( a.data(), b.data(), a.len() );
 }
 
-typedef shared::shared_ptr< AlignedBuffer > AlignedPointer;
+using AlignedPointer = std::shared_ptr<AlignedBuffer>;
 
 static AlignedBuffer *get_ctx( const AlignedBuffer &key ) {
   AlignedBuffer *ctx_buf = new AlignedBuffer( ae_ctx_sizeof() );
