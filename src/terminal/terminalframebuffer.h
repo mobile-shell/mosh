@@ -37,18 +37,15 @@
 #include <limits.h>
 #include <stdint.h>
 
-#include <vector>
 #include <deque>
-#include <string>
 #include <list>
-
-#include "src/util/shared.h"
+#include <memory>
+#include <string>
+#include <vector>
 
 /* Terminal framebuffer */
 
 namespace Terminal {
-  using shared::shared_ptr;
-  using shared::make_shared;
   typedef uint32_t color_type;
 
   class Renditions {
@@ -372,7 +369,7 @@ namespace Terminal {
     // * If no row is shared, the frame has not been modified.
   public:
     typedef std::vector<wchar_t> title_type;
-    typedef shared_ptr<Row> row_pointer;
+    typedef std::shared_ptr<Row> row_pointer;
     typedef std::vector<row_pointer> rows_type; /* can be either std::vector or std::deque */
 
   private:
@@ -387,7 +384,7 @@ namespace Terminal {
     {
       const size_t w = ds.get_width();
       const color_type c = ds.get_background_rendition();
-      return make_shared<Row>( w, c );
+      return std::make_shared<Row>( w, c );
     }
 
   public:
@@ -422,7 +419,7 @@ namespace Terminal {
       row_pointer &mutable_row = rows.at( row );
       // If the row is shared, copy it.
       if (!mutable_row.unique()) {
-	mutable_row = make_shared<Row>( *mutable_row );
+	mutable_row = std::make_shared<Row>( *mutable_row );
       }
       return mutable_row.get();
     }

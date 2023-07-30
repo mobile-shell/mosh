@@ -33,12 +33,13 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include <memory>
+
 #include "src/statesync/user.h"
 #include "src/util/fatal_assert.h"
 #include "src/util/pty_compat.h"
 #include "src/network/networktransport-impl.h"
 #include "src/util/select.h"
-#include "src/util/shared.h"
 
 using namespace Network;
 
@@ -50,7 +51,7 @@ int main( int argc, char *argv[] )
   char *port;
 
   UserStream me, remote;
-  typedef shared::shared_ptr<Transport<UserStream, UserStream> > NetworkPointer;
+  using NetworkPointer = std::shared_ptr<Transport<UserStream, UserStream>>;
   Transport<UserStream, UserStream> *raw_n;
   try {
     if ( argc > 1 ) {

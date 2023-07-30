@@ -50,8 +50,8 @@ namespace Parser {
   public:
     void setfamily( StateFamily *s_family ) { family = s_family; }
     Transition input( wchar_t ch ) const;
-    virtual ActionPointer enter( void ) const { return shared::make_shared< Ignore >(); }
-    virtual ActionPointer exit( void ) const { return shared::make_shared< Ignore >(); }
+    virtual ActionPointer enter( void ) const { return std::make_shared<Ignore>(); }
+    virtual ActionPointer exit( void ) const { return std::make_shared<Ignore>(); }
 
     State() : family( NULL ) {};
     virtual ~State() {};

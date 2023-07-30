@@ -424,7 +424,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
 
   /* open network */
   Network::UserStream blank;
-  typedef shared::shared_ptr<ServerConnection> NetworkPointer;
+  using NetworkPointer = std::shared_ptr<ServerConnection>;
   NetworkPointer network( new ServerConnection( terminal, blank, desired_ip, desired_port ) );
 
   network->set_verbose( verbose );
