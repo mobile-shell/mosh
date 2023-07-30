@@ -33,33 +33,34 @@
 #include "src/include/config.h"
 #include "src/include/version.h"
 
-#include <err.h>
-#include <errno.h>
-#include <locale.h>
-#include <string.h>
-#include <strings.h>
+#include <cerrno>
+#include <clocale>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <sstream>
+#include <typeinfo>
+
+#include <err.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <netdb.h>
+#include <pwd.h>
+#include <strings.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <typeinfo>
-#include <signal.h>
 #ifdef HAVE_UTEMPTER
 #include <utempter.h>
 #endif
 #ifdef HAVE_SYSLOG
 #include <syslog.h>
 #endif
-#include <sys/socket.h>
-#include <netdb.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <inttypes.h>
 
 #ifdef HAVE_UTMPX_H
 #include <utmpx.h>

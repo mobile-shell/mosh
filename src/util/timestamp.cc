@@ -34,10 +34,10 @@
 
 #include "src/util/timestamp.h"
 
-#include <errno.h>
+#include <cerrno>
 
 #if HAVE_CLOCK_GETTIME
-#include <time.h>
+#include <ctime>
 #endif
 #if HAVE_MACH_ABSOLUTE_TIME
 #include <mach/error.h>
@@ -45,7 +45,7 @@
 #endif
 #if HAVE_GETTIMEOFDAY
 #include <sys/time.h>
-#include <stdio.h>
+#include <cstdio>
 #endif
 
 // On Apple systems CLOCK_MONOTONIC is unfortunately able to go

@@ -60,7 +60,7 @@
 
 /* Use our fallback implementation, which is correct for any endianness. */
 
-#include <stdint.h>
+#include <cstdint>
 
 /* Make sure they aren't macros */
 #undef htobe64

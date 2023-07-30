@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "terminaldisplay.h"
 #include "src/terminal/terminalframebuffer.h"

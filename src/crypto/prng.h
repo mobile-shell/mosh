@@ -33,9 +33,9 @@
 #ifndef PRNG_HPP
 #define PRNG_HPP
 
-#include <string>
-#include <stdint.h>
+#include <cstdint>
 #include <fstream>
+#include <string>
 
 #include "src/crypto/crypto.h"
 

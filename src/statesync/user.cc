@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include <assert.h>
+#include <cassert>
 #include <typeinfo>
 
 #include "src/statesync/user.h"

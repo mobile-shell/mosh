@@ -30,7 +30,7 @@
     also delete it here.
 */
 
-#include <assert.h>
+#include <cassert>
 
 #include "src/crypto/byteorder.h"
 #include "transportfragment.h"

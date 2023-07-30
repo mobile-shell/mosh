@@ -30,12 +30,11 @@
     also delete it here.
 */
 
-#include "src/statesync/completeterminal.h"
-#include "src/util/fatal_assert.h"
+#include <climits>
 
 #include "src/protobufs/hostinput.pb.h"
-
-#include <limits.h>
+#include "src/statesync/completeterminal.h"
+#include "src/util/fatal_assert.h"
 
 using namespace std;
 using namespace Parser;

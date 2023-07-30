@@ -33,8 +33,8 @@
 #ifndef COMPLETE_TERMINAL_HPP
 #define COMPLETE_TERMINAL_HPP
 
+#include <cstdint>
 #include <list>
-#include <stdint.h>
 
 #include "src/terminal/parser.h"
 #include "src/terminal/terminal.h"

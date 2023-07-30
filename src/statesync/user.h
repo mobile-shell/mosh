@@ -33,10 +33,10 @@
 #ifndef USER_HPP
 #define USER_HPP
 
+#include <cassert>
 #include <deque>
 #include <list>
 #include <string>
-#include <assert.h>
 
 #include "src/terminal/parseraction.h"
 

@@ -32,11 +32,11 @@
 
 #include "src/include/config.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <locale.h>
-#include <errno.h>
+#include <cerrno>
+#include <clocale>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 #if HAVE_LANGINFO_H

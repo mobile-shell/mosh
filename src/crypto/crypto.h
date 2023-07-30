@@ -34,11 +34,12 @@
 #define CRYPTO_HPP
 
 #include "src/crypto/ae.h"
-#include <string>
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
+
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <exception>
+#include <string>
 
 
 long int myatoi( const char *str );

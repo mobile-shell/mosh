@@ -33,14 +33,15 @@
 #include "src/include/config.h"
 
 #if !defined(HAVE_FORKPTY) || !defined(HAVE_CFMAKERAW)
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/stropts.h>
 #include <termios.h>
+#include <unistd.h>
 
 #include "src/util/pty_compat.h"
 

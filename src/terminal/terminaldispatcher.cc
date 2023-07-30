@@ -30,11 +30,11 @@
     also delete it here.
 */
 
-#include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "terminaldispatcher.h"
 #include "src/terminal/parseraction.h"

@@ -32,6 +32,10 @@
 
 #include "src/include/config.h"
 
+#include <cassert>
+#include <cerrno>
+#include <cstring>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #ifdef HAVE_SYS_UIO_H
@@ -39,9 +43,6 @@
 #endif
 #include <netdb.h>
 #include <netinet/in.h>
-#include <assert.h>
-#include <errno.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "src/util/dos_assert.h"

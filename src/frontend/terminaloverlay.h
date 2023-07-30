@@ -38,8 +38,8 @@
 #include "src/network/transportsender.h"
 #include "src/terminal/parser.h"
 
+#include <climits>
 #include <vector>
-#include <limits.h>
 
 namespace Overlay {
   using namespace Terminal;

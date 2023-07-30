@@ -33,7 +33,8 @@
 #include "src/include/config.h"
 #include "src/include/version.h"
 
-#include <stdlib.h>
+#include <cstdlib>
+
 #include <unistd.h>
 
 #include "stmclient.h"

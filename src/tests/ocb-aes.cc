@@ -37,9 +37,9 @@
    client and server.  It does not particularly test any code written for
    the Mosh project. */
 
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <memory>
 
 #include "src/crypto/ae.h"

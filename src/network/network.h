@@ -33,16 +33,17 @@
 #ifndef NETWORK_HPP
 #define NETWORK_HPP
 
-#include <stdint.h>
+#include <cassert>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <deque>
+#include <exception>
+#include <string>
+#include <vector>
+
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <string>
-#include <math.h>
-#include <vector>
-#include <assert.h>
-#include <exception>
-#include <string.h>
 
 #include "src/crypto/crypto.h"
 
