@@ -179,7 +179,7 @@ int main( int argc, char *argv[] )
   char *predict_overwrite = getenv( "MOSH_PREDICTION_OVERWRITE" );
   /* can be NULL */
 
-  string key( env_key );
+  std::string key( env_key );
 
   if ( unsetenv( "MOSH_KEY" ) < 0 ) {
     perror( "unsetenv" );

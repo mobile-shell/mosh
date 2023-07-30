@@ -106,9 +106,9 @@ int main( int argc, char **argv )
       overlays.apply( *new_state );
 
       /* calculate minimal difference from where we are */
-      const string diff( display.new_frame( false,
-					    *local_framebuffer,
-					    *new_state ) );
+      const std::string diff( display.new_frame( false,
+						 *local_framebuffer,
+						 *new_state ) );
 
       /* make sure to use diff */
       if ( diff.size() > INT_MAX ) {

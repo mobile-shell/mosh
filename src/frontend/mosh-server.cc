@@ -104,7 +104,7 @@ static void serve( int host_fd,
 		   long network_signaled_timeout );
 
 static int run_server( const char *desired_ip, const char *desired_port,
-		       const string &command_path, char *command_argv[],
+		       const std::string &command_path, char *command_argv[],
 		       const int colors, unsigned int verbose, bool with_motd );
 
 
@@ -125,7 +125,7 @@ static void print_usage( FILE *stream, const char *argv0 )
 static bool print_motd( const char *filename );
 static void chdir_homedir( void );
 static bool motd_hushed( void );
-static void warn_unattached( const string & ignore_entry );
+static void warn_unattached( const std::string & ignore_entry );
 
 /* Simple spinloop */
 static void spin( void )
@@ -142,19 +142,19 @@ static void spin( void )
   }
 }
 
-static string get_SSH_IP( void )
+static std::string get_SSH_IP( void )
 {
   const char *SSH_CONNECTION = getenv( "SSH_CONNECTION" );
   if ( !SSH_CONNECTION ) { /* Older sshds don't set this */
     fputs( "Warning: SSH_CONNECTION not found; binding to any interface.\n", stderr );
-    return string( "" );
+    return std::string( "" );
   }
   std::istringstream ss( SSH_CONNECTION );
-  string dummy, local_interface_IP;
+  std::string dummy, local_interface_IP;
   ss >> dummy >> dummy >> local_interface_IP;
   if ( !ss ) {
     fputs( "Warning: Could not parse SSH_CONNECTION; binding to any interface.\n", stderr );
-    return string( "" );
+    return std::string( "" );
   }
 
   /* Strip IPv6 prefix. */
@@ -177,14 +177,14 @@ int main( int argc, char *argv[] )
   fatal_assert( argc > 0 );
 
   const char *desired_ip = NULL;
-  string desired_ip_str;
+  std::string desired_ip_str;
   const char *desired_port = NULL;
-  string command_path;
+  std::string command_path;
   char **command_argv = NULL;
   int colors = 0;
   unsigned int verbose = 0; /* don't close stdin/stdout/stderr */
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
-  list<string> locale_vars;
+  std::list<std::string> locale_vars;
 
   /* strip off command */
   for ( int i = 1; i < argc; i++ ) {
@@ -249,7 +249,7 @@ int main( int argc, char *argv[] )
 	verbose++;
 	break;
       case 'l':
-	locale_vars.push_back( string( optarg ) );
+	locale_vars.push_back( std::string( optarg ) );
 	break;
       default:
 	/* don't die on unknown options */
@@ -286,7 +286,7 @@ int main( int argc, char *argv[] )
 
   /* Get shell */
   char *my_argv[ 2 ];
-  string shell_name;
+  std::string shell_name;
   if ( !command_argv ) {
     /* get shell name */
     const char *shell = getenv( "SHELL" );
@@ -299,7 +299,7 @@ int main( int argc, char *argv[] )
       shell = pw->pw_shell;
     }
 
-    string shell_path( shell );
+    std::string shell_path( shell );
     if ( shell_path.empty() ) { /* empty shell means Bourne shell */
       shell_path = _PATH_BSHELL;
     }
@@ -307,7 +307,7 @@ int main( int argc, char *argv[] )
     command_path = shell_path;
 
     size_t shell_slash( shell_path.rfind('/') );
-    if ( shell_slash == string::npos ) {
+    if ( shell_slash == std::string::npos ) {
       shell_name = shell_path;
     } else {
       shell_name = shell_path.substr(shell_slash + 1);
@@ -332,11 +332,11 @@ int main( int argc, char *argv[] )
   if ( !is_utf8_locale() ) {
     /* save details for diagnostic */
     LocaleVar native_ctype = get_ctype();
-    string native_charset( locale_charset() );
+    std::string native_charset( locale_charset() );
 
     /* apply locale-related environment variables from client */
     clear_locale_variables();
-    for ( list<string>::const_iterator i = locale_vars.begin();
+    for ( std::list<std::string>::const_iterator i = locale_vars.begin();
 	  i != locale_vars.end();
 	  i++ ) {
       char *env_string = strdup( i->c_str() );
@@ -350,7 +350,7 @@ int main( int argc, char *argv[] )
     set_native_locale();
     if ( !is_utf8_locale() ) {
       LocaleVar client_ctype = get_ctype();
-      string client_charset( locale_charset() );
+      std::string client_charset( locale_charset() );
 
       fprintf( stderr, "mosh-server needs a UTF-8 native locale to run.\n\n"
 	       "Unfortunately, the local environment (%s) specifies\n"
@@ -377,7 +377,7 @@ int main( int argc, char *argv[] )
 }
 
 static int run_server( const char *desired_ip, const char *desired_port,
-		       const string &command_path, char *command_argv[],
+		       const std::string &command_path, char *command_argv[],
 		       const int colors, unsigned int verbose, bool with_motd ) {
   /* get network idle timeout */
   long network_timeout = 0;
@@ -723,7 +723,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
 
       now = Network::timestamp();
       uint64_t time_since_remote_state = now - network.get_latest_remote_state().timestamp;
-      string terminal_to_host;
+      std::string terminal_to_host;
 
       if ( sel.read( network_fd ) ) {
 	/* packet received from the network */
@@ -842,7 +842,7 @@ static void serve( int host_fd, Terminal::Complete &terminal, ServerConnection &
         if ( bytes_read <= 0 ) {
 	  network.start_shutdown();
 	} else {
-	  terminal_to_host += terminal.act( string( buf, bytes_read ) );
+	  terminal_to_host += terminal.act( std::string( buf, bytes_read ) );
 	
 	  /* update client with new state of terminal */
 	  network.set_current_state( terminal );
@@ -992,13 +992,13 @@ static bool motd_hushed( void )
 #ifdef HAVE_UTMPX_H
 static bool device_exists( const char *ut_line )
 {
-  string device_name = string( "/dev/" ) + string( ut_line );
+  std::string device_name = std::string( "/dev/" ) + std::string( ut_line );
   struct stat buf;
   return 0 == lstat( device_name.c_str(), &buf );
 }
 #endif
 
-static void warn_unattached( const string & ignore_entry )
+static void warn_unattached( const std::string & ignore_entry )
 {
 #ifdef HAVE_UTMPX_H
   /* get username */
@@ -1009,16 +1009,16 @@ static void warn_unattached( const string & ignore_entry )
     return;
   }
 
-  const string username( pw->pw_name );
+  const std::string username( pw->pw_name );
 
   /* look for unattached sessions */
-  vector< string > unattached_mosh_servers;
+  std::vector< std::string > unattached_mosh_servers;
 
   while ( struct utmpx *entry = getutxent() ) {
     if ( (entry->ut_type == USER_PROCESS)
-	 && (username == string( entry->ut_user )) ) {
+	 && (username == std::string( entry->ut_user )) ) {
       /* does line show unattached mosh session */
-      string text( entry->ut_host );
+      std::string text( entry->ut_host );
       if ( (text.size() >= 5)
 	   && (text.substr( 0, 5 ) == "mosh ")
 	   && (text[ text.size() - 1 ] == ']')
@@ -1036,9 +1036,9 @@ static void warn_unattached( const string & ignore_entry )
     printf( "\033[37;44mMosh: You have a detached Mosh session on this server (%s).\033[m\n\n",
 	    unattached_mosh_servers.front().c_str() );
   } else {
-    string pid_string;
+    std::string pid_string;
 
-    for ( vector< string >::const_iterator it = unattached_mosh_servers.begin();
+    for ( std::vector< std::string >::const_iterator it = unattached_mosh_servers.begin();
 	  it != unattached_mosh_servers.end();
 	  it++ ) {
       pid_string += "        - " + *it + "\n";

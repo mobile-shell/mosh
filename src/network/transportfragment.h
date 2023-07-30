@@ -40,8 +40,6 @@
 #include "src/protobufs/transportinstruction.pb.h"
 
 namespace Network {
-  using std::vector;
-  using std::string;
   using namespace TransportBuffers;
 
   class Fragment
@@ -55,20 +53,20 @@ namespace Network {
 
     bool initialized;
 
-    string contents;
+    std::string contents;
 
     Fragment()
       : id( -1 ), fragment_num( -1 ), final( false ), initialized( false ), contents()
     {}
 
-    Fragment( uint64_t s_id, uint16_t s_fragment_num, bool s_final, const string & s_contents )
+    Fragment( uint64_t s_id, uint16_t s_fragment_num, bool s_final, const std::string & s_contents )
       : id( s_id ), fragment_num( s_fragment_num ), final( s_final ), initialized( true ),
 	contents( s_contents )
     {}
 
-    Fragment( const string &x );
+    Fragment( const std::string &x );
 
-    string tostring( void );
+    std::string tostring( void );
 
     bool operator==( const Fragment &x ) const;
   };
@@ -76,7 +74,7 @@ namespace Network {
   class FragmentAssembly
   {
   private:
-    vector<Fragment> fragments;
+    std::vector<Fragment> fragments;
     uint64_t current_id;
     int fragments_arrived, fragments_total;
 
@@ -99,7 +97,7 @@ namespace Network {
       last_instruction.set_old_num( -1 );
       last_instruction.set_new_num( -1 );
     }
-    vector<Fragment> make_fragments( const Instruction &inst, size_t MTU );
+    std::vector<Fragment> make_fragments( const Instruction &inst, size_t MTU );
     uint64_t last_ack_sent( void ) const { return last_instruction.ack_num(); }
   };
   

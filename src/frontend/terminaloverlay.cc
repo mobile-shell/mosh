@@ -100,7 +100,7 @@ Validity ConditionalOverlayCell::get_validity( const Framebuffer &fb, int row,
   }
 
   if ( current.contents_match( replacement ) ) {
-    vector<Cell>::const_iterator it = original_contents.begin();
+    std::vector<Cell>::const_iterator it = original_contents.begin();
     for ( ; it != original_contents.end(); it++ ) {
       if ( it->contents_match( replacement ) )
 	break;
@@ -248,14 +248,14 @@ void NotificationEngine::apply( Framebuffer &fb ) const
 	      explanation, keystroke_str );
   }
 
-  wstring string_to_draw( tmp );
+  std::wstring string_to_draw( tmp );
 
   int overlay_col = 0;
 
   Cell *combining_cell = fb.get_mutable_cell( 0, 0 );
 
   /* We unfortunately duplicate the terminal's logic for how to render a Unicode sequence into graphemes */
-  for ( wstring::const_iterator i = string_to_draw.begin(); i != string_to_draw.end(); i++ ) {
+  for ( std::wstring::const_iterator i = string_to_draw.begin(); i != string_to_draw.end(); i++ ) {
     if ( overlay_col >= fb.ds.get_width() ) {
       break;
     }
@@ -339,7 +339,7 @@ void OverlayManager::apply( Framebuffer &fb )
   title.apply( fb );
 }
 
-void TitleEngine::set_prefix( const wstring &s )
+void TitleEngine::set_prefix( const std::wstring &s )
 {
   prefix = Terminal::Framebuffer::title_type( s.begin(), s.end() );
 }
@@ -615,7 +615,7 @@ void PredictionEngine::cull( const Framebuffer &fb )
 
   /* NB: switching from list to another STL container could break this code.
      So we don't use the cursors_type typedef. */
-  for ( list<ConditionalCursorMove>::iterator it = cursors.begin();
+  for ( std::list<ConditionalCursorMove>::iterator it = cursors.begin();
         it != cursors.end(); ) {
     if ( it->get_validity( fb, local_frame_acked, local_frame_late_acked ) != Pending ) {
       it = cursors.erase( it );

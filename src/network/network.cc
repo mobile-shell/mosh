@@ -80,7 +80,7 @@ Packet::Packet( const Message & message )
   timestamp = be16toh( data[ 0 ] );
   timestamp_reply = be16toh( data[ 1 ] );
 
-  payload = string( message.text.begin() + 2 * sizeof( uint16_t ), message.text.end() );
+  payload = std::string( message.text.begin() + 2 * sizeof( uint16_t ), message.text.end() );
 }
 
 /* Output from packet */
@@ -91,12 +91,12 @@ Message Packet::toMessage( void )
   uint16_t ts_net[ 2 ] = { static_cast<uint16_t>( htobe16( timestamp ) ),
                            static_cast<uint16_t>( htobe16( timestamp_reply ) ) };
 
-  string timestamps = string( (char *)ts_net, 2 * sizeof( uint16_t ) );
+  std::string timestamps = std::string( (char *)ts_net, 2 * sizeof( uint16_t ) );
 
   return Message( Nonce( direction_seq ), timestamps + payload );
 }
 
-Packet Connection::new_packet( const string &s_payload )
+Packet Connection::new_packet( const std::string &s_payload )
 {
   uint16_t outgoing_timestamp_reply = -1;
 
@@ -391,7 +391,7 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
   set_MTU( remote_addr.sa.sa_family );
 }
 
-void Connection::send( const string & s )
+void Connection::send( const std::string & s )
 {
   if ( !has_remote_addr ) {
     return;
@@ -399,7 +399,7 @@ void Connection::send( const string & s )
 
   Packet px = new_packet( s );
 
-  string p = session.encrypt( px.toMessage() );
+  std::string p = session.encrypt( px.toMessage() );
 
   ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
 			       &remote_addr.sa, remote_addr_len );
@@ -428,13 +428,13 @@ void Connection::send( const string & s )
   }
 }
 
-string Connection::recv( void )
+std::string Connection::recv( void )
 {
   assert( !socks.empty() );
   for ( std::deque< Socket >::const_iterator it = socks.begin();
 	it != socks.end();
 	it++ ) {
-    string payload;
+    std::string payload;
     try {
       payload = recv_one( it->fd());
     } catch ( NetworkException & e ) {
@@ -453,7 +453,7 @@ string Connection::recv( void )
   throw NetworkException( "No packet received" );
 }
 
-string Connection::recv_one( int sock_to_recv )
+std::string Connection::recv_one( int sock_to_recv )
 {
   /* receive source address, ECN, and payload in msghdr structure */
   Addr packet_remote_addr;
