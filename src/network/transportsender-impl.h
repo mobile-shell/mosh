@@ -40,8 +40,9 @@
 #include <ctime>
 #include <list>
 
+#include "src/network/transportfragment.h"
 #include "src/network/transportsender.h"
-#include "transportfragment.h"
+#include "src/util/fatal_assert.h"
 
 using namespace Network;
 
