@@ -33,8 +33,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "src/util/fatal_assert.h"
 #include "src/crypto/base64.h"
+#include "src/util/fatal_assert.h"
 
 static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -60,27 +60,26 @@ static const unsigned char reverse[] = {
 };
 
 /* Reverse maps from an ASCII char to a base64 sixbit value.  Returns > 0x3f on failure. */
-static unsigned char base64_char_to_sixbit(unsigned char c)
+static unsigned char base64_char_to_sixbit( unsigned char c )
 {
   return reverse[c];
 }
 
-bool base64_decode( const char *b64, const size_t b64_len,
-		    uint8_t *raw, size_t *raw_len )
+bool base64_decode( const char* b64, const size_t b64_len, uint8_t* raw, size_t* raw_len )
 {
   fatal_assert( b64_len == 24 ); /* only useful for Mosh keys */
   fatal_assert( *raw_len == 16 );
 
   uint32_t bytes = 0;
-  for (int i = 0; i < 22; i++) {
-    unsigned char sixbit = base64_char_to_sixbit(*(b64++));
-    if (sixbit > 0x3f) {
+  for ( int i = 0; i < 22; i++ ) {
+    unsigned char sixbit = base64_char_to_sixbit( *( b64++ ) );
+    if ( sixbit > 0x3f ) {
       return false;
     }
     bytes <<= 6;
     bytes |= sixbit;
     /* write groups of 3 */
-    if (i % 4 == 3) {
+    if ( i % 4 == 3 ) {
       raw[0] = bytes >> 16;
       raw[1] = bytes >> 8;
       raw[2] = bytes;
@@ -90,33 +89,32 @@ bool base64_decode( const char *b64, const size_t b64_len,
   }
   /* last byte of output */
   *raw = bytes >> 4;
-  if (b64[0] != '=' || b64[1] != '=') {
+  if ( b64[0] != '=' || b64[1] != '=' ) {
     return false;
   }
   return true;
 }
 
-void base64_encode( const uint8_t *raw, const size_t raw_len,
-		    char *b64, const size_t b64_len )
+void base64_encode( const uint8_t* raw, const size_t raw_len, char* b64, const size_t b64_len )
 {
   fatal_assert( b64_len == 24 ); /* only useful for Mosh keys */
   fatal_assert( raw_len == 16 );
 
   /* first 15 bytes of input */
-  for (int i = 0; i < 5; i++) {
-    uint32_t bytes = (raw[0] << 16) | (raw[1] << 8) | raw[2];
-    b64[0] = table[(bytes >> 18) & 0x3f];
-    b64[1] = table[(bytes >> 12) & 0x3f];
-    b64[2] = table[(bytes >> 6) & 0x3f];
-    b64[3] = table[(bytes) & 0x3f];
+  for ( int i = 0; i < 5; i++ ) {
+    uint32_t bytes = ( raw[0] << 16 ) | ( raw[1] << 8 ) | raw[2];
+    b64[0] = table[( bytes >> 18 ) & 0x3f];
+    b64[1] = table[( bytes >> 12 ) & 0x3f];
+    b64[2] = table[( bytes >> 6 ) & 0x3f];
+    b64[3] = table[(bytes)&0x3f];
     raw += 3;
     b64 += 4;
   }
-  
+
   /* last byte of input, last 4 of output */
   uint8_t lastchar = *raw;
-  b64[0] = table[(lastchar >> 2) & 0x3f];
-  b64[1] = table[(lastchar << 4) & 0x3f];
+  b64[0] = table[( lastchar >> 2 ) & 0x3f];
+  b64[1] = table[( lastchar << 4 ) & 0x3f];
   b64[2] = '=';
   b64[3] = '=';
 }

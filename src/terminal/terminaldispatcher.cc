@@ -36,23 +36,22 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "terminaldispatcher.h"
 #include "src/terminal/parseraction.h"
 #include "src/terminal/terminalframebuffer.h"
+#include "terminaldispatcher.h"
 
 using namespace Terminal;
 
-static const size_t MAXIMUM_CLIPBOARD_SIZE = 16*1024;
+static const size_t MAXIMUM_CLIPBOARD_SIZE = 16 * 1024;
 
 Dispatcher::Dispatcher()
-  : params(), parsed_params(), parsed( false ), dispatch_chars(),
-    OSC_string(), terminal_to_host()
+  : params(), parsed_params(), parsed( false ), dispatch_chars(), OSC_string(), terminal_to_host()
 {}
 
-void Dispatcher::newparamchar( const Parser::Param *act )
+void Dispatcher::newparamchar( const Parser::Param* act )
 {
   assert( act->char_present );
-  assert( (act->ch == ';') || ( (act->ch >= '0') && (act->ch <= '9') ) );
+  assert( ( act->ch == ';' ) || ( ( act->ch >= '0' ) && ( act->ch <= '9' ) ) );
   if ( params.length() < 100 ) {
     /* enough for 16 five-char params plus 15 semicolons */
     params.push_back( act->ch );
@@ -60,16 +59,16 @@ void Dispatcher::newparamchar( const Parser::Param *act )
   parsed = false;
 }
 
-void Dispatcher::collect( const Parser::Collect *act )
+void Dispatcher::collect( const Parser::Collect* act )
 {
   assert( act->char_present );
   if ( ( dispatch_chars.length() < 8 ) /* never should need more than 2 */
-       && ( act->ch <= 255 ) ) {  /* ignore non-8-bit */    
+       && ( act->ch <= 255 ) ) {       /* ignore non-8-bit */
     dispatch_chars.push_back( act->ch );
   }
 }
 
-void Dispatcher::clear( const Parser::Clear *act __attribute((unused)) )
+void Dispatcher::clear( const Parser::Clear* act __attribute( ( unused ) ) )
 {
   params.clear();
   dispatch_chars.clear();
@@ -83,17 +82,17 @@ void Dispatcher::parse_params( void )
   }
 
   parsed_params.clear();
-  const char *str = params.c_str();
-  const char *segment_begin = str;
+  const char* str = params.c_str();
+  const char* segment_begin = str;
 
   while ( 1 ) {
-    const char *segment_end = strchr( segment_begin, ';' );
+    const char* segment_end = strchr( segment_begin, ';' );
     if ( segment_end == NULL ) {
       break;
     }
 
     errno = 0;
-    char *endptr;
+    char* endptr;
     long val = strtol( segment_begin, &endptr, 10 );
     if ( endptr == segment_begin ) {
       val = -1;
@@ -113,7 +112,7 @@ void Dispatcher::parse_params( void )
 
   /* get last param */
   errno = 0;
-  char *endptr;
+  char* endptr;
   long val = strtol( segment_begin, &endptr, 10 );
   if ( endptr == segment_begin ) {
     val = -1;
@@ -139,10 +138,11 @@ int Dispatcher::getparam( size_t N, int defaultval )
   }
 
   if ( parsed_params.size() > N ) {
-    ret = parsed_params[ N ];
+    ret = parsed_params[N];
   }
 
-  if ( ret < 1 ) ret = defaultval;
+  if ( ret < 1 )
+    ret = defaultval;
 
   return ret;
 }
@@ -158,66 +158,70 @@ int Dispatcher::param_count( void )
 
 std::string Dispatcher::str( void )
 {
-  char assum[ 64 ];
-  snprintf( assum, 64, "[dispatch=\"%s\" params=\"%s\"]",
-	    dispatch_chars.c_str(), params.c_str() );
+  char assum[64];
+  snprintf( assum, 64, "[dispatch=\"%s\" params=\"%s\"]", dispatch_chars.c_str(), params.c_str() );
   return std::string( assum );
 }
 
 /* construct on first use to avoid static initialization order crash */
-DispatchRegistry & Terminal::get_global_dispatch_registry( void )
+DispatchRegistry& Terminal::get_global_dispatch_registry( void )
 {
   static DispatchRegistry global_dispatch_registry;
   return global_dispatch_registry;
 }
 
-static void register_function( Function_Type type,
-			       const std::string & dispatch_chars,
-			       Function f )
+static void register_function( Function_Type type, const std::string& dispatch_chars, Function f )
 {
   switch ( type ) {
-  case ESCAPE:
-    get_global_dispatch_registry().escape.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
-    break;
-  case CSI:
-    get_global_dispatch_registry().CSI.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
-    break;
-  case CONTROL:
-    get_global_dispatch_registry().control.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
-    break;
+    case ESCAPE:
+      get_global_dispatch_registry().escape.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
+      break;
+    case CSI:
+      get_global_dispatch_registry().CSI.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
+      break;
+    case CONTROL:
+      get_global_dispatch_registry().control.insert( dispatch_map_t::value_type( dispatch_chars, f ) );
+      break;
   }
 }
 
-Function::Function( Function_Type type, const std::string & dispatch_chars,
-		    void (*s_function)( Framebuffer *, Dispatcher * ),
-		    bool s_clears_wrap_state )
+Function::Function( Function_Type type,
+                    const std::string& dispatch_chars,
+                    void ( *s_function )( Framebuffer*, Dispatcher* ),
+                    bool s_clears_wrap_state )
   : function( s_function ), clears_wrap_state( s_clears_wrap_state )
 {
   register_function( type, dispatch_chars, *this );
 }
 
-void Dispatcher::dispatch( Function_Type type, const Parser::Action *act, Framebuffer *fb )
+void Dispatcher::dispatch( Function_Type type, const Parser::Action* act, Framebuffer* fb )
 {
   /* add final char to dispatch key */
-  if ( (type == ESCAPE) || (type == CSI) ) {
+  if ( ( type == ESCAPE ) || ( type == CSI ) ) {
     assert( act->char_present );
     Parser::Collect act2;
     act2.char_present = true;
     act2.ch = act->ch;
-    collect( &act2 ); 
+    collect( &act2 );
   }
 
-  dispatch_map_t *map = NULL;
+  dispatch_map_t* map = NULL;
   switch ( type ) {
-  case ESCAPE:  map = &get_global_dispatch_registry().escape;  break;
-  case CSI:     map = &get_global_dispatch_registry().CSI;     break;
-  case CONTROL: map = &get_global_dispatch_registry().control; break;
+    case ESCAPE:
+      map = &get_global_dispatch_registry().escape;
+      break;
+    case CSI:
+      map = &get_global_dispatch_registry().CSI;
+      break;
+    case CONTROL:
+      map = &get_global_dispatch_registry().control;
+      break;
   }
 
   std::string key = dispatch_chars;
   if ( type == CONTROL ) {
     assert( act->ch <= 255 );
-    char ctrlstr[ 2 ] = { (char)act->ch, 0 };
+    char ctrlstr[2] = { (char)act->ch, 0 };
     key = std::string( ctrlstr, 1 );
   }
 
@@ -233,25 +237,22 @@ void Dispatcher::dispatch( Function_Type type, const Parser::Action *act, Frameb
   i->second.function( fb, this );
 }
 
-void Dispatcher::OSC_put( const Parser::OSC_Put *act )
+void Dispatcher::OSC_put( const Parser::OSC_Put* act )
 {
   assert( act->char_present );
-  if ( OSC_string.size() < MAXIMUM_CLIPBOARD_SIZE) {
+  if ( OSC_string.size() < MAXIMUM_CLIPBOARD_SIZE ) {
     OSC_string.push_back( act->ch );
   }
 }
 
-void Dispatcher::OSC_start( const Parser::OSC_Start *act __attribute((unused)) )
+void Dispatcher::OSC_start( const Parser::OSC_Start* act __attribute( ( unused ) ) )
 {
   OSC_string.clear();
 }
 
-bool Dispatcher::operator==( const Dispatcher &x ) const
+bool Dispatcher::operator==( const Dispatcher& x ) const
 {
-  return ( params == x.params )
-    && ( parsed_params == x.parsed_params )
-    && ( parsed == x.parsed )
-    && ( dispatch_chars == x.dispatch_chars )
-    && ( OSC_string == x.OSC_string )
-    && ( terminal_to_host == x.terminal_to_host );
+  return ( params == x.params ) && ( parsed_params == x.parsed_params ) && ( parsed == x.parsed )
+         && ( dispatch_chars == x.dispatch_chars ) && ( OSC_string == x.OSC_string )
+         && ( terminal_to_host == x.terminal_to_host );
 }

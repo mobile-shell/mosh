@@ -38,37 +38,35 @@
 #include "src/terminal/parseraction.h"
 
 namespace Parser {
-  class State;
+class State;
 
-  class Transition
+class Transition
+{
+public:
+  // Transition is only a courier for an Action; it should
+  // never create/delete one on its own.
+  ActionPointer action;
+  State* next_state;
+
+  Transition( const Transition& x ) : action( x.action ), next_state( x.next_state ) {}
+  Transition& operator=( const Transition& t )
   {
-  public:
-    // Transition is only a courier for an Action; it should
-    // never create/delete one on its own.
-    ActionPointer action;
-    State *next_state;
+    action = t.action;
+    next_state = t.next_state;
 
-    Transition( const Transition &x )
-      : action( x.action ),
-	next_state( x.next_state ) {}
-    Transition & operator=( const Transition &t )
-    {
-      action = t.action;
-      next_state = t.next_state;
+    return *this;
+  }
+  Transition( ActionPointer s_action = std::make_shared<Ignore>(), State* s_next_state = NULL )
+    : action( s_action ), next_state( s_next_state )
+  {}
 
-      return *this;
-    }
-    Transition( ActionPointer s_action = std::make_shared<Ignore>(), State *s_next_state=NULL )
-      : action( s_action ), next_state( s_next_state )
-    {}
-
-    // This is only ever used in the 1-argument form;
-    // we use this instead of an initializer to
-    // tell Coverity the object never owns *action.
-    Transition( State *s_next_state, ActionPointer s_action = std::make_shared<Ignore>() )
-      : action( s_action ), next_state( s_next_state )
-    {}
-  };
+  // This is only ever used in the 1-argument form;
+  // we use this instead of an initializer to
+  // tell Coverity the object never owns *action.
+  Transition( State* s_next_state, ActionPointer s_action = std::make_shared<Ignore>() )
+    : action( s_action ), next_state( s_next_state )
+  {}
+};
 }
 
 #endif

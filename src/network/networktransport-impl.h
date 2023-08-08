@@ -39,35 +39,32 @@
 
 using namespace Network;
 
-template <class MyState, class RemoteState>
-Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState &initial_remote,
-					    const char *desired_ip, const char *desired_port )
-  : connection( desired_ip, desired_port ),
-    sender( &connection, initial_state ),
+template<class MyState, class RemoteState>
+Transport<MyState, RemoteState>::Transport( MyState& initial_state,
+                                            RemoteState& initial_remote,
+                                            const char* desired_ip,
+                                            const char* desired_port )
+  : connection( desired_ip, desired_port ), sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
-    receiver_quench_timer( 0 ),
-    last_receiver_state( initial_remote ),
-    fragments(),
-    verbose( 0 )
+    receiver_quench_timer( 0 ), last_receiver_state( initial_remote ), fragments(), verbose( 0 )
 {
   /* server */
 }
 
-template <class MyState, class RemoteState>
-Transport<MyState, RemoteState>::Transport( MyState &initial_state, RemoteState &initial_remote,
-					    const char *key_str, const char *ip, const char *port )
-  : connection( key_str, ip, port ),
-    sender( &connection, initial_state ),
+template<class MyState, class RemoteState>
+Transport<MyState, RemoteState>::Transport( MyState& initial_state,
+                                            RemoteState& initial_remote,
+                                            const char* key_str,
+                                            const char* ip,
+                                            const char* port )
+  : connection( key_str, ip, port ), sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
-    receiver_quench_timer( 0 ),
-    last_receiver_state( initial_remote ),
-    fragments(),
-    verbose( 0 )
+    receiver_quench_timer( 0 ), last_receiver_state( initial_remote ), fragments(), verbose( 0 )
 {
   /* client */
 }
 
-template <class MyState, class RemoteState>
+template<class MyState, class RemoteState>
 void Transport<MyState, RemoteState>::recv( void )
 {
   std::string s( connection.recv() );
@@ -86,30 +83,31 @@ void Transport<MyState, RemoteState>::recv( void )
     connection.set_last_roundtrip_success( sender.get_sent_state_acked_timestamp() );
 
     /* first, make sure we don't already have the new state */
-    for ( typename std::list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
-	  i != received_states.end();
-	  i++ ) {
+    for ( typename std::list<TimestampedState<RemoteState>>::iterator i = received_states.begin();
+          i != received_states.end();
+          i++ ) {
       if ( inst.new_num() == i->num ) {
-	return;
+        return;
       }
     }
-    
+
     /* now, make sure we do have the old state */
     bool found = 0;
-    typename std::list< TimestampedState<RemoteState> >::iterator reference_state = received_states.begin();
+    typename std::list<TimestampedState<RemoteState>>::iterator reference_state = received_states.begin();
     while ( reference_state != received_states.end() ) {
       if ( inst.old_num() == reference_state->num ) {
-	found = true;
-	break;
+        found = true;
+        break;
       }
       reference_state++;
     }
-    
+
     if ( !found ) {
-      //    fprintf( stderr, "Ignoring out-of-order packet. Reference state %d has been discarded or hasn't yet been received.\n", int(inst.old_num) );
+      //    fprintf( stderr, "Ignoring out-of-order packet. Reference state %d has been discarded or hasn't yet been
+      //    received.\n", int(inst.old_num) );
       return; /* this is security-sensitive and part of how we enforce idempotency */
     }
-    
+
     /* Do not accept state if our queue is full */
     /* This is better than dropping states from the middle of the
        queue (as sender does), because we don't want to ACK a state
@@ -120,13 +118,16 @@ void Transport<MyState, RemoteState>::recv( void )
     if ( received_states.size() > 1024 ) { /* limit on state queue */
       uint64_t now = timestamp();
       if ( now < receiver_quench_timer ) { /* deny letting state grow further */
-	if ( verbose ) {
-	  fprintf( stderr, "[%u] Receiver queue full, discarding %d (malicious sender or long-unidirectional connectivity?)\n",
-		   (unsigned int)(timestamp() % 100000), (int)inst.new_num() );
-	}
-	return;
+        if ( verbose ) {
+          fprintf(
+            stderr,
+            "[%u] Receiver queue full, discarding %d (malicious sender or long-unidirectional connectivity?)\n",
+            (unsigned int)( timestamp() % 100000 ),
+            (int)inst.new_num() );
+        }
+        return;
       } else {
-	receiver_quench_timer = now + 15000;
+        receiver_quench_timer = now + 15000;
       }
     }
 
@@ -140,21 +141,28 @@ void Transport<MyState, RemoteState>::recv( void )
     }
 
     /* Insert new state in sorted place */
-    for ( typename std::list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
-	  i != received_states.end();
-	  i++ ) {
+    for ( typename std::list<TimestampedState<RemoteState>>::iterator i = received_states.begin();
+          i != received_states.end();
+          i++ ) {
       if ( i->num > new_state.num ) {
-	received_states.insert( i, new_state );
-	if ( verbose ) {
-	  fprintf( stderr, "[%u] Received OUT-OF-ORDER state %d [ack %d]\n",
-		   (unsigned int)(timestamp() % 100000), (int)new_state.num, (int)inst.ack_num() );
-	}
-	return;
+        received_states.insert( i, new_state );
+        if ( verbose ) {
+          fprintf( stderr,
+                   "[%u] Received OUT-OF-ORDER state %d [ack %d]\n",
+                   (unsigned int)( timestamp() % 100000 ),
+                   (int)new_state.num,
+                   (int)inst.ack_num() );
+        }
+        return;
       }
     }
     if ( verbose ) {
-      fprintf( stderr, "[%u] Received state %d [coming from %d, ack %d]\n",
-	       (unsigned int)(timestamp() % 100000), (int)new_state.num, (int)inst.old_num(), (int)inst.ack_num() );
+      fprintf( stderr,
+               "[%u] Received state %d [coming from %d, ack %d]\n",
+               (unsigned int)( timestamp() % 100000 ),
+               (int)new_state.num,
+               (int)inst.old_num(),
+               (int)inst.ack_num() );
     }
     received_states.push_back( new_state );
     sender.set_ack_num( received_states.back().num );
@@ -167,12 +175,12 @@ void Transport<MyState, RemoteState>::recv( void )
 }
 
 /* The sender uses throwaway_num to tell us the earliest received state that we need to keep around */
-template <class MyState, class RemoteState>
+template<class MyState, class RemoteState>
 void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwaway_num )
 {
-  typename std::list< TimestampedState<RemoteState> >::iterator i = received_states.begin();
+  typename std::list<TimestampedState<RemoteState>>::iterator i = received_states.begin();
   while ( i != received_states.end() ) {
-    typename std::list< TimestampedState<RemoteState> >::iterator inext = i;
+    typename std::list<TimestampedState<RemoteState>>::iterator inext = i;
     inext++;
     if ( i->num < throwaway_num ) {
       received_states.erase( i );
@@ -183,20 +191,20 @@ void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwawa
   fatal_assert( received_states.size() > 0 );
 }
 
-template <class MyState, class RemoteState>
+template<class MyState, class RemoteState>
 std::string Transport<MyState, RemoteState>::get_remote_diff( void )
 {
   /* find diff between last receiver state and current remote state, then rationalize states */
 
   std::string ret( received_states.back().state.diff_from( last_receiver_state ) );
 
-  const RemoteState *oldest_receiver_state = &received_states.front().state;
+  const RemoteState* oldest_receiver_state = &received_states.front().state;
 
-  for ( typename std::list< TimestampedState<RemoteState> >::reverse_iterator i = received_states.rbegin();
-	i != received_states.rend();
-	i++ ) {
+  for ( typename std::list<TimestampedState<RemoteState>>::reverse_iterator i = received_states.rbegin();
+        i != received_states.rend();
+        i++ ) {
     i->state.subtract( oldest_receiver_state );
-  }  
+  }
 
   last_receiver_state = received_states.back().state;
 

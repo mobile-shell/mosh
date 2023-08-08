@@ -32,11 +32,11 @@
 
 #include <cassert>
 
-#include "src/crypto/byteorder.h"
-#include "transportfragment.h"
-#include "src/protobufs/transportinstruction.pb.h"
 #include "compressor.h"
+#include "src/crypto/byteorder.h"
+#include "src/protobufs/transportinstruction.pb.h"
 #include "src/util/fatal_assert.h"
+#include "transportfragment.h"
 
 using namespace Network;
 using namespace TransportBuffers;
@@ -44,13 +44,13 @@ using namespace TransportBuffers;
 static std::string network_order_string( uint16_t host_order )
 {
   uint16_t net_int = htobe16( host_order );
-  return std::string( (char *)&net_int, sizeof( net_int ) );
+  return std::string( (char*)&net_int, sizeof( net_int ) );
 }
 
 static std::string network_order_string( uint64_t host_order )
 {
   uint64_t net_int = htobe64( host_order );
-  return std::string( (char *)&net_int, sizeof( net_int ) );
+  return std::string( (char*)&net_int, sizeof( net_int ) );
 }
 
 std::string Fragment::tostring( void )
@@ -58,10 +58,11 @@ std::string Fragment::tostring( void )
   assert( initialized );
 
   std::string ret;
-  
+
   ret += network_order_string( id );
 
-  fatal_assert( !( fragment_num & 0x8000 ) ); /* effective limit on size of a terminal screen change or buffered user input */
+  fatal_assert(
+    !( fragment_num & 0x8000 ) ); /* effective limit on size of a terminal screen change or buffered user input */
   uint16_t combined_fragment_num = ( final << 15 ) | fragment_num;
   ret += network_order_string( combined_fragment_num );
 
@@ -72,23 +73,22 @@ std::string Fragment::tostring( void )
   return ret;
 }
 
-Fragment::Fragment( const std::string &x )
-  : id( -1 ), fragment_num( -1 ), final( false ), initialized( true ),
-    contents()
+Fragment::Fragment( const std::string& x )
+  : id( -1 ), fragment_num( -1 ), final( false ), initialized( true ), contents()
 {
   fatal_assert( x.size() >= frag_header_len );
   contents = std::string( x.begin() + frag_header_len, x.end() );
 
   uint64_t data64;
-  uint16_t *data16 = (uint16_t *)x.data();
+  uint16_t* data16 = (uint16_t*)x.data();
   memcpy( &data64, x.data(), sizeof( data64 ) );
   id = be64toh( data64 );
-  fragment_num = be16toh( data16[ 4 ] );
+  fragment_num = be16toh( data16[4] );
   final = ( fragment_num & 0x8000 ) >> 15;
   fragment_num &= 0x7FFF;
 }
 
-bool FragmentAssembly::add_fragment( Fragment &frag )
+bool FragmentAssembly::add_fragment( Fragment& frag )
 {
   /* see if this is a totally new packet */
   if ( current_id != frag.id ) {
@@ -98,15 +98,14 @@ bool FragmentAssembly::add_fragment( Fragment &frag )
     fragments_arrived = 1;
     fragments_total = -1; /* unknown */
     current_id = frag.id;
- } else { /* not a new packet */
+  } else { /* not a new packet */
     /* see if we already have this fragment */
-    if ( (fragments.size() > frag.fragment_num)
-	 && (fragments.at( frag.fragment_num ).initialized) ) {
+    if ( ( fragments.size() > frag.fragment_num ) && ( fragments.at( frag.fragment_num ).initialized ) ) {
       /* make sure new version is same as what we already have */
       assert( fragments.at( frag.fragment_num ) == frag );
     } else {
       if ( (int)fragments.size() < frag.fragment_num + 1 ) {
-	fragments.resize( frag.fragment_num + 1 );
+        fragments.resize( frag.fragment_num + 1 );
       }
       fragments.at( frag.fragment_num ) = frag;
       fragments_arrived++;
@@ -148,27 +147,24 @@ Instruction FragmentAssembly::get_assembly( void )
   return ret;
 }
 
-bool Fragment::operator==( const Fragment &x ) const
+bool Fragment::operator==( const Fragment& x ) const
 {
   return ( id == x.id ) && ( fragment_num == x.fragment_num ) && ( final == x.final )
-    && ( initialized == x.initialized ) && ( contents == x.contents );
+         && ( initialized == x.initialized ) && ( contents == x.contents );
 }
 
-std::vector<Fragment> Fragmenter::make_fragments( const Instruction &inst, size_t MTU )
+std::vector<Fragment> Fragmenter::make_fragments( const Instruction& inst, size_t MTU )
 {
   MTU -= Fragment::frag_header_len;
-  if ( (inst.old_num() != last_instruction.old_num())
-       || (inst.new_num() != last_instruction.new_num())
-       || (inst.ack_num() != last_instruction.ack_num())
-       || (inst.throwaway_num() != last_instruction.throwaway_num())
-       || (inst.chaff() != last_instruction.chaff())
-       || (inst.protocol_version() != last_instruction.protocol_version())
-       || (last_MTU != MTU) ) {
+  if ( ( inst.old_num() != last_instruction.old_num() ) || ( inst.new_num() != last_instruction.new_num() )
+       || ( inst.ack_num() != last_instruction.ack_num() )
+       || ( inst.throwaway_num() != last_instruction.throwaway_num() )
+       || ( inst.chaff() != last_instruction.chaff() )
+       || ( inst.protocol_version() != last_instruction.protocol_version() ) || ( last_MTU != MTU ) ) {
     next_instruction_id++;
   }
 
-  if ( (inst.old_num() == last_instruction.old_num())
-       && (inst.new_num() == last_instruction.new_num()) ) {
+  if ( ( inst.old_num() == last_instruction.old_num() ) && ( inst.new_num() == last_instruction.new_num() ) ) {
     assert( inst.diff() == last_instruction.diff() );
   }
 

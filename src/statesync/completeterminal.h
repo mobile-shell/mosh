@@ -42,46 +42,48 @@
 /* This class represents the complete terminal -- a UTF8Parser feeding Actions to an Emulator. */
 
 namespace Terminal {
-  class Complete {
-  private:
-    Parser::UTF8Parser parser;
-    Terminal::Emulator terminal;
-    Terminal::Display display;
+class Complete
+{
+private:
+  Parser::UTF8Parser parser;
+  Terminal::Emulator terminal;
+  Terminal::Display display;
 
-    // Only used locally by act(), but kept here as a performance optimization,
-    // to avoid construction/destruction.  It must always be empty
-    // outside calls to act() to keep horrible things from happening.
-    Parser::Actions actions;
+  // Only used locally by act(), but kept here as a performance optimization,
+  // to avoid construction/destruction.  It must always be empty
+  // outside calls to act() to keep horrible things from happening.
+  Parser::Actions actions;
 
-    using input_history_type = std::list<std::pair<uint64_t, uint64_t>>;
-    input_history_type input_history;
-    uint64_t echo_ack;
+  using input_history_type = std::list<std::pair<uint64_t, uint64_t>>;
+  input_history_type input_history;
+  uint64_t echo_ack;
 
-    static const int ECHO_TIMEOUT = 50; /* for late ack */
+  static const int ECHO_TIMEOUT = 50; /* for late ack */
 
-  public:
-    Complete( size_t width, size_t height ) : parser(), terminal( width, height ), display( false ),
-					      actions(), input_history(), echo_ack( 0 ) {}
-    
-    std::string act( const std::string &str );
-    std::string act( const Parser::Action &act );
+public:
+  Complete( size_t width, size_t height )
+    : parser(), terminal( width, height ), display( false ), actions(), input_history(), echo_ack( 0 )
+  {}
 
-    const Framebuffer & get_fb( void ) const { return terminal.get_fb(); }
-    void reset_input( void ) { parser.reset_input(); }
-    uint64_t get_echo_ack( void ) const { return echo_ack; }
-    bool set_echo_ack( uint64_t now );
-    void register_input_frame( uint64_t n, uint64_t now );
-    int wait_time( uint64_t now ) const;
+  std::string act( const std::string& str );
+  std::string act( const Parser::Action& act );
 
-    /* interface for Network::Transport */
-    void subtract( const Complete * ) const {}
-    std::string diff_from( const Complete &existing ) const;
-    std::string init_diff( void ) const;
-    void apply_string( const std::string & diff );
-    bool operator==( const Complete &x ) const;
+  const Framebuffer& get_fb( void ) const { return terminal.get_fb(); }
+  void reset_input( void ) { parser.reset_input(); }
+  uint64_t get_echo_ack( void ) const { return echo_ack; }
+  bool set_echo_ack( uint64_t now );
+  void register_input_frame( uint64_t n, uint64_t now );
+  int wait_time( uint64_t now ) const;
 
-    bool compare( const Complete &other ) const;
-  };
+  /* interface for Network::Transport */
+  void subtract( const Complete* ) const {}
+  std::string diff_from( const Complete& existing ) const;
+  std::string init_diff( void ) const;
+  void apply_string( const std::string& diff );
+  bool operator==( const Complete& x ) const;
+
+  bool compare( const Complete& other ) const;
+};
 }
 
 #endif

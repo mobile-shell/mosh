@@ -44,15 +44,15 @@
 #include <mach/mach_time.h>
 #endif
 #if HAVE_GETTIMEOFDAY
-#include <sys/time.h>
 #include <cstdio>
+#include <sys/time.h>
 #endif
 
 // On Apple systems CLOCK_MONOTONIC is unfortunately able to go
 // backwards in time. This breaks mosh when system is returning from
 // suspend as described in ticket #1014. To avoid this issue prefer
 // CLOCK_MONOTONIC_RAW on Apple systems when available.
-#if defined(__APPLE__) && defined(CLOCK_MONOTONIC_RAW)
+#if defined( __APPLE__ ) && defined( CLOCK_MONOTONIC_RAW )
 #define CLOCKTYPE CLOCK_MONOTONIC_RAW
 #else
 #define CLOCKTYPE CLOCK_MONOTONIC
@@ -79,11 +79,11 @@ void freeze_timestamp( void )
   struct timespec tp;
 
   if (
-#if defined(__APPLE__) && defined(__MACH__)
-      // Check for presence, for OS X SDK >= 10.12 and runtime < 10.12
-      &clock_gettime != NULL &&
+#if defined( __APPLE__ ) && defined( __MACH__ )
+    // Check for presence, for OS X SDK >= 10.12 and runtime < 10.12
+    &clock_gettime != NULL &&
 #endif
-      clock_gettime( CLOCKTYPE, &tp ) == 0 ) {
+    clock_gettime( CLOCKTYPE, &tp ) == 0 ) {
     uint64_t millis = tp.tv_nsec / 1000000;
     millis += uint64_t( tp.tv_sec ) * 1000;
 
@@ -97,8 +97,8 @@ void freeze_timestamp( void )
   static mach_timebase_info_data_t s_timebase_info;
   static double absolute_to_millis = 0.0;
 
-  if (absolute_to_millis == 0.0) {
-    if (ERR_SUCCESS == mach_timebase_info(&s_timebase_info)) {
+  if ( absolute_to_millis == 0.0 ) {
+    if ( ERR_SUCCESS == mach_timebase_info( &s_timebase_info ) ) {
       absolute_to_millis = 1e-6 * s_timebase_info.numer / s_timebase_info.denom;
     } else
       absolute_to_millis = -1.0;
@@ -106,7 +106,7 @@ void freeze_timestamp( void )
 
   // NB: mach_absolute_time() returns "absolute time units"
   // We need to apply a conversion to get milliseconds.
-  if (absolute_to_millis > 0.0) {
+  if ( absolute_to_millis > 0.0 ) {
     millis_cache = mach_absolute_time() * absolute_to_millis;
     return;
   }
@@ -115,7 +115,7 @@ void freeze_timestamp( void )
   // Not monotonic.
   // NOTE: If time steps backwards, timeouts may be confused.
   struct timeval tv;
-  if ( gettimeofday(&tv, NULL) ) {
+  if ( gettimeofday( &tv, NULL ) ) {
     perror( "gettimeofday" );
   } else {
     uint64_t millis = tv.tv_usec / 1000;
@@ -125,6 +125,6 @@ void freeze_timestamp( void )
     return;
   }
 #else
-# error "gettimeofday() unavailable-- required as timer of last resort"
+#error "gettimeofday() unavailable-- required as timer of last resort"
 #endif
 }

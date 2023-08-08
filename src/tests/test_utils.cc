@@ -34,22 +34,25 @@
 
 #include "test_utils.h"
 
-void hexdump( const void *buf, size_t len, const char *name ) {
-  const unsigned char *data = (const unsigned char *) buf;
+void hexdump( const void* buf, size_t len, const char* name )
+{
+  const unsigned char* data = (const unsigned char*)buf;
   printf( DUMP_NAME_FMT, name );
   for ( size_t i = 0; i < len; i++ ) {
     // Although data[i] is an unsigned char, it will be promoted to a signed int
     // when passed as an argument. Explicitly cast it back to an unsigned type
     // so it can be printed in hex.
-    printf( "%02x", static_cast<unsigned>( data[ i ] ) );
+    printf( "%02x", static_cast<unsigned>( data[i] ) );
   }
   printf( "\n" );
 }
 
-void hexdump( const Crypto::AlignedBuffer &buf, const char *name ) {
+void hexdump( const Crypto::AlignedBuffer& buf, const char* name )
+{
   hexdump( buf.data(), buf.len(), name );
 }
 
-void hexdump( const std::string &buf, const char *name ) {
+void hexdump( const std::string& buf, const char* name )
+{
   hexdump( buf.data(), buf.size(), name );
 }

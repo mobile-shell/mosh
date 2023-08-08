@@ -40,8 +40,7 @@
 
 const Parser::StateFamily Parser::family;
 
-static void append_or_delete( Parser::ActionPointer act,
-			      Parser::Actions &vec )
+static void append_or_delete( Parser::ActionPointer act, Parser::Actions& vec )
 {
   assert( act );
 
@@ -50,7 +49,7 @@ static void append_or_delete( Parser::ActionPointer act,
   }
 }
 
-void Parser::Parser::input( wchar_t ch, Actions &ret )
+void Parser::Parser::input( wchar_t ch, Actions& ret )
 {
   Transition tx = state->input( ch );
 
@@ -66,24 +65,23 @@ void Parser::Parser::input( wchar_t ch, Actions &ret )
   }
 }
 
-Parser::UTF8Parser::UTF8Parser()
-  : parser(), buf_len( 0 )
+Parser::UTF8Parser::UTF8Parser() : parser(), buf_len( 0 )
 {
   assert( BUF_SIZE >= (size_t)MB_CUR_MAX );
   buf[0] = '\0';
 }
 
-void Parser::UTF8Parser::input( char c, Actions &ret )
+void Parser::UTF8Parser::input( char c, Actions& ret )
 {
   assert( buf_len < BUF_SIZE );
 
   /* 1-byte UTF-8 character, aka ASCII?  Cheat. */
-  if ( buf_len == 0 && static_cast<unsigned char>(c) <= 0x7f ) {
-    parser.input( static_cast<wchar_t>(c), ret );
+  if ( buf_len == 0 && static_cast<unsigned char>( c ) <= 0x7f ) {
+    parser.input( static_cast<wchar_t>( c ), ret );
     return;
   }
 
-  buf[ buf_len++ ] = c;
+  buf[buf_len++] = c;
 
   /* This function will only work in a UTF-8 locale. */
   wchar_t pwc;
@@ -108,19 +106,19 @@ void Parser::UTF8Parser::input( char c, Actions &ret )
       buf_len = 0;
       pwc = L'\0';
       bytes_parsed = 1;
-    } else if ( bytes_parsed == (size_t) -1 ) {
+    } else if ( bytes_parsed == (size_t)-1 ) {
       /* invalid sequence, use replacement character and try again with last char */
       assert( errno == EILSEQ );
       if ( buf_len > 1 ) {
-	buf[ 0 ] = buf[ buf_len - 1 ];
-	bytes_parsed = buf_len - 1;
-	buf_len = 1;
+        buf[0] = buf[buf_len - 1];
+        bytes_parsed = buf_len - 1;
+        buf_len = 1;
       } else {
-	buf_len = 0;
-	bytes_parsed = 1;
+        buf_len = 0;
+        bytes_parsed = 1;
       }
-      pwc = (wchar_t) 0xFFFD;
-    } else if ( bytes_parsed == (size_t) -2 ) {
+      pwc = (wchar_t)0xFFFD;
+    } else if ( bytes_parsed == (size_t)-2 ) {
       /* can't parse incomplete multibyte character */
       total_bytes_parsed += buf_len;
       continue;
@@ -137,16 +135,16 @@ void Parser::UTF8Parser::input( char c, Actions &ret )
     const uint32_t pwcheck = pwc;
 
     if ( pwcheck > 0x10FFFF ) { /* outside Unicode range */
-      pwc = (wchar_t) 0xFFFD;
+      pwc = (wchar_t)0xFFFD;
     }
 
-    if ( (pwcheck >= 0xD800) && (pwcheck <= 0xDFFF) ) { /* surrogate code point */
+    if ( ( pwcheck >= 0xD800 ) && ( pwcheck <= 0xDFFF ) ) { /* surrogate code point */
       /*
-	OS X unfortunately allows these sequences without EILSEQ, but
-	they are ill-formed UTF-8 and we shouldn't repeat them to the
-	user's terminal.
+        OS X unfortunately allows these sequences without EILSEQ, but
+        they are ill-formed UTF-8 and we shouldn't repeat them to the
+        user's terminal.
       */
-      pwc = (wchar_t) 0xFFFD;
+      pwc = (wchar_t)0xFFFD;
     }
 
     parser.input( pwc, ret );
@@ -155,11 +153,9 @@ void Parser::UTF8Parser::input( char c, Actions &ret )
   }
 }
 
-Parser::Parser::Parser( const Parser &other )
-  : state( other.state )
-{}
+Parser::Parser::Parser( const Parser& other ) : state( other.state ) {}
 
-Parser::Parser & Parser::Parser::operator=( const Parser &other )
+Parser::Parser& Parser::Parser::operator=( const Parser& other )
 {
   state = other.state;
   return *this;

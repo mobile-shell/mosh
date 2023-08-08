@@ -32,8 +32,8 @@
 
 /* Tests that the Mosh network layer seems to be using unique nonces */
 
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 #include <set>
 
 #include "src/network/network.h"

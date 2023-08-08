@@ -33,308 +33,316 @@
 #ifndef TERMINAL_OVERLAY_HPP
 #define TERMINAL_OVERLAY_HPP
 
-#include "src/terminal/terminalframebuffer.h"
 #include "src/network/network.h"
 #include "src/network/transportsender.h"
 #include "src/terminal/parser.h"
+#include "src/terminal/terminalframebuffer.h"
 
 #include <climits>
 #include <vector>
 
 namespace Overlay {
-  using namespace Terminal;
-  using namespace Network;
+using namespace Terminal;
+using namespace Network;
 
-  enum Validity {
-    Pending,
-    Correct,
-    CorrectNoCredit,
-    IncorrectOrExpired,
-    Inactive
+enum Validity
+{
+  Pending,
+  Correct,
+  CorrectNoCredit,
+  IncorrectOrExpired,
+  Inactive
+};
+
+class ConditionalOverlay
+{
+public:
+  uint64_t expiration_frame;
+  int col;
+  bool active;                    /* represents a prediction at all */
+  uint64_t tentative_until_epoch; /* when to show */
+  uint64_t prediction_time;       /* used to find long-pending predictions */
+
+  ConditionalOverlay( uint64_t s_exp, int s_col, uint64_t s_tentative )
+    : expiration_frame( s_exp ), col( s_col ), active( false ), tentative_until_epoch( s_tentative ),
+      prediction_time( uint64_t( -1 ) )
+  {}
+
+  virtual ~ConditionalOverlay() {}
+
+  bool tentative( uint64_t confirmed_epoch ) const { return tentative_until_epoch > confirmed_epoch; }
+  void reset( void )
+  {
+    expiration_frame = tentative_until_epoch = -1;
+    active = false;
+  }
+  void expire( uint64_t s_exp, uint64_t now )
+  {
+    expiration_frame = s_exp;
+    prediction_time = now;
+  }
+};
+
+class ConditionalCursorMove : public ConditionalOverlay
+{
+public:
+  int row;
+
+  void apply( Framebuffer& fb, uint64_t confirmed_epoch ) const;
+
+  Validity get_validity( const Framebuffer& fb, uint64_t early_ack, uint64_t late_ack ) const;
+
+  ConditionalCursorMove( uint64_t s_exp, int s_row, int s_col, uint64_t s_tentative )
+    : ConditionalOverlay( s_exp, s_col, s_tentative ), row( s_row )
+  {}
+};
+
+class ConditionalOverlayCell : public ConditionalOverlay
+{
+public:
+  Cell replacement;
+  bool unknown;
+
+  std::vector<Cell> original_contents; /* we don't give credit for correct predictions
+                                          that match the original contents */
+
+  void apply( Framebuffer& fb, uint64_t confirmed_epoch, int row, bool flag ) const;
+  Validity get_validity( const Framebuffer& fb, int row, uint64_t early_ack, uint64_t late_ack ) const;
+
+  ConditionalOverlayCell( uint64_t s_exp, int s_col, uint64_t s_tentative )
+    : ConditionalOverlay( s_exp, s_col, s_tentative ), replacement( 0 ), unknown( false ), original_contents()
+  {}
+
+  void reset( void )
+  {
+    unknown = false;
+    original_contents.clear();
+    ConditionalOverlay::reset();
+  }
+  void reset_with_orig( void )
+  {
+    if ( ( !active ) || unknown ) {
+      reset();
+      return;
+    }
+
+    original_contents.push_back( replacement );
+    ConditionalOverlay::reset();
+  }
+};
+
+class ConditionalOverlayRow
+{
+public:
+  int row_num;
+
+  using overlay_cells_type = std::vector<ConditionalOverlayCell>;
+  overlay_cells_type overlay_cells;
+
+  void apply( Framebuffer& fb, uint64_t confirmed_epoch, bool flag ) const;
+
+  ConditionalOverlayRow( int s_row_num ) : row_num( s_row_num ), overlay_cells() {}
+};
+
+/* the various overlays */
+class NotificationEngine
+{
+private:
+  uint64_t last_word_from_server;
+  uint64_t last_acked_state;
+  std::string escape_key_string;
+  std::wstring message;
+  bool message_is_network_error;
+  uint64_t message_expiration;
+  bool show_quit_keystroke;
+
+  bool server_late( uint64_t ts ) const { return ( ts - last_word_from_server ) > 6500; }
+  bool reply_late( uint64_t ts ) const { return ( ts - last_acked_state ) > 10000; }
+  bool need_countup( uint64_t ts ) const { return server_late( ts ) || reply_late( ts ); }
+
+public:
+  void adjust_message( void );
+  void apply( Framebuffer& fb ) const;
+  const std::wstring& get_notification_string( void ) const { return message; }
+  void server_heard( uint64_t s_last_word ) { last_word_from_server = s_last_word; }
+  void server_acked( uint64_t s_last_acked ) { last_acked_state = s_last_acked; }
+  int wait_time( void ) const;
+
+  void set_notification_string( const std::wstring& s_message,
+                                bool permanent = false,
+                                bool s_show_quit_keystroke = true )
+  {
+    message = s_message;
+    if ( permanent ) {
+      message_expiration = -1;
+    } else {
+      message_expiration = timestamp() + 1000;
+    }
+    message_is_network_error = false;
+    show_quit_keystroke = s_show_quit_keystroke;
+  }
+
+  void set_escape_key_string( const std::string& s_name )
+  {
+    char tmp[128];
+    snprintf( tmp, sizeof tmp, " [To quit: %s .]", s_name.c_str() );
+    escape_key_string = tmp;
+  }
+
+  void set_network_error( const std::string& s )
+  {
+    wchar_t tmp[128];
+    swprintf( tmp, 128, L"%s", s.c_str() );
+
+    message = tmp;
+    message_is_network_error = true;
+    message_expiration = timestamp() + Network::ACK_INTERVAL + 100;
+  }
+
+  void clear_network_error()
+  {
+    if ( message_is_network_error ) {
+      message_expiration = std::min( message_expiration, timestamp() + 1000 );
+    }
+  }
+
+  NotificationEngine();
+};
+
+class PredictionEngine
+{
+private:
+  static const uint64_t SRTT_TRIGGER_LOW = 20;  /* <= ms cures SRTT trigger to show predictions */
+  static const uint64_t SRTT_TRIGGER_HIGH = 30; /* > ms starts SRTT trigger */
+
+  static const uint64_t FLAG_TRIGGER_LOW = 50;  /* <= ms cures flagging */
+  static const uint64_t FLAG_TRIGGER_HIGH = 80; /* > ms starts flagging */
+
+  static const uint64_t GLITCH_THRESHOLD = 250;          /* prediction outstanding this long is glitch */
+  static const uint64_t GLITCH_REPAIR_COUNT = 10;        /* non-glitches required to cure glitch trigger */
+  static const uint64_t GLITCH_REPAIR_MININTERVAL = 150; /* required time in between non-glitches */
+
+  static const uint64_t GLITCH_FLAG_THRESHOLD = 5000; /* prediction outstanding this long => underline */
+
+  char last_byte;
+  Parser::UTF8Parser parser;
+
+  using overlays_type = std::list<ConditionalOverlayRow>;
+  overlays_type overlays;
+
+  using cursors_type = std::list<ConditionalCursorMove>;
+  cursors_type cursors;
+
+  using overlay_cells_type = ConditionalOverlayRow::overlay_cells_type;
+
+  uint64_t local_frame_sent, local_frame_acked, local_frame_late_acked;
+
+  ConditionalOverlayRow& get_or_make_row( int row_num, int num_cols );
+
+  uint64_t prediction_epoch;
+  uint64_t confirmed_epoch;
+
+  void become_tentative( void );
+
+  void newline_carriage_return( const Framebuffer& fb );
+
+  bool flagging;               /* whether we are underlining predictions */
+  bool srtt_trigger;           /* show predictions because of slow round trip time */
+  unsigned int glitch_trigger; /* show predictions temporarily because of long-pending prediction */
+  uint64_t last_quick_confirmation;
+
+  ConditionalCursorMove& cursor( void )
+  {
+    assert( !cursors.empty() );
+    return cursors.back();
+  }
+
+  void kill_epoch( uint64_t epoch, const Framebuffer& fb );
+
+  void init_cursor( const Framebuffer& fb );
+
+  unsigned int send_interval;
+
+  int last_height, last_width;
+
+public:
+  enum DisplayPreference
+  {
+    Always,
+    Never,
+    Adaptive,
+    Experimental
   };
 
-  class ConditionalOverlay {
-  public:
-    uint64_t expiration_frame;
-    int col;
-    bool active; /* represents a prediction at all */
-    uint64_t tentative_until_epoch; /* when to show */
-    uint64_t prediction_time; /* used to find long-pending predictions */
-
-    ConditionalOverlay( uint64_t s_exp, int s_col, uint64_t s_tentative )
-      : expiration_frame( s_exp ), col( s_col ),
-	active( false ),
-	tentative_until_epoch( s_tentative ), prediction_time( uint64_t( -1 ) )
-    {}
-
-    virtual ~ConditionalOverlay() {}
-
-    bool tentative( uint64_t confirmed_epoch ) const { return tentative_until_epoch > confirmed_epoch; }
-    void reset( void ) { expiration_frame = tentative_until_epoch = -1; active = false; }
-    void expire( uint64_t s_exp, uint64_t now )
-    {
-      expiration_frame = s_exp; prediction_time = now;
-    }
-  };
-
-  class ConditionalCursorMove : public ConditionalOverlay {
-  public:
-    int row;
-
-    void apply( Framebuffer &fb, uint64_t confirmed_epoch ) const;
-
-    Validity get_validity( const Framebuffer &fb, uint64_t early_ack, uint64_t late_ack ) const;
-
-    ConditionalCursorMove( uint64_t s_exp, int s_row, int s_col, uint64_t s_tentative )
-      : ConditionalOverlay( s_exp, s_col, s_tentative ), row( s_row )
-    {}
-  };
-
-  class ConditionalOverlayCell : public ConditionalOverlay {
-  public:
-    Cell replacement;
-    bool unknown;
-
-    std::vector<Cell> original_contents; /* we don't give credit for correct predictions
-				            that match the original contents */
-
-    void apply( Framebuffer &fb, uint64_t confirmed_epoch, int row, bool flag ) const;
-    Validity get_validity( const Framebuffer &fb, int row, uint64_t early_ack, uint64_t late_ack ) const;
-
-    ConditionalOverlayCell( uint64_t s_exp, int s_col, uint64_t s_tentative )
-      : ConditionalOverlay( s_exp, s_col, s_tentative ),
-	replacement( 0 ),
-	unknown( false ),
-	original_contents()
-    {}
-
-    void reset( void ) { unknown = false; original_contents.clear(); ConditionalOverlay::reset(); }
-    void reset_with_orig( void ) {
-      if ( (!active) || unknown ) {
-	reset();
-	return;
-      }
-
-      original_contents.push_back( replacement );
-      ConditionalOverlay::reset();
-    }
-  };
-
-  class ConditionalOverlayRow {
-  public:
-    int row_num;
-
-    using overlay_cells_type = std::vector<ConditionalOverlayCell>;
-    overlay_cells_type overlay_cells;
-
-    void apply( Framebuffer &fb, uint64_t confirmed_epoch, bool flag ) const;
-
-    ConditionalOverlayRow( int s_row_num ) : row_num( s_row_num ), overlay_cells() {}
-  };
-
-  /* the various overlays */
-  class NotificationEngine {
-  private:
-    uint64_t last_word_from_server;
-    uint64_t last_acked_state;
-    std::string escape_key_string;
-    std::wstring message;
-    bool message_is_network_error;
-    uint64_t message_expiration;
-    bool show_quit_keystroke;
-
-    bool server_late( uint64_t ts ) const { return (ts - last_word_from_server) > 6500; }
-    bool reply_late( uint64_t ts ) const { return (ts - last_acked_state) > 10000; }
-    bool need_countup( uint64_t ts ) const { return server_late( ts ) || reply_late( ts ); }
-
-  public:
-    void adjust_message( void );
-    void apply( Framebuffer &fb ) const;
-    const std::wstring &get_notification_string( void ) const { return message; }
-    void server_heard( uint64_t s_last_word ) { last_word_from_server = s_last_word; }
-    void server_acked( uint64_t s_last_acked ) { last_acked_state = s_last_acked; }
-    int wait_time( void ) const;
-
-    void set_notification_string( const std::wstring &s_message, bool permanent = false, bool s_show_quit_keystroke = true )
-    {
-      message = s_message;
-      if ( permanent ) {
-        message_expiration = -1;
-      } else {
-        message_expiration = timestamp() + 1000;
-      }
-      message_is_network_error = false;
-      show_quit_keystroke = s_show_quit_keystroke;
-    }
-
-    void set_escape_key_string( const std::string &s_name )
-    {
-      char tmp[ 128 ];
-      snprintf( tmp, sizeof tmp, " [To quit: %s .]", s_name.c_str() );
-      escape_key_string = tmp;
-    }
-
-    void set_network_error( const std::string &s )
-    {
-      wchar_t tmp[ 128 ];
-      swprintf( tmp, 128, L"%s", s.c_str() );
-
-      message = tmp;
-      message_is_network_error = true;
-      message_expiration = timestamp() + Network::ACK_INTERVAL + 100;
-    }
-
-    void clear_network_error()
-    {
-      if ( message_is_network_error ) {
-	message_expiration = std::min( message_expiration, timestamp() + 1000 );
-      }
-    }
-
-    NotificationEngine();
-  };
-
-  class PredictionEngine {
-  private:
-    static const uint64_t SRTT_TRIGGER_LOW = 20; /* <= ms cures SRTT trigger to show predictions */
-    static const uint64_t SRTT_TRIGGER_HIGH = 30; /* > ms starts SRTT trigger */
-
-    static const uint64_t FLAG_TRIGGER_LOW = 50; /* <= ms cures flagging */
-    static const uint64_t FLAG_TRIGGER_HIGH = 80; /* > ms starts flagging */
-
-    static const uint64_t GLITCH_THRESHOLD = 250; /* prediction outstanding this long is glitch */
-    static const uint64_t GLITCH_REPAIR_COUNT = 10; /* non-glitches required to cure glitch trigger */
-    static const uint64_t GLITCH_REPAIR_MININTERVAL = 150; /* required time in between non-glitches */
-
-    static const uint64_t GLITCH_FLAG_THRESHOLD = 5000; /* prediction outstanding this long => underline */
-
-    char last_byte;
-    Parser::UTF8Parser parser;
-
-    using overlays_type = std::list<ConditionalOverlayRow>;
-    overlays_type overlays;
-
-    using cursors_type = std::list<ConditionalCursorMove>;
-    cursors_type cursors;
-
-    using overlay_cells_type = ConditionalOverlayRow::overlay_cells_type;
-
-    uint64_t local_frame_sent, local_frame_acked, local_frame_late_acked;
-
-    ConditionalOverlayRow & get_or_make_row( int row_num, int num_cols );
-
-    uint64_t prediction_epoch;
-    uint64_t confirmed_epoch;
-
-    void become_tentative( void );
-
-    void newline_carriage_return( const Framebuffer &fb );
-
-    bool flagging; /* whether we are underlining predictions */
-    bool srtt_trigger; /* show predictions because of slow round trip time */
-    unsigned int glitch_trigger; /* show predictions temporarily because of long-pending prediction */
-    uint64_t last_quick_confirmation;
-
-    ConditionalCursorMove & cursor( void ) { assert( !cursors.empty() ); return cursors.back(); }
-
-    void kill_epoch( uint64_t epoch, const Framebuffer &fb );
-
-    void init_cursor( const Framebuffer &fb );
-
-    unsigned int send_interval;
-
-    int last_height, last_width;
-
-  public:
-    enum DisplayPreference {
-      Always,
-      Never,
-      Adaptive,
-      Experimental
-    };
-
-  private:
-    DisplayPreference display_preference;
-    bool predict_overwrite;
-
-    bool active( void ) const;
-
-    bool timing_tests_necessary( void ) const {
-      /* Are there any timing-based triggers that haven't fired yet? */
-      return !( glitch_trigger && flagging );
-    }
-
-  public:
-    void set_display_preference( DisplayPreference s_pref ) { display_preference = s_pref; }
-    void set_predict_overwrite( bool overwrite ) { predict_overwrite = overwrite; }
-
-    void apply( Framebuffer &fb ) const;
-    void new_user_byte( char the_byte, const Framebuffer &fb );
-    void cull( const Framebuffer &fb );
-
-    void reset( void );
-
-    void set_local_frame_sent( uint64_t x ) { local_frame_sent = x; }
-    void set_local_frame_acked( uint64_t x ) { local_frame_acked = x; }
-    void set_local_frame_late_acked( uint64_t x ) { local_frame_late_acked = x; }
-
-    void set_send_interval( unsigned int x ) { send_interval = x; }
-
-    int wait_time( void ) const
-    {
-      return ( timing_tests_necessary() && active() )
-          ? 50
-          : INT_MAX;
-    }
-
-    PredictionEngine( void ) : last_byte( 0 ), parser(), overlays(), cursors(),
-			       local_frame_sent( 0 ), local_frame_acked( 0 ),
-			       local_frame_late_acked( 0 ),
-			       prediction_epoch( 1 ), confirmed_epoch( 0 ),
-			       flagging( false ),
-			       srtt_trigger( false ),
-			       glitch_trigger( 0 ),
-			       last_quick_confirmation( 0 ),
-			       send_interval( 250 ),
-			       last_height( 0 ), last_width( 0 ),
-			       display_preference( Adaptive ),
-			       predict_overwrite( false )
-    {
-    }
-  };
-
-  class TitleEngine {
-  private:
-    Terminal::Framebuffer::title_type prefix;
-
-  public:
-    void apply( Framebuffer &fb ) const { fb.prefix_window_title( prefix ); }
-    TitleEngine() : prefix() {}
-    void set_prefix( const std::wstring &s );
-  };
-
-  /* the overlay manager */
-  class OverlayManager {
-  private:
-    NotificationEngine notifications;
-    PredictionEngine predictions;
-    TitleEngine title;
-
-  public:
-    void apply( Framebuffer &fb );
-
-    NotificationEngine & get_notification_engine( void ) { return notifications; }
-    PredictionEngine & get_prediction_engine( void ) { return predictions; }
-
-    void set_title_prefix( const std::wstring &s ) { title.set_prefix( s ); }
-
-    OverlayManager() : notifications(), predictions(), title() {}
-
-    int wait_time( void ) const
-    {
-      return std::min( notifications.wait_time(), predictions.wait_time() );
-    }
-  };
+private:
+  DisplayPreference display_preference;
+  bool predict_overwrite;
+
+  bool active( void ) const;
+
+  bool timing_tests_necessary( void ) const
+  {
+    /* Are there any timing-based triggers that haven't fired yet? */
+    return !( glitch_trigger && flagging );
+  }
+
+public:
+  void set_display_preference( DisplayPreference s_pref ) { display_preference = s_pref; }
+  void set_predict_overwrite( bool overwrite ) { predict_overwrite = overwrite; }
+
+  void apply( Framebuffer& fb ) const;
+  void new_user_byte( char the_byte, const Framebuffer& fb );
+  void cull( const Framebuffer& fb );
+
+  void reset( void );
+
+  void set_local_frame_sent( uint64_t x ) { local_frame_sent = x; }
+  void set_local_frame_acked( uint64_t x ) { local_frame_acked = x; }
+  void set_local_frame_late_acked( uint64_t x ) { local_frame_late_acked = x; }
+
+  void set_send_interval( unsigned int x ) { send_interval = x; }
+
+  int wait_time( void ) const { return ( timing_tests_necessary() && active() ) ? 50 : INT_MAX; }
+
+  PredictionEngine( void )
+    : last_byte( 0 ), parser(), overlays(), cursors(), local_frame_sent( 0 ), local_frame_acked( 0 ),
+      local_frame_late_acked( 0 ), prediction_epoch( 1 ), confirmed_epoch( 0 ), flagging( false ),
+      srtt_trigger( false ), glitch_trigger( 0 ), last_quick_confirmation( 0 ), send_interval( 250 ),
+      last_height( 0 ), last_width( 0 ), display_preference( Adaptive ), predict_overwrite( false )
+  {}
+};
+
+class TitleEngine
+{
+private:
+  Terminal::Framebuffer::title_type prefix;
+
+public:
+  void apply( Framebuffer& fb ) const { fb.prefix_window_title( prefix ); }
+  TitleEngine() : prefix() {}
+  void set_prefix( const std::wstring& s );
+};
+
+/* the overlay manager */
+class OverlayManager
+{
+private:
+  NotificationEngine notifications;
+  PredictionEngine predictions;
+  TitleEngine title;
+
+public:
+  void apply( Framebuffer& fb );
+
+  NotificationEngine& get_notification_engine( void ) { return notifications; }
+  PredictionEngine& get_prediction_engine( void ) { return predictions; }
+
+  void set_title_prefix( const std::wstring& s ) { title.set_prefix( s ); }
+
+  OverlayManager() : notifications(), predictions(), title() {}
+
+  int wait_time( void ) const { return std::min( notifications.wait_time(), predictions.wait_time() ); }
+};
 }
 
 #endif

@@ -36,52 +36,59 @@
 #include "src/terminal/terminalframebuffer.h"
 
 namespace Terminal {
-  /* variables used within a new_frame */
-  class FrameState {
-  public:
-    std::string str;
+/* variables used within a new_frame */
+class FrameState
+{
+public:
+  std::string str;
 
-    int cursor_x, cursor_y;
-    Renditions current_rendition;
-    bool cursor_visible;
+  int cursor_x, cursor_y;
+  Renditions current_rendition;
+  bool cursor_visible;
 
-    const Framebuffer &last_frame;
+  const Framebuffer& last_frame;
 
-    FrameState( const Framebuffer &s_last );
+  FrameState( const Framebuffer& s_last );
 
-    void append( char c ) { str.append( 1, c ); }
-    void append( size_t s, char c ) { str.append( s, c ); }
-    void append( wchar_t wc ) { Cell::append_to_str( str, wc ); }
-    void append( const char * s ) { str.append( s ); }
-    void append_string( const std::string &append ) { str.append(append); }
+  void append( char c ) { str.append( 1, c ); }
+  void append( size_t s, char c ) { str.append( s, c ); }
+  void append( wchar_t wc ) { Cell::append_to_str( str, wc ); }
+  void append( const char* s ) { str.append( s ); }
+  void append_string( const std::string& append ) { str.append( append ); }
 
-    void append_cell(const Cell & cell) { cell.print_grapheme( str ); }
-    void append_silent_move( int y, int x );
-    void append_move( int y, int x );
-    void update_rendition( const Renditions &r, bool force = false );
-  };
+  void append_cell( const Cell& cell ) { cell.print_grapheme( str ); }
+  void append_silent_move( int y, int x );
+  void append_move( int y, int x );
+  void update_rendition( const Renditions& r, bool force = false );
+};
 
-  class Display {
-  private:
-    bool has_ech; /* erase character is part of vt200 but not supported by tmux
-		     (or by "screen" terminfo entry, which is what tmux advertises) */
+class Display
+{
+private:
+  bool has_ech; /* erase character is part of vt200 but not supported by tmux
+                   (or by "screen" terminfo entry, which is what tmux advertises) */
 
-    bool has_bce; /* erases result in cell filled with background color */
+  bool has_bce; /* erases result in cell filled with background color */
 
-    bool has_title; /* supports window title and icon name */
+  bool has_title; /* supports window title and icon name */
 
-    const char *smcup, *rmcup; /* enter and exit alternate screen mode */
+  const char *smcup, *rmcup; /* enter and exit alternate screen mode */
 
-    bool put_row( bool initialized, FrameState &frame, const Framebuffer &f, int frame_y, const Row &old_row, bool wrap ) const;
+  bool put_row( bool initialized,
+                FrameState& frame,
+                const Framebuffer& f,
+                int frame_y,
+                const Row& old_row,
+                bool wrap ) const;
 
-  public:
-    std::string open() const;
-    std::string close() const;
+public:
+  std::string open() const;
+  std::string close() const;
 
-    std::string new_frame( bool initialized, const Framebuffer &last, const Framebuffer &f ) const;
+  std::string new_frame( bool initialized, const Framebuffer& last, const Framebuffer& f ) const;
 
-    Display( bool use_environment );
-  };
+  Display( bool use_environment );
+};
 }
 
 #endif

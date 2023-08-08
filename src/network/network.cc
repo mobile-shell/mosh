@@ -36,8 +36,8 @@
 #include <cerrno>
 #include <cstring>
 
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
@@ -45,11 +45,11 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include "src/crypto/byteorder.h"
+#include "src/crypto/crypto.h"
+#include "src/network/network.h"
 #include "src/util/dos_assert.h"
 #include "src/util/fatal_assert.h"
-#include "src/crypto/byteorder.h"
-#include "src/network/network.h"
-#include "src/crypto/crypto.h"
 
 #include "src/util/timestamp.h"
 
@@ -64,22 +64,20 @@
 using namespace Network;
 using namespace Crypto;
 
-const uint64_t DIRECTION_MASK = uint64_t(1) << 63;
-const uint64_t SEQUENCE_MASK = uint64_t(-1) ^ DIRECTION_MASK;
+const uint64_t DIRECTION_MASK = uint64_t( 1 ) << 63;
+const uint64_t SEQUENCE_MASK = uint64_t( -1 ) ^ DIRECTION_MASK;
 
 /* Read in packet */
-Packet::Packet( const Message & message )
+Packet::Packet( const Message& message )
   : seq( message.nonce.val() & SEQUENCE_MASK ),
-    direction( (message.nonce.val() & DIRECTION_MASK) ? TO_CLIENT : TO_SERVER ),
-    timestamp( -1 ),
-    timestamp_reply( -1 ),
-    payload()
+    direction( ( message.nonce.val() & DIRECTION_MASK ) ? TO_CLIENT : TO_SERVER ), timestamp( -1 ),
+    timestamp_reply( -1 ), payload()
 {
   dos_assert( message.text.size() >= 2 * sizeof( uint16_t ) );
 
-  const uint16_t *data = (uint16_t *)message.text.data();
-  timestamp = be16toh( data[ 0 ] );
-  timestamp_reply = be16toh( data[ 1 ] );
+  const uint16_t* data = (uint16_t*)message.text.data();
+  timestamp = be16toh( data[0] );
+  timestamp_reply = be16toh( data[1] );
 
   payload = std::string( message.text.begin() + 2 * sizeof( uint16_t ), message.text.end() );
 }
@@ -87,17 +85,17 @@ Packet::Packet( const Message & message )
 /* Output from packet */
 Message Packet::toMessage( void )
 {
-  uint64_t direction_seq = (uint64_t( direction == TO_CLIENT ) << 63) | (seq & SEQUENCE_MASK);
+  uint64_t direction_seq = ( uint64_t( direction == TO_CLIENT ) << 63 ) | ( seq & SEQUENCE_MASK );
 
-  uint16_t ts_net[ 2 ] = { static_cast<uint16_t>( htobe16( timestamp ) ),
-                           static_cast<uint16_t>( htobe16( timestamp_reply ) ) };
+  uint16_t ts_net[2]
+    = { static_cast<uint16_t>( htobe16( timestamp ) ), static_cast<uint16_t>( htobe16( timestamp_reply ) ) };
 
-  std::string timestamps = std::string( (char *)ts_net, 2 * sizeof( uint16_t ) );
+  std::string timestamps = std::string( (char*)ts_net, 2 * sizeof( uint16_t ) );
 
   return Message( Nonce( direction_seq ), timestamps + payload );
 }
 
-Packet Connection::new_packet( const std::string &s_payload )
+Packet Connection::new_packet( const std::string& s_payload )
 {
   uint16_t outgoing_timestamp_reply = -1;
 
@@ -105,7 +103,7 @@ Packet Connection::new_packet( const std::string &s_payload )
 
   if ( now - saved_timestamp_received_at < 1000 ) { /* we have a recent received timestamp */
     /* send "corrected" timestamp advanced by how long we held it */
-    outgoing_timestamp_reply = saved_timestamp + (now - saved_timestamp_received_at);
+    outgoing_timestamp_reply = saved_timestamp + ( now - saved_timestamp_received_at );
     saved_timestamp = -1;
     saved_timestamp_received_at = 0;
   }
@@ -133,7 +131,7 @@ void Connection::prune_sockets( void )
     if ( timestamp() - last_port_choice > MAX_OLD_SOCKET_AGE ) {
       int num_to_kill = socks.size() - 1;
       for ( int i = 0; i < num_to_kill; i++ ) {
-	socks.pop_front();
+        socks.pop_front();
       }
     }
   } else {
@@ -149,8 +147,7 @@ void Connection::prune_sockets( void )
   }
 }
 
-Connection::Socket::Socket( int family )
-  : _fd( socket( family, SOCK_DGRAM, 0 ) )
+Connection::Socket::Socket( int family ) : _fd( socket( family, SOCK_DGRAM, 0 ) )
 {
   if ( _fd < 0 ) {
     throw NetworkException( "socket", errno );
@@ -185,13 +182,11 @@ void Connection::setup( void )
   last_port_choice = timestamp();
 }
 
-const std::vector< int > Connection::fds( void ) const
+const std::vector<int> Connection::fds( void ) const
 {
-  std::vector< int > ret;
+  std::vector<int> ret;
 
-  for ( std::deque< Socket >::const_iterator it = socks.begin();
-	it != socks.end();
-	it++ ) {
+  for ( std::deque<Socket>::const_iterator it = socks.begin(); it != socks.end(); it++ ) {
     ret.push_back( it->fd() );
   }
 
@@ -201,54 +196,42 @@ const std::vector< int > Connection::fds( void ) const
 void Connection::set_MTU( int family )
 {
   switch ( family ) {
-  case AF_INET:
-    MTU = DEFAULT_IPV4_MTU - IPV4_HEADER_LEN;
-    break;
-  case AF_INET6:
-    MTU = DEFAULT_IPV6_MTU - IPV6_HEADER_LEN;
-    break;
-  default:
-    throw NetworkException( "Unknown address family", 0 );
+    case AF_INET:
+      MTU = DEFAULT_IPV4_MTU - IPV4_HEADER_LEN;
+      break;
+    case AF_INET6:
+      MTU = DEFAULT_IPV6_MTU - IPV6_HEADER_LEN;
+      break;
+    default:
+      throw NetworkException( "Unknown address family", 0 );
   }
 }
 
-class AddrInfo {
+class AddrInfo
+{
 public:
-  struct addrinfo *res;
-  AddrInfo( const char *node, const char *service,
-	    const struct addrinfo *hints ) :
-    res( NULL ) {
+  struct addrinfo* res;
+  AddrInfo( const char* node, const char* service, const struct addrinfo* hints ) : res( NULL )
+  {
     int errcode = getaddrinfo( node, service, hints, &res );
     if ( errcode != 0 ) {
-      throw NetworkException( std::string( "Bad IP address (" ) + (node != NULL ? node : "(null)") + "): " + gai_strerror( errcode ), 0 );
+      throw NetworkException( std::string( "Bad IP address (" ) + ( node != NULL ? node : "(null)" )
+                                + "): " + gai_strerror( errcode ),
+                              0 );
     }
   }
-  ~AddrInfo() { freeaddrinfo(res); }
+  ~AddrInfo() { freeaddrinfo( res ); }
+
 private:
-  AddrInfo(const AddrInfo &);
-  AddrInfo &operator=(const AddrInfo &);
+  AddrInfo( const AddrInfo& );
+  AddrInfo& operator=( const AddrInfo& );
 };
 
-Connection::Connection( const char *desired_ip, const char *desired_port ) /* server */
-  : socks(),
-    has_remote_addr( false ),
-    remote_addr(),
-    remote_addr_len( 0 ),
-    server( true ),
-    MTU( DEFAULT_SEND_MTU ),
-    key(),
-    session( key ),
-    direction( TO_CLIENT ),
-    saved_timestamp( -1 ),
-    saved_timestamp_received_at( 0 ),
-    expected_receiver_seq( 0 ),
-    last_heard( -1 ),
-    last_port_choice( -1 ),
-    last_roundtrip_success( -1 ),
-    RTT_hit( false ),
-    SRTT( 1000 ),
-    RTTVAR( 500 ),
-    send_error()
+Connection::Connection( const char* desired_ip, const char* desired_port ) /* server */
+  : socks(), has_remote_addr( false ), remote_addr(), remote_addr_len( 0 ), server( true ), MTU( DEFAULT_SEND_MTU ),
+    key(), session( key ), direction( TO_CLIENT ), saved_timestamp( -1 ), saved_timestamp_received_at( 0 ),
+    expected_receiver_seq( 0 ), last_heard( -1 ), last_port_choice( -1 ), last_roundtrip_success( -1 ),
+    RTT_hit( false ), SRTT( 1000 ), RTTVAR( 500 ), send_error()
 {
   setup();
 
@@ -263,33 +246,34 @@ Connection::Connection( const char *desired_ip, const char *desired_port ) /* se
   int desired_port_high = -1;
 
   if ( desired_port && !parse_portrange( desired_port, desired_port_low, desired_port_high ) ) {
-    throw NetworkException("Invalid port range", 0);
+    throw NetworkException( "Invalid port range", 0 );
   }
 
   /* try to bind to desired IP first */
   if ( desired_ip ) {
     try {
-      if ( try_bind( desired_ip, desired_port_low, desired_port_high ) ) { return; }
-    } catch ( const NetworkException &e ) {
-      fprintf( stderr, "Error binding to IP %s: %s\n",
-	       desired_ip,
-	       e.what() );
+      if ( try_bind( desired_ip, desired_port_low, desired_port_high ) ) {
+        return;
+      }
+    } catch ( const NetworkException& e ) {
+      fprintf( stderr, "Error binding to IP %s: %s\n", desired_ip, e.what() );
     }
   }
 
   /* now try any local interface */
   try {
-    if ( try_bind( NULL, desired_port_low, desired_port_high ) ) { return; }
-  } catch ( const NetworkException &e ) {
-    fprintf( stderr, "Error binding to any interface: %s\n",
-	     e.what() );
+    if ( try_bind( NULL, desired_port_low, desired_port_high ) ) {
+      return;
+    }
+  } catch ( const NetworkException& e ) {
+    fprintf( stderr, "Error binding to any interface: %s\n", e.what() );
     throw; /* this time it's fatal */
   }
 
   throw NetworkException( "Could not bind", errno );
 }
 
-bool Connection::try_bind( const char *addr, int port_low, int port_high )
+bool Connection::try_bind( const char* addr, int port_low, int port_high )
 {
   struct addrinfo hints;
   memset( &hints, 0, sizeof( hints ) );
@@ -313,21 +297,21 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
 
   socks.push_back( Socket( local_addr.sa.sa_family ) );
   for ( int i = search_low; i <= search_high; i++ ) {
-    switch (local_addr.sa.sa_family) {
-    case AF_INET:
-      local_addr.sin.sin_port = htons( i );
-      break;
-    case AF_INET6:
-      local_addr.sin6.sin6_port = htons( i );
-      break;
-    default:
-      throw NetworkException( "Unknown address family", 0 );
+    switch ( local_addr.sa.sa_family ) {
+      case AF_INET:
+        local_addr.sin.sin_port = htons( i );
+        break;
+      case AF_INET6:
+        local_addr.sin6.sin6_port = htons( i );
+        break;
+      default:
+        throw NetworkException( "Unknown address family", 0 );
     }
 
     if ( local_addr.sa.sa_family == AF_INET6
-      && memcmp(&local_addr.sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any)) == 0 ) {
+         && memcmp( &local_addr.sin6.sin6_addr, &in6addr_any, sizeof( in6addr_any ) ) == 0 ) {
       const int off = 0;
-      if ( setsockopt( sock(), IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off) ) ) {
+      if ( setsockopt( sock(), IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof( off ) ) ) {
         perror( "setsockopt( IPV6_V6ONLY, off )" );
       }
     }
@@ -339,38 +323,26 @@ bool Connection::try_bind( const char *addr, int port_low, int port_high )
   }
   int saved_errno = errno;
   socks.pop_back();
-  char host[ NI_MAXHOST ], serv[ NI_MAXSERV ];
-  int errcode = getnameinfo( &local_addr.sa, local_addr_len,
-			     host, sizeof( host ), serv, sizeof( serv ),
-			     NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
+  char host[NI_MAXHOST], serv[NI_MAXSERV];
+  int errcode = getnameinfo( &local_addr.sa,
+                             local_addr_len,
+                             host,
+                             sizeof( host ),
+                             serv,
+                             sizeof( serv ),
+                             NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
   if ( errcode != 0 ) {
     throw NetworkException( std::string( "bind: getnameinfo: " ) + gai_strerror( errcode ), 0 );
   }
-  fprintf( stderr, "Failed binding to %s:%s\n",
-	   host, serv );
+  fprintf( stderr, "Failed binding to %s:%s\n", host, serv );
   throw NetworkException( "bind", saved_errno );
 }
 
-Connection::Connection( const char *key_str, const char *ip, const char *port ) /* client */
-  : socks(),
-    has_remote_addr( false ),
-    remote_addr(),
-    remote_addr_len( 0 ),
-    server( false ),
-    MTU( DEFAULT_SEND_MTU ),
-    key( key_str ),
-    session( key ),
-    direction( TO_SERVER ),
-    saved_timestamp( -1 ),
-    saved_timestamp_received_at( 0 ),
-    expected_receiver_seq( 0 ),
-    last_heard( -1 ),
-    last_port_choice( -1 ),
-    last_roundtrip_success( -1 ),
-    RTT_hit( false ),
-    SRTT( 1000 ),
-    RTTVAR( 500 ),
-    send_error()
+Connection::Connection( const char* key_str, const char* ip, const char* port ) /* client */
+  : socks(), has_remote_addr( false ), remote_addr(), remote_addr_len( 0 ), server( false ),
+    MTU( DEFAULT_SEND_MTU ), key( key_str ), session( key ), direction( TO_SERVER ), saved_timestamp( -1 ),
+    saved_timestamp_received_at( 0 ), expected_receiver_seq( 0 ), last_heard( -1 ), last_port_choice( -1 ),
+    last_roundtrip_success( -1 ), RTT_hit( false ), SRTT( 1000 ), RTTVAR( 500 ), send_error()
 {
   setup();
 
@@ -392,7 +364,7 @@ Connection::Connection( const char *key_str, const char *ip, const char *port ) 
   set_MTU( remote_addr.sa.sa_family );
 }
 
-void Connection::send( const std::string & s )
+void Connection::send( const std::string& s )
 {
   if ( !has_remote_addr ) {
     return;
@@ -402,8 +374,7 @@ void Connection::send( const std::string & s )
 
   std::string p = session.encrypt( px.toMessage() );
 
-  ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT,
-			       &remote_addr.sa, remote_addr_len );
+  ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT, &remote_addr.sa, remote_addr_len );
 
   if ( bytes_sent != static_cast<ssize_t>( p.size() ) ) {
     /* Make sendto() failure available to the frontend. */
@@ -422,8 +393,7 @@ void Connection::send( const std::string & s )
       fprintf( stderr, "Server now detached from client.\n" );
     }
   } else { /* client */
-    if ( ( now - last_port_choice > PORT_HOP_INTERVAL )
-	 && ( now - last_roundtrip_success > PORT_HOP_INTERVAL ) ) {
+    if ( ( now - last_port_choice > PORT_HOP_INTERVAL ) && ( now - last_roundtrip_success > PORT_HOP_INTERVAL ) ) {
       hop_port();
     }
   }
@@ -432,18 +402,15 @@ void Connection::send( const std::string & s )
 std::string Connection::recv( void )
 {
   assert( !socks.empty() );
-  for ( std::deque< Socket >::const_iterator it = socks.begin();
-	it != socks.end();
-	it++ ) {
+  for ( std::deque<Socket>::const_iterator it = socks.begin(); it != socks.end(); it++ ) {
     std::string payload;
     try {
-      payload = recv_one( it->fd());
-    } catch ( NetworkException & e ) {
-      if ( (e.the_errno == EAGAIN)
-	   || (e.the_errno == EWOULDBLOCK) ) {
-	continue;
+      payload = recv_one( it->fd() );
+    } catch ( NetworkException& e ) {
+      if ( ( e.the_errno == EAGAIN ) || ( e.the_errno == EWOULDBLOCK ) ) {
+        continue;
       } else {
-	throw;
+        throw;
       }
     }
 
@@ -461,8 +428,8 @@ std::string Connection::recv_one( int sock_to_recv )
   struct msghdr header;
   struct iovec msg_iovec;
 
-  char msg_payload[ Session::RECEIVE_MTU ];
-  char msg_control[ Session::RECEIVE_MTU ];
+  char msg_payload[Session::RECEIVE_MTU];
+  char msg_control[Session::RECEIVE_MTU];
 
   /* receive source address */
   header.msg_name = &packet_remote_addr;
@@ -494,32 +461,32 @@ std::string Connection::recv_one( int sock_to_recv )
   /* receive ECN */
   bool congestion_experienced = false;
 
-  struct cmsghdr *ecn_hdr = CMSG_FIRSTHDR( &header );
-  if ( ecn_hdr
-       && ecn_hdr->cmsg_level == IPPROTO_IP
+  struct cmsghdr* ecn_hdr = CMSG_FIRSTHDR( &header );
+  if ( ecn_hdr && ecn_hdr->cmsg_level == IPPROTO_IP
        && ( ecn_hdr->cmsg_type == IP_TOS
 #ifdef IP_RECVTOS
-	    || ecn_hdr->cmsg_type == IP_RECVTOS
+            || ecn_hdr->cmsg_type == IP_RECVTOS
 #endif
-	    ) ) {
+            ) ) {
     /* got one */
-    uint8_t *ecn_octet_p = (uint8_t *)CMSG_DATA( ecn_hdr );
+    uint8_t* ecn_octet_p = (uint8_t*)CMSG_DATA( ecn_hdr );
     assert( ecn_octet_p );
 
-    congestion_experienced = (*ecn_octet_p & 0x03) == 0x03;
+    congestion_experienced = ( *ecn_octet_p & 0x03 ) == 0x03;
   }
 
   Packet p( session.decrypt( msg_payload, received_len ) );
 
-  dos_assert( p.direction == (server ? TO_SERVER : TO_CLIENT) ); /* prevent malicious playback to sender */
+  dos_assert( p.direction == ( server ? TO_SERVER : TO_CLIENT ) ); /* prevent malicious playback to sender */
 
-  if ( p.seq < expected_receiver_seq ) { /* don't use (but do return) out-of-order packets for timestamp or targeting */
+  if ( p.seq
+       < expected_receiver_seq ) { /* don't use (but do return) out-of-order packets for timestamp or targeting */
     return p.payload;
   }
   expected_receiver_seq = p.seq + 1; /* this is security-sensitive because a replay attack could otherwise
-					screw up the timestamp and targeting */
+                                        screw up the timestamp and targeting */
 
-  if ( p.timestamp != uint16_t(-1) ) {
+  if ( p.timestamp != uint16_t( -1 ) ) {
     saved_timestamp = p.timestamp;
     saved_timestamp_received_at = timestamp();
 
@@ -528,26 +495,26 @@ std::string Connection::recv_one( int sock_to_recv )
       /* this will gradually slow the counterparty down to the minimum frame rate */
       saved_timestamp -= CONGESTION_TIMESTAMP_PENALTY;
       if ( server ) {
-	fprintf( stderr, "Received explicit congestion notification.\n" );
+        fprintf( stderr, "Received explicit congestion notification.\n" );
       }
     }
   }
 
-  if ( p.timestamp_reply != uint16_t(-1) ) {
+  if ( p.timestamp_reply != uint16_t( -1 ) ) {
     uint16_t now = timestamp16();
     double R = timestamp_diff( now, p.timestamp_reply );
 
-    if ( R < 5000 ) { /* ignore large values, e.g. server was Ctrl-Zed */
+    if ( R < 5000 ) {   /* ignore large values, e.g. server was Ctrl-Zed */
       if ( !RTT_hit ) { /* first measurement */
-	SRTT = R;
-	RTTVAR = R / 2;
-	RTT_hit = true;
+        SRTT = R;
+        RTTVAR = R / 2;
+        RTT_hit = true;
       } else {
-	const double alpha = 1.0 / 8.0;
-	const double beta = 1.0 / 4.0;
-	  
-	RTTVAR = (1 - beta) * RTTVAR + ( beta * fabs( SRTT - R ) );
-	SRTT = (1 - alpha) * SRTT + ( alpha * R );
+        const double alpha = 1.0 / 8.0;
+        const double beta = 1.0 / 4.0;
+
+        RTTVAR = ( 1 - beta ) * RTTVAR + ( beta * fabs( SRTT - R ) );
+        SRTT = ( 1 - alpha ) * SRTT + ( alpha * R );
       }
     }
   }
@@ -557,19 +524,22 @@ std::string Connection::recv_one( int sock_to_recv )
   last_heard = timestamp();
 
   if ( server && /* only client can roam */
-       ( remote_addr_len != header.msg_namelen ||
-	 memcmp( &remote_addr, &packet_remote_addr, remote_addr_len ) != 0 ) ) {
+       ( remote_addr_len != header.msg_namelen
+         || memcmp( &remote_addr, &packet_remote_addr, remote_addr_len ) != 0 ) ) {
     remote_addr = packet_remote_addr;
     remote_addr_len = header.msg_namelen;
-    char host[ NI_MAXHOST ], serv[ NI_MAXSERV ];
-    int errcode = getnameinfo( &remote_addr.sa, remote_addr_len,
-			       host, sizeof( host ), serv, sizeof( serv ),
-			       NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
+    char host[NI_MAXHOST], serv[NI_MAXSERV];
+    int errcode = getnameinfo( &remote_addr.sa,
+                               remote_addr_len,
+                               host,
+                               sizeof( host ),
+                               serv,
+                               sizeof( serv ),
+                               NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV );
     if ( errcode != 0 ) {
       throw NetworkException( std::string( "recv_one: getnameinfo: " ) + gai_strerror( errcode ), 0 );
     }
-    fprintf( stderr, "Server now attached to client at %s:%s\n",
-	     host, serv );
+    fprintf( stderr, "Server now attached to client at %s:%s\n", host, serv );
   }
   return p.payload;
 }
@@ -583,10 +553,8 @@ std::string Connection::port( void ) const
     throw NetworkException( "getsockname", errno );
   }
 
-  char serv[ NI_MAXSERV ];
-  int errcode = getnameinfo( &local_addr.sa, addrlen,
-			     NULL, 0, serv, sizeof( serv ),
-			     NI_DGRAM | NI_NUMERICSERV );
+  char serv[NI_MAXSERV];
+  int errcode = getnameinfo( &local_addr.sa, addrlen, NULL, 0, serv, sizeof( serv ), NI_DGRAM | NI_NUMERICSERV );
   if ( errcode != 0 ) {
     throw NetworkException( std::string( "port: getnameinfo: " ) + gai_strerror( errcode ), 0 );
   }
@@ -602,7 +570,7 @@ uint64_t Network::timestamp( void )
 uint16_t Network::timestamp16( void )
 {
   uint16_t ts = timestamp() % 65536;
-  if ( ts == uint16_t(-1) ) {
+  if ( ts == uint16_t( -1 ) ) {
     ts++;
   }
   return ts;
@@ -614,7 +582,7 @@ uint16_t Network::timestamp_diff( uint16_t tsnew, uint16_t tsold )
   if ( diff < 0 ) {
     diff += 65536;
   }
-  
+
   assert( diff >= 0 );
   assert( diff <= 65535 );
 
@@ -634,18 +602,17 @@ uint64_t Connection::timeout( void ) const
 
 Connection::Socket::~Socket()
 {
-  fatal_assert ( close( _fd ) == 0 );
+  fatal_assert( close( _fd ) == 0 );
 }
 
-Connection::Socket::Socket( const Socket & other )
-  : _fd( dup( other._fd ) )
+Connection::Socket::Socket( const Socket& other ) : _fd( dup( other._fd ) )
 {
   if ( _fd < 0 ) {
     throw NetworkException( "socket", errno );
   }
 }
 
-Connection::Socket & Connection::Socket::operator=( const Socket & other )
+Connection::Socket& Connection::Socket::operator=( const Socket& other )
 {
   if ( dup2( other._fd, _fd ) < 0 ) {
     throw NetworkException( "socket", errno );
@@ -654,39 +621,39 @@ Connection::Socket & Connection::Socket::operator=( const Socket & other )
   return *this;
 }
 
-bool Connection::parse_portrange( const char * desired_port, int & desired_port_low, int & desired_port_high )
+bool Connection::parse_portrange( const char* desired_port, int& desired_port_low, int& desired_port_high )
 {
   /* parse "port" or "portlow:porthigh" */
   desired_port_low = desired_port_high = 0;
-  char *end;
+  char* end;
   long value;
 
   /* parse first (only?) port */
   errno = 0;
   value = strtol( desired_port, &end, 10 );
-  if ( (errno != 0) || (*end != '\0' && *end != ':') ) {
+  if ( ( errno != 0 ) || ( *end != '\0' && *end != ':' ) ) {
     fprintf( stderr, "Invalid (low) port number (%s)\n", desired_port );
     return false;
   }
-  if ( (value < 0) || (value > 65535) ) {
+  if ( ( value < 0 ) || ( value > 65535 ) ) {
     fprintf( stderr, "(Low) port number %ld outside valid range [0..65535]\n", value );
     return false;
   }
 
   desired_port_low = (int)value;
-  if (*end == '\0') { /* not a port range */
+  if ( *end == '\0' ) { /* not a port range */
     desired_port_high = desired_port_low;
     return true;
   }
   /* port range; parse high port */
-  const char * cp = end + 1;
+  const char* cp = end + 1;
   errno = 0;
   value = strtol( cp, &end, 10 );
-  if ( (errno != 0) || (*end != '\0') ) {
+  if ( ( errno != 0 ) || ( *end != '\0' ) ) {
     fprintf( stderr, "Invalid high port number (%s)\n", cp );
     return false;
   }
-  if ( (value < 0) || (value > 65535) ) {
+  if ( ( value < 0 ) || ( value > 65535 ) ) {
     fprintf( stderr, "High port number %ld outside valid range [0..65535]\n", value );
     return false;
   }
@@ -701,7 +668,6 @@ bool Connection::parse_portrange( const char * desired_port, int & desired_port_
     fprintf( stderr, "Low port 0 incompatible with port ranges\n" );
     return false;
   }
-
 
   return true;
 }

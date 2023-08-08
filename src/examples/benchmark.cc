@@ -53,41 +53,41 @@
 #include <util.h>
 #endif
 
-#include "src/util/swrite.h"
+#include "src/frontend/terminaloverlay.h"
 #include "src/statesync/completeterminal.h"
 #include "src/statesync/user.h"
-#include "src/frontend/terminaloverlay.h"
-#include "src/util/locale_utils.h"
 #include "src/util/fatal_assert.h"
+#include "src/util/locale_utils.h"
+#include "src/util/swrite.h"
 
 const int ITERATIONS = 100000;
 
 using namespace Terminal;
 
-int main( int argc, char **argv )
+int main( int argc, char** argv )
 {
   try {
     int fbmod = 0;
     int width = 80, height = 24;
     int iterations = ITERATIONS;
-    if (argc > 1) {
-      iterations = atoi(argv[1]);
-      if (iterations < 1 || iterations > 1000000000) {
-	fprintf(stderr, "bogus iteration count\n");
-	exit(1);
+    if ( argc > 1 ) {
+      iterations = atoi( argv[1] );
+      if ( iterations < 1 || iterations > 1000000000 ) {
+        fprintf( stderr, "bogus iteration count\n" );
+        exit( 1 );
       }
     }
-    if (argc > 3) {
-      width = atoi(argv[2]);
-      height = atoi(argv[3]);
-      if (width < 1 || width > 1000 || height < 1 || height > 1000) {
-	fprintf(stderr, "bogus window size\n");
-	exit(1);
+    if ( argc > 3 ) {
+      width = atoi( argv[2] );
+      height = atoi( argv[3] );
+      if ( width < 1 || width > 1000 || height < 1 || height > 1000 ) {
+        fprintf( stderr, "bogus window size\n" );
+        exit( 1 );
       }
     }
-    Framebuffer local_framebuffers[ 2 ] = { Framebuffer(width,height), Framebuffer(width,height) };
-    Framebuffer *local_framebuffer = &(local_framebuffers[ fbmod ]);
-    Framebuffer *new_state = &(local_framebuffers[ !fbmod ]);
+    Framebuffer local_framebuffers[2] = { Framebuffer( width, height ), Framebuffer( width, height ) };
+    Framebuffer* local_framebuffer = &( local_framebuffers[fbmod] );
+    Framebuffer* new_state = &( local_framebuffers[!fbmod] );
     Overlay::OverlayManager overlays;
     Display display( true );
     Complete local_terminal( width, height );
@@ -107,20 +107,18 @@ int main( int argc, char **argv )
       overlays.apply( *new_state );
 
       /* calculate minimal difference from where we are */
-      const std::string diff( display.new_frame( false,
-						 *local_framebuffer,
-						 *new_state ) );
+      const std::string diff( display.new_frame( false, *local_framebuffer, *new_state ) );
 
       /* make sure to use diff */
       if ( diff.size() > INT_MAX ) {
-	exit( 1 );
+        exit( 1 );
       }
 
       fbmod = !fbmod;
-      local_framebuffer = &(local_framebuffers[ fbmod ]);
-      new_state = &(local_framebuffers[ !fbmod ]);
+      local_framebuffer = &( local_framebuffers[fbmod] );
+      new_state = &( local_framebuffers[!fbmod] );
     }
-  } catch ( const std::exception &e ) {
+  } catch ( const std::exception& e ) {
     fprintf( stderr, "Exception caught: %s\n", e.what() );
     return 1;
   }
