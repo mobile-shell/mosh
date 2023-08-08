@@ -39,55 +39,53 @@
 #include <cstring>
 #include <cwchar>
 
-#include "parsertransition.h"
-#include "src/terminal/parseraction.h"
 #include "parserstate.h"
 #include "parserstatefamily.h"
+#include "parsertransition.h"
+#include "src/terminal/parseraction.h"
 
 namespace Parser {
-  extern const StateFamily family;
+extern const StateFamily family;
 
-  class Parser {
-  private:
-    State const *state;
+class Parser
+{
+private:
+  State const* state;
 
-  public:
-    Parser() : state( &family.s_Ground ) {}
+public:
+  Parser() : state( &family.s_Ground ) {}
 
-    Parser( const Parser &other );
-    Parser & operator=( const Parser & );
-    ~Parser() {}
+  Parser( const Parser& other );
+  Parser& operator=( const Parser& );
+  ~Parser() {}
 
-    void input( wchar_t ch, Actions &actions );
+  void input( wchar_t ch, Actions& actions );
 
-    void reset_input( void )
-    {
-      state = &family.s_Ground;
-    }
+  void reset_input( void ) { state = &family.s_Ground; }
+};
 
-  };
+static const size_t BUF_SIZE = 8;
 
-  static const size_t BUF_SIZE = 8;
+class UTF8Parser
+{
+private:
+  Parser parser;
 
-  class UTF8Parser {
-  private:
-    Parser parser;
+  char buf[BUF_SIZE];
+  size_t buf_len;
 
-    char buf[ BUF_SIZE ];
-    size_t buf_len;
+public:
+  UTF8Parser();
 
-  public:
-    UTF8Parser();
+  void input( char c, Actions& actions );
 
-    void input( char c, Actions &actions );
-
-    void reset_input( void )
-    {
-      parser.reset_input();
-      buf[0] = '\0';
-      buf_len = 0;
-    }
-  };
+  void reset_input( void )
+  {
+    parser.reset_input();
+    buf[0] = '\0';
+    buf_len = 0;
+  }
+};
 }
 
 #endif

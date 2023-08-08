@@ -39,23 +39,22 @@
 
 #include <sys/resource.h>
 
+#include "src/crypto/base64.h"
 #include "src/crypto/byteorder.h"
 #include "src/crypto/crypto.h"
-#include "src/crypto/base64.h"
-#include "src/util/fatal_assert.h"
 #include "src/crypto/prng.h"
+#include "src/util/fatal_assert.h"
 
 using namespace Crypto;
 
-long int myatoi( const char *str )
+long int myatoi( const char* str )
 {
-  char *end;
+  char* end;
 
   errno = 0;
   long int ret = strtol( str, &end, 10 );
 
-  if ( ( errno != 0 )
-       || ( end != str + strlen( str ) ) ) {
+  if ( ( errno != 0 ) || ( end != str + strlen( str ) ) ) {
     throw CryptoException( "Bad integer." );
   }
 
@@ -72,16 +71,14 @@ uint64_t Crypto::unique( void )
   return rv;
 }
 
-AlignedBuffer::AlignedBuffer( size_t len, const char *data )
-  : m_len( len ), m_allocated( NULL ), m_data( NULL )
+AlignedBuffer::AlignedBuffer( size_t len, const char* data ) : m_len( len ), m_allocated( NULL ), m_data( NULL )
 {
   size_t alloc_len = len ? len : 1;
-#if defined(HAVE_POSIX_MEMALIGN)
-  if ( ( 0 != posix_memalign( &m_allocated, 16, alloc_len ) )
-      || ( m_allocated == NULL ) ) {
+#if defined( HAVE_POSIX_MEMALIGN )
+  if ( ( 0 != posix_memalign( &m_allocated, 16, alloc_len ) ) || ( m_allocated == NULL ) ) {
     throw std::bad_alloc();
   }
-  m_data = (char *) m_allocated;
+  m_data = (char*)m_allocated;
 
 #else
   /* malloc() a region 15 bytes larger than we need, and find
@@ -91,15 +88,15 @@ AlignedBuffer::AlignedBuffer( size_t len, const char *data )
     throw std::bad_alloc();
   }
 
-  uintptr_t iptr = (uintptr_t) m_allocated;
+  uintptr_t iptr = (uintptr_t)m_allocated;
   if ( iptr & 0xF ) {
     iptr += 16 - ( iptr & 0xF );
   }
   assert( !( iptr & 0xF ) );
-  assert( iptr >= (uintptr_t) m_allocated );
-  assert( iptr <= ( 15 + (uintptr_t) m_allocated ) );
+  assert( iptr >= (uintptr_t)m_allocated );
+  assert( iptr <= ( 15 + (uintptr_t)m_allocated ) );
 
-  m_data = (char *) iptr;
+  m_data = (char*)iptr;
 
 #endif /* !defined(HAVE_POSIX_MEMALIGN) */
 
@@ -136,32 +133,28 @@ Base64Key::Base64Key()
   PRNG().fill( key, sizeof( key ) );
 }
 
-Base64Key::Base64Key(PRNG &prng)
+Base64Key::Base64Key( PRNG& prng )
 {
   prng.fill( key, sizeof( key ) );
 }
 
 std::string Base64Key::printable_key( void ) const
 {
-  char base64[ 24 ];
-  
+  char base64[24];
+
   base64_encode( key, 16, base64, 24 );
 
-  if ( (base64[ 23 ] != '=')
-       || (base64[ 22 ] != '=') ) {
+  if ( ( base64[23] != '=' ) || ( base64[22] != '=' ) ) {
     throw CryptoException( std::string( "Unexpected output from base64_encode: " ) + std::string( base64, 24 ) );
   }
 
-  base64[ 22 ] = 0;
+  base64[22] = 0;
   return std::string( base64 );
 }
 
 Session::Session( Base64Key s_key )
-  : key( s_key ), ctx_buf( ae_ctx_sizeof() ),
-    ctx( (ae_ctx *)ctx_buf.data() ), blocks_encrypted( 0 ),
-    plaintext_buffer( RECEIVE_MTU ),
-    ciphertext_buffer( RECEIVE_MTU ),
-    nonce_buffer( Nonce::NONCE_LEN )
+  : key( s_key ), ctx_buf( ae_ctx_sizeof() ), ctx( (ae_ctx*)ctx_buf.data() ), blocks_encrypted( 0 ),
+    plaintext_buffer( RECEIVE_MTU ), ciphertext_buffer( RECEIVE_MTU ), nonce_buffer( Nonce::NONCE_LEN )
 {
   if ( AE_SUCCESS != ae_init( ctx, key.data(), 16, 12, 16 ) ) {
     throw CryptoException( "Could not initialize AES-OCB context." );
@@ -188,7 +181,7 @@ uint64_t Nonce::val( void ) const
   return be64toh( ret );
 }
 
-Nonce::Nonce( const char *s_bytes, size_t len )
+Nonce::Nonce( const char* s_bytes, size_t len )
 {
   if ( len != 8 ) {
     throw CryptoException( "Nonce representation must be 8 octets long." );
@@ -198,7 +191,7 @@ Nonce::Nonce( const char *s_bytes, size_t len )
   memcpy( bytes + 4, s_bytes, 8 );
 }
 
-const std::string Session::encrypt( const Message & plaintext )
+const std::string Session::encrypt( const Message& plaintext )
 {
   const size_t pt_len = plaintext.text.size();
   const int ciphertext_len = pt_len + 16;
@@ -209,15 +202,16 @@ const std::string Session::encrypt( const Message & plaintext )
   memcpy( plaintext_buffer.data(), plaintext.text.data(), pt_len );
   memcpy( nonce_buffer.data(), plaintext.nonce.data(), Nonce::NONCE_LEN );
 
-  if ( ciphertext_len != ae_encrypt( ctx,                                     /* ctx */
-				     nonce_buffer.data(),                     /* nonce */
-				     plaintext_buffer.data(),                 /* pt */
-				     pt_len,                                  /* pt_len */
-				     NULL,                                    /* ad */
-				     0,                                       /* ad_len */
-				     ciphertext_buffer.data(),                /* ct */
-				     NULL,                                    /* tag */
-				     AE_FINALIZE ) ) {                        /* final */
+  if ( ciphertext_len
+       != ae_encrypt( ctx,                      /* ctx */
+                      nonce_buffer.data(),      /* nonce */
+                      plaintext_buffer.data(),  /* pt */
+                      pt_len,                   /* pt_len */
+                      NULL,                     /* ad */
+                      0,                        /* ad_len */
+                      ciphertext_buffer.data(), /* ct */
+                      NULL,                     /* tag */
+                      AE_FINALIZE ) ) {         /* final */
     throw CryptoException( "ae_encrypt() returned error." );
   }
 
@@ -248,7 +242,7 @@ const std::string Session::encrypt( const Message & plaintext )
   return plaintext.nonce.cc_str() + text;
 }
 
-const Message Session::decrypt( const char *str, size_t len )
+const Message Session::decrypt( const char* str, size_t len )
 {
   if ( len < 24 ) {
     throw CryptoException( "Ciphertext must contain nonce and tag." );
@@ -269,15 +263,16 @@ const Message Session::decrypt( const char *str, size_t len )
   memcpy( ciphertext_buffer.data(), str + 8, body_len );
   memcpy( nonce_buffer.data(), nonce.data(), Nonce::NONCE_LEN );
 
-  if ( pt_len != ae_decrypt( ctx,                      /* ctx */
-			     nonce_buffer.data(),      /* nonce */
-			     ciphertext_buffer.data(), /* ct */
-			     body_len,                 /* ct_len */
-			     NULL,                     /* ad */
-			     0,                        /* ad_len */
-			     plaintext_buffer.data(),  /* pt */
-			     NULL,                     /* tag */
-			     AE_FINALIZE ) ) {         /* final */
+  if ( pt_len
+       != ae_decrypt( ctx,                      /* ctx */
+                      nonce_buffer.data(),      /* nonce */
+                      ciphertext_buffer.data(), /* ct */
+                      body_len,                 /* ct_len */
+                      NULL,                     /* ad */
+                      0,                        /* ad_len */
+                      plaintext_buffer.data(),  /* pt */
+                      NULL,                     /* tag */
+                      AE_FINALIZE ) ) {         /* final */
     throw CryptoException( "Packet failed integrity check." );
   }
 
@@ -290,7 +285,8 @@ static rlim_t saved_core_rlimit;
 
 /* Disable dumping core, as a precaution to avoid saving sensitive data
    to disk. */
-void Crypto::disable_dumping_core( void ) {
+void Crypto::disable_dumping_core( void )
+{
   struct rlimit limit;
   if ( 0 != getrlimit( RLIMIT_CORE, &limit ) ) {
     /* We don't throw CryptoException because this is called very early
@@ -307,7 +303,8 @@ void Crypto::disable_dumping_core( void ) {
   }
 }
 
-void Crypto::reenable_dumping_core( void ) {
+void Crypto::reenable_dumping_core( void )
+{
   /* Silent failure is safe. */
   struct rlimit limit;
   if ( 0 == getrlimit( RLIMIT_CORE, &limit ) ) {

@@ -33,31 +33,30 @@
 #ifndef TERMINALUSERINPUT_HPP
 #define TERMINALUSERINPUT_HPP
 
-#include <string>
 #include "src/terminal/parseraction.h"
+#include <string>
 
 namespace Terminal {
-  class UserInput {
-  public:
-    enum UserInputState {
-      Ground,
-      ESC,
-      SS3
-    };
-
-  private:
-    UserInputState state;
-
-  public:
-    UserInput()
-      : state( Ground )
-    {}
-
-    std::string input( const Parser::UserByte *act,
-		       bool application_mode_cursor_keys );
-
-    bool operator==( const UserInput &x ) const { return state == x.state; }
+class UserInput
+{
+public:
+  enum UserInputState
+  {
+    Ground,
+    ESC,
+    SS3
   };
+
+private:
+  UserInputState state;
+
+public:
+  UserInput() : state( Ground ) {}
+
+  std::string input( const Parser::UserByte* act, bool application_mode_cursor_keys );
+
+  bool operator==( const UserInput& x ) const { return state == x.state; }
+};
 }
 
 #endif

@@ -41,52 +41,57 @@
 #include "src/terminal/parseraction.h"
 
 namespace Network {
-  enum UserEventType {
-    UserByteType = 0,
-    ResizeType = 1
-  };
+enum UserEventType
+{
+  UserByteType = 0,
+  ResizeType = 1
+};
 
-  class UserEvent
+class UserEvent
+{
+public:
+  UserEventType type;
+  Parser::UserByte userbyte;
+  Parser::Resize resize;
+
+  UserEvent( const Parser::UserByte& s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 )
+  {}
+  UserEvent( const Parser::Resize& s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ) {}
+
+private:
+  UserEvent();
+
+public:
+  bool operator==( const UserEvent& x ) const
   {
-  public:
-    UserEventType type;
-    Parser::UserByte userbyte;
-    Parser::Resize resize;
+    return ( type == x.type ) && ( userbyte == x.userbyte ) && ( resize == x.resize );
+  }
+};
 
-    UserEvent( const Parser::UserByte & s_userbyte ) : type( UserByteType ), userbyte( s_userbyte ), resize( -1, -1 ) {}
-    UserEvent( const Parser::Resize & s_resize ) : type( ResizeType ), userbyte( 0 ), resize( s_resize ) {}
+class UserStream
+{
+private:
+  std::deque<UserEvent> actions;
 
-  private:
-    UserEvent();
+public:
+  UserStream() : actions() {}
 
-  public:
-    bool operator==( const UserEvent &x ) const { return ( type == x.type ) && ( userbyte == x.userbyte ) && ( resize == x.resize ); }
-  };
+  void push_back( const Parser::UserByte& s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
+  void push_back( const Parser::Resize& s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
 
-  class UserStream
-  {
-  private:
-    std::deque<UserEvent> actions;
-    
-  public:
-    UserStream() : actions() {}
-    
-    void push_back( const Parser::UserByte & s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
-    void push_back( const Parser::Resize & s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
-    
-    bool empty( void ) const { return actions.empty(); }
-    size_t size( void ) const { return actions.size(); }
-    const Parser::Action &get_action( unsigned int i ) const;
-    
-    /* interface for Network::Transport */
-    void subtract( const UserStream *prefix );
-    std::string diff_from( const UserStream &existing ) const;
-    std::string init_diff( void ) const { return diff_from( UserStream() ); };
-    void apply_string( const std::string &diff );
-    bool operator==( const UserStream &x ) const { return actions == x.actions; }
+  bool empty( void ) const { return actions.empty(); }
+  size_t size( void ) const { return actions.size(); }
+  const Parser::Action& get_action( unsigned int i ) const;
 
-    bool compare( const UserStream & ) { return false; }
-  };
+  /* interface for Network::Transport */
+  void subtract( const UserStream* prefix );
+  std::string diff_from( const UserStream& existing ) const;
+  std::string init_diff( void ) const { return diff_from( UserStream() ); };
+  void apply_string( const std::string& diff );
+  bool operator==( const UserStream& x ) const { return actions == x.actions; }
+
+  bool compare( const UserStream& ) { return false; }
+};
 }
 
 #endif

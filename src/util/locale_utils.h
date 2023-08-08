@@ -35,17 +35,16 @@
 
 #include <string>
 
-class LocaleVar {
- public:
+class LocaleVar
+{
+public:
   const std::string name, value;
-  LocaleVar( const char *s_name, const char *s_value )
-    : name( s_name ), value( s_value )
-  {}
+  LocaleVar( const char* s_name, const char* s_value ) : name( s_name ), value( s_value ) {}
   const std::string str( void ) const;
 };
 
 const LocaleVar get_ctype( void );
-const char *locale_charset( void );
+const char* locale_charset( void );
 bool is_utf8_locale( void );
 void set_native_locale( void );
 void clear_locale_variables( void );

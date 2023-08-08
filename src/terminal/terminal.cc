@@ -41,9 +41,7 @@
 
 using namespace Terminal;
 
-Emulator::Emulator( size_t s_width, size_t s_height )
-  : fb( s_width, s_height ), dispatch(), user()
-{}
+Emulator::Emulator( size_t s_width, size_t s_height ) : fb( s_width, s_height ), dispatch(), user() {}
 
 std::string Emulator::read_octets_to_host( void )
 {
@@ -52,12 +50,12 @@ std::string Emulator::read_octets_to_host( void )
   return ret;
 }
 
-void Emulator::execute( const Parser::Execute *act )
+void Emulator::execute( const Parser::Execute* act )
 {
   dispatch.dispatch( CONTROL, act, &fb );
 }
 
-void Emulator::print( const Parser::Print *act )
+void Emulator::print( const Parser::Print* act )
 {
   assert( act->char_present );
 
@@ -67,103 +65,98 @@ void Emulator::print( const Parser::Print *act )
    * Check for printing ISO 8859-1 first, it's a cheap way to detect
    * some common narrow characters.
    */
-  const int chwidth = ch == L'\0' ? -1 : ( Cell::isprint_iso8859_1( ch ) ? 1 : wcwidth( ch ));
+  const int chwidth = ch == L'\0' ? -1 : ( Cell::isprint_iso8859_1( ch ) ? 1 : wcwidth( ch ) );
 
-  Cell *this_cell = fb.get_mutable_cell();
+  Cell* this_cell = fb.get_mutable_cell();
 
   switch ( chwidth ) {
-  case 1: /* normal character */
-  case 2: /* wide character */
-    if ( fb.ds.auto_wrap_mode && fb.ds.next_print_will_wrap ) {
-      fb.get_mutable_row( -1 )->set_wrap( true );
-      fb.ds.move_col( 0 );
-      fb.move_rows_autoscroll( 1 );
-      this_cell = NULL;
-    } else if ( fb.ds.auto_wrap_mode
-		&& (chwidth == 2)
-		&& (fb.ds.get_cursor_col() == fb.ds.get_width() - 1) ) {
-      /* wrap 2-cell chars if no room, even without will-wrap flag */
-      fb.reset_cell( this_cell );
-      fb.get_mutable_row( -1 )->set_wrap( false );
-      /* There doesn't seem to be a consistent way to get the
-	 downstream terminal emulator to set the wrap-around
-	 copy-and-paste flag on a row that ends with an empty cell
-	 because a wide char was wrapped to the next line. */
-      fb.ds.move_col( 0 );
-      fb.move_rows_autoscroll( 1 );
-      this_cell = NULL;
-    }
-
-    if ( fb.ds.insert_mode ) {
-      for ( int i = 0; i < chwidth; i++ ) {
-	fb.insert_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
+    case 1: /* normal character */
+    case 2: /* wide character */
+      if ( fb.ds.auto_wrap_mode && fb.ds.next_print_will_wrap ) {
+        fb.get_mutable_row( -1 )->set_wrap( true );
+        fb.ds.move_col( 0 );
+        fb.move_rows_autoscroll( 1 );
+        this_cell = NULL;
+      } else if ( fb.ds.auto_wrap_mode && ( chwidth == 2 )
+                  && ( fb.ds.get_cursor_col() == fb.ds.get_width() - 1 ) ) {
+        /* wrap 2-cell chars if no room, even without will-wrap flag */
+        fb.reset_cell( this_cell );
+        fb.get_mutable_row( -1 )->set_wrap( false );
+        /* There doesn't seem to be a consistent way to get the
+           downstream terminal emulator to set the wrap-around
+           copy-and-paste flag on a row that ends with an empty cell
+           because a wide char was wrapped to the next line. */
+        fb.ds.move_col( 0 );
+        fb.move_rows_autoscroll( 1 );
+        this_cell = NULL;
       }
-      this_cell = NULL;
-    }
 
-    if (!this_cell) {
-      this_cell = fb.get_mutable_cell();
-    }
+      if ( fb.ds.insert_mode ) {
+        for ( int i = 0; i < chwidth; i++ ) {
+          fb.insert_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() );
+        }
+        this_cell = NULL;
+      }
 
-    fb.reset_cell( this_cell );
-    this_cell->append( ch );
-    this_cell->set_wide( chwidth == 2 ); /* chwidth had better be 1 or 2 here */
-    fb.apply_renditions_to_cell( this_cell );
+      if ( !this_cell ) {
+        this_cell = fb.get_mutable_cell();
+      }
 
-    if ( chwidth == 2
-      && fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) { /* erase overlapped cell */
-      fb.reset_cell( fb.get_mutable_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 ) );
-    }
+      fb.reset_cell( this_cell );
+      this_cell->append( ch );
+      this_cell->set_wide( chwidth == 2 ); /* chwidth had better be 1 or 2 here */
+      fb.apply_renditions_to_cell( this_cell );
 
-    fb.ds.move_col( chwidth, true, true );
+      if ( chwidth == 2 && fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) { /* erase overlapped cell */
+        fb.reset_cell( fb.get_mutable_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 ) );
+      }
 
-    break;
-  case 0: /* combining character */
+      fb.ds.move_col( chwidth, true, true );
+
+      break;
+    case 0: /* combining character */
     {
-      Cell *combining_cell = fb.get_combining_cell(); /* can be null if we were resized */
-      if ( combining_cell == NULL ) { /* character is now offscreen */
-	break;
+      Cell* combining_cell = fb.get_combining_cell(); /* can be null if we were resized */
+      if ( combining_cell == NULL ) {                 /* character is now offscreen */
+        break;
       }
 
       if ( combining_cell->empty() ) {
-	/* cell starts with combining character */
-	/* ... but isn't necessarily the target for a new
-	   base character [e.g. start of line], if the
-	   combining character has been cleared with
-	   a sequence like ED ("J") or EL ("K") */
-	assert( !combining_cell->get_wide() );
-	combining_cell->set_fallback( true );
-	fb.ds.move_col( 1, true, true );
+        /* cell starts with combining character */
+        /* ... but isn't necessarily the target for a new
+           base character [e.g. start of line], if the
+           combining character has been cleared with
+           a sequence like ED ("J") or EL ("K") */
+        assert( !combining_cell->get_wide() );
+        combining_cell->set_fallback( true );
+        fb.ds.move_col( 1, true, true );
       }
       if ( !combining_cell->full() ) {
-	combining_cell->append( ch );
+        combining_cell->append( ch );
       }
-    }
-    break;
-  case -1: /* unprintable character */
-    break;
-  default:
-    assert( !"unexpected character width from wcwidth()" );
-    break;
+    } break;
+    case -1: /* unprintable character */
+      break;
+    default:
+      assert( !"unexpected character width from wcwidth()" );
+      break;
   }
 }
 
-void Emulator::CSI_dispatch( const Parser::CSI_Dispatch *act )
+void Emulator::CSI_dispatch( const Parser::CSI_Dispatch* act )
 {
   dispatch.dispatch( CSI, act, &fb );
 }
 
-void Emulator::OSC_end( const Parser::OSC_End *act )
+void Emulator::OSC_end( const Parser::OSC_End* act )
 {
   dispatch.OSC_dispatch( act, &fb );
 }
 
-void Emulator::Esc_dispatch( const Parser::Esc_Dispatch *act )
+void Emulator::Esc_dispatch( const Parser::Esc_Dispatch* act )
 {
   /* handle 7-bit ESC-encoding of C1 control characters */
-  if ( (dispatch.get_dispatch_chars().size() == 0)
-       && (0x40 <= act->ch)
-       && (act->ch <= 0x5F) ) {
+  if ( ( dispatch.get_dispatch_chars().size() == 0 ) && ( 0x40 <= act->ch ) && ( act->ch <= 0x5F ) ) {
     Parser::Esc_Dispatch act2 = *act;
     act2.ch += 0x40;
     dispatch.dispatch( CONTROL, &act2, &fb );
@@ -177,7 +170,7 @@ void Emulator::resize( size_t s_width, size_t s_height )
   fb.resize( s_width, s_height );
 }
 
-bool Emulator::operator==( Emulator const &x ) const
+bool Emulator::operator==( Emulator const& x ) const
 {
   /* dispatcher and user are irrelevant for us */
   return fb == x.fb;

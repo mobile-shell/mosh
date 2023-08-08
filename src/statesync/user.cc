@@ -33,24 +33,22 @@
 #include <cassert>
 #include <typeinfo>
 
+#include "src/protobufs/userinput.pb.h"
 #include "src/statesync/user.h"
 #include "src/util/fatal_assert.h"
-#include "src/protobufs/userinput.pb.h"
 
 using namespace Parser;
 using namespace Network;
 using namespace ClientBuffers;
 
-void UserStream::subtract( const UserStream *prefix )
+void UserStream::subtract( const UserStream* prefix )
 {
   // if we are subtracting ourself from ourself, just clear the std::deque
   if ( this == prefix ) {
     actions.clear();
     return;
   }
-  for ( std::deque<UserEvent>::const_iterator i = prefix->actions.begin();
-	i != prefix->actions.end();
-	i++ ) {
+  for ( std::deque<UserEvent>::const_iterator i = prefix->actions.begin(); i != prefix->actions.end(); i++ ) {
     assert( this != prefix );
     assert( !actions.empty() );
     assert( *i == actions.front() );
@@ -58,13 +56,11 @@ void UserStream::subtract( const UserStream *prefix )
   }
 }
 
-std::string UserStream::diff_from( const UserStream &existing ) const
+std::string UserStream::diff_from( const UserStream& existing ) const
 {
   std::deque<UserEvent>::const_iterator my_it = actions.begin();
 
-  for ( std::deque<UserEvent>::const_iterator i = existing.actions.begin();
-	i != existing.actions.end();
-	i++ ) {
+  for ( std::deque<UserEvent>::const_iterator i = existing.actions.begin(); i != existing.actions.end(); i++ ) {
     assert( my_it != actions.end() );
     assert( *i == *my_it );
     my_it++;
@@ -74,29 +70,28 @@ std::string UserStream::diff_from( const UserStream &existing ) const
 
   while ( my_it != actions.end() ) {
     switch ( my_it->type ) {
-    case UserByteType:
-      {
-	char the_byte = my_it->userbyte.c;
-	/* can we combine this with a previous Keystroke? */
-	if ( (output.instruction_size() > 0)
-	     && (output.instruction( output.instruction_size() - 1 ).HasExtension( keystroke )) ) {
-	  output.mutable_instruction( output.instruction_size() - 1 )->MutableExtension( keystroke )->mutable_keys()->append( std::string( &the_byte, 1 ) );
-	} else {
-	  Instruction *new_inst = output.add_instruction();
-	  new_inst->MutableExtension( keystroke )->set_keys( &the_byte, 1 );
-	}
-      }
-      break;
-    case ResizeType:
-      {
-	Instruction *new_inst = output.add_instruction();
-	new_inst->MutableExtension( resize )->set_width( my_it->resize.width );
-	new_inst->MutableExtension( resize )->set_height( my_it->resize.height );
-      }
-      break;
-    default:
-      assert( !"unexpected event type" );
-      break;
+      case UserByteType: {
+        char the_byte = my_it->userbyte.c;
+        /* can we combine this with a previous Keystroke? */
+        if ( ( output.instruction_size() > 0 )
+             && ( output.instruction( output.instruction_size() - 1 ).HasExtension( keystroke ) ) ) {
+          output.mutable_instruction( output.instruction_size() - 1 )
+            ->MutableExtension( keystroke )
+            ->mutable_keys()
+            ->append( std::string( &the_byte, 1 ) );
+        } else {
+          Instruction* new_inst = output.add_instruction();
+          new_inst->MutableExtension( keystroke )->set_keys( &the_byte, 1 );
+        }
+      } break;
+      case ResizeType: {
+        Instruction* new_inst = output.add_instruction();
+        new_inst->MutableExtension( resize )->set_width( my_it->resize.width );
+        new_inst->MutableExtension( resize )->set_height( my_it->resize.height );
+      } break;
+      default:
+        assert( !"unexpected event type" );
+        break;
     }
 
     my_it++;
@@ -105,7 +100,7 @@ std::string UserStream::diff_from( const UserStream &existing ) const
   return output.SerializeAsString();
 }
 
-void UserStream::apply_string( const std::string &diff )
+void UserStream::apply_string( const std::string& diff )
 {
   ClientBuffers::UserMessage input;
   fatal_assert( input.ParseFromString( diff ) );
@@ -114,25 +109,25 @@ void UserStream::apply_string( const std::string &diff )
     if ( input.instruction( i ).HasExtension( keystroke ) ) {
       std::string the_bytes = input.instruction( i ).GetExtension( keystroke ).keys();
       for ( unsigned int loc = 0; loc < the_bytes.size(); loc++ ) {
-	actions.push_back( UserEvent( UserByte( the_bytes.at( loc ) ) ) );
+        actions.push_back( UserEvent( UserByte( the_bytes.at( loc ) ) ) );
       }
     } else if ( input.instruction( i ).HasExtension( resize ) ) {
       actions.push_back( UserEvent( Resize( input.instruction( i ).GetExtension( resize ).width(),
-					    input.instruction( i ).GetExtension( resize ).height() ) ) );
+                                            input.instruction( i ).GetExtension( resize ).height() ) ) );
     }
   }
 }
 
-const Parser::Action &UserStream::get_action( unsigned int i ) const
+const Parser::Action& UserStream::get_action( unsigned int i ) const
 {
-  switch( actions[ i ].type ) {
-  case UserByteType:
-    return actions[ i ].userbyte;
-  case ResizeType:
-    return actions[ i ].resize;
-  default:
-    assert( !"unexpected action type" );
-    static const Parser::Ignore nothing = Parser::Ignore();
-    return nothing;
+  switch ( actions[i].type ) {
+    case UserByteType:
+      return actions[i].userbyte;
+    case ResizeType:
+      return actions[i].resize;
+    default:
+      assert( !"unexpected action type" );
+      static const Parser::Ignore nothing = Parser::Ignore();
+      return nothing;
   }
 }

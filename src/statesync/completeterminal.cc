@@ -41,17 +41,15 @@ using namespace Parser;
 using namespace Terminal;
 using namespace HostBuffers;
 
-string Complete::act( const string &str )
+string Complete::act( const string& str )
 {
   for ( unsigned int i = 0; i < str.size(); i++ ) {
     /* parse octet into up to three actions */
-    parser.input( str[ i ], actions );
-    
+    parser.input( str[i], actions );
+
     /* apply actions to terminal and delete them */
-    for ( Actions::iterator it = actions.begin();
-	  it != actions.end();
-	  it++ ) {
-      Action &act = **it;
+    for ( Actions::iterator it = actions.begin(); it != actions.end(); it++ ) {
+      Action& act = **it;
       act.act_on_terminal( &terminal );
     }
     actions.clear();
@@ -60,7 +58,7 @@ string Complete::act( const string &str )
   return terminal.read_octets_to_host();
 }
 
-string Complete::act( const Action &act )
+string Complete::act( const Action& act )
 {
   /* apply action to terminal */
   act.act_on_terminal( &terminal );
@@ -68,39 +66,39 @@ string Complete::act( const Action &act )
 }
 
 /* interface for Network::Transport */
-string Complete::diff_from( const Complete &existing ) const
+string Complete::diff_from( const Complete& existing ) const
 {
   HostBuffers::HostMessage output;
 
   if ( existing.get_echo_ack() != get_echo_ack() ) {
     assert( get_echo_ack() >= existing.get_echo_ack() );
-    Instruction *new_echo = output.add_instruction();
+    Instruction* new_echo = output.add_instruction();
     new_echo->MutableExtension( echoack )->set_echo_ack_num( get_echo_ack() );
   }
 
-  if ( !(existing.get_fb() == get_fb()) ) {
-    if ( (existing.get_fb().ds.get_width() != terminal.get_fb().ds.get_width())
-	 || (existing.get_fb().ds.get_height() != terminal.get_fb().ds.get_height()) ) {
-      Instruction *new_res = output.add_instruction();
+  if ( !( existing.get_fb() == get_fb() ) ) {
+    if ( ( existing.get_fb().ds.get_width() != terminal.get_fb().ds.get_width() )
+         || ( existing.get_fb().ds.get_height() != terminal.get_fb().ds.get_height() ) ) {
+      Instruction* new_res = output.add_instruction();
       new_res->MutableExtension( resize )->set_width( terminal.get_fb().ds.get_width() );
       new_res->MutableExtension( resize )->set_height( terminal.get_fb().ds.get_height() );
     }
     string update = display.new_frame( true, existing.get_fb(), terminal.get_fb() );
     if ( !update.empty() ) {
-      Instruction *new_inst = output.add_instruction();
+      Instruction* new_inst = output.add_instruction();
       new_inst->MutableExtension( hostbytes )->set_hoststring( update );
     }
   }
-  
+
   return output.SerializeAsString();
 }
 
 string Complete::init_diff( void ) const
 {
-  return diff_from( Complete( get_fb().ds.get_width(), get_fb().ds.get_height() ));
+  return diff_from( Complete( get_fb().ds.get_width(), get_fb().ds.get_height() ) );
 }
 
-void Complete::apply_string( const string & diff )
+void Complete::apply_string( const string& diff )
 {
   HostBuffers::HostMessage input;
   fatal_assert( input.ParseFromString( diff ) );
@@ -111,7 +109,7 @@ void Complete::apply_string( const string & diff )
       assert( terminal_to_host.empty() ); /* server never interrogates client terminal */
     } else if ( input.instruction( i ).HasExtension( resize ) ) {
       act( Resize( input.instruction( i ).GetExtension( resize ).width(),
-				      input.instruction( i ).GetExtension( resize ).height() ) );
+                   input.instruction( i ).GetExtension( resize ).height() ) );
     } else if ( input.instruction( i ).HasExtension( echoack ) ) {
       uint64_t inst_echo_ack_num = input.instruction( i ).GetExtension( echoack ).echo_ack_num();
       assert( inst_echo_ack_num >= echo_ack );
@@ -120,10 +118,10 @@ void Complete::apply_string( const string & diff )
   }
 }
 
-bool Complete::operator==( Complete const &x ) const
+bool Complete::operator==( Complete const& x ) const
 {
   //  assert( parser == x.parser ); /* parser state is irrelevant for us */
-  return (terminal == x.terminal) && (echo_ack == x.echo_ack);
+  return ( terminal == x.terminal ) && ( echo_ack == x.echo_ack );
 }
 
 bool Complete::set_echo_ack( uint64_t now )
@@ -131,16 +129,13 @@ bool Complete::set_echo_ack( uint64_t now )
   bool ret = false;
   uint64_t newest_echo_ack = 0;
 
-  for ( input_history_type::const_iterator i = input_history.begin();
-        i != input_history.end();
-        i++ ) {
+  for ( input_history_type::const_iterator i = input_history.begin(); i != input_history.end(); i++ ) {
     if ( i->second <= now - ECHO_TIMEOUT ) {
       newest_echo_ack = i->first;
     }
   }
 
-  for ( input_history_type::iterator i = input_history.begin();
-	i != input_history.end(); ) {
+  for ( input_history_type::iterator i = input_history.begin(); i != input_history.end(); ) {
     input_history_type::iterator i_next = i;
     i_next++;
     if ( i->first < newest_echo_ack ) {
@@ -179,11 +174,11 @@ int Complete::wait_time( uint64_t now ) const
   return next_echo_ack_time - now;
 }
 
-bool Complete::compare( const Complete &other ) const
+bool Complete::compare( const Complete& other ) const
 {
   bool ret = false;
-  const Framebuffer &fb = terminal.get_fb();
-  const Framebuffer &other_fb = other.terminal.get_fb();
+  const Framebuffer& fb = terminal.get_fb();
+  const Framebuffer& other_fb = other.terminal.get_fb();
   const int height = fb.ds.get_height();
   const int other_height = other_fb.ds.get_height();
   const int width = fb.ds.get_width();
@@ -197,17 +192,20 @@ bool Complete::compare( const Complete &other ) const
   for ( int y = 0; y < height; y++ ) {
     for ( int x = 0; x < width; x++ ) {
       if ( fb.get_cell( y, x )->compare( *other_fb.get_cell( y, x ) ) ) {
-	fprintf( stderr, "Cell (%d, %d) differs.\n", y, x );
-	ret = true;
+        fprintf( stderr, "Cell (%d, %d) differs.\n", y, x );
+        ret = true;
       }
     }
   }
 
-  if ( (fb.ds.get_cursor_row() != other_fb.ds.get_cursor_row())
-       || (fb.ds.get_cursor_col() != other_fb.ds.get_cursor_col()) ) {
-    fprintf( stderr, "Cursor mismatch: (%d, %d) vs. (%d, %d).\n",
-	     fb.ds.get_cursor_row(), fb.ds.get_cursor_col(),
-	     other_fb.ds.get_cursor_row(), other_fb.ds.get_cursor_col() );
+  if ( ( fb.ds.get_cursor_row() != other_fb.ds.get_cursor_row() )
+       || ( fb.ds.get_cursor_col() != other_fb.ds.get_cursor_col() ) ) {
+    fprintf( stderr,
+             "Cursor mismatch: (%d, %d) vs. (%d, %d).\n",
+             fb.ds.get_cursor_row(),
+             fb.ds.get_cursor_col(),
+             other_fb.ds.get_cursor_row(),
+             other_fb.ds.get_cursor_col() );
     ret = true;
   }
   /* XXX should compare other terminal state too (mouse mode, bell. etc.) */

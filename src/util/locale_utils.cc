@@ -45,7 +45,6 @@
 
 #include "src/util/locale_utils.h"
 
-
 const std::string LocaleVar::str( void ) const
 {
   if ( name.empty() ) {
@@ -57,22 +56,22 @@ const std::string LocaleVar::str( void ) const
 const LocaleVar get_ctype( void )
 {
   /* Reimplement the search logic, just for diagnostics */
-  if ( const char *all = getenv( "LC_ALL" ) ) {
+  if ( const char* all = getenv( "LC_ALL" ) ) {
     return LocaleVar( "LC_ALL", all );
-  } else if ( const char *ctype = getenv( "LC_CTYPE" ) ) {
+  } else if ( const char* ctype = getenv( "LC_CTYPE" ) ) {
     return LocaleVar( "LC_CTYPE", ctype );
-  } else if ( const char *lang = getenv( "LANG" ) ) {
+  } else if ( const char* lang = getenv( "LANG" ) ) {
     return LocaleVar( "LANG", lang );
   }
   return LocaleVar( "", "" );
 }
 
-const char *locale_charset( void )
+const char* locale_charset( void )
 {
   static const char ASCII_name[] = "US-ASCII";
 
   /* Produce more pleasant name of US-ASCII */
-  const char *ret = nl_langinfo( CODESET );
+  const char* ret = nl_langinfo( CODESET );
 
   if ( strcmp( ret, "ANSI_X3.4-1968" ) == 0 ) {
     ret = ASCII_name;
@@ -81,16 +80,17 @@ const char *locale_charset( void )
   return ret;
 }
 
-bool is_utf8_locale( void ) {
+bool is_utf8_locale( void )
+{
   /* Verify locale calls for UTF-8 */
-  if ( strcmp( locale_charset(), "UTF-8" ) != 0 &&
-       strcmp( locale_charset(), "utf-8" ) != 0 ) {
+  if ( strcmp( locale_charset(), "UTF-8" ) != 0 && strcmp( locale_charset(), "utf-8" ) != 0 ) {
     return false;
   }
   return true;
 }
 
-void set_native_locale( void ) {
+void set_native_locale( void )
+{
   /* Adopt native locale */
   if ( NULL == setlocale( LC_ALL, "" ) ) {
     int saved_errno = errno;
@@ -98,8 +98,7 @@ void set_native_locale( void ) {
       LocaleVar ctype( get_ctype() );
       fprintf( stderr, "The locale requested by %s isn't available here.\n", ctype.str().c_str() );
       if ( !ctype.name.empty() ) {
-	fprintf( stderr, "Running `locale-gen %s' may be necessary.\n\n",
-		 ctype.value.c_str() );
+        fprintf( stderr, "Running `locale-gen %s' may be necessary.\n\n", ctype.value.c_str() );
       }
     } else {
       errno = saved_errno;
@@ -108,7 +107,8 @@ void set_native_locale( void ) {
   }
 }
 
-void clear_locale_variables( void ) {
+void clear_locale_variables( void )
+{
   unsetenv( "LANG" );
   unsetenv( "LANGUAGE" );
   unsetenv( "LC_CTYPE" );

@@ -43,6 +43,6 @@ void Select::handle_signal( int signum )
   fatal_assert( signum >= 0 );
   fatal_assert( signum <= MAX_SIGNAL_NUMBER );
 
-  Select &sel = get_instance();
-  sel.got_signal[ signum ] = 1;
+  Select& sel = get_instance();
+  sel.got_signal[signum] = 1;
 }

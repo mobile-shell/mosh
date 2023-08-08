@@ -37,10 +37,10 @@
 
 #include <unistd.h>
 
-#include "stmclient.h"
 #include "src/crypto/crypto.h"
-#include "src/util/locale_utils.h"
 #include "src/util/fatal_assert.h"
+#include "src/util/locale_utils.h"
+#include "stmclient.h"
 
 /* These need to be included last because of conflicting defines. */
 /*
@@ -53,59 +53,62 @@
 #endif
 
 #if defined HAVE_NCURSESW_CURSES_H
-#  include <ncursesw/curses.h>
-#  include <ncursesw/term.h>
+#include <ncursesw/curses.h>
+#include <ncursesw/term.h>
 #elif defined HAVE_NCURSESW_H
-#  include <ncursesw.h>
-#  include <term.h>
+#include <ncursesw.h>
+#include <term.h>
 #elif defined HAVE_NCURSES_CURSES_H
-#  include <ncurses/curses.h>
-#  include <ncurses/term.h>
+#include <ncurses/curses.h>
+#include <ncurses/term.h>
 #elif defined HAVE_NCURSES_H
-#  include <ncurses.h>
-#  include <term.h>
+#include <ncurses.h>
+#include <term.h>
 #elif defined HAVE_CURSES_H
-#  include <curses.h>
-#  include <term.h>
+#include <curses.h>
+#include <term.h>
 #else
-#  error "SysV or X/Open-compatible Curses header file required"
+#error "SysV or X/Open-compatible Curses header file required"
 #endif
 
-static void print_version( FILE *file )
+static void print_version( FILE* file )
 {
   fputs( "mosh-client (" PACKAGE_STRING ") [build " BUILD_VERSION "]\n"
-	 "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n"
-	 "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
-	 "This is free software: you are free to change and redistribute it.\n"
-	 "There is NO WARRANTY, to the extent permitted by law.\n", file );
+         "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n"
+         "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+         "This is free software: you are free to change and redistribute it.\n"
+         "There is NO WARRANTY, to the extent permitted by law.\n",
+         file );
 }
 
-static void print_usage( FILE *file, const char *argv0 )
+static void print_usage( FILE* file, const char* argv0 )
 {
   print_version( file );
-  fprintf( file, "\nUsage: %s [-# 'ARGS'] IP PORT\n"
-	   "       %s -c\n", argv0, argv0 );
+  fprintf( file,
+           "\nUsage: %s [-# 'ARGS'] IP PORT\n"
+           "       %s -c\n",
+           argv0,
+           argv0 );
 }
 
 static void print_colorcount( void )
 {
   /* check colors */
-  setupterm((char *)0, 1, (int *)0);
+  setupterm( (char*)0, 1, (int*)0 );
 
   char colors_name[] = "colors";
   int color_val = tigetnum( colors_name );
   if ( color_val == -2 ) {
-    fprintf( stderr, "Invalid terminfo numeric capability: %s\n",
-	     colors_name );
+    fprintf( stderr, "Invalid terminfo numeric capability: %s\n", colors_name );
   }
 
   printf( "%d\n", color_val );
 }
 
 #ifdef NACL
-int mosh_main( int argc, char *argv[] )
+int mosh_main( int argc, char* argv[] )
 #else
-int main( int argc, char *argv[] )
+int main( int argc, char* argv[] )
 #endif
 {
   unsigned int verbose = 0;
@@ -117,67 +120,66 @@ int main( int argc, char *argv[] )
 
   /* Get arguments */
   for ( int i = 1; i < argc; i++ ) {
-    if ( 0 == strcmp( argv[ i ], "--help" ) ) {
-      print_usage( stdout, argv[ 0 ] );
+    if ( 0 == strcmp( argv[i], "--help" ) ) {
+      print_usage( stdout, argv[0] );
       exit( 0 );
     }
-    if ( 0 == strcmp( argv[ i ], "--version" ) ) {
+    if ( 0 == strcmp( argv[i], "--version" ) ) {
       print_version( stdout );
       exit( 0 );
     }
   }
 
   int opt;
-  while ( (opt = getopt( argc, argv, "#:cv" )) != -1 ) {
+  while ( ( opt = getopt( argc, argv, "#:cv" ) ) != -1 ) {
     switch ( opt ) {
-    case '#':
-      // Ignore the original arguments to mosh wrapper
-      break;
-    case 'c':
-      print_colorcount();
-      exit( 0 );
-      break;
-    case 'v':
-      verbose++;
-      break;
-    default:
-      print_usage( stderr, argv[ 0 ] );
-      exit( 1 );
-      break;
+      case '#':
+        // Ignore the original arguments to mosh wrapper
+        break;
+      case 'c':
+        print_colorcount();
+        exit( 0 );
+        break;
+      case 'v':
+        verbose++;
+        break;
+      default:
+        print_usage( stderr, argv[0] );
+        exit( 1 );
+        break;
     }
   }
 
   char *ip, *desired_port;
 
   if ( argc - optind != 2 ) {
-    print_usage( stderr, argv[ 0 ] );
+    print_usage( stderr, argv[0] );
     exit( 1 );
   }
 
-  ip = argv[ optind ];
-  desired_port = argv[ optind + 1 ];
+  ip = argv[optind];
+  desired_port = argv[optind + 1];
 
   /* Sanity-check arguments */
-  if ( desired_port
-       && ( strspn( desired_port, "0123456789" ) != strlen( desired_port ) ) ) {
-    fprintf( stderr, "%s: Bad UDP port (%s)\n\n", argv[ 0 ], desired_port );
-    print_usage( stderr, argv[ 0 ] );
+  if ( desired_port && ( strspn( desired_port, "0123456789" ) != strlen( desired_port ) ) ) {
+    fprintf( stderr, "%s: Bad UDP port (%s)\n\n", argv[0], desired_port );
+    print_usage( stderr, argv[0] );
     exit( 1 );
   }
 
   /* Read key from environment */
-  char *env_key = getenv( "MOSH_KEY" );
+  char* env_key = getenv( "MOSH_KEY" );
   if ( env_key == NULL ) {
     fputs( "MOSH_KEY environment variable not found.\n", stderr );
     exit( 1 );
   }
 
   /* Read prediction preference */
-  char *predict_mode = getenv( "MOSH_PREDICTION_DISPLAY" );
+  char* predict_mode = getenv( "MOSH_PREDICTION_DISPLAY" );
   /* can be NULL */
 
   /* Read prediction insertion preference */
-  char *predict_overwrite = getenv( "MOSH_PREDICTION_OVERWRITE" );
+  char* predict_overwrite = getenv( "MOSH_PREDICTION_OVERWRITE" );
   /* can be NULL */
 
   std::string key( env_key );
@@ -203,15 +205,13 @@ int main( int argc, char *argv[] )
     }
 
     client.shutdown();
-  } catch ( const Network::NetworkException &e ) {
-    fprintf( stderr, "Network exception: %s\r\n",
-	     e.what() );
+  } catch ( const Network::NetworkException& e ) {
+    fprintf( stderr, "Network exception: %s\r\n", e.what() );
     success = false;
-  } catch ( const Crypto::CryptoException &e ) {
-    fprintf( stderr, "Crypto exception: %s\r\n",
-	     e.what() );
+  } catch ( const Crypto::CryptoException& e ) {
+    fprintf( stderr, "Crypto exception: %s\r\n", e.what() );
     success = false;
-  } catch ( const std::exception &e ) {
+  } catch ( const std::exception& e ) {
     fprintf( stderr, "Error: %s\r\n", e.what() );
     success = false;
   }

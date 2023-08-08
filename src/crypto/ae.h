@@ -32,14 +32,14 @@ extern "C" {
 /* Return status codes: Negative return values indicate an error occurred.
  * For full explanations of error values, consult the implementation's
  * documentation.                                                          */
-#define AE_SUCCESS       ( 0)  /* Indicates successful completion of call  */
-#define AE_INVALID       (-1)  /* Indicates bad tag during decryption      */
-#define AE_NOT_SUPPORTED (-2)  /* Indicates unsupported option requested   */
+#define AE_SUCCESS ( 0 )        /* Indicates successful completion of call  */
+#define AE_INVALID ( -1 )       /* Indicates bad tag during decryption      */
+#define AE_NOT_SUPPORTED ( -2 ) /* Indicates unsupported option requested   */
 
 /* Flags: When data can be processed "incrementally", these flags are used
  * to indicate whether the submitted data is the last or not.               */
-#define AE_FINALIZE      (1)   /* This is the last of data                  */
-#define AE_PENDING       (0)   /* More data of is coming                    */
+#define AE_FINALIZE ( 1 ) /* This is the last of data                  */
+#define AE_PENDING ( 0 )  /* More data of is coming                    */
 
 /* --------------------------------------------------------------------------
  *
@@ -55,10 +55,10 @@ typedef struct _ae_ctx ae_ctx;
  *
  * ----------------------------------------------------------------------- */
 
-ae_ctx* ae_allocate  (void *misc);  /* Allocate ae_ctx, set optional ptr   */
-void    ae_free      (ae_ctx *ctx); /* Deallocate ae_ctx struct            */
-int     ae_clear     (ae_ctx *ctx); /* Undo initialization                 */
-int     ae_ctx_sizeof(void);        /* Return sizeof(ae_ctx)               */
+ae_ctx* ae_allocate( void* misc ); /* Allocate ae_ctx, set optional ptr   */
+void ae_free( ae_ctx* ctx );       /* Deallocate ae_ctx struct            */
+int ae_clear( ae_ctx* ctx );       /* Undo initialization                 */
+int ae_ctx_sizeof( void );         /* Return sizeof(ae_ctx)               */
 /* ae_allocate() allocates an ae_ctx structure, but does not initialize it.
  * ae_free() deallocates an ae_ctx structure, but does not zeroize it.
  * ae_clear() zeroes sensitive values associated with an ae_ctx structure
@@ -72,11 +72,7 @@ int     ae_ctx_sizeof(void);        /* Return sizeof(ae_ctx)               */
  *
  * ----------------------------------------------------------------------- */
 
-int ae_init(ae_ctx     *ctx,
-            const void *key,
-            int         key_len,
-            int         nonce_len,
-            int         tag_len);
+int ae_init( ae_ctx* ctx, const void* key, int key_len, int nonce_len, int tag_len );
 /* --------------------------------------------------------------------------
  *
  * Initialize an ae_ctx context structure.
@@ -95,15 +91,15 @@ int ae_init(ae_ctx     *ctx,
  *
  * ----------------------------------------------------------------------- */
 
-int ae_encrypt(ae_ctx     *ctx,
-               const void *nonce,
-               const void *pt,
-               int         pt_len,
-               const void *ad,
-               int         ad_len,
-               void       *ct,
-               void       *tag,
-               int         final);
+int ae_encrypt( ae_ctx* ctx,
+                const void* nonce,
+                const void* pt,
+                int pt_len,
+                const void* ad,
+                int ad_len,
+                void* ct,
+                void* tag,
+                int final );
 /* --------------------------------------------------------------------------
  *
  * Encrypt plaintext; provide for authentication of ciphertext/associated data.
@@ -132,15 +128,15 @@ int ae_encrypt(ae_ctx     *ctx,
  *
  * ----------------------------------------------------------------------- */
 
-int ae_decrypt(ae_ctx     *ctx,
-               const void *nonce,
-               const void *ct,
-               int         ct_len,
-               const void *ad,
-               int         ad_len,
-               void       *pt,
-               const void *tag,
-               int         final);
+int ae_decrypt( ae_ctx* ctx,
+                const void* nonce,
+                const void* ct,
+                int ct_len,
+                const void* ad,
+                int ad_len,
+                void* pt,
+                const void* tag,
+                int final );
 /* --------------------------------------------------------------------------
  *
  * Decrypt ciphertext; provide authenticity of plaintext and associated data.

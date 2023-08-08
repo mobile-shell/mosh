@@ -61,19 +61,19 @@
 #include <libutil.h>
 #endif
 
-#include "src/terminal/parser.h"
 #include "src/statesync/completeterminal.h"
-#include "src/util/swrite.h"
+#include "src/terminal/parser.h"
 #include "src/util/fatal_assert.h"
-#include "src/util/pty_compat.h"
 #include "src/util/locale_utils.h"
+#include "src/util/pty_compat.h"
 #include "src/util/select.h"
+#include "src/util/swrite.h"
 
 const size_t buf_size = 16384;
 
 static void emulate_terminal( int fd );
 
-int main( int argc, char *argv[] )
+int main( int argc, char* argv[] )
 {
   int master;
   struct termios saved_termios, raw_termios, child_termios;
@@ -89,12 +89,14 @@ int main( int argc, char *argv[] )
   child_termios = saved_termios;
 
 #ifdef HAVE_IUTF8
-  if ( !(child_termios.c_iflag & IUTF8) ) {
+  if ( !( child_termios.c_iflag & IUTF8 ) ) {
     fprintf( stderr, "Warning: Locale is UTF-8 but termios IUTF8 flag not set. Setting IUTF8 flag.\n" );
     child_termios.c_iflag |= IUTF8;
   }
 #else
-  fprintf( stderr, "Warning: termios IUTF8 flag not defined. Character-erase of multibyte character sequence probably does not work properly on this platform.\n" );
+  fprintf( stderr,
+           "Warning: termios IUTF8 flag not defined. Character-erase of multibyte character sequence probably does "
+           "not work properly on this platform.\n" );
 #endif /* HAVE_IUTF8 */
 
   pid_t child = forkpty( &master, NULL, &child_termios, NULL );
@@ -117,26 +119,26 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
-    char *my_argv[ 2 ];
+    char* my_argv[2];
 
     if ( argc > 1 ) {
       argv++;
     } else {
       /* get shell name */
-      my_argv[ 0 ] = getenv( "SHELL" );
-      if ( my_argv[ 0 ] == NULL || *my_argv[ 0 ] == '\0' ) {
-	struct passwd *pw = getpwuid( getuid() );
-	if ( pw == NULL ) {
-	  perror( "getpwuid" );
-	  exit( 1 );
-	}
-	my_argv[ 0 ] = strdup( pw->pw_shell );
+      my_argv[0] = getenv( "SHELL" );
+      if ( my_argv[0] == NULL || *my_argv[0] == '\0' ) {
+        struct passwd* pw = getpwuid( getuid() );
+        if ( pw == NULL ) {
+          perror( "getpwuid" );
+          exit( 1 );
+        }
+        my_argv[0] = strdup( pw->pw_shell );
       }
-      assert( my_argv[ 0 ] );
-      my_argv[ 1 ] = NULL;
+      assert( my_argv[0] );
+      my_argv[1] = NULL;
       argv = my_argv;
     }
-    if ( execvp( argv[ 0 ], argv ) < 0 ) {
+    if ( execvp( argv[0], argv ) < 0 ) {
       perror( "execve" );
       exit( 1 );
     }
@@ -154,7 +156,7 @@ int main( int argc, char *argv[] )
 
     try {
       emulate_terminal( master );
-    } catch ( const std::exception &e ) {
+    } catch ( const std::exception& e ) {
       fprintf( stderr, "\r\nException caught: %s\r\n", e.what() );
     }
 
@@ -170,8 +172,7 @@ int main( int argc, char *argv[] )
 }
 
 /* Print a frame if the last frame was more than 1/50 seconds ago */
-static bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame,
-		  const Terminal::Display &display )
+static bool tick( Terminal::Framebuffer& state, Terminal::Framebuffer& new_frame, const Terminal::Display& display )
 {
   static bool initialized = false;
   static struct timeval last_time;
@@ -182,11 +183,9 @@ static bool tick( Terminal::Framebuffer &state, Terminal::Framebuffer &new_frame
     perror( "gettimeofday" );
   }
 
-  double diff = (this_time.tv_sec - last_time.tv_sec)
-    + .000001 * (this_time.tv_usec - last_time.tv_usec);
+  double diff = ( this_time.tv_sec - last_time.tv_sec ) + .000001 * ( this_time.tv_usec - last_time.tv_usec );
 
-  if ( (!initialized)
-       || (diff >= 0.02) ) {
+  if ( ( !initialized ) || ( diff >= 0.02 ) ) {
     std::string update = display.new_frame( initialized, state, new_frame );
     swrite( STDOUT_FILENO, update.c_str() );
     state = new_frame;
@@ -239,7 +238,7 @@ static void emulate_terminal( int fd )
   /* open display */
   Terminal::Display display( true ); /* use TERM to initialize */
 
-  Select &sel = Select::get_instance();
+  Select& sel = Select::get_instance();
   sel.add_fd( STDIN_FILENO );
   sel.add_fd( fd );
   sel.add_signal( SIGWINCH );
@@ -257,48 +256,48 @@ static void emulate_terminal( int fd )
 
     if ( sel.read( STDIN_FILENO ) ) {
       /* input from user */
-      char buf[ buf_size ];
+      char buf[buf_size];
 
       /* fill buffer if possible */
       ssize_t bytes_read = read( STDIN_FILENO, buf, buf_size );
       if ( bytes_read == 0 ) { /* EOF */
-	return;
+        return;
       } else if ( bytes_read < 0 ) {
-	perror( "read" );
-	return;
+        perror( "read" );
+        return;
       }
-      
+
       std::string terminal_to_host;
-      
+
       for ( int i = 0; i < bytes_read; i++ ) {
-	terminal_to_host += complete.act( Parser::UserByte( buf[ i ] ) );
+        terminal_to_host += complete.act( Parser::UserByte( buf[i] ) );
       }
-      
+
       if ( swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	break;
+        break;
       }
     } else if ( sel.read( fd ) ) {
       /* input from host */
-      char buf[ buf_size ];
+      char buf[buf_size];
 
       /* fill buffer if possible */
       ssize_t bytes_read = read( fd, buf, buf_size );
       if ( bytes_read == 0 ) { /* EOF */
-	return;
+        return;
       } else if ( bytes_read < 0 ) {
-	perror( "read" );
-	return;
+        perror( "read" );
+        return;
       }
-      
+
       std::string terminal_to_host = complete.act( std::string( buf, bytes_read ) );
       if ( swrite( fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-	break;
+        break;
       }
     } else if ( sel.signal( SIGWINCH ) ) {
       /* get new size */
       if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
-	perror( "ioctl TIOCGWINSZ" );
-	return;
+        perror( "ioctl TIOCGWINSZ" );
+        return;
       }
 
       /* tell emulator */
@@ -306,8 +305,8 @@ static void emulate_terminal( int fd )
 
       /* tell child process */
       if ( ioctl( fd, TIOCSWINSZ, &window_size ) < 0 ) {
-	perror( "ioctl TIOCSWINSZ" );
-	return;
+        perror( "ioctl TIOCSWINSZ" );
+        return;
       }
     }
 

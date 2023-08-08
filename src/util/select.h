@@ -48,9 +48,11 @@
    Any signals blocked by calling sigprocmask() outside this code will still be
    received during Select::select().  So don't do that. */
 
-class Select {
+class Select
+{
 public:
-  static Select &get_instance( void ) {
+  static Select& get_instance( void )
+  {
     /* COFU may or may not be thread-safe, depending on compiler */
     static Select instance;
     return instance;
@@ -59,12 +61,10 @@ public:
 private:
   Select()
     : max_fd( -1 )
-    /* These initializations are not used; they are just
-       here to appease -Weffc++. */
-    , all_fds( dummy_fd_set )
-    , read_fds( dummy_fd_set )
-    , empty_sigset( dummy_sigset )
-    , consecutive_polls( 0 )
+      /* These initializations are not used; they are just
+         here to appease -Weffc++. */
+      ,
+      all_fds( dummy_fd_set ), read_fds( dummy_fd_set ), empty_sigset( dummy_sigset ), consecutive_polls( 0 )
   {
     FD_ZERO( &all_fds );
     FD_ZERO( &read_fds );
@@ -75,16 +75,15 @@ private:
 
   void clear_got_signal( void )
   {
-    for ( volatile sig_atomic_t *p = got_signal;
-          p < got_signal + sizeof( got_signal ) / sizeof( *got_signal );
+    for ( volatile sig_atomic_t* p = got_signal; p < got_signal + sizeof( got_signal ) / sizeof( *got_signal );
           p++ ) {
       *p = 0;
     }
   }
 
   /* not implemented */
-  Select( const Select & );
-  Select &operator=( const Select & );
+  Select( const Select& );
+  Select& operator=( const Select& );
 
 public:
   void add_fd( int fd )
@@ -95,10 +94,7 @@ public:
     FD_SET( fd, &all_fds );
   }
 
-  void clear_fds( void )
-  {
-    FD_ZERO( &all_fds );
-  }
+  void clear_fds( void ) { FD_ZERO( &all_fds ); }
 
   static void add_signal( int signum )
   {
@@ -123,7 +119,7 @@ public:
   /* timeout unit: milliseconds; negative timeout means wait forever */
   int select( int timeout )
   {
-    memcpy( &read_fds,  &all_fds, sizeof( read_fds  ) );
+    memcpy( &read_fds, &all_fds, sizeof( read_fds ) );
     clear_got_signal();
 
     /* Rate-limit and warn about polls. */
@@ -132,35 +128,35 @@ public:
     }
     if ( timeout == 0 && ++consecutive_polls >= MAX_POLLS ) {
       if ( verbose > 1 && consecutive_polls == MAX_POLLS ) {
-	fprintf( stderr, "%s: got %d polls, rate limiting.\n", __func__, MAX_POLLS );
+        fprintf( stderr, "%s: got %d polls, rate limiting.\n", __func__, MAX_POLLS );
       }
       timeout = 1;
     } else if ( timeout != 0 && consecutive_polls ) {
       if ( verbose > 1 && consecutive_polls >= MAX_POLLS ) {
-	fprintf( stderr, "%s: got %d consecutive polls\n", __func__, consecutive_polls );
+        fprintf( stderr, "%s: got %d consecutive polls\n", __func__, consecutive_polls );
       }
       consecutive_polls = 0;
     }
 
 #ifdef HAVE_PSELECT
     struct timespec ts;
-    struct timespec *tsp = NULL;
+    struct timespec* tsp = NULL;
 
     if ( timeout >= 0 ) {
-      ts.tv_sec  = timeout / 1000;
-      ts.tv_nsec = 1000000 * (long( timeout ) % 1000);
+      ts.tv_sec = timeout / 1000;
+      ts.tv_nsec = 1000000 * ( long( timeout ) % 1000 );
       tsp = &ts;
     }
 
     int ret = ::pselect( max_fd + 1, &read_fds, NULL, NULL, tsp, &empty_sigset );
 #else
     struct timeval tv;
-    struct timeval *tvp = NULL;
+    struct timeval* tvp = NULL;
     sigset_t old_sigset;
 
     if ( timeout >= 0 ) {
-      tv.tv_sec  = timeout / 1000;
-      tv.tv_usec = 1000 * (long( timeout ) % 1000);
+      tv.tv_sec = timeout / 1000;
+      tv.tv_usec = 1000 * ( long( timeout ) % 1000 );
       tvp = &tv;
     }
 
@@ -174,11 +170,11 @@ public:
     if ( ret == 0 || ( ret == -1 && errno == EINTR ) ) {
       /* Look for and report Cygwin select() bug. */
       if ( ret == 0 ) {
-	for ( int fd = 0; fd <= max_fd; fd++ ) {
-	  if ( FD_ISSET( fd, &read_fds ) ) {
-	    fprintf( stderr, "select(): nfds = 0 but read fd %d is set\n", fd );
-	  }
-	}
+        for ( int fd = 0; fd <= max_fd; fd++ ) {
+          if ( FD_ISSET( fd, &read_fds ) ) {
+            fprintf( stderr, "select(): nfds = 0 but read fd %d is set\n", fd );
+          }
+        }
       }
       /* The user should process events as usual. */
       FD_ZERO( &read_fds );
@@ -205,8 +201,8 @@ public:
     fatal_assert( signum >= 0 );
     fatal_assert( signum <= MAX_SIGNAL_NUMBER );
     /* XXX This requires a guard against concurrent signals. */
-    bool rv = got_signal[ signum ];
-    got_signal[ signum ] = 0;
+    bool rv = got_signal[signum];
+    got_signal[signum] = 0;
     return rv;
   }
 
@@ -214,13 +210,16 @@ public:
   bool any_signal( void ) const
   {
     bool rv = false;
-    for (int i = 0; i < MAX_SIGNAL_NUMBER; i++) {
-      rv |= got_signal[ i ];
+    for ( int i = 0; i < MAX_SIGNAL_NUMBER; i++ ) {
+      rv |= got_signal[i];
     }
     return rv;
   }
 
-  static void set_verbose( unsigned int s_verbose ) { verbose = s_verbose; }
+  static void set_verbose( unsigned int s_verbose )
+  {
+    verbose = s_verbose;
+  }
 
 private:
   static const int MAX_SIGNAL_NUMBER = 64;
@@ -234,7 +233,7 @@ private:
 
   /* We assume writes to got_signal are atomic, though we also try to mask out
      concurrent signal handlers. */
-  volatile sig_atomic_t got_signal[ MAX_SIGNAL_NUMBER + 1 ];
+  volatile sig_atomic_t got_signal[MAX_SIGNAL_NUMBER + 1];
 
   fd_set all_fds, read_fds;
 

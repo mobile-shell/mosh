@@ -55,21 +55,19 @@
 #endif
 
 #include "src/terminal/parser.h"
-#include "src/util/swrite.h"
-#include "src/util/locale_utils.h"
 #include "src/util/fatal_assert.h"
+#include "src/util/locale_utils.h"
 #include "src/util/pty_compat.h"
 #include "src/util/select.h"
+#include "src/util/swrite.h"
 
 const size_t buf_size = 1024;
 
 static void emulate_terminal( int fd );
 static int copy( int src, int dest );
-static int vt_parser( int fd, Parser::UTF8Parser *parser );
+static int vt_parser( int fd, Parser::UTF8Parser* parser );
 
-int main( int argc __attribute__((unused)),
-	  char *argv[] __attribute__((unused)),
-	  char *envp[] )
+int main( int argc __attribute__( ( unused ) ), char* argv[] __attribute__( ( unused ) ), char* envp[] )
 {
   int master;
   struct termios saved_termios, raw_termios, child_termios;
@@ -85,12 +83,14 @@ int main( int argc __attribute__((unused)),
   child_termios = saved_termios;
 
 #ifdef HAVE_IUTF8
-  if ( !(child_termios.c_iflag & IUTF8) ) {
+  if ( !( child_termios.c_iflag & IUTF8 ) ) {
     fprintf( stderr, "Warning: Locale is UTF-8 but termios IUTF8 flag not set. Setting IUTF8 flag.\n" );
     child_termios.c_iflag |= IUTF8;
   }
 #else
-  fprintf( stderr, "Warning: termios IUTF8 flag not defined. Character-erase of multibyte character sequence probably does not work properly on this platform.\n" );
+  fprintf( stderr,
+           "Warning: termios IUTF8 flag not defined. Character-erase of multibyte character sequence probably does "
+           "not work properly on this platform.\n" );
 #endif /* HAVE_IUTF8 */
 
   pid_t child = forkpty( &master, NULL, &child_termios, NULL );
@@ -102,11 +102,11 @@ int main( int argc __attribute__((unused)),
 
   if ( child == 0 ) {
     /* child */
-    char *my_argv[ 2 ];
-    my_argv[ 0 ] = strdup( "/bin/bash" );
-    assert( my_argv[ 0 ] );
+    char* my_argv[2];
+    my_argv[0] = strdup( "/bin/bash" );
+    assert( my_argv[0] );
 
-    my_argv[ 1 ] = NULL;
+    my_argv[1] = NULL;
 
     if ( execve( "/bin/bash", my_argv, envp ) < 0 ) {
       perror( "execve" );
@@ -139,7 +139,7 @@ static void emulate_terminal( int fd )
 {
   Parser::UTF8Parser parser;
 
-  Select &sel = Select::get_instance();
+  Select& sel = Select::get_instance();
   sel.add_fd( STDIN_FILENO );
   sel.add_fd( fd );
 
@@ -152,11 +152,11 @@ static void emulate_terminal( int fd )
 
     if ( sel.read( STDIN_FILENO ) ) {
       if ( copy( STDIN_FILENO, fd ) < 0 ) {
-	return;
+        return;
       }
     } else if ( sel.read( fd ) ) {
       if ( vt_parser( fd, &parser ) < 0 ) {
-	return;
+        return;
       }
     } else {
       fprintf( stderr, "select mysteriously woken up\n" );
@@ -166,7 +166,7 @@ static void emulate_terminal( int fd )
 
 static int copy( int src, int dest )
 {
-  char buf[ buf_size ];
+  char buf[buf_size];
 
   ssize_t bytes_read = read( src, buf, buf_size );
   if ( bytes_read == 0 ) { /* EOF */
@@ -179,9 +179,9 @@ static int copy( int src, int dest )
   return swrite( dest, buf, bytes_read );
 }
 
-static int vt_parser( int fd, Parser::UTF8Parser *parser )
+static int vt_parser( int fd, Parser::UTF8Parser* parser )
 {
-  char buf[ buf_size ];
+  char buf[buf_size];
 
   /* fill buffer if possible */
   ssize_t bytes_read = read( fd, buf, buf_size );
@@ -195,22 +195,20 @@ static int vt_parser( int fd, Parser::UTF8Parser *parser )
   /* feed to parser */
   Parser::Actions actions;
   for ( int i = 0; i < bytes_read; i++ ) {
-    parser->input( buf[ i ], actions );
-    for ( Parser::Actions::iterator j = actions.begin();
-	  j != actions.end();
-	  j++ ) {
+    parser->input( buf[i], actions );
+    for ( Parser::Actions::iterator j = actions.begin(); j != actions.end(); j++ ) {
 
       assert( *j );
-      Parser::Action &act = **j;
+      Parser::Action& act = **j;
 
       if ( act.char_present ) {
-	if ( iswprint( act.ch ) ) {
-	  printf( "%s(0x%02x=%lc) ", act.name().c_str(), (unsigned int)act.ch, (wint_t)act.ch );
-	} else {
-	  printf( "%s(0x%02x) ", act.name().c_str(), (unsigned int)act.ch );
-	}
+        if ( iswprint( act.ch ) ) {
+          printf( "%s(0x%02x=%lc) ", act.name().c_str(), (unsigned int)act.ch, (wint_t)act.ch );
+        } else {
+          printf( "%s(0x%02x) ", act.name().c_str(), (unsigned int)act.ch );
+        }
       } else {
-	printf( "[%s] ", act.name().c_str() );
+        printf( "[%s] ", act.name().c_str() );
       }
 
       fflush( stdout );

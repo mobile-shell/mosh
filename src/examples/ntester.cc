@@ -35,38 +35,38 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "src/network/networktransport-impl.h"
 #include "src/statesync/user.h"
 #include "src/util/fatal_assert.h"
 #include "src/util/pty_compat.h"
-#include "src/network/networktransport-impl.h"
 #include "src/util/select.h"
 
 using namespace Network;
 
-int main( int argc, char *argv[] )
+int main( int argc, char* argv[] )
 {
   bool server = true;
-  char *key;
-  char *ip;
-  char *port;
+  char* key;
+  char* ip;
+  char* port;
 
   UserStream me, remote;
   using NetworkPointer = std::shared_ptr<Transport<UserStream, UserStream>>;
-  Transport<UserStream, UserStream> *raw_n;
+  Transport<UserStream, UserStream>* raw_n;
   try {
     if ( argc > 1 ) {
       server = false;
       /* client */
-      
-      key = argv[ 1 ];
-      ip = argv[ 2 ];
-      port = argv[ 3 ];
-      
+
+      key = argv[1];
+      ip = argv[2];
+      port = argv[3];
+
       raw_n = new Transport<UserStream, UserStream>( me, remote, key, ip, port );
     } else {
       raw_n = new Transport<UserStream, UserStream>( me, remote, NULL, NULL );
     }
-  } catch ( const std::exception &e ) {
+  } catch ( const std::exception& e ) {
     fprintf( stderr, "Fatal startup error: %s\n", e.what() );
     exit( 1 );
   }
@@ -74,32 +74,33 @@ int main( int argc, char *argv[] )
   fprintf( stderr, "Port bound is %s, key is %s\n", n->port().c_str(), n->get_key().c_str() );
 
   if ( server ) {
-    Select &sel = Select::get_instance();
+    Select& sel = Select::get_instance();
     uint64_t last_num = n->get_remote_state_num();
     while ( true ) {
       try {
-	sel.clear_fds();
-	std::vector< int > fd_list( n->fds() );
-	assert( fd_list.size() == 1 ); /* servers don't hop */
-	int network_fd = fd_list.back();
-	sel.add_fd( network_fd );
-	if ( sel.select( n->wait_time() ) < 0 ) {
-	  perror( "select" );
-	  exit( 1 );
-	}
-	
-	n->tick();
+        sel.clear_fds();
+        std::vector<int> fd_list( n->fds() );
+        assert( fd_list.size() == 1 ); /* servers don't hop */
+        int network_fd = fd_list.back();
+        sel.add_fd( network_fd );
+        if ( sel.select( n->wait_time() ) < 0 ) {
+          perror( "select" );
+          exit( 1 );
+        }
 
-	if ( sel.read( network_fd ) ) {
-	  n->recv();
+        n->tick();
 
-	  if ( n->get_remote_state_num() != last_num ) {
-	    fprintf( stderr, "[%d=>%d %s]", (int)last_num, (int)n->get_remote_state_num(), n->get_remote_diff().c_str() );
-	    last_num = n->get_remote_state_num();
-	  }
-	}
-      } catch ( const std::exception &e ) {
-	fprintf( stderr, "Server error: %s\n", e.what() );
+        if ( sel.read( network_fd ) ) {
+          n->recv();
+
+          if ( n->get_remote_state_num() != last_num ) {
+            fprintf(
+              stderr, "[%d=>%d %s]", (int)last_num, (int)n->get_remote_state_num(), n->get_remote_diff().c_str() );
+            last_num = n->get_remote_state_num();
+          }
+        }
+      } catch ( const std::exception& e ) {
+        fprintf( stderr, "Server error: %s\n", e.what() );
       }
     }
   } else {
@@ -120,54 +121,50 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
-    Select &sel = Select::get_instance();
+    Select& sel = Select::get_instance();
 
-    while( true ) {
+    while ( true ) {
       sel.clear_fds();
       sel.add_fd( STDIN_FILENO );
 
-      std::vector< int > fd_list( n->fds() );
-      for ( std::vector< int >::const_iterator it = fd_list.begin();
-	    it != fd_list.end();
-	    it++ ) {
-	sel.add_fd( *it );
+      std::vector<int> fd_list( n->fds() );
+      for ( std::vector<int>::const_iterator it = fd_list.begin(); it != fd_list.end(); it++ ) {
+        sel.add_fd( *it );
       }
 
       try {
-	if ( sel.select( n->wait_time() ) < 0 ) {
-	  perror( "select" );
-	}
+        if ( sel.select( n->wait_time() ) < 0 ) {
+          perror( "select" );
+        }
 
-	n->tick();
+        n->tick();
 
-	if ( sel.read( STDIN_FILENO ) ) {
-	  char x;
-	  fatal_assert( read( STDIN_FILENO, &x, 1 ) == 1 );
-	  n->get_current_state().push_back( Parser::UserByte( x ) );
-	}
+        if ( sel.read( STDIN_FILENO ) ) {
+          char x;
+          fatal_assert( read( STDIN_FILENO, &x, 1 ) == 1 );
+          n->get_current_state().push_back( Parser::UserByte( x ) );
+        }
 
-	bool network_ready_to_read = false;
-	for ( std::vector< int >::const_iterator it = fd_list.begin();
-	      it != fd_list.end();
-	      it++ ) {
-	  if ( sel.read( *it ) ) {
-	    /* packet received from the network */
-	    /* we only read one socket each run */
-	    network_ready_to_read = true;
-	  }
-	}
+        bool network_ready_to_read = false;
+        for ( std::vector<int>::const_iterator it = fd_list.begin(); it != fd_list.end(); it++ ) {
+          if ( sel.read( *it ) ) {
+            /* packet received from the network */
+            /* we only read one socket each run */
+            network_ready_to_read = true;
+          }
+        }
 
-	if ( network_ready_to_read ) {
-	  n->recv();
-	}
-      } catch ( const std::exception &e ) {
-	fprintf( stderr, "Client error: %s\n", e.what() );
+        if ( network_ready_to_read ) {
+          n->recv();
+        }
+      } catch ( const std::exception& e ) {
+        fprintf( stderr, "Client error: %s\n", e.what() );
       }
     }
 
     if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
       perror( "tcsetattr" );
       exit( 1 );
-    }    
+    }
   }
 }

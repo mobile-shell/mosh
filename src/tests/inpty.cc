@@ -56,9 +56,9 @@
 #include "src/util/pty_compat.h"
 #include "src/util/swrite.h"
 
-int main( int argc, char *argv[] )
+int main( int argc, char* argv[] )
 {
-  if (argc < 2) {
+  if ( argc < 2 ) {
     fprintf( stderr, "usage: inpty COMMAND [ARGS...]\n" );
     return 1;
   }
@@ -68,7 +68,7 @@ int main( int argc, char *argv[] )
   winsize.ws_col = 80;
   winsize.ws_row = 24;
 
-  int saved_stderr = dup(STDERR_FILENO);
+  int saved_stderr = dup( STDERR_FILENO );
   if ( saved_stderr < 0 ) {
     perror( "dup" );
     return 1;
@@ -101,7 +101,7 @@ int main( int argc, char *argv[] )
   }
 
   while ( 1 ) {
-    char buf[ 1024 ];
+    char buf[1024];
     ssize_t bytes_read = read( master, buf, sizeof( buf ) );
     if ( bytes_read == 0 || ( bytes_read < 0 && errno == EIO ) ) { /* EOF */
       break;

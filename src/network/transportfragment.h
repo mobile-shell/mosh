@@ -40,67 +40,64 @@
 #include "src/protobufs/transportinstruction.pb.h"
 
 namespace Network {
-  using namespace TransportBuffers;
+using namespace TransportBuffers;
 
-  class Fragment
+class Fragment
+{
+public:
+  static const size_t frag_header_len = sizeof( uint64_t ) + sizeof( uint16_t );
+
+  uint64_t id;
+  uint16_t fragment_num;
+  bool final;
+
+  bool initialized;
+
+  std::string contents;
+
+  Fragment() : id( -1 ), fragment_num( -1 ), final( false ), initialized( false ), contents() {}
+
+  Fragment( uint64_t s_id, uint16_t s_fragment_num, bool s_final, const std::string& s_contents )
+    : id( s_id ), fragment_num( s_fragment_num ), final( s_final ), initialized( true ), contents( s_contents )
+  {}
+
+  Fragment( const std::string& x );
+
+  std::string tostring( void );
+
+  bool operator==( const Fragment& x ) const;
+};
+
+class FragmentAssembly
+{
+private:
+  std::vector<Fragment> fragments;
+  uint64_t current_id;
+  int fragments_arrived, fragments_total;
+
+public:
+  FragmentAssembly() : fragments(), current_id( -1 ), fragments_arrived( 0 ), fragments_total( -1 ) {}
+  bool add_fragment( Fragment& inst );
+  Instruction get_assembly( void );
+};
+
+class Fragmenter
+{
+private:
+  uint64_t next_instruction_id;
+  Instruction last_instruction;
+  size_t last_MTU;
+
+public:
+  Fragmenter() : next_instruction_id( 0 ), last_instruction(), last_MTU( -1 )
   {
-  public:
-    static const size_t frag_header_len = sizeof( uint64_t ) + sizeof( uint16_t );
+    last_instruction.set_old_num( -1 );
+    last_instruction.set_new_num( -1 );
+  }
+  std::vector<Fragment> make_fragments( const Instruction& inst, size_t MTU );
+  uint64_t last_ack_sent( void ) const { return last_instruction.ack_num(); }
+};
 
-    uint64_t id;
-    uint16_t fragment_num;
-    bool final;
-
-    bool initialized;
-
-    std::string contents;
-
-    Fragment()
-      : id( -1 ), fragment_num( -1 ), final( false ), initialized( false ), contents()
-    {}
-
-    Fragment( uint64_t s_id, uint16_t s_fragment_num, bool s_final, const std::string & s_contents )
-      : id( s_id ), fragment_num( s_fragment_num ), final( s_final ), initialized( true ),
-	contents( s_contents )
-    {}
-
-    Fragment( const std::string &x );
-
-    std::string tostring( void );
-
-    bool operator==( const Fragment &x ) const;
-  };
-
-  class FragmentAssembly
-  {
-  private:
-    std::vector<Fragment> fragments;
-    uint64_t current_id;
-    int fragments_arrived, fragments_total;
-
-  public:
-    FragmentAssembly() : fragments(), current_id( -1 ), fragments_arrived( 0 ), fragments_total( -1 ) {}
-    bool add_fragment( Fragment &inst );
-    Instruction get_assembly( void );
-  };
-
-  class Fragmenter
-  {
-  private:
-    uint64_t next_instruction_id;
-    Instruction last_instruction;
-    size_t last_MTU;
-
-  public:
-    Fragmenter() : next_instruction_id( 0 ), last_instruction(), last_MTU( -1 )
-    {
-      last_instruction.set_old_num( -1 );
-      last_instruction.set_new_num( -1 );
-    }
-    std::vector<Fragment> make_fragments( const Instruction &inst, size_t MTU );
-    uint64_t last_ack_sent( void ) const { return last_instruction.ack_num(); }
-  };
-  
 }
 
 #endif
