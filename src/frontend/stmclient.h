@@ -98,9 +98,9 @@ public:
     : ip( s_ip ? s_ip : "" ), port( s_port ? s_port : "" ), key( s_key ? s_key : "" ), escape_key( 0x1E ),
       escape_pass_key( '^' ), escape_pass_key2( '^' ), escape_requires_lf( false ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(), window_size(), local_framebuffer( 1, 1 ), new_state( 1, 1 ), overlays(),
-      network(), display( true ), /* use TERM environment var to initialize display */
-      connecting_notification(), repaint_requested( false ), lf_entered( false ), quit_sequence_started( false ),
-      clean_shutdown( false ), verbose( s_verbose )
+      network(), display( true ) /* use TERM environment var to initialize display */, connecting_notification(),
+      repaint_requested( false ), lf_entered( false ), quit_sequence_started( false ), clean_shutdown( false ),
+      verbose( s_verbose )
   {
     if ( predict_mode ) {
       if ( !strcmp( predict_mode, "always" ) ) {
