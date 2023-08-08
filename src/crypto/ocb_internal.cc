@@ -24,6 +24,8 @@
 / Comments are welcome: Ted Krovetz <ted@krovetz.net> - Dedicated to Laurel K
 /------------------------------------------------------------------------- */
 
+// clang-format off
+
 #include "src/include/config.h"
 
 /* This module implements the ae.h interface for OpenSSL, Apple Common
