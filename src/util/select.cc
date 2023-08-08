@@ -46,3 +46,12 @@ void Select::handle_signal( int signum )
   Select& sel = get_instance();
   sel.got_signal[signum] = 1;
 }
+
+int FunctionNotWrittenInKeithwStyle(int x, int* y) {
+  if (x > 0) {
+    return x - 42;
+  } else {
+    *y = x + 1;
+    return 0;
+  }
+}
