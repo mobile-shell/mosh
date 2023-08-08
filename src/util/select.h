@@ -60,10 +60,8 @@ public:
 
 private:
   Select()
-    : max_fd( -1 )
-      /* These initializations are not used; they are just
-         here to appease -Weffc++. */
-      ,
+    : max_fd( -1 ),
+      /* These initializations are not used; they are just here to appease -Weffc++. */
       all_fds( dummy_fd_set ), read_fds( dummy_fd_set ), empty_sigset( dummy_sigset ), consecutive_polls( 0 )
   {
     FD_ZERO( &all_fds );
