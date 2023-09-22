@@ -577,6 +577,29 @@ AS_IF([test "$install_completion" != no],
      [completions="${sysconfdir}/bash_completion.d"])
    AC_SUBST([completions])])
 
+# Allow autoconf configuration of port range
+AC_ARG_WITH([port_low], AC_HELP_STRING([--port-low=port]),
+  [port_low=$withval],
+  [port_low=60001])
+AS_IF([test ! $port_low -eq $port_low],
+  AC_MSG_ERROR([port-low must be an integer]))
+AS_IF([test $port_low -ge 65535 -o $port_low -le 1023],
+  AC_MSG_ERROR([port-low must be between 1024 and 65535]))
+
+AC_ARG_WITH([port_high], AC_HELP_STRING([--port-high=port]),
+  [port_high=$withval],
+  [port_high=60999])
+AS_IF([test ! $port_high -eq $port_high],
+  AC_MSG_ERROR([port-high must be an integer]))
+AS_IF([test $port_high -ge 65535 -o $port_high -le 1023],
+  AC_MSG_ERROR([port-high must be between 1024 and 65535]))
+
+AS_IF([test $port_low -ge $port_high],
+  AC_MSG_ERROR([port-low must be lower than port_high]))
+
+AC_DEFINE_UNQUOTED([PORT_RANGE_LOW], [$port_low], [Low end of UDP port range])
+AC_DEFINE_UNQUOTED([PORT_RANGE_HIGH], [$port_high], [High end of UDP port range])
+
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
