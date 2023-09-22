@@ -139,9 +139,6 @@ private:
   static const uint64_t MIN_RTO = 50;   /* ms */
   static const uint64_t MAX_RTO = 1000; /* ms */
 
-  static const int PORT_RANGE_LOW = 60001;
-  static const int PORT_RANGE_HIGH = 60999;
-
   static const unsigned int SERVER_ASSOCIATION_TIMEOUT = 40000;
   static const unsigned int PORT_HOP_INTERVAL = 10000;
 
