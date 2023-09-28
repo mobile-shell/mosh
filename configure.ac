@@ -218,9 +218,9 @@ AS_IF([test x"$enable_syslog" != xno],
       [AC_MSG_ERROR([--enable-syslog was given but syslog.h was not found.])])])])
 
 AC_ARG_ENABLE([agent-forwarding],
-  [AS_HELP_STRING([--enable-agent-forwarding], [Build support for SSH agent forwarding @<:@no@:>@])],
+  [AS_HELP_STRING([--disable-agent-forwarding], [Build support for SSH agent forwarding @<:@yes@:>@])],
   [enable_agent_forwarding="$enableval"],
-  [enable_agent_forwarding="no"])
+  [enable_agent_forwarding="yes"])
 AS_IF([test x"$enable_agent_forwarding" != xno],
   [AC_DEFINE([SUPPORT_AGENT_FORWARDING], [1], [Define to build support for SSH agent forwarding.])])
 
