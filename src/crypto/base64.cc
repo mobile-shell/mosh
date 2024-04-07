@@ -106,7 +106,7 @@ void base64_encode( const uint8_t* raw, const size_t raw_len, char* b64, const s
     b64[0] = table[( bytes >> 18 ) & 0x3f];
     b64[1] = table[( bytes >> 12 ) & 0x3f];
     b64[2] = table[( bytes >> 6 ) & 0x3f];
-    b64[3] = table[(bytes)&0x3f];
+    b64[3] = table[( bytes ) & 0x3f];
     raw += 3;
     b64 += 4;
   }
