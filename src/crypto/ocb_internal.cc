@@ -220,7 +220,8 @@
 		bl = _mm_slli_epi32(bl, 1);
 		return _mm_xor_si128(bl,tmp);
 	}
-#elif __ALTIVEC__ && _CALL_ELF != 2
+/* This code does not build on Darwin PowerPC at the moment. */
+#elif (__ALTIVEC__ && _CALL_ELF != 2) && !defined(__APPLE__)
     #include <altivec.h>
     typedef vector unsigned block;
     #define xor_block(x,y)         vec_xor(x,y)
