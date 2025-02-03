@@ -1,0 +1,42 @@
+#!/bin/env bash
+VIM='vim $HOME/google-cloud-sdk/lib/googlecloudsdk/command_lib/util/ssh/ssh.py -c /Suite.OPENSSH:'
+if test $# -eq 0; then
+	echo this is a mosh wrapper for ssh designed for gcloud compute. enable from
+	echo $VIM
+	echo $VIM|termux-clipboard-set 2>/dev/null
+	exit -1
+fi
+# echo ssh-mosh $*
+
+val=()
+pos=()
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-i|-p|-o)
+		val+=("$1 $2")
+		shift 2
+		;;
+		-X*|-C*|-v*)
+		val+=("$1")
+		shift
+		;;
+		-*|--*)
+		echo skipping $1
+		shift
+		;;
+		*)
+			pos+=("$1")
+			shift;;
+	esac
+done
+
+if test ${#pos[@]} -eq 0; then
+	echo failed to parse arguments
+	exit -1
+fi
+
+echo installing mosh-server
+ssh -o LogLevel=quiet ${val[*]} -- ${pos[0]} "sudo apt-get -qq update; sudo apt-get -qqy install mosh"
+
+# echo mosh --ssh "ssh ${val[*]}" -- ${pos[*]}
+mosh --no-init --ssh "ssh ${val[*]}" -- ${pos[*]}
