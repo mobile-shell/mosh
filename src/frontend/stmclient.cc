@@ -235,12 +235,19 @@ void STMClient::shutdown( void )
 
 void STMClient::main_init( void )
 {
+  /* Ignore SIGPIPE to prevent crashes when writing to terminal */
+  struct sigaction sa;
+  sa.sa_handler = SIG_IGN;
+  sa.sa_flags = 0;
+  sigemptyset( &sa.sa_mask );
+  sigaction( SIGPIPE, &sa, NULL );
+
   Select& sel = Select::get_instance();
   sel.add_signal( SIGWINCH );
   sel.add_signal( SIGTERM );
   sel.add_signal( SIGINT );
   sel.add_signal( SIGHUP );
-  sel.add_signal( SIGPIPE );
+  /* Don't monitor SIGPIPE - we're ignoring it */
   sel.add_signal( SIGCONT );
 
   /* get initial window size */
@@ -505,7 +512,7 @@ bool STMClient::main( void )
         resume();
       }
 
-      if ( sel.signal( SIGTERM ) || sel.signal( SIGINT ) || sel.signal( SIGHUP ) || sel.signal( SIGPIPE ) ) {
+      if ( sel.signal( SIGTERM ) || sel.signal( SIGINT ) || sel.signal( SIGHUP ) ) {
         /* shutdown signal */
         if ( !network->has_remote_addr() ) {
           break;

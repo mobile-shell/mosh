@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make:*)",
+      "Bash(./autogen.sh:*)",
+      "Bash(./configure:*)",
+      "Bash(grep:*)"
+    ],
+    "deny": []
+  }
+}

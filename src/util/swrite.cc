@@ -30,6 +30,7 @@
     also delete it here.
 */
 
+#include <cerrno>
 #include <cstdio>
 #include <cstring>
 
@@ -44,6 +45,11 @@ int swrite( int fd, const char* str, ssize_t len )
   while ( total_bytes_written < bytes_to_write ) {
     ssize_t bytes_written = write( fd, str + total_bytes_written, bytes_to_write - total_bytes_written );
     if ( bytes_written <= 0 ) {
+      /* Handle EPIPE gracefully - this can happen when writing large amounts of data */
+      if ( errno == EPIPE ) {
+        /* Terminal couldn't keep up, but this isn't fatal */
+        return 0;
+      }
       perror( "write" );
       return -1;
     }
