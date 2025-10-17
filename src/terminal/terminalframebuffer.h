@@ -255,6 +255,8 @@ public:
 class DrawState
 {
 private:
+  static const int cursor_shape_count = 7; /* 0-6 are valid cursor control code */
+
   int width, height;
 
   void new_grapheme( void );
@@ -282,6 +284,7 @@ public:
   bool cursor_visible;
   bool reverse_video;
   bool bracketed_paste;
+  int cursor_shape;
 
   enum MouseReportingMode
   {
@@ -317,6 +320,12 @@ public:
   int get_combining_char_row( void ) const { return combining_char_row; }
   int get_width( void ) const { return width; }
   int get_height( void ) const { return height; }
+  void set_cursor_shape(int shape)
+  {
+    if ( shape >= 0 && shape < cursor_shape_count ) {
+      cursor_shape = shape;
+    }
+  }
 
   void set_tab( void );
   void clear_tab( int col );
@@ -355,7 +364,7 @@ public:
            && ( reverse_video == x.reverse_video ) && ( renditions == x.renditions )
            && ( bracketed_paste == x.bracketed_paste ) && ( mouse_reporting_mode == x.mouse_reporting_mode )
            && ( mouse_focus_event == x.mouse_focus_event ) && ( mouse_alternate_scroll == x.mouse_alternate_scroll )
-           && ( mouse_encoding_mode == x.mouse_encoding_mode );
+           && ( mouse_encoding_mode == x.mouse_encoding_mode ) && (cursor_shape == x.cursor_shape);
   }
 };
 
