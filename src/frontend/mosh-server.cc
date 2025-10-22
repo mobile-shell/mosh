@@ -457,35 +457,37 @@ static int run_server( const char* desired_ip,
   fatal_assert( 0 == sigaction( SIGHUP, &sa, NULL ) );
   fatal_assert( 0 == sigaction( SIGPIPE, &sa, NULL ) );
 
-  /* detach from terminal */
-  fflush( NULL );
-  pid_t the_pid = fork();
-  if ( the_pid < 0 ) {
-    perror( "fork" );
-  } else if ( the_pid > 0 ) {
-    fputs( "\nmosh-server (" PACKAGE_STRING ") [build " BUILD_VERSION "]\n"
-           "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n"
-           "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
-           "This is free software: you are free to change and redistribute it.\n"
-           "There is NO WARRANTY, to the extent permitted by law.\n\n",
-           stderr );
+  if ( getenv( "MOSH_KEEP_SSH" ) == nullptr ) {
+    /* detach from terminal */
+    fflush( NULL );
+    pid_t the_pid = fork();
+    if ( the_pid < 0 ) {
+      perror( "fork" );
+    } else if ( the_pid > 0 ) {
+      fputs( "\nmosh-server (" PACKAGE_STRING ") [build " BUILD_VERSION "]\n"
+             "Copyright 2012 Keith Winstein <mosh-devel@mit.edu>\n"
+             "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+             "This is free software: you are free to change and redistribute it.\n"
+             "There is NO WARRANTY, to the extent permitted by law.\n\n",
+             stderr );
 
-    fprintf( stderr, "[mosh-server detached, pid = %d]\n", static_cast<int>( the_pid ) );
+      fprintf( stderr, "[mosh-server detached, pid = %d]\n", static_cast<int>( the_pid ) );
 #ifndef HAVE_IUTF8
-    fputs( "\nWarning: termios IUTF8 flag not defined.\n"
-           "Character-erase of multibyte character sequence\n"
-           "probably does not work properly on this platform.\n",
-           stderr );
+      fputs( "\nWarning: termios IUTF8 flag not defined.\n"
+             "Character-erase of multibyte character sequence\n"
+             "probably does not work properly on this platform.\n",
+             stderr );
 #endif /* HAVE_IUTF8 */
 
-    fflush( NULL );
-    if ( isatty( STDOUT_FILENO ) ) {
-      tcdrain( STDOUT_FILENO );
+      fflush( NULL );
+      if ( isatty( STDOUT_FILENO ) ) {
+        tcdrain( STDOUT_FILENO );
+      }
+      if ( isatty( STDERR_FILENO ) ) {
+        tcdrain( STDERR_FILENO );
+      }
+      exit( 0 );
     }
-    if ( isatty( STDERR_FILENO ) ) {
-      tcdrain( STDERR_FILENO );
-    }
-    exit( 0 );
   }
 
   int master;

@@ -63,6 +63,7 @@ $|=1;
 
 my $client = 'mosh-client';
 my $server = 'mosh-server';
+my $preserve_ssh = 0;
 
 my $predict = undef;
 
@@ -152,26 +153,78 @@ sub predict_check {
   }
 }
 
+sub ssh_forwarding_option_set {
+  my ( $value ) = @_;
+  return 0 unless defined $value;
+
+  if ( $value =~ /(LocalForward|RemoteForward|DynamicForward)\b/i ) {
+    return 1;
+  }
+
+  return 0;
+}
+
+sub ssh_forwarding_requested {
+  my ( @argv ) = @_;
+  my $index = 0;
+
+  while ( $index <= $#argv ) {
+    my $arg = $argv[$index];
+
+    if ( $arg eq '-L' or $arg eq '-R' or $arg eq '-D' ) {
+      return 1;
+    }
+
+    if ( $arg =~ /^-[LRD].+/ ) {
+      return 1;
+    }
+
+    if ( $arg eq '-o' ) {
+      my $value = undef;
+      if ( $index + 1 <= $#argv ) {
+        $value = $argv[$index + 1];
+        if ( ssh_forwarding_option_set( $value ) ) {
+          return 1;
+        }
+      }
+      $index = $index + 2;
+      next;
+    }
+
+    if ( $arg =~ /^-o(.+)/ ) {
+      my $option = $1;
+      if ( ssh_forwarding_option_set( $option ) ) {
+        return 1;
+      }
+    }
+
+    $index++;
+  }
+
+  return 0;
+}
+
 GetOptions( 'client=s' => \$client,
-	    'server=s' => \$server,
-	    'predict=s' => \$predict,
-	    'predict-overwrite|o!' => \$overwrite,
-	    'port=s' => \$port_request,
-	    'a' => sub { $predict = 'always' },
-	    'n' => sub { $predict = 'never' },
-	    'family=s' => \$family,
-	    '4' => sub { $family = 'inet' },
-	    '6' => sub { $family = 'inet6' },
-	    'p=s' => \$port_request,
-	    'ssh=s' => sub { @ssh = shellwords($_[1]); },
-	    'ssh-pty!' => \$ssh_pty,
-	    'init!' => \$term_init,
-	    'local' => \$localhost,
-	    'help' => \$help,
-	    'version' => \$version,
-	    'fake-proxy!' => \my $fake_proxy,
-	    'bind-server=s' => \$bind_ip,
-	    'experimental-remote-ip=s' => \$use_remote_ip) or die $usage;
+            'server=s' => \$server,
+            'predict=s' => \$predict,
+            'predict-overwrite|o!' => \$overwrite,
+            'port=s' => \$port_request,
+            'a' => sub { $predict = 'always' },
+            'n' => sub { $predict = 'never' },
+            'family=s' => \$family,
+            '4' => sub { $family = 'inet' },
+            '6' => sub { $family = 'inet6' },
+            'p=s' => \$port_request,
+            'ssh=s' => sub { @ssh = shellwords($_[1]); },
+            'ssh-pty!' => \$ssh_pty,
+            'init!' => \$term_init,
+            'local' => \$localhost,
+            'help' => \$help,
+            'version' => \$version,
+            'fake-proxy!' => \my $fake_proxy,
+            'bind-server=s' => \$bind_ip,
+            'experimental-remote-ip=s' => \$use_remote_ip) or die $usage;
+
 
 if ( defined $help ) {
     print $usage;
@@ -406,7 +459,12 @@ if ( $pid == 0 ) { # child
     my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
     push @sshopts, ( '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p" );
   }
-  my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . "$server " . shell_quote( @server ) );
+  my $remote_command = "$server " . shell_quote( @server );
+  if ( $preserve_ssh ) {
+    $remote_command = "MOSH_KEEP_SSH=1 $remote_command";
+  }
+
+  my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . $remote_command );
   exec @exec_argv;
   die "Cannot exec ssh: $!\n";
 } else { # parent
