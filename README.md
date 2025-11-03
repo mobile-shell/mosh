@@ -1,4 +1,6 @@
 [![ci](https://github.com/mobile-shell/mosh/actions/workflows/ci.yml/badge.svg)](https://github.com/mobile-shell/mosh/actions/workflows/ci.yml)
+echo "# Mosh Documentation Update" >> DOC_UPDATE.md
+echo "This update improves readability and adds contribution details." >> DOC_UPDATE.md
 
 Mosh: the mobile shell
 ======================
