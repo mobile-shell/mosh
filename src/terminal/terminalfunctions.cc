@@ -137,7 +137,7 @@ static Function func_CSI_cursormove_f( CSI, "f", CSI_cursormove );
 /* cursor shape */
 static void CSI_cursorshape( Framebuffer* fb, Dispatcher* dispatch )
 {
-  int shape = dispatch->getparam( 0, -1 );
+  int shape = dispatch->getparam( 0, 0 );
 
   fb->ds.set_cursor_shape(shape);
 }
