@@ -24,13 +24,13 @@ baseline()
         printf '\n\033[%d q%s' "$shape" "$text"
         sleep $sleep_time
     done <<EOF
-0 1 Block
-1 1 Block
-2 2 BlinkBlock
-3 1 Underline
-4 2 BlinkUnderline
-5 1 Bar
-6 2 BlinkBar
+0 2 BlinkBlock0
+1 2 BlinkBlock1
+2 2 SteadyBlock
+3 2 BlinkUnderline
+4 2 SteadyUnderline
+5 2 BlinkBar
+6 2 SteadyBar
 0 0 done
 EOF
     echo
