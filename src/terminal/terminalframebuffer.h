@@ -98,12 +98,42 @@ public:
   void clear_attributes() { attributes = 0; }
 };
 
+class Hyperlink
+{
+private:
+  struct Rep
+  {
+    std::string id;
+    std::string url;
+  };
+  std::shared_ptr<Rep> rep;
+  static const std::string* empty_string;
+
+public:
+  Hyperlink() = default;
+  Hyperlink( std::string id, std::string url )
+    : rep( url.empty() ? nullptr : std::make_shared<Rep>( Rep { std::move( id ), std::move( url ) } ) )
+  {}
+
+  std::string osc8() const;
+
+  const std::string& get_id() const { return rep == nullptr ? *empty_string : rep->id; }
+  const std::string& get_url() const { return rep == nullptr ? *empty_string : rep->url; }
+
+  bool empty() const { return rep == nullptr; }
+
+  bool operator==( const Hyperlink& x ) const;
+
+  bool operator!=( const Hyperlink& x ) const { return !operator==( x ); }
+};
+
 class Cell
 {
 private:
   typedef std::string content_type; /* can be std::string, std::vector<uint8_t>, or __gnu_cxx::__vstring */
   content_type contents;
   Renditions renditions;
+  Hyperlink hyperlink;
   unsigned int wide : 1;     /* 0 = narrow, 1 = wide */
   unsigned int fallback : 1; /* first character is combining character */
   unsigned int wrap : 1;
@@ -119,7 +149,7 @@ public:
   bool operator==( const Cell& x ) const
   {
     return ( ( contents == x.contents ) && ( fallback == x.fallback ) && ( wide == x.wide )
-             && ( renditions == x.renditions ) && ( wrap == x.wrap ) );
+             && ( renditions == x.renditions ) && ( hyperlink == x.hyperlink ) && ( wrap == x.wrap ) );
   }
 
   bool operator!=( const Cell& x ) const { return !operator==( x ); }
@@ -198,6 +228,8 @@ public:
   }
 
   /* Other accessors */
+  const Hyperlink& get_hyperlink() const { return hyperlink; }
+  const void set_hyperlink( Hyperlink l ) { hyperlink = std::move( l ); }
   const Renditions& get_renditions( void ) const { return renditions; }
   Renditions& get_renditions( void ) { return renditions; }
   void set_renditions( const Renditions& r ) { renditions = r; }
@@ -271,6 +303,7 @@ private:
   int scrolling_region_top_row, scrolling_region_bottom_row;
 
   Renditions renditions;
+  Hyperlink hyperlink;
 
   SavedCursor save;
 
@@ -332,6 +365,9 @@ public:
   int limit_top( void ) const;
   int limit_bottom( void ) const;
 
+  const Hyperlink& get_hyperlink() const { return hyperlink; }
+  void set_hyperlink( Hyperlink x ) { hyperlink = std::move( x ); }
+
   void set_foreground_color( int x ) { renditions.set_foreground_color( x ); }
   void set_background_color( int x ) { renditions.set_background_color( x ); }
   void add_rendition( color_type x ) { renditions.set_rendition( x ); }
@@ -355,7 +391,7 @@ public:
            && ( reverse_video == x.reverse_video ) && ( renditions == x.renditions )
            && ( bracketed_paste == x.bracketed_paste ) && ( mouse_reporting_mode == x.mouse_reporting_mode )
            && ( mouse_focus_event == x.mouse_focus_event ) && ( mouse_alternate_scroll == x.mouse_alternate_scroll )
-           && ( mouse_encoding_mode == x.mouse_encoding_mode );
+           && ( mouse_encoding_mode == x.mouse_encoding_mode ) && hyperlink == x.hyperlink;
   }
 };
 
@@ -448,6 +484,7 @@ public:
   Cell* get_combining_cell( void );
 
   void apply_renditions_to_cell( Cell* cell );
+  void apply_hyperlink_to_cell( Cell* cell );
 
   void insert_line( int before_row, int count );
   void delete_line( int row, int count );

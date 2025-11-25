@@ -268,6 +268,14 @@ void Framebuffer::apply_renditions_to_cell( Cell* cell )
   cell->set_renditions( ds.get_renditions() );
 }
 
+void Framebuffer::apply_hyperlink_to_cell( Cell* cell )
+{
+  if ( !cell ) {
+    cell = get_mutable_cell();
+  }
+  cell->set_hyperlink( ds.get_hyperlink() );
+}
+
 SavedCursor::SavedCursor()
   : cursor_col( 0 ), cursor_row( 0 ), renditions( 0 ), auto_wrap_mode( true ), origin_mode( false )
 {}
@@ -390,6 +398,7 @@ void Framebuffer::soft_reset( void )
   ds.application_mode_cursor_keys = false;
   ds.set_scrolling_region( 0, ds.get_height() - 1 );
   ds.add_rendition( 0 );
+  ds.set_hyperlink( Hyperlink() );
   ds.clear_saved_cursor();
 }
 
@@ -591,6 +600,38 @@ std::string Renditions::sgr( void ) const
   }
   ret.append( "m" );
 
+  return ret;
+}
+
+// Empty static string to return from accessors.
+/* static */ const std::string* Hyperlink::empty_string = new std::string;
+
+bool Hyperlink::operator==( const Hyperlink& x ) const
+{
+  if ( rep == nullptr && x.rep == nullptr ) {
+    return true;
+  }
+  if ( rep == nullptr || x.rep == nullptr ) {
+    return false;
+  }
+
+  return rep->url == x.rep->url && rep->id == x.rep->id;
+}
+
+std::string Hyperlink::osc8() const
+{
+  std::string ret;
+
+  ret.append( "\033]8;" );
+  const std::string& id = get_id();
+  if ( !id.empty() ) {
+    ret.append( "id=" );
+    ret.append( id );
+  }
+  ret.append( ";" );
+  ret.append( get_url() );
+
+  ret.append( "\033\\" );
   return ret;
 }
 
