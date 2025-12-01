@@ -603,9 +603,6 @@ std::string Renditions::sgr( void ) const
   return ret;
 }
 
-// Empty static string to return from accessors.
-/* static */ const std::string* Hyperlink::empty_string = new std::string;
-
 bool Hyperlink::operator==( const Hyperlink& x ) const
 {
   if ( rep == nullptr && x.rep == nullptr ) {
@@ -615,7 +612,7 @@ bool Hyperlink::operator==( const Hyperlink& x ) const
     return false;
   }
 
-  return rep->url == x.rep->url && rep->id == x.rep->id;
+  return rep->url == x.rep->url && rep->params == x.rep->params;
 }
 
 std::string Hyperlink::osc8() const
@@ -623,13 +620,14 @@ std::string Hyperlink::osc8() const
   std::string ret;
 
   ret.append( "\033]8;" );
-  const std::string& id = get_id();
-  if ( !id.empty() ) {
-    ret.append( "id=" );
-    ret.append( id );
+  if ( empty() ) {
+    ret.append( ";\033\\" );
+    return ret;
   }
+
+  ret.append( rep->params );
   ret.append( ";" );
-  ret.append( get_url() );
+  ret.append( rep->url );
 
   ret.append( "\033\\" );
   return ret;
