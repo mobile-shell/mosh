@@ -35,6 +35,15 @@ if [ "$(basename "$0")" = emulation-attributes-bce.test ] &&
     exit 77
 fi
 
+# Need 3.4 for OSC 8 support
+if [ "$(basename "$0")" = emulation-attributes-osc8.test ] &&
+   ! tmux_check 3 4; then
+    printf "tmux does not support OSC 8 hyperlinks\n" >&2
+    exit 77
+fi
+
+
+
 # Top-level wrapper.
 if [ $# -eq 0 ]; then
     e2e-test "$0" baseline direct verify
@@ -139,6 +148,10 @@ baseline()
 	    printf '\033[42m\033[J16 color\n'
 	    printf '\033[0mdone\n'
 	    ;;
+        osc8)
+            printf '\033]8;;http://example.com\033\133This is a link\033]8;;\033\133\n'
+            printf '\033]8;id=foo;http://example.com\033\133link\033]8;;\033\133\n'
+            ;;
 	*)
 	    fail "unknown test name %s\n" "$1"
 	    ;;
