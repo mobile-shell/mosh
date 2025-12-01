@@ -40,6 +40,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 /* Terminal framebuffer */
@@ -103,22 +104,18 @@ class Hyperlink
 private:
   struct Rep
   {
-    std::string id;
+    std::string params;
     std::string url;
   };
   std::shared_ptr<Rep> rep;
-  static const std::string* empty_string;
 
 public:
   Hyperlink() = default;
-  Hyperlink( std::string id, std::string url )
-    : rep( url.empty() ? nullptr : std::make_shared<Rep>( Rep { std::move( id ), std::move( url ) } ) )
+  Hyperlink( std::string params, std::string url )
+    : rep( url.empty() ? nullptr : std::make_shared<Rep>( Rep { std::move( params ), std::move( url ) } ) )
   {}
 
   std::string osc8() const;
-
-  const std::string& get_id() const { return rep == nullptr ? *empty_string : rep->id; }
-  const std::string& get_url() const { return rep == nullptr ? *empty_string : rep->url; }
 
   bool empty() const { return rep == nullptr; }
 
