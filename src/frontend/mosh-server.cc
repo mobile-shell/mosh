@@ -1025,6 +1025,28 @@ static bool device_exists( const char* ut_line )
   struct stat buf;
   return 0 == lstat( device_name.c_str(), &buf );
 }
+
+static std::string format_duration( time_t duration )
+{
+  if ( duration < 0 )
+    return "?";
+  int days = duration / 86400;
+  duration %= 86400;
+  int hours = duration / 3600;
+  duration %= 3600;
+  int minutes = duration / 60;
+  int seconds = duration % 60;
+
+  char buf[64];
+  if ( days > 0 ) {
+    snprintf( buf, 64, "%dd %dh %dm", days, hours, minutes );
+  } else if ( hours > 0 ) {
+    snprintf( buf, 64, "%dh %dm", hours, minutes );
+  } else {
+    snprintf( buf, 64, "%dm %ds", minutes, seconds );
+  }
+  return std::string( buf );
+}
 #endif
 
 static void warn_unattached( const std::string& ignore_entry )
@@ -1042,6 +1064,7 @@ static void warn_unattached( const std::string& ignore_entry )
 
   /* look for unattached sessions */
   std::vector<std::string> unattached_mosh_servers;
+  time_t now = time( NULL );
 
   while ( struct utmpx* entry = getutxent() ) {
     if ( ( entry->ut_type == USER_PROCESS ) && ( username == std::string( entry->ut_user ) ) ) {
@@ -1049,6 +1072,10 @@ static void warn_unattached( const std::string& ignore_entry )
       std::string text( entry->ut_host );
       if ( ( text.size() >= 5 ) && ( text.substr( 0, 5 ) == "mosh " ) && ( text[text.size() - 1] == ']' )
            && ( text != ignore_entry ) && device_exists( entry->ut_line ) ) {
+        long int age = now - entry->ut_tv.tv_sec;
+        if ( age < 0 )
+          age = 0;
+        text += " (age " + format_duration( age ) + ")";
         unattached_mosh_servers.push_back( text );
       }
     }
