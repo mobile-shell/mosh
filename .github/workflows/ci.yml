@@ -24,7 +24,11 @@ jobs:
 
     - name: "setup macos build environment"
       if: ${{ startsWith(matrix.os, 'macos') }}
-      run: brew install protobuf automake
+      run: |
+        brew install protobuf automake
+        F=$(pkg-config --cflags protobuf |  sed 's/-I\/opt\/homebrew/-isystem \/opt\/homebrew/g')
+        echo "protobuf_CFLAGS=$F" >> $GITHUB_ENV
+
 
     - name: "generate build scripts"
       run: ./autogen.sh
