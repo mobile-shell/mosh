@@ -126,6 +126,7 @@ public:
 
   const Addr& get_remote_addr( void ) const { return connection.get_remote_addr(); }
   socklen_t get_remote_addr_len( void ) const { return connection.get_remote_addr_len(); }
+  void set_remote_addr( const struct sockaddr* addr, socklen_t len ) { connection.set_remote_addr( addr, len ); }
 
   std::string& get_send_error( void ) { return connection.get_send_error(); }
 };

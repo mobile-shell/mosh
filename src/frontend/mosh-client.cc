@@ -85,7 +85,7 @@ static void print_usage( FILE* file, const char* argv0 )
 {
   print_version( file );
   fprintf( file,
-           "\nUsage: %s [-# 'ARGS'] IP PORT\n"
+           "\nUsage: %s [-# 'ARGS'] [-n hostname] IP PORT\n"
            "       %s -c\n",
            argv0,
            argv0 );
@@ -130,8 +130,10 @@ int main( int argc, char* argv[] )
     }
   }
 
+  char *hostname = NULL;
+
   int opt;
-  while ( ( opt = getopt( argc, argv, "#:cv" ) ) != -1 ) {
+  while ( ( opt = getopt( argc, argv, "#:cvn:" ) ) != -1 ) {
     switch ( opt ) {
       case '#':
         // Ignore the original arguments to mosh wrapper
@@ -142,6 +144,9 @@ int main( int argc, char* argv[] )
         break;
       case 'v':
         verbose++;
+        break;
+      case 'n':
+        hostname = optarg;
         break;
       default:
         print_usage( stderr, argv[0] );
@@ -194,7 +199,7 @@ int main( int argc, char* argv[] )
 
   bool success = false;
   try {
-    STMClient client( ip, desired_port, key.c_str(), predict_mode, verbose, predict_overwrite );
+    STMClient client( hostname, ip, desired_port, key.c_str(), predict_mode, verbose, predict_overwrite );
     client.init();
 
     try {
