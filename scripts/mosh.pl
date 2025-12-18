@@ -69,6 +69,7 @@ my $predict = undef;
 my $overwrite = 0;
 
 my $bind_ip = undef;
+my $host = undef;
 
 my $use_remote_ip = 'proxy';
 
@@ -245,6 +246,7 @@ if ( ! defined $fake_proxy ) {
   }
   $userhost = shift;
   @command = @ARGV;
+  (my $user, $host) = $userhost =~ /^((?:.*@)?)(.*)$/;
   if ( not defined $bind_ip or $bind_ip =~ m{^ssh$}i ) {
     if ( not defined $localhost ) {
       push @bind_arguments, '-s';
@@ -334,7 +336,7 @@ $ENV{ 'MOSH_CLIENT_PID' } = $$; # We don't support this, but it's useful for tes
 my $ip;
 if ( $use_remote_ip eq 'local' ) {
   # "parse" the host from what the user gave us
-  my ($user, $host) = $userhost =~ /^((?:.*@)?)(.*)$/;
+  (my $user, $host) = $userhost =~ /^((?:.*@)?)(.*)$/;
   # get list of addresses
   my @res = resolvename( $host, 22, $family );
   # Use only the first address as the Mosh IP
@@ -462,7 +464,7 @@ if ( $pid == 0 ) { # child
   $ENV{ 'MOSH_KEY' } = $key;
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
   $ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
-  exec {$client} ("$client", "-# @cmdline |", $ip, $port);
+  exec {$client} ("$client", "-# @cmdline |", "-n", "$host", $ip, $port);
 }
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }
