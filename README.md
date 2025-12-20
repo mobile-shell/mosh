@@ -157,6 +157,15 @@ $ sudo apt install -y build-essential protobuf-compiler \
     libssl-dev bash-completion tmux less
 ```
 
+Fedora, RHEL:
+
+```
+$ sudo dnf group install development-tools
+$ sudo dnf install automake protobuf-compiler protobuf-devel libutempter-devel \
+    zlib-ng-compat-devel ncurses-devel openssl-devel bash-completion tmux less \
+    perl-diagnostics
+```
+
 MacOS:
 
 ```
