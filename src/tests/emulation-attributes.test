@@ -152,6 +152,7 @@ baseline()
             printf '\033]8;;http://example.com\033\133This is a link\033]8;;\033\133\n'
             printf '\033]8;id=foo;http://example.com\033\133link\033]8;;\033\133\n'
             printf '\033]8;foo=bar:bar=baz;http://example.com\033\133link\033]8;;\033\133\n'
+            printf "\e]8;;vscode://file/home/achin/test:1:1\e\x5c\e[0m\e[35mtest\e[0m\e]8;;\e\x5c:\e[0m\e[1m\e[31mtest\e[0m\n"
             ;;
 	*)
 	    fail "unknown test name %s\n" "$1"
