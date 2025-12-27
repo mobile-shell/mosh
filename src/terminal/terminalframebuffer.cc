@@ -46,6 +46,7 @@ void Cell::reset( color_type background_color )
 {
   contents.clear();
   renditions = Renditions( background_color );
+  hyperlink = Hyperlink();
   wide = false;
   fallback = false;
   wrap = false;
