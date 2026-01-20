@@ -272,6 +272,7 @@ AC_CHECK_HEADERS(m4_normalize([
   stdlib.h
   string.h
   sys/ioctl.h
+  sys/random.h
   sys/resource.h
   sys/socket.h
   sys/stat.h
@@ -304,6 +305,8 @@ AC_TYPE_UINTPTR_T
 
 # Checks for library functions.
 AC_CHECK_FUNCS(m4_normalize([
+  getentropy
+  getrandom
   gettimeofday
   posix_memalign
   cfmakeraw
