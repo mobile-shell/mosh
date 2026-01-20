@@ -45,6 +45,8 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <netdb.h>
+#include <sys/socket.h>
 
 #if HAVE_PTY_H
 #include <pty.h>
@@ -193,7 +195,7 @@ void STMClient::init( void )
     tmp = std::string( escape_key_name_buf );
     std::wstring escape_key_name = std::wstring( tmp.begin(), tmp.end() );
     escape_key_help
-      = L"Commands: Ctrl-Z suspends, \".\" quits, " + escape_pass_name + L" gives literal " + escape_key_name;
+      = L"Commands: Ctrl-Z suspends, \".\" quits, \"r\" forces a re-resolve, " + escape_pass_name + L" gives literal " + escape_key_name;
     overlays.get_notification_engine().set_escape_key_string( tmp );
   }
   wchar_t tmp[128];
@@ -367,6 +369,41 @@ bool STMClient::process_user_input( int fd )
         kill( 0, SIGSTOP );
 
         resume();
+      } else if ( the_byte == 'r' || the_byte == 'R' ) {
+        if ( !hostname.empty() ) {
+          overlays.get_notification_engine().set_notification_string( std::wstring( L"Re-resolving..." ), true );
+          output_new_frame();
+          struct addrinfo hints, *res;
+          memset( &hints, 0, sizeof( hints ) );
+          hints.ai_family = AF_UNSPEC;
+          hints.ai_socktype = SOCK_DGRAM;
+          int err = getaddrinfo( hostname.c_str(), port.c_str(), &hints, &res );
+          if ( err == 0 ) {
+            struct addrinfo *p;
+            struct addrinfo *match = NULL;
+            int current_family = net.get_remote_addr().sa.sa_family;
+
+            for ( p = res; p != NULL; p = p->ai_next ) {
+              if ( p->ai_family == current_family ) {
+                match = p;
+                break;
+              }
+            }
+
+            if ( match ) {
+              net.set_remote_addr( match->ai_addr, match->ai_addrlen );
+            } else {
+              net.set_remote_addr( res->ai_addr, res->ai_addrlen );
+            }
+
+            freeaddrinfo( res );
+            overlays.get_notification_engine().set_notification_string( std::wstring( L"Re-resolved hostname." ), false );
+          } else {
+            std::string msg = "DNS failure: ";
+            msg += gai_strerror( err );
+            overlays.get_notification_engine().set_notification_string( std::wstring( msg.begin(), msg.end() ), false );
+          }
+        }
       } else if ( ( the_byte == escape_pass_key ) || ( the_byte == escape_pass_key2 ) ) {
         /* Emulation sequence to type escape_key is escape_key +
            escape_pass_key (that is escape key without Ctrl) */

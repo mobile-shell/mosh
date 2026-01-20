@@ -364,6 +364,24 @@ Connection::Connection( const char* key_str, const char* ip, const char* port ) 
   set_MTU( remote_addr.sa.sa_family );
 }
 
+void Connection::set_remote_addr( const struct sockaddr* addr, socklen_t len )
+{
+  fatal_assert( len <= sizeof( remote_addr ) );
+
+  bool family_changed = ( remote_addr.sa.sa_family != addr->sa_family );
+
+  remote_addr_len = len;
+  memcpy( &remote_addr.sa, addr, remote_addr_len );
+
+  has_remote_addr = true;
+
+  if ( family_changed ) {
+    socks.push_back( Socket( remote_addr.sa.sa_family ) );
+  }
+
+  set_MTU( remote_addr.sa.sa_family );
+}
+
 void Connection::send( const std::string& s )
 {
   if ( !has_remote_addr ) {
