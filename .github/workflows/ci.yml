@@ -8,11 +8,11 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-20.04, ubuntu-22.04]
+        os: [macos-latest, ubuntu-22.04, ubuntu-24.04]
         crypto: [auto]
         include:
           - crypto: nettle
-            os: ubuntu-20.04
+            os: ubuntu-22.04
         
 
     steps:
@@ -24,7 +24,11 @@ jobs:
 
     - name: "setup macos build environment"
       if: ${{ startsWith(matrix.os, 'macos') }}
-      run: brew install protobuf automake
+      run: |
+        brew install protobuf automake
+        F=$(pkg-config --cflags protobuf |  sed 's/-I\/opt\/homebrew/-isystem \/opt\/homebrew/g')
+        echo "protobuf_CFLAGS=$F" >> $GITHUB_ENV
+
 
     - name: "generate build scripts"
       run: ./autogen.sh
