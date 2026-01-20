@@ -105,11 +105,7 @@ static void print_colorcount( void )
   printf( "%d\n", color_val );
 }
 
-#ifdef NACL
-int mosh_main( int argc, char* argv[] )
-#else
 int main( int argc, char* argv[] )
-#endif
 {
   unsigned int verbose = 0;
   /* For security, make sure we don't dump core */
