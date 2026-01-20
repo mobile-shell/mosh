@@ -1,3 +1,9 @@
+mosh (1.4.0-2) UNRELEASED; urgency=medium
+
+  * Remove Benjamin Barenblat from Uploaders.
+
+ -- Benjamin Barenblat <bbaren@debian.org>  Mon, 19 Jan 2026 19:38:42 -0500
+
 mosh (1.4.0-1) unstable; urgency=medium
 
   * New upstream release.
