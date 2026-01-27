@@ -25,6 +25,7 @@ aminclude_static.am
 src/include/config.h
 src/include/config.h.in
 src/include/config.h.in~
+/config.cache
 /config.log
 /config.status
 /configure
