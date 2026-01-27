@@ -108,7 +108,7 @@ public:
     /* Register a handler, which will only be called when pselect()
        is interrupted by a (possibly queued) signal. */
     struct sigaction sa;
-    sa.sa_flags = 0;
+    sa.sa_flags = SA_RESTART;
     sa.sa_handler = &handle_signal;
     fatal_assert( 0 == sigfillset( &sa.sa_mask ) );
     fatal_assert( 0 == sigaction( signum, &sa, NULL ) );
