@@ -427,8 +427,9 @@ public:
     if ( row == -1 )
       row = ds.get_cursor_row();
     row_pointer& mutable_row = rows.at( row );
-    // If the row is shared, copy it.
-    if ( !mutable_row.unique() ) {
+    // If the row is shared, copy it. This is only safe because mosh isn't
+    // multi-threaded.
+    if ( mutable_row.use_count() > 1 ) {
       mutable_row = std::make_shared<Row>( *mutable_row );
     }
     return mutable_row.get();
