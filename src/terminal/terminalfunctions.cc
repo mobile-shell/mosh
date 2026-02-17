@@ -657,6 +657,13 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End* act __attribute( ( unused 
       OSC_8( osc_8_str, fb );
       return;
     }
+    if ( cmd_num == 7 ) {
+      fb->set_current_directory_initialized();
+      int cwd_length = std::min( OSC_string.size(), (size_t)1024 );
+      Terminal::Framebuffer::title_type new_cwd( OSC_string.begin() + offset, OSC_string.begin() + cwd_length );
+      fb->set_current_directory( new_cwd );
+      return;
+    }
     bool set_icon = cmd_num == 0 || cmd_num == 1;
     bool set_title = cmd_num == 0 || cmd_num == 2;
     if ( set_icon || set_title ) {

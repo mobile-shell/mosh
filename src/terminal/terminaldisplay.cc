@@ -102,6 +102,17 @@ std::string Display::new_frame( bool initialized, const Framebuffer& last, const
     }
   }
 
+  /* has cwd changed? OSC 7 current directory support */
+  if ( f.is_current_directory_initialized()
+       && ( !initialized || f.get_current_directory() != frame.last_frame.get_current_directory() ) ) {
+    frame.append( "\033]7;" );
+    for ( const auto c : f.get_current_directory() ) {
+      frame.append( c );
+    }
+    frame.append( '\007' );
+    /* ST is more correct, but BEL more widely supported */
+  }
+
   /* has clipboard changed? */
   if ( f.get_clipboard() != frame.last_frame.get_clipboard() ) {
     frame.append( "\033]52;c;" );

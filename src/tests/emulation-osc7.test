@@ -1,0 +1,41 @@
+#!/bin/sh
+
+#
+# This test is for OSC7 support.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+
+if ! tmux_check 3 3; then
+    printf "tmux does not support OSC7\n" >&2
+    exit 77
+fi
+
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline post
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    printf '\033]7;file://hostname/directory/\007'
+    echo 0
+    printf '\033]7;\007'
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    post)
+	;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac
