@@ -48,7 +48,7 @@ AC_ARG_ENABLE([compile-warnings],
        # remove -Wno-unused-parameter once
        # protocolbuffers/protobuf#10357 is resolved       
        WARNING_CXXFLAGS="-Wall -Werror -Wno-c++17-extensions"
-       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations -Wno-unused-parameter"
+       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations -Wno-unused-parameter -Wno-nullability-extension"
        ;;
      distcheck)
        WARNING_CXXFLAGS="-Wall -Werror"
