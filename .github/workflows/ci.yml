@@ -8,11 +8,11 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-20.04, ubuntu-22.04]
+        os: [macos-latest, ubuntu-22.04, ubuntu-24.04]
         crypto: [auto]
         include:
           - crypto: nettle
-            os: ubuntu-20.04
+            os: ubuntu-22.04
         
 
     steps:
