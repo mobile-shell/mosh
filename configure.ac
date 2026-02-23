@@ -40,7 +40,7 @@ AC_ARG_ENABLE([compile-warnings],
        ;;
      maximum)
        WARNING_CXXFLAGS="-Wall"
-       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
+       PICKY_CXXFLAGS="-Wextra -Wno-long-long -Weffc++ -Wmissing-declarations"
        ;;
      error)
        # remove -Wno-c++17-extensions once protocolbuffers/protobuf#9181 is
@@ -48,11 +48,11 @@ AC_ARG_ENABLE([compile-warnings],
        # remove -Wno-unused-parameter once
        # protocolbuffers/protobuf#10357 is resolved       
        WARNING_CXXFLAGS="-Wall -Werror -Wno-c++17-extensions"
-       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations -Wno-unused-parameter"
+       PICKY_CXXFLAGS="-Wextra -Wno-long-long -Weffc++ -Wmissing-declarations -Wno-unused-parameter"
        ;;
      distcheck)
        WARNING_CXXFLAGS="-Wall -Werror"
-       PICKY_CXXFLAGS="-Wextra -pedantic -Wno-long-long -Weffc++ -Wmissing-declarations"
+       PICKY_CXXFLAGS="-Wextra -Wno-long-long -Weffc++ -Wmissing-declarations"
        AX_CHECK_COMPILE_FLAG([-Wno-error=unused-parameter],
          [PICKY_CXXFLAGS="$PICKY_CXXFLAGS -Wno-error=unused-parameter"], [], [-Werror])
        AX_CHECK_COMPILE_FLAG([-Wno-error=c++11-extensions],
