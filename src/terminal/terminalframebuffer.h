@@ -110,7 +110,7 @@ private:
   std::shared_ptr<Rep> rep;
 
 public:
-  Hyperlink() = default;
+  Hyperlink() : rep( nullptr ) {}
   Hyperlink( std::string params, std::string url )
     : rep( url.empty() ? nullptr : std::make_shared<Rep>( Rep { std::move( params ), std::move( url ) } ) )
   {}
@@ -226,7 +226,7 @@ public:
 
   /* Other accessors */
   const Hyperlink& get_hyperlink() const { return hyperlink; }
-  const void set_hyperlink( Hyperlink l ) { hyperlink = std::move( l ); }
+  void set_hyperlink( Hyperlink l ) { hyperlink = std::move( l ); }
   const Renditions& get_renditions( void ) const { return renditions; }
   Renditions& get_renditions( void ) { return renditions; }
   void set_renditions( const Renditions& r ) { renditions = r; }
