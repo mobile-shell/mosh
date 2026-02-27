@@ -59,7 +59,7 @@ jobs:
 
     - name: "setup linux build environment"
       if: ${{ startsWith(matrix.os, 'ubuntu') }}
-      run: sudo apt install -y protobuf-compiler libprotobuf-dev libutempter-dev autoconf automake nettle-dev
+      run: sudo apt update && sudo apt install -y protobuf-compiler libprotobuf-dev libutempter-dev autoconf automake nettle-dev
 
     - name: "Install gtar wrapper"
       if: ${{ startsWith(matrix.os, 'macos') }}
