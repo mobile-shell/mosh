@@ -473,8 +473,8 @@ bool Display::put_row( bool initialized,
 }
 
 FrameState::FrameState( const Framebuffer& s_last )
-  : str(), cursor_x( 0 ), cursor_y( 0 ), current_rendition( 0 ), cursor_visible( s_last.ds.cursor_visible ),
-    last_frame( s_last )
+  : str(), cursor_x( 0 ), cursor_y( 0 ), current_rendition( 0 ), current_hyperlink(),
+    cursor_visible( s_last.ds.cursor_visible ), last_frame( s_last )
 {
   /* Preallocate for better performance.  Make a guess-- doesn't matter for correctness */
   str.reserve( last_frame.ds.get_width() * last_frame.ds.get_height() * 4 );
