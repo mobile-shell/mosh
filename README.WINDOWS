@@ -1,0 +1,153 @@
+# Building Mosh for Windows
+
+This document describes how to build Mosh natively on Windows using MSYS2 and MinGW64.
+
+## Prerequisites
+
+### MSYS2 Installation
+1. Install MSYS2 from https://www.msys2.org/
+2. Update the package database:
+   ```bash
+   pacman -Syuu --noconfirm
+   ```
+
+### Required Build Tools
+Install necessary build tools and dependencies in MSYS2 MinGW64 environment:
+
+```bash
+pacman -S --noconfirm base-devel \
+  git \
+  autoconf \
+  automake \
+  libtool \
+  pkg-config \
+  mingw-w64-x86_64-gcc \
+  mingw-w64-x86_64-make \
+  mingw-w64-x86_64-cmake \
+  mingw-w64-x86_64-protobuf \
+  mingw-w64-x86_64-openssl \
+  mingw-w64-x86_64-zlib
+```
+
+## Build Steps
+
+### 1. Launch MSYS2 MinGW64
+```bash
+# From PowerShell or Command Prompt
+C:\scoop\apps\msys2\current\msys2_shell.cmd -mingw64
+```
+
+### 2. Navigate to Mosh Source Directory
+```bash
+cd /c/Users/YourUsername/Projects/mosh-windows
+```
+
+### 3. Generate Configure Script
+```bash
+bash autogen.sh
+```
+
+### 4. Configure for Windows Build
+```bash
+./configure \
+  --host=x86_64-w64-mingw32 \
+  --prefix=/c/Users/YourUsername/Projects/mosh-install \
+  CXXFLAGS="-O2 -std=c++17 -D_WIN32_WINNT=0x0601" \
+  LDFLAGS="-lwsock32 -lws2_32"
+```
+
+### 5. Build
+```bash
+make -j4
+```
+
+### 6. Install
+```bash
+make install
+```
+
+## Windows-Specific Modifications
+
+### New Files Added
+- `src/windows/pty_windows.h` - Console/PTY compatibility layer (header)
+- `src/windows/pty_windows.cc` - Console/PTY implementation
+- `src/windows/select_windows.h` - select() compatibility layer (header)
+- `src/windows/select_windows.cc` - Async I/O multiplexing implementation
+
+### Key Changes
+1. **PTY Handling**: Windows console API replaces Unix termios/pty
+2. **I/O Multiplexing**: WaitForMultipleObjects() for event handling
+3. **Socket API**: Winsock2 for UDP communication
+4. **Signal Handling**: Windows events replace Unix signals
+
+## Known Limitations
+
+1. **Console I/O**: Limited to console-based terminals (cmd.exe, PowerShell)
+   - Windows Terminal (modern) and other terminal emulators supported
+   - Not compatible with non-terminal I/O redirection
+
+2. **SSH Integration**: Requires:
+   - OpenSSH for Windows (Windows 10+ built-in)
+   - Or third-party SSH client (e.g., PuTTY, Git Bash SSH)
+
+3. **Server-Side**: Mosh server must run on Unix/Linux
+   - Windows cannot serve as Mosh server
+   - This client connects to Unix/Linux hosts only
+
+## Testing
+
+### Basic Connectivity Test
+```bash
+# From Windows command line
+mosh-client --version
+
+# Connect to remote Mosh server
+mosh [user@]hostname
+```
+
+### Troubleshooting
+- Ensure UDP ports 60000-61000 are open in firewall
+- Check SSH connectivity: `ssh [user@]hostname`
+- Verify Mosh server running: `ps aux | grep mosh-server`
+
+## Building Issues
+
+### Protobuf Compilation Error
+If protoc is not found:
+```bash
+pacman -S --noconfirm mingw-w64-x86_64-protobuf
+```
+
+### Missing Dependencies
+Run: `./configure --help` for all options and flags
+
+### Permission Errors
+On Windows, files might be locked. Use:
+```bash
+make distclean
+rm -rf autom4te.cache
+```
+
+## Contributing Changes
+
+This fork maintains GPL 3.0 compatibility. All modifications:
+1. Must include appropriate GPL 3.0 headers
+2. Should be submitted as pull requests
+3. Need to document Windows-specific behavior
+4. Should include test cases for new functionality
+
+## License
+
+Mosh is distributed under GPLv3. See COPYING file in source root.
+
+This Windows port maintains full GPL 3.0 compliance:
+- All modifications include GPLv3 headers
+- Source code is freely available
+- Derivative works must also be GPLv3 licensed
+
+## References
+
+- Mosh Official: https://mosh.org/
+- MSYS2: https://www.msys2.org/
+- Windows ConPTY API: https://docs.microsoft.com/en-us/windows/console/pseudoconsole-session
+- Winsock2: https://docs.microsoft.com/en-us/windows/win32/winsock/winsock-functions
