@@ -33,6 +33,8 @@
 #include <algorithm>
 #include <cstdio>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <unistd.h>
 
@@ -588,6 +590,39 @@ static void CSI_DECSTR( Framebuffer* fb, Dispatcher* dispatch __attribute( ( unu
 
 static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );
 
+static bool Parse_OSC_8( const std::vector<wchar_t>& osc8_vector, std::string& osc8_str )
+{
+  osc8_str.reserve( osc8_vector.size() );
+  for ( wchar_t wide_char : osc8_vector ) {
+    // Valid char range is 32-126, per
+    // https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda#encodings
+    if ( wide_char < 32 || wide_char > 126 ) {
+      return false;
+    }
+    osc8_str.append( 1, static_cast<char>( wide_char ) );
+  }
+  return true;
+}
+
+static void OSC_8( const std::string& OSC_string, Framebuffer* fb )
+{
+  // OSC of the form "\033]8;params;url\007"
+  assert( OSC_string[0] == '8' );
+  if ( OSC_string.size() <= 2 || OSC_string[1] != ';' ) {
+    // Bail early if the string is malformed.
+    return;
+  }
+
+  size_t second_semicolon = OSC_string.find_first_of( ';', 2 );
+  if ( second_semicolon == std::string::npos ) {
+    // Missing the second semicolon, malformed.
+    return;
+  }
+
+  fb->ds.set_hyperlink(
+    Hyperlink( OSC_string.substr( 2, second_semicolon - 2 ), OSC_string.substr( second_semicolon + 1 ) ) );
+}
+
 /* xterm uses an Operating System Command to set the window title */
 void Dispatcher::OSC_dispatch( const Parser::OSC_End* act __attribute( ( unused ) ), Framebuffer* fb )
 {
@@ -611,6 +646,16 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End* act __attribute( ( unused 
        * 2: set window title */
       cmd_num = OSC_string[0] - L'0';
       offset = 2;
+    }
+    if ( cmd_num == 8 ) {
+      // Handle OSC8 hyperlinks separately
+      std::string osc_8_str;
+      if ( !Parse_OSC_8( OSC_string, osc_8_str ) ) {
+        //
+        return;
+      }
+      OSC_8( osc_8_str, fb );
+      return;
     }
     bool set_icon = cmd_num == 0 || cmd_num == 1;
     bool set_title = cmd_num == 0 || cmd_num == 2;

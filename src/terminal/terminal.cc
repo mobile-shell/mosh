@@ -106,6 +106,7 @@ void Emulator::print( const Parser::Print* act )
       this_cell->append( ch );
       this_cell->set_wide( chwidth == 2 ); /* chwidth had better be 1 or 2 here */
       fb.apply_renditions_to_cell( this_cell );
+      fb.apply_hyperlink_to_cell( this_cell );
 
       if ( chwidth == 2 && fb.ds.get_cursor_col() + 1 < fb.ds.get_width() ) { /* erase overlapped cell */
         fb.reset_cell( fb.get_mutable_cell( fb.ds.get_cursor_row(), fb.ds.get_cursor_col() + 1 ) );

@@ -39,13 +39,14 @@
 using namespace Terminal;
 
 Cell::Cell( color_type background_color )
-  : contents(), renditions( background_color ), wide( false ), fallback( false ), wrap( false )
+  : contents(), renditions( background_color ), hyperlink(), wide( false ), fallback( false ), wrap( false )
 {}
 
 void Cell::reset( color_type background_color )
 {
   contents.clear();
   renditions = Renditions( background_color );
+  hyperlink = Hyperlink();
   wide = false;
   fallback = false;
   wrap = false;
@@ -62,7 +63,7 @@ void DrawState::reinitialize_tabs( unsigned int start )
 DrawState::DrawState( int s_width, int s_height )
   : width( s_width ), height( s_height ), cursor_col( 0 ), cursor_row( 0 ), combining_char_col( 0 ),
     combining_char_row( 0 ), default_tabs( true ), tabs( s_width ), scrolling_region_top_row( 0 ),
-    scrolling_region_bottom_row( height - 1 ), renditions( 0 ), save(), next_print_will_wrap( false ),
+    scrolling_region_bottom_row( height - 1 ), renditions( 0 ), hyperlink(), save(), next_print_will_wrap( false ),
     origin_mode( false ), auto_wrap_mode( true ), insert_mode( false ), cursor_visible( true ),
     reverse_video( false ), bracketed_paste( false ), mouse_reporting_mode( MOUSE_REPORTING_NONE ),
     mouse_focus_event( false ), mouse_alternate_scroll( false ), mouse_encoding_mode( MOUSE_ENCODING_DEFAULT ),
@@ -268,6 +269,14 @@ void Framebuffer::apply_renditions_to_cell( Cell* cell )
   cell->set_renditions( ds.get_renditions() );
 }
 
+void Framebuffer::apply_hyperlink_to_cell( Cell* cell )
+{
+  if ( !cell ) {
+    cell = get_mutable_cell();
+  }
+  cell->set_hyperlink( ds.get_hyperlink() );
+}
+
 SavedCursor::SavedCursor()
   : cursor_col( 0 ), cursor_row( 0 ), renditions( 0 ), auto_wrap_mode( true ), origin_mode( false )
 {}
@@ -390,6 +399,7 @@ void Framebuffer::soft_reset( void )
   ds.application_mode_cursor_keys = false;
   ds.set_scrolling_region( 0, ds.get_height() - 1 );
   ds.add_rendition( 0 );
+  ds.set_hyperlink( Hyperlink() );
   ds.clear_saved_cursor();
 }
 
@@ -591,6 +601,36 @@ std::string Renditions::sgr( void ) const
   }
   ret.append( "m" );
 
+  return ret;
+}
+
+bool Hyperlink::operator==( const Hyperlink& x ) const
+{
+  if ( rep == nullptr && x.rep == nullptr ) {
+    return true;
+  }
+  if ( rep == nullptr || x.rep == nullptr ) {
+    return false;
+  }
+
+  return rep->url == x.rep->url && rep->params == x.rep->params;
+}
+
+std::string Hyperlink::osc8() const
+{
+  std::string ret;
+
+  ret.append( "\033]8;" );
+  if ( empty() ) {
+    ret.append( ";\033\\" );
+    return ret;
+  }
+
+  ret.append( rep->params );
+  ret.append( ";" );
+  ret.append( rep->url );
+
+  ret.append( "\033\\" );
   return ret;
 }
 

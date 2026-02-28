@@ -21,6 +21,7 @@ displaytests = \
 	emulation-attributes-256color248.test \
 	emulation-attributes-truecolor.test \
 	emulation-attributes-bce.test \
+	emulation-attributes-osc8.test \
 	emulation-back-tab.test \
 	emulation-cursor-motion.test \
 	emulation-multiline-scroll.test \

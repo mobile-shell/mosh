@@ -95,7 +95,7 @@ private:
   bool parsed;
 
   std::string dispatch_chars;
-  std::vector<wchar_t> OSC_string; /* only used to set the window title */
+  std::vector<wchar_t> OSC_string;
 
   void parse_params( void );
 
