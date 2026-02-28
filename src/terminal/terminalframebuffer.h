@@ -101,14 +101,6 @@ public:
 
 class Hyperlink
 {
-private:
-  struct Rep
-  {
-    std::string params;
-    std::string url;
-  };
-  std::shared_ptr<Rep> rep;
-
 public:
   Hyperlink() : rep( nullptr ) {}
   Hyperlink( std::string params, std::string url )
@@ -122,6 +114,14 @@ public:
   bool operator==( const Hyperlink& x ) const;
 
   bool operator!=( const Hyperlink& x ) const { return !operator==( x ); }
+
+private:
+  struct Rep
+  {
+    std::string params;
+    std::string url;
+  };
+  std::shared_ptr<Rep> rep;
 };
 
 class Cell
