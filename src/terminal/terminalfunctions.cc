@@ -134,6 +134,17 @@ static Function func_CSI_cursormove_D( CSI, "D", CSI_cursormove );
 static Function func_CSI_cursormove_H( CSI, "H", CSI_cursormove );
 static Function func_CSI_cursormove_f( CSI, "f", CSI_cursormove );
 
+/* cursor shape */
+static void CSI_cursorshape( Framebuffer* fb, Dispatcher* dispatch )
+{
+  int shape = dispatch->getparam( 0, 0 );
+
+  fb->ds.set_cursor_shape(shape);
+}
+
+static Function func_CSI_cursorshape( CSI, " q", CSI_cursorshape );
+
+
 /* device attributes */
 static void CSI_DA( Framebuffer* fb __attribute( ( unused ) ), Dispatcher* dispatch )
 {

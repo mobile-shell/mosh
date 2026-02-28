@@ -119,6 +119,11 @@ std::string Display::new_frame( bool initialized, const Framebuffer& last, const
     frame.append( tmp );
   }
 
+  if ( f.ds.cursor_shape != frame.last_frame.ds.cursor_shape && f.ds.cursor_shape != -1 ) {
+    snprintf(tmp, sizeof(tmp), "\033[%d q", f.ds.cursor_shape);
+    frame.append(tmp);
+  }
+
   /* has size changed? */
   if ( ( !initialized ) || ( f.ds.get_width() != frame.last_frame.ds.get_width() )
        || ( f.ds.get_height() != frame.last_frame.ds.get_height() ) ) {

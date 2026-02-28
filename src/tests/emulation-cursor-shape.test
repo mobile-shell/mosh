@@ -1,0 +1,44 @@
+#!/bin/sh
+
+#
+# This test exercises the cursor shape ascii sequence in Mosh.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline direct verify
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    while read -r shape sleep_time text; do
+        printf '\n\033[%d q%s' "$shape" "$text"
+        sleep $sleep_time
+    done <<EOF
+0 2 BlinkBlock0
+1 2 BlinkBlock1
+2 2 SteadyBlock
+3 2 BlinkUnderline
+4 2 SteadyUnderline
+5 2 BlinkBar
+6 2 SteadyBar
+0 0 done
+EOF
+    echo
+}
+
+case $1 in
+    baseline|direct)
+        baseline;;
+    *)
+        fail "unknown test argument %s\n" "$1";;
+esac
