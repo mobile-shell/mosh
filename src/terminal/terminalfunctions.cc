@@ -594,7 +594,8 @@ static bool Parse_OSC_8( const std::vector<wchar_t>& osc8_vector, std::string& o
 {
   osc8_str.reserve( osc8_vector.size() );
   for ( wchar_t wide_char : osc8_vector ) {
-    // Valid char range is 32-126
+    // Valid char range is 32-126, per
+    // https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda#encodings
     if ( wide_char < 32 || wide_char > 126 ) {
       return false;
     }
@@ -618,9 +619,8 @@ static void OSC_8( const std::string& OSC_string, Framebuffer* fb )
     return;
   }
 
-  std::string params = OSC_string.substr( 2, second_semicolon - 2 );
-  std::string url = OSC_string.substr( second_semicolon + 1 );
-  fb->ds.set_hyperlink( Hyperlink( std::move( params ), std::move( url ) ) );
+  fb->ds.set_hyperlink(
+    Hyperlink( OSC_string.substr( 2, second_semicolon - 2 ), OSC_string.substr( second_semicolon + 1 ) ) );
 }
 
 /* xterm uses an Operating System Command to set the window title */
