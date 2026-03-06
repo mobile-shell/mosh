@@ -110,6 +110,7 @@ public:
   std::string osc8() const;
 
   bool empty() const { return rep == nullptr; }
+  operator bool() const { return !empty(); }
 
   bool operator==( const Hyperlink& x ) const;
 

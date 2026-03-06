@@ -619,8 +619,8 @@ static void OSC_8( const std::string& OSC_string, Framebuffer* fb )
     return;
   }
 
-  fb->ds.set_hyperlink(
-    Hyperlink( OSC_string.substr( 2, second_semicolon - 2 ), OSC_string.substr( second_semicolon + 1 ) ) );
+  std::string url = OSC_string.substr( second_semicolon + 1 );
+  fb->ds.set_hyperlink( Hyperlink( OSC_string.substr( 2, second_semicolon - 2 ), std::move( url ) ) );
 }
 
 /* xterm uses an Operating System Command to set the window title */
