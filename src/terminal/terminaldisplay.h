@@ -83,6 +83,8 @@ private:
                 const Row& old_row,
                 bool wrap ) const;
 
+  bool can_use_erase( const FrameState& frame ) const;
+
 public:
   std::string open() const;
   std::string close() const;

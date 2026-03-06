@@ -606,7 +606,7 @@ std::string Renditions::sgr( void ) const
 
 bool Hyperlink::operator==( const Hyperlink& x ) const
 {
-  if ( rep == nullptr && x.rep == nullptr ) {
+  if ( rep == x.rep ) {
     return true;
   }
   if ( rep == nullptr || x.rep == nullptr ) {
@@ -621,14 +621,12 @@ std::string Hyperlink::osc8() const
   std::string ret;
 
   ret.append( "\033]8;" );
-  if ( empty() ) {
-    ret.append( ";\033\\" );
-    return ret;
-  }
 
-  ret.append( rep->params );
+  if ( *this )
+    ret.append( rep->params );
   ret.append( ";" );
-  ret.append( rep->url );
+  if ( *this )
+    ret.append( rep->url );
 
   ret.append( "\033\\" );
   return ret;

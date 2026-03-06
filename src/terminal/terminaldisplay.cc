@@ -388,9 +388,7 @@ bool Display::put_row( bool initialized,
       frame.append_silent_move( frame_y, frame_x - clear_count );
       frame.update_rendition( blank_renditions );
       frame.update_hyperlink( blank_hyperlink );
-      bool can_use_erase
-        = has_bce || ( frame.current_rendition == initial_rendition() && frame.current_hyperlink.empty() );
-      if ( can_use_erase && has_ech && clear_count > 4 ) {
+      if ( can_use_erase( frame ) && has_ech && clear_count > 4 ) {
         snprintf( tmp, 64, "\033[%dX", clear_count );
         frame.append( tmp );
       } else {
@@ -442,9 +440,7 @@ bool Display::put_row( bool initialized,
     frame.update_rendition( blank_renditions );
     frame.update_hyperlink( blank_hyperlink );
 
-    bool can_use_erase
-      = has_bce || ( frame.current_rendition == initial_rendition() && frame.current_hyperlink.empty() );
-    if ( can_use_erase && !wrap_this ) {
+    if ( can_use_erase( frame ) && !wrap_this ) {
       frame.append( "\033[K" );
     } else {
       frame.append( clear_count, ' ' );
@@ -470,6 +466,11 @@ bool Display::put_row( bool initialized,
   frame.cursor_x = 0;
   frame.cursor_y++;
   return false;
+}
+
+bool Display::can_use_erase( const FrameState& frame ) const
+{
+  return has_bce || ( frame.current_rendition == initial_rendition() && frame.current_hyperlink.empty() );
 }
 
 FrameState::FrameState( const Framebuffer& s_last )
