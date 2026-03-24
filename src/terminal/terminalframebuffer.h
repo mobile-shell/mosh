@@ -74,7 +74,7 @@ public:
   void set_foreground_color( int num );
   void set_background_color( int num );
   void set_rendition( color_type num );
-  std::string sgr( void ) const;
+  std::string sgr() const;
 
   static unsigned int make_true_color( unsigned int r, unsigned int g, unsigned int b )
   {
@@ -153,14 +153,14 @@ public:
   bool operator!=( const Cell& x ) const { return !operator==( x ); }
 
   /* Accessors for contents field */
-  std::string debug_contents( void ) const;
+  std::string debug_contents() const;
 
-  bool empty( void ) const { return contents.empty(); }
+  bool empty() const { return contents.empty(); }
   /* 32 seems like a reasonable limit on combining characters */
-  bool full( void ) const { return contents.size() >= 32; }
-  void clear( void ) { contents.clear(); }
+  bool full() const { return contents.size() >= 32; }
+  void clear() { contents.clear(); }
 
-  bool is_blank( void ) const
+  bool is_blank() const
   {
     // XXX fix.
     return ( contents.empty() || contents == " " || contents == "\xC2\xA0" );
@@ -228,15 +228,15 @@ public:
   /* Other accessors */
   const Hyperlink& get_hyperlink() const { return hyperlink; }
   void set_hyperlink( Hyperlink l ) { hyperlink = std::move( l ); }
-  const Renditions& get_renditions( void ) const { return renditions; }
-  Renditions& get_renditions( void ) { return renditions; }
+  const Renditions& get_renditions() const { return renditions; }
+  Renditions& get_renditions() { return renditions; }
   void set_renditions( const Renditions& r ) { renditions = r; }
-  bool get_wide( void ) const { return wide; }
+  bool get_wide() const { return wide; }
   void set_wide( bool w ) { wide = w; }
-  unsigned int get_width( void ) const { return wide + 1; }
-  bool get_fallback( void ) const { return fallback; }
+  unsigned int get_width() const { return wide + 1; }
+  bool get_fallback() const { return fallback; }
   void set_fallback( bool f ) { fallback = f; }
-  bool get_wrap( void ) const { return wrap; }
+  bool get_wrap() const { return wrap; }
   void set_wrap( bool f ) { wrap = f; }
 };
 
@@ -263,7 +263,7 @@ public:
 
   bool operator==( const Row& x ) const { return ( gen == x.gen && cells == x.cells ); }
 
-  bool get_wrap( void ) const { return cells.back().get_wrap(); }
+  bool get_wrap() const { return cells.back().get_wrap(); }
   void set_wrap( bool w ) { cells.back().set_wrap( w ); }
 
   uint64_t get_gen() const;
@@ -287,8 +287,8 @@ class DrawState
 private:
   int width, height;
 
-  void new_grapheme( void );
-  void snap_cursor_to_border( void );
+  void new_grapheme();
+  void snap_cursor_to_border();
 
   int cursor_col, cursor_row;
   int combining_char_col, combining_char_row;
@@ -342,26 +342,26 @@ public:
   void move_row( int N, bool relative = false );
   void move_col( int N, bool relative = false, bool implicit = false );
 
-  int get_cursor_col( void ) const { return cursor_col; }
-  int get_cursor_row( void ) const { return cursor_row; }
-  int get_combining_char_col( void ) const { return combining_char_col; }
-  int get_combining_char_row( void ) const { return combining_char_row; }
-  int get_width( void ) const { return width; }
-  int get_height( void ) const { return height; }
+  int get_cursor_col() const { return cursor_col; }
+  int get_cursor_row() const { return cursor_row; }
+  int get_combining_char_col() const { return combining_char_col; }
+  int get_combining_char_row() const { return combining_char_row; }
+  int get_width() const { return width; }
+  int get_height() const { return height; }
 
-  void set_tab( void );
+  void set_tab();
   void clear_tab( int col );
-  void clear_default_tabs( void ) { default_tabs = false; }
+  void clear_default_tabs() { default_tabs = false; }
   /* Default tabs can't be restored without resetting the draw state. */
   int get_next_tab( int count ) const;
 
   void set_scrolling_region( int top, int bottom );
 
-  int get_scrolling_region_top_row( void ) const { return scrolling_region_top_row; }
-  int get_scrolling_region_bottom_row( void ) const { return scrolling_region_bottom_row; }
+  int get_scrolling_region_top_row() const { return scrolling_region_top_row; }
+  int get_scrolling_region_bottom_row() const { return scrolling_region_bottom_row; }
 
-  int limit_top( void ) const;
-  int limit_bottom( void ) const;
+  int limit_top() const;
+  int limit_bottom() const;
 
   const Hyperlink& get_hyperlink() const { return hyperlink; }
   void set_hyperlink( Hyperlink x ) { hyperlink = std::move( x ); }
@@ -369,13 +369,13 @@ public:
   void set_foreground_color( int x ) { renditions.set_foreground_color( x ); }
   void set_background_color( int x ) { renditions.set_background_color( x ); }
   void add_rendition( color_type x ) { renditions.set_rendition( x ); }
-  const Renditions& get_renditions( void ) const { return renditions; }
-  Renditions& get_renditions( void ) { return renditions; }
-  int get_background_rendition( void ) const { return renditions.get_background_rendition(); }
+  const Renditions& get_renditions() const { return renditions; }
+  Renditions& get_renditions() { return renditions; }
+  int get_background_rendition() const { return renditions.get_background_rendition(); }
 
-  void save_cursor( void );
-  void restore_cursor( void );
-  void clear_saved_cursor( void ) { save = SavedCursor(); }
+  void save_cursor();
+  void restore_cursor();
+  void clear_saved_cursor() { save = SavedCursor(); }
 
   void resize( int s_width, int s_height );
 
@@ -420,7 +420,7 @@ private:
   unsigned int bell_count;
   bool title_initialized; /* true if the window title has been set via an OSC */
 
-  row_pointer newrow( void )
+  row_pointer newrow()
   {
     const size_t w = ds.get_width();
     const color_type c = ds.get_background_rendition();
@@ -479,7 +479,7 @@ public:
     return &get_mutable_row( row )->cells.at( col );
   }
 
-  Cell* get_combining_cell( void );
+  Cell* get_combining_cell();
 
   void apply_renditions_to_cell( Cell* cell );
   void apply_hyperlink_to_cell( Cell* cell );
@@ -490,17 +490,17 @@ public:
   void insert_cell( int row, int col );
   void delete_cell( int row, int col );
 
-  void reset( void );
-  void soft_reset( void );
+  void reset();
+  void soft_reset();
 
-  void set_title_initialized( void ) { title_initialized = true; }
-  bool is_title_initialized( void ) const { return title_initialized; }
+  void set_title_initialized() { title_initialized = true; }
+  bool is_title_initialized() const { return title_initialized; }
   void set_icon_name( const title_type& s ) { icon_name = s; }
   void set_window_title( const title_type& s ) { window_title = s; }
   void set_clipboard( const title_type& s ) { clipboard = s; }
-  const title_type& get_icon_name( void ) const { return icon_name; }
-  const title_type& get_window_title( void ) const { return window_title; }
-  const title_type& get_clipboard( void ) const { return clipboard; }
+  const title_type& get_icon_name() const { return icon_name; }
+  const title_type& get_window_title() const { return window_title; }
+  const title_type& get_clipboard() const { return clipboard; }
 
   void prefix_window_title( const title_type& s );
 
@@ -509,8 +509,8 @@ public:
   void reset_cell( Cell* c ) { c->reset( ds.get_background_rendition() ); }
   void reset_row( Row* r ) { r->reset( ds.get_background_rendition() ); }
 
-  void ring_bell( void ) { bell_count++; }
-  unsigned int get_bell_count( void ) const { return bell_count; }
+  void ring_bell() { bell_count++; }
+  unsigned int get_bell_count() const { return bell_count; }
 
   bool operator==( const Framebuffer& x ) const
   {

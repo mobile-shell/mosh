@@ -61,7 +61,7 @@ public:
  * numbers that never repeats its output.  Enforce that with this
  * function.
  */
-uint64_t unique( void );
+uint64_t unique();
 
 /* 16-byte-aligned buffer, with length. */
 class AlignedBuffer
@@ -76,8 +76,8 @@ public:
 
   ~AlignedBuffer() { free( m_allocated ); }
 
-  char* data( void ) const { return m_data; }
-  size_t len( void ) const { return m_len; }
+  char* data() const { return m_data; }
+  size_t len() const { return m_len; }
 
 private:
   /* Not implemented */
@@ -94,8 +94,8 @@ public:
   Base64Key(); /* random key */
   Base64Key( PRNG& prng );
   Base64Key( std::string printable_key );
-  std::string printable_key( void ) const;
-  unsigned char* data( void ) { return key; }
+  std::string printable_key() const;
+  unsigned char* data() { return key; }
 };
 
 class Nonce
@@ -110,9 +110,9 @@ public:
   Nonce( uint64_t val );
   Nonce( const char* s_bytes, size_t len );
 
-  std::string cc_str( void ) const { return std::string( bytes + 4, 8 ); }
-  const char* data( void ) const { return bytes; }
-  uint64_t val( void ) const;
+  std::string cc_str() const { return std::string( bytes + 4, 8 ); }
+  const char* data() const { return bytes; }
+  uint64_t val() const;
 };
 
 class Message
@@ -156,8 +156,8 @@ public:
   Session& operator=( const Session& );
 };
 
-void disable_dumping_core( void );
-void reenable_dumping_core( void );
+void disable_dumping_core();
+void reenable_dumping_core();
 }
 
 #endif

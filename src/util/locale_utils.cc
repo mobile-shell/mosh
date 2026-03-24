@@ -45,7 +45,7 @@
 
 #include "src/util/locale_utils.h"
 
-const std::string LocaleVar::str( void ) const
+const std::string LocaleVar::str() const
 {
   if ( name.empty() ) {
     return std::string( "[no charset variables]" );
@@ -53,7 +53,7 @@ const std::string LocaleVar::str( void ) const
   return name + "=" + value;
 }
 
-const LocaleVar get_ctype( void )
+const LocaleVar get_ctype()
 {
   /* Reimplement the search logic, just for diagnostics */
   if ( const char* all = getenv( "LC_ALL" ) ) {
@@ -66,7 +66,7 @@ const LocaleVar get_ctype( void )
   return LocaleVar( "", "" );
 }
 
-const char* locale_charset( void )
+const char* locale_charset()
 {
   static const char ASCII_name[] = "US-ASCII";
 
@@ -80,7 +80,7 @@ const char* locale_charset( void )
   return ret;
 }
 
-bool is_utf8_locale( void )
+bool is_utf8_locale()
 {
   /* Verify locale calls for UTF-8 */
   if ( strcmp( locale_charset(), "UTF-8" ) != 0 && strcmp( locale_charset(), "utf-8" ) != 0 ) {
@@ -89,7 +89,7 @@ bool is_utf8_locale( void )
   return true;
 }
 
-void set_native_locale( void )
+void set_native_locale()
 {
   /* Adopt native locale */
   if ( NULL == setlocale( LC_ALL, "" ) ) {
@@ -107,7 +107,7 @@ void set_native_locale( void )
   }
 }
 
-void clear_locale_variables( void )
+void clear_locale_variables()
 {
   unsetenv( "LANG" );
   unsetenv( "LANGUAGE" );

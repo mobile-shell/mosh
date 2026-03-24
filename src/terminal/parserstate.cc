@@ -100,7 +100,7 @@ Transition Ground::input_state_rule( wchar_t ch ) const
   return Transition();
 }
 
-ActionPointer Escape::enter( void ) const
+ActionPointer Escape::enter() const
 {
   return std::make_shared<Clear>();
 }
@@ -156,7 +156,7 @@ Transition Escape_Intermediate::input_state_rule( wchar_t ch ) const
   return Transition();
 }
 
-ActionPointer CSI_Entry::enter( void ) const
+ActionPointer CSI_Entry::enter() const
 {
   return std::make_shared<Clear>();
 }
@@ -249,7 +249,7 @@ Transition CSI_Ignore::input_state_rule( wchar_t ch ) const
   return Transition();
 }
 
-ActionPointer DCS_Entry::enter( void ) const
+ActionPointer DCS_Entry::enter() const
 {
   return std::make_shared<Clear>();
 }
@@ -317,12 +317,12 @@ Transition DCS_Intermediate::input_state_rule( wchar_t ch ) const
   return Transition();
 }
 
-ActionPointer DCS_Passthrough::enter( void ) const
+ActionPointer DCS_Passthrough::enter() const
 {
   return std::make_shared<Hook>();
 }
 
-ActionPointer DCS_Passthrough::exit( void ) const
+ActionPointer DCS_Passthrough::exit() const
 {
   return std::make_shared<Unhook>();
 }
@@ -349,12 +349,12 @@ Transition DCS_Ignore::input_state_rule( wchar_t ch ) const
   return Transition();
 }
 
-ActionPointer OSC_String::enter( void ) const
+ActionPointer OSC_String::enter() const
 {
   return std::make_shared<OSC_Start>();
 }
 
-ActionPointer OSC_String::exit( void ) const
+ActionPointer OSC_String::exit() const
 {
   return std::make_shared<OSC_End>();
 }

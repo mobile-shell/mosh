@@ -76,39 +76,39 @@ public:
              const char* port );
 
   /* Send data or an ack if necessary. */
-  void tick( void ) { sender.tick(); }
+  void tick() { sender.tick(); }
 
   /* Returns the number of ms to wait until next possible event. */
-  int wait_time( void ) { return sender.wait_time(); }
+  int wait_time() { return sender.wait_time(); }
 
   /* Blocks waiting for a packet. */
-  void recv( void );
+  void recv();
 
   /* Find diff between last receiver state and current remote state, then rationalize states. */
-  std::string get_remote_diff( void );
+  std::string get_remote_diff();
 
   /* Shut down other side of connection. */
   /* Illegal to change current_state after this. */
-  void start_shutdown( void ) { sender.start_shutdown(); }
-  bool shutdown_in_progress( void ) const { return sender.get_shutdown_in_progress(); }
-  bool shutdown_acknowledged( void ) const { return sender.get_shutdown_acknowledged(); }
-  bool shutdown_ack_timed_out( void ) const { return sender.shutdown_ack_timed_out(); }
-  bool has_remote_addr( void ) const { return connection.get_has_remote_addr(); }
+  void start_shutdown() { sender.start_shutdown(); }
+  bool shutdown_in_progress() const { return sender.get_shutdown_in_progress(); }
+  bool shutdown_acknowledged() const { return sender.get_shutdown_acknowledged(); }
+  bool shutdown_ack_timed_out() const { return sender.shutdown_ack_timed_out(); }
+  bool has_remote_addr() const { return connection.get_has_remote_addr(); }
 
   /* Other side has requested shutdown and we have sent one ACK */
-  bool counterparty_shutdown_ack_sent( void ) const { return sender.get_counterparty_shutdown_acknowledged(); }
+  bool counterparty_shutdown_ack_sent() const { return sender.get_counterparty_shutdown_acknowledged(); }
 
-  std::string port( void ) const { return connection.port(); }
-  std::string get_key( void ) const { return connection.get_key(); }
+  std::string port() const { return connection.port(); }
+  std::string get_key() const { return connection.get_key(); }
 
-  MyState& get_current_state( void ) { return sender.get_current_state(); }
+  MyState& get_current_state() { return sender.get_current_state(); }
   void set_current_state( const MyState& x ) { sender.set_current_state( x ); }
 
-  uint64_t get_remote_state_num( void ) const { return received_states.back().num; }
+  uint64_t get_remote_state_num() const { return received_states.back().num; }
 
-  const TimestampedState<RemoteState>& get_latest_remote_state( void ) const { return received_states.back(); }
+  const TimestampedState<RemoteState>& get_latest_remote_state() const { return received_states.back(); }
 
-  const std::vector<int> fds( void ) const { return connection.fds(); }
+  const std::vector<int> fds() const { return connection.fds(); }
 
   void set_verbose( unsigned int s_verbose )
   {
@@ -118,16 +118,16 @@ public:
 
   void set_send_delay( int new_delay ) { sender.set_send_delay( new_delay ); }
 
-  uint64_t get_sent_state_acked_timestamp( void ) const { return sender.get_sent_state_acked_timestamp(); }
-  uint64_t get_sent_state_acked( void ) const { return sender.get_sent_state_acked(); }
-  uint64_t get_sent_state_last( void ) const { return sender.get_sent_state_last(); }
+  uint64_t get_sent_state_acked_timestamp() const { return sender.get_sent_state_acked_timestamp(); }
+  uint64_t get_sent_state_acked() const { return sender.get_sent_state_acked(); }
+  uint64_t get_sent_state_last() const { return sender.get_sent_state_last(); }
 
-  unsigned int send_interval( void ) const { return sender.send_interval(); }
+  unsigned int send_interval() const { return sender.send_interval(); }
 
-  const Addr& get_remote_addr( void ) const { return connection.get_remote_addr(); }
-  socklen_t get_remote_addr_len( void ) const { return connection.get_remote_addr_len(); }
+  const Addr& get_remote_addr() const { return connection.get_remote_addr(); }
+  socklen_t get_remote_addr_len() const { return connection.get_remote_addr_len(); }
 
-  std::string& get_send_error( void ) { return connection.get_send_error(); }
+  std::string& get_send_error() { return connection.get_send_error(); }
 };
 }
 

@@ -58,7 +58,7 @@ TransportSender<MyState>::TransportSender( Connection* s_connection, MyState& in
 
 /* Try to send roughly two frames per RTT, bounded by limits on frame rate */
 template<class MyState>
-unsigned int TransportSender<MyState>::send_interval( void ) const
+unsigned int TransportSender<MyState>::send_interval() const
 {
   int SEND_INTERVAL = lrint( ceil( connection->get_SRTT() / 2.0 ) );
   if ( SEND_INTERVAL < SEND_INTERVAL_MIN ) {
@@ -72,7 +72,7 @@ unsigned int TransportSender<MyState>::send_interval( void ) const
 
 /* Housekeeping routine to calculate next send and ack times */
 template<class MyState>
-void TransportSender<MyState>::calculate_timers( void )
+void TransportSender<MyState>::calculate_timers()
 {
   uint64_t now = timestamp();
 
@@ -111,7 +111,7 @@ void TransportSender<MyState>::calculate_timers( void )
 
 /* How many ms to wait until next event */
 template<class MyState>
-int TransportSender<MyState>::wait_time( void )
+int TransportSender<MyState>::wait_time()
 {
   calculate_timers();
 
@@ -135,7 +135,7 @@ int TransportSender<MyState>::wait_time( void )
 
 /* Send data or an empty ack if necessary */
 template<class MyState>
-void TransportSender<MyState>::tick( void )
+void TransportSender<MyState>::tick()
 {
   calculate_timers(); /* updates assumed receiver state and rationalizes */
 
@@ -187,7 +187,7 @@ void TransportSender<MyState>::tick( void )
 }
 
 template<class MyState>
-void TransportSender<MyState>::send_empty_ack( void )
+void TransportSender<MyState>::send_empty_ack()
 {
   uint64_t now = timestamp();
 
@@ -253,7 +253,7 @@ void TransportSender<MyState>::send_to_receiver( const std::string& diff )
 }
 
 template<class MyState>
-void TransportSender<MyState>::update_assumed_receiver_state( void )
+void TransportSender<MyState>::update_assumed_receiver_state()
 {
   uint64_t now = timestamp();
 
@@ -278,7 +278,7 @@ void TransportSender<MyState>::update_assumed_receiver_state( void )
 }
 
 template<class MyState>
-void TransportSender<MyState>::rationalize_states( void )
+void TransportSender<MyState>::rationalize_states()
 {
   const MyState* known_receiver_state = &sent_states.front().state;
 
@@ -292,7 +292,7 @@ void TransportSender<MyState>::rationalize_states( void )
 }
 
 template<class MyState>
-const std::string TransportSender<MyState>::make_chaff( void )
+const std::string TransportSender<MyState>::make_chaff()
 {
   const size_t CHAFF_MAX = 16;
   const size_t chaff_len = prng.uint8() % ( CHAFF_MAX + 1 );
@@ -372,7 +372,7 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
 
 /* give up on getting acknowledgement for shutdown */
 template<class MyState>
-bool TransportSender<MyState>::shutdown_ack_timed_out( void ) const
+bool TransportSender<MyState>::shutdown_ack_timed_out() const
 {
   if ( shutdown_in_progress ) {
     if ( shutdown_tries >= SHUTDOWN_RETRIES ) {

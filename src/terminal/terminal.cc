@@ -43,7 +43,7 @@ using namespace Terminal;
 
 Emulator::Emulator( size_t s_width, size_t s_height ) : fb( s_width, s_height ), dispatch(), user() {}
 
-std::string Emulator::read_octets_to_host( void )
+std::string Emulator::read_octets_to_host()
 {
   std::string ret = dispatch.terminal_to_host;
   dispatch.terminal_to_host.clear();

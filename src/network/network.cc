@@ -83,7 +83,7 @@ Packet::Packet( const Message& message )
 }
 
 /* Output from packet */
-Message Packet::toMessage( void )
+Message Packet::toMessage()
 {
   uint64_t direction_seq = ( uint64_t( direction == TO_CLIENT ) << 63 ) | ( seq & SEQUENCE_MASK );
 
@@ -113,7 +113,7 @@ Packet Connection::new_packet( const std::string& s_payload )
   return p;
 }
 
-void Connection::hop_port( void )
+void Connection::hop_port()
 {
   assert( !server );
 
@@ -124,7 +124,7 @@ void Connection::hop_port( void )
   prune_sockets();
 }
 
-void Connection::prune_sockets( void )
+void Connection::prune_sockets()
 {
   /* don't keep old sockets if the new socket has been working for long enough */
   if ( socks.size() > 1 ) {
@@ -177,12 +177,12 @@ Connection::Socket::Socket( int family ) : _fd( socket( family, SOCK_DGRAM, 0 ) 
 #endif
 }
 
-void Connection::setup( void )
+void Connection::setup()
 {
   last_port_choice = timestamp();
 }
 
-const std::vector<int> Connection::fds( void ) const
+const std::vector<int> Connection::fds() const
 {
   std::vector<int> ret;
 
@@ -399,7 +399,7 @@ void Connection::send( const std::string& s )
   }
 }
 
-std::string Connection::recv( void )
+std::string Connection::recv()
 {
   assert( !socks.empty() );
   for ( std::deque<Socket>::const_iterator it = socks.begin(); it != socks.end(); it++ ) {
@@ -544,7 +544,7 @@ std::string Connection::recv_one( int sock_to_recv )
   return p.payload;
 }
 
-std::string Connection::port( void ) const
+std::string Connection::port() const
 {
   Addr local_addr;
   socklen_t addrlen = sizeof( local_addr );
@@ -562,12 +562,12 @@ std::string Connection::port( void ) const
   return std::string( serv );
 }
 
-uint64_t Network::timestamp( void )
+uint64_t Network::timestamp()
 {
   return frozen_timestamp();
 }
 
-uint16_t Network::timestamp16( void )
+uint16_t Network::timestamp16()
 {
   uint16_t ts = timestamp() % 65536;
   if ( ts == uint16_t( -1 ) ) {
@@ -589,7 +589,7 @@ uint16_t Network::timestamp_diff( uint16_t tsnew, uint16_t tsold )
   return diff;
 }
 
-uint64_t Connection::timeout( void ) const
+uint64_t Connection::timeout() const
 {
   uint64_t RTO = lrint( ceil( SRTT + 4 * RTTVAR ) );
   if ( RTO < MIN_RTO ) {

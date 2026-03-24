@@ -54,7 +54,7 @@ std::string Compressor::uncompress_str( const std::string& input )
 }
 
 /* construct on first use */
-Compressor& Network::get_compressor( void )
+Compressor& Network::get_compressor()
 {
   static Compressor the_compressor;
   return the_compressor;

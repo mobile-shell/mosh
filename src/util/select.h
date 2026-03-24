@@ -51,7 +51,7 @@
 class Select
 {
 public:
-  static Select& get_instance( void )
+  static Select& get_instance()
   {
     /* COFU may or may not be thread-safe, depending on compiler */
     static Select instance;
@@ -71,7 +71,7 @@ private:
     fatal_assert( 0 == sigemptyset( &empty_sigset ) );
   }
 
-  void clear_got_signal( void )
+  void clear_got_signal()
   {
     for ( volatile sig_atomic_t* p = got_signal; p < got_signal + sizeof( got_signal ) / sizeof( *got_signal );
           p++ ) {
@@ -92,7 +92,7 @@ public:
     FD_SET( fd, &all_fds );
   }
 
-  void clear_fds( void ) { FD_ZERO( &all_fds ); }
+  void clear_fds() { FD_ZERO( &all_fds ); }
 
   static void add_signal( int signum )
   {
@@ -205,7 +205,7 @@ public:
   }
 
   /* This method does not consume signal notifications. */
-  bool any_signal( void ) const
+  bool any_signal() const
   {
     bool rv = false;
     for ( int i = 0; i < MAX_SIGNAL_NUMBER; i++ ) {

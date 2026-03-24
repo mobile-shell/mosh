@@ -35,7 +35,7 @@
 
 #include <cstdint>
 
-void freeze_timestamp( void );
-uint64_t frozen_timestamp( void );
+void freeze_timestamp();
+uint64_t frozen_timestamp();
 
 #endif

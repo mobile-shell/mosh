@@ -298,14 +298,14 @@ void NotificationEngine::apply( Framebuffer& fb ) const
   }
 }
 
-void NotificationEngine::adjust_message( void )
+void NotificationEngine::adjust_message()
 {
   if ( timestamp() >= message_expiration ) {
     message.clear();
   }
 }
 
-int NotificationEngine::wait_time( void ) const
+int NotificationEngine::wait_time() const
 {
   uint64_t next_expiry = INT_MAX;
 
@@ -390,7 +390,7 @@ void PredictionEngine::kill_epoch( uint64_t epoch, const Framebuffer& fb )
   become_tentative();
 }
 
-void PredictionEngine::reset( void )
+void PredictionEngine::reset()
 {
   cursors.clear();
   overlays.clear();
@@ -862,7 +862,7 @@ void PredictionEngine::newline_carriage_return( const Framebuffer& fb )
   }
 }
 
-void PredictionEngine::become_tentative( void )
+void PredictionEngine::become_tentative()
 {
   if ( display_preference != Experimental ) {
     prediction_epoch++;
@@ -874,7 +874,7 @@ void PredictionEngine::become_tentative( void )
   */
 }
 
-bool PredictionEngine::active( void ) const
+bool PredictionEngine::active() const
 {
   if ( !cursors.empty() ) {
     return true;

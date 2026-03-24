@@ -91,7 +91,7 @@ static void print_usage( FILE* file, const char* argv0 )
            argv0 );
 }
 
-static void print_colorcount( void )
+static void print_colorcount()
 {
   /* check colors */
   setupterm( (char*)0, 1, (int*)0 );

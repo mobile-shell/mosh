@@ -77,9 +77,9 @@ private:
 public:
   Emulator( size_t s_width, size_t s_height );
 
-  std::string read_octets_to_host( void );
+  std::string read_octets_to_host();
 
-  const Framebuffer& get_fb( void ) const { return fb; }
+  const Framebuffer& get_fb() const { return fb; }
 
   bool operator==( Emulator const& x ) const;
 };

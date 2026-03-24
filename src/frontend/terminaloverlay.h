@@ -71,7 +71,7 @@ public:
   virtual ~ConditionalOverlay() {}
 
   bool tentative( uint64_t confirmed_epoch ) const { return tentative_until_epoch > confirmed_epoch; }
-  void reset( void )
+  void reset()
   {
     expiration_frame = tentative_until_epoch = -1;
     active = false;
@@ -113,13 +113,13 @@ public:
     : ConditionalOverlay( s_exp, s_col, s_tentative ), replacement( 0 ), unknown( false ), original_contents()
   {}
 
-  void reset( void )
+  void reset()
   {
     unknown = false;
     original_contents.clear();
     ConditionalOverlay::reset();
   }
-  void reset_with_orig( void )
+  void reset_with_orig()
   {
     if ( ( !active ) || unknown ) {
       reset();
@@ -161,12 +161,12 @@ private:
   bool need_countup( uint64_t ts ) const { return server_late( ts ) || reply_late( ts ); }
 
 public:
-  void adjust_message( void );
+  void adjust_message();
   void apply( Framebuffer& fb ) const;
-  const std::wstring& get_notification_string( void ) const { return message; }
+  const std::wstring& get_notification_string() const { return message; }
   void server_heard( uint64_t s_last_word ) { last_word_from_server = s_last_word; }
   void server_acked( uint64_t s_last_acked ) { last_acked_state = s_last_acked; }
-  int wait_time( void ) const;
+  int wait_time() const;
 
   void set_notification_string( const std::wstring& s_message,
                                 bool permanent = false,
@@ -242,7 +242,7 @@ private:
   uint64_t prediction_epoch;
   uint64_t confirmed_epoch;
 
-  void become_tentative( void );
+  void become_tentative();
 
   void newline_carriage_return( const Framebuffer& fb );
 
@@ -251,7 +251,7 @@ private:
   unsigned int glitch_trigger; /* show predictions temporarily because of long-pending prediction */
   uint64_t last_quick_confirmation;
 
-  ConditionalCursorMove& cursor( void )
+  ConditionalCursorMove& cursor()
   {
     assert( !cursors.empty() );
     return cursors.back();
@@ -278,9 +278,9 @@ private:
   DisplayPreference display_preference;
   bool predict_overwrite;
 
-  bool active( void ) const;
+  bool active() const;
 
-  bool timing_tests_necessary( void ) const
+  bool timing_tests_necessary() const
   {
     /* Are there any timing-based triggers that haven't fired yet? */
     return !( glitch_trigger && flagging );
@@ -294,7 +294,7 @@ public:
   void new_user_byte( char the_byte, const Framebuffer& fb );
   void cull( const Framebuffer& fb );
 
-  void reset( void );
+  void reset();
 
   void set_local_frame_sent( uint64_t x ) { local_frame_sent = x; }
   void set_local_frame_acked( uint64_t x ) { local_frame_acked = x; }
@@ -302,9 +302,9 @@ public:
 
   void set_send_interval( unsigned int x ) { send_interval = x; }
 
-  int wait_time( void ) const { return ( timing_tests_necessary() && active() ) ? 50 : INT_MAX; }
+  int wait_time() const { return ( timing_tests_necessary() && active() ) ? 50 : INT_MAX; }
 
-  PredictionEngine( void )
+  PredictionEngine()
     : last_byte( 0 ), parser(), overlays(), cursors(), local_frame_sent( 0 ), local_frame_acked( 0 ),
       local_frame_late_acked( 0 ), prediction_epoch( 1 ), confirmed_epoch( 0 ), flagging( false ),
       srtt_trigger( false ), glitch_trigger( 0 ), last_quick_confirmation( 0 ), send_interval( 250 ),
@@ -334,14 +334,14 @@ private:
 public:
   void apply( Framebuffer& fb );
 
-  NotificationEngine& get_notification_engine( void ) { return notifications; }
-  PredictionEngine& get_prediction_engine( void ) { return predictions; }
+  NotificationEngine& get_notification_engine() { return notifications; }
+  PredictionEngine& get_prediction_engine() { return predictions; }
 
   void set_title_prefix( const std::wstring& s ) { title.set_prefix( s ); }
 
   OverlayManager() : notifications(), predictions(), title() {}
 
-  int wait_time( void ) const { return std::min( notifications.wait_time(), predictions.wait_time() ); }
+  int wait_time() const { return std::min( notifications.wait_time(), predictions.wait_time() ); }
 };
 }
 

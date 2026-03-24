@@ -75,7 +75,7 @@ void Dispatcher::clear( const Parser::Clear* act __attribute( ( unused ) ) )
   parsed = false;
 }
 
-void Dispatcher::parse_params( void )
+void Dispatcher::parse_params()
 {
   if ( parsed ) {
     return;
@@ -147,7 +147,7 @@ int Dispatcher::getparam( size_t N, int defaultval )
   return ret;
 }
 
-int Dispatcher::param_count( void )
+int Dispatcher::param_count()
 {
   if ( !parsed ) {
     parse_params();
@@ -156,7 +156,7 @@ int Dispatcher::param_count( void )
   return parsed_params.size();
 }
 
-std::string Dispatcher::str( void )
+std::string Dispatcher::str()
 {
   char assum[64];
   snprintf( assum, 64, "[dispatch=\"%s\" params=\"%s\"]", dispatch_chars.c_str(), params.c_str() );
@@ -164,7 +164,7 @@ std::string Dispatcher::str( void )
 }
 
 /* construct on first use to avoid static initialization order crash */
-DispatchRegistry& Terminal::get_global_dispatch_registry( void )
+DispatchRegistry& Terminal::get_global_dispatch_registry()
 {
   static DispatchRegistry global_dispatch_registry;
   return global_dispatch_registry;

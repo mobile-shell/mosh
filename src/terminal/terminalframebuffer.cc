@@ -112,13 +112,13 @@ void Framebuffer::scroll( int N )
   }
 }
 
-void DrawState::new_grapheme( void )
+void DrawState::new_grapheme()
 {
   combining_char_col = cursor_col;
   combining_char_row = cursor_row;
 }
 
-void DrawState::snap_cursor_to_border( void )
+void DrawState::snap_cursor_to_border()
 {
   if ( cursor_row < limit_top() )
     cursor_row = limit_top();
@@ -188,7 +188,7 @@ void Framebuffer::move_rows_autoscroll( int rows )
   ds.move_row( rows, true );
 }
 
-Cell* Framebuffer::get_combining_cell( void )
+Cell* Framebuffer::get_combining_cell()
 {
   if ( ( ds.get_combining_char_col() < 0 ) || ( ds.get_combining_char_row() < 0 )
        || ( ds.get_combining_char_col() >= ds.get_width() )
@@ -199,7 +199,7 @@ Cell* Framebuffer::get_combining_cell( void )
   return get_mutable_cell( ds.get_combining_char_row(), ds.get_combining_char_col() );
 }
 
-void DrawState::set_tab( void )
+void DrawState::set_tab()
 {
   tabs[cursor_col] = true;
 }
@@ -251,12 +251,12 @@ void DrawState::set_scrolling_region( int top, int bottom )
   }
 }
 
-int DrawState::limit_top( void ) const
+int DrawState::limit_top() const
 {
   return origin_mode ? scrolling_region_top_row : 0;
 }
 
-int DrawState::limit_bottom( void ) const
+int DrawState::limit_bottom() const
 {
   return origin_mode ? scrolling_region_bottom_row : height - 1;
 }
@@ -281,7 +281,7 @@ SavedCursor::SavedCursor()
   : cursor_col( 0 ), cursor_row( 0 ), renditions( 0 ), auto_wrap_mode( true ), origin_mode( false )
 {}
 
-void DrawState::save_cursor( void )
+void DrawState::save_cursor()
 {
   save.cursor_col = cursor_col;
   save.cursor_row = cursor_row;
@@ -290,7 +290,7 @@ void DrawState::save_cursor( void )
   save.origin_mode = origin_mode;
 }
 
-void DrawState::restore_cursor( void )
+void DrawState::restore_cursor()
 {
   cursor_col = save.cursor_col;
   cursor_row = save.cursor_row;
@@ -381,7 +381,7 @@ void Framebuffer::delete_cell( int row, int col )
   get_mutable_row( row )->delete_cell( col, ds.get_background_rendition() );
 }
 
-void Framebuffer::reset( void )
+void Framebuffer::reset()
 {
   int width = ds.get_width(), height = ds.get_height();
   ds = DrawState( width, height );
@@ -391,7 +391,7 @@ void Framebuffer::reset( void )
   /* do not reset bell_count */
 }
 
-void Framebuffer::soft_reset( void )
+void Framebuffer::soft_reset()
 {
   ds.insert_mode = false;
   ds.origin_mode = false;
@@ -538,7 +538,7 @@ void Renditions::set_background_color( int num )
   }
 }
 
-std::string Renditions::sgr( void ) const
+std::string Renditions::sgr() const
 {
   std::string ret;
   char col[64];
@@ -649,7 +649,7 @@ void Framebuffer::prefix_window_title( const title_type& s )
   window_title.insert( window_title.begin(), s.begin(), s.end() );
 }
 
-std::string Cell::debug_contents( void ) const
+std::string Cell::debug_contents() const
 {
   if ( contents.empty() ) {
     return "'_' ()";

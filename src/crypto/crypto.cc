@@ -61,7 +61,7 @@ long int myatoi( const char* str )
   return ret;
 }
 
-uint64_t Crypto::unique( void )
+uint64_t Crypto::unique()
 {
   static uint64_t counter = 0;
   uint64_t rv = counter++;
@@ -138,7 +138,7 @@ Base64Key::Base64Key( PRNG& prng )
   prng.fill( key, sizeof( key ) );
 }
 
-std::string Base64Key::printable_key( void ) const
+std::string Base64Key::printable_key() const
 {
   char base64[24];
 
@@ -174,7 +174,7 @@ Nonce::Nonce( uint64_t val )
   memcpy( bytes + 4, &val_net, 8 );
 }
 
-uint64_t Nonce::val( void ) const
+uint64_t Nonce::val() const
 {
   uint64_t ret;
   memcpy( &ret, bytes + 4, 8 );
@@ -285,7 +285,7 @@ static rlim_t saved_core_rlimit;
 
 /* Disable dumping core, as a precaution to avoid saving sensitive data
    to disk. */
-void Crypto::disable_dumping_core( void )
+void Crypto::disable_dumping_core()
 {
   struct rlimit limit;
   if ( 0 != getrlimit( RLIMIT_CORE, &limit ) ) {
@@ -303,7 +303,7 @@ void Crypto::disable_dumping_core( void )
   }
 }
 
-void Crypto::reenable_dumping_core( void )
+void Crypto::reenable_dumping_core()
 {
   /* Silent failure is safe. */
   struct rlimit limit;
