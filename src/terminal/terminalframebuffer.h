@@ -60,6 +60,7 @@ public:
     blink,
     inverse,
     invisible,
+    strikethrough,
     SIZE
   } attribute_type;
 
