@@ -32,6 +32,7 @@ displaytests = \
 	pty-deadlock.test \
 	repeat.test \
 	repeat-with-input.test \
+	server-failure.test \
 	server-network-timeout.test \
 	server-signal-timeout.test \
 	window-resize.test \
