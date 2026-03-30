@@ -33,6 +33,8 @@
 #ifndef SELECT_HPP
 #define SELECT_HPP
 
+#include "src/include/config.h"
+
 #include <cassert>
 #include <cerrno>
 #include <csignal>
