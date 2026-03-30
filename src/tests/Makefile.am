@@ -25,6 +25,7 @@ displaytests = \
 	emulation-back-tab.test \
 	emulation-cursor-motion.test \
 	emulation-multiline-scroll.test \
+	emulation-osc7.test \
 	emulation-scroll.test \
 	emulation-wrap-across-frames.test \
 	network-no-diff.test \
