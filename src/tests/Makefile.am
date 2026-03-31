@@ -27,6 +27,7 @@ displaytests = \
 	emulation-multiline-scroll.test \
 	emulation-scroll.test \
 	emulation-wrap-across-frames.test \
+	emulation-xda.test
 	network-no-diff.test \
 	prediction-unicode.test \
 	pty-deadlock.test \
