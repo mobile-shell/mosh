@@ -38,6 +38,7 @@
 
 #include <unistd.h>
 
+#include "src/include/config.h"
 #include "src/terminal/parseraction.h"
 #include "src/terminal/terminalframebuffer.h"
 #include "terminaldispatcher.h"
@@ -151,6 +152,14 @@ static void CSI_SDA( Framebuffer* fb __attribute( ( unused ) ), Dispatcher* disp
 }
 
 static Function func_CSI_SDA( CSI, ">c", CSI_SDA );
+
+/* extended device attributes */
+static void CSI_XDA( Framebuffer* fb __attribute( ( unused ) ), Dispatcher* dispatch )
+{
+  dispatch->terminal_to_host.append( "\033P>|" PACKAGE_STRING "\033\\" );
+}
+
+static Function func_CSI_XDA( CSI, ">q", CSI_XDA );
 
 /* screen alignment diagnostic */
 static void Esc_DECALN( Framebuffer* fb, Dispatcher* dispatch __attribute( ( unused ) ) )

@@ -1,0 +1,48 @@
+#!/bin/sh
+
+#
+# Test XDA CSI code.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    e2e-test "$0" baseline post
+    exit
+fi
+
+# OK, we have arguments, we're one of the test hooks.
+if [ $# -ne 1 ]; then
+    fail "bad arguments %s\n" "$@"
+fi
+
+baseline()
+{
+    # Clear
+    printf '\033[H\033[J'
+    # XDA
+    printf '\033[>q'
+
+}
+
+post()
+{
+    local capture
+    capture="$(basename "$0").d/baseline.capture"
+    # 'Bad line' should have been overwritten
+    if grep -q 'P>|mosh 1\.[0-9]' "$capture"; then
+	exit 0
+    fi
+    exit 1
+}
+
+case $1 in
+    baseline)
+	baseline;;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac
