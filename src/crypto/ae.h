@@ -58,7 +58,7 @@ typedef struct _ae_ctx ae_ctx;
 ae_ctx* ae_allocate( void* misc ); /* Allocate ae_ctx, set optional ptr   */
 void ae_free( ae_ctx* ctx );       /* Deallocate ae_ctx struct            */
 int ae_clear( ae_ctx* ctx );       /* Undo initialization                 */
-int ae_ctx_sizeof( void );         /* Return sizeof(ae_ctx)               */
+int ae_ctx_sizeof();               /* Return sizeof(ae_ctx)               */
 /* ae_allocate() allocates an ae_ctx structure, but does not initialize it.
  * ae_free() deallocates an ae_ctx structure, but does not zeroize it.
  * ae_clear() zeroes sensitive values associated with an ae_ctx structure

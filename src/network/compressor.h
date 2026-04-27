@@ -55,7 +55,7 @@ public:
   Compressor& operator=( const Compressor& );
 };
 
-Compressor& get_compressor( void );
+Compressor& get_compressor();
 }
 
 #endif

@@ -52,8 +52,8 @@ using namespace Crypto;
 namespace Network {
 static const unsigned int MOSH_PROTOCOL_VERSION = 2; /* bumped for echo-ack */
 
-uint64_t timestamp( void );
-uint16_t timestamp16( void );
+uint64_t timestamp();
+uint16_t timestamp16();
 uint16_t timestamp_diff( uint16_t tsnew, uint16_t tsold );
 
 class NetworkException : public std::exception
@@ -94,7 +94,7 @@ public:
 
   Packet( const Message& message );
 
-  Message toMessage( void );
+  Message toMessage();
 };
 
 union Addr {
@@ -158,7 +158,7 @@ private:
     int _fd;
 
   public:
-    int fd( void ) const { return _fd; }
+    int fd() const { return _fd; }
     Socket( int family );
     ~Socket();
 
@@ -178,7 +178,7 @@ private:
   Base64Key key;
   Session session;
 
-  void setup( void );
+  void setup();
 
   Direction direction;
   uint16_t saved_timestamp;
@@ -198,15 +198,15 @@ private:
 
   Packet new_packet( const std::string& s_payload );
 
-  void hop_port( void );
+  void hop_port();
 
-  int sock( void ) const
+  int sock() const
   {
     assert( !socks.empty() );
     return socks.back().fd();
   }
 
-  void prune_sockets( void );
+  void prune_sockets();
 
   std::string recv_one( int sock_to_recv );
 
@@ -220,21 +220,21 @@ public:
   Connection( const char* key_str, const char* ip, const char* port ); /* client */
 
   void send( const std::string& s );
-  std::string recv( void );
-  const std::vector<int> fds( void ) const;
-  int get_MTU( void ) const { return MTU; }
+  std::string recv();
+  const std::vector<int> fds() const;
+  int get_MTU() const { return MTU; }
 
-  std::string port( void ) const;
-  std::string get_key( void ) const { return key.printable_key(); }
-  bool get_has_remote_addr( void ) const { return has_remote_addr; }
+  std::string port() const;
+  std::string get_key() const { return key.printable_key(); }
+  bool get_has_remote_addr() const { return has_remote_addr; }
 
-  uint64_t timeout( void ) const;
-  double get_SRTT( void ) const { return SRTT; }
+  uint64_t timeout() const;
+  double get_SRTT() const { return SRTT; }
 
-  const Addr& get_remote_addr( void ) const { return remote_addr; }
-  socklen_t get_remote_addr_len( void ) const { return remote_addr_len; }
+  const Addr& get_remote_addr() const { return remote_addr; }
+  socklen_t get_remote_addr_len() const { return remote_addr_len; }
 
-  std::string& get_send_error( void ) { return send_error; }
+  std::string& get_send_error() { return send_error; }
 
   void set_last_roundtrip_success( uint64_t s_success ) { last_roundtrip_success = s_success; }
 

@@ -73,20 +73,20 @@ private:
   bool clean_shutdown;
   unsigned int verbose;
 
-  void main_init( void );
-  void process_network_input( void );
+  void main_init();
+  void process_network_input();
   bool process_user_input( int fd );
-  bool process_resize( void );
+  bool process_resize();
 
-  void output_new_frame( void );
+  void output_new_frame();
 
-  bool still_connecting( void ) const
+  bool still_connecting() const
   {
     /* Initially, network == NULL */
     return network && ( network->get_remote_state_num() == 0 );
   }
 
-  void resume( void ); /* restore state after SIGCONT */
+  void resume(); /* restore state after SIGCONT */
 
 public:
   STMClient( const char* s_ip,
@@ -121,9 +121,9 @@ public:
     }
   }
 
-  void init( void );
-  void shutdown( void );
-  bool main( void );
+  void init();
+  void shutdown();
+  bool main();
 
   /* unused */
   STMClient( const STMClient& );

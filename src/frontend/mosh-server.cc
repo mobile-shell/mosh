@@ -130,12 +130,12 @@ static void print_usage( FILE* stream, const char* argv0 )
 }
 
 static bool print_motd( const char* filename );
-static void chdir_homedir( void );
-static bool motd_hushed( void );
+static void chdir_homedir();
+static bool motd_hushed();
 static void warn_unattached( const std::string& ignore_entry );
 
 /* Simple spinloop */
-static void spin( void )
+static void spin()
 {
   static unsigned int spincount = 0;
   spincount++;
@@ -149,7 +149,7 @@ static void spin( void )
   }
 }
 
-static std::string get_SSH_IP( void )
+static std::string get_SSH_IP()
 {
   const char* SSH_CONNECTION = getenv( "SSH_CONNECTION" );
   if ( !SSH_CONNECTION ) { /* Older sshds don't set this */
@@ -990,7 +990,7 @@ static bool print_motd( const char* filename )
   return true;
 }
 
-static void chdir_homedir( void )
+static void chdir_homedir()
 {
   const char* home = getenv( "HOME" );
   if ( home == NULL ) {
@@ -1011,7 +1011,7 @@ static void chdir_homedir( void )
   }
 }
 
-static bool motd_hushed( void )
+static bool motd_hushed()
 {
   /* must be in home directory already */
   struct stat buf;

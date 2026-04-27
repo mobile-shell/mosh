@@ -79,14 +79,14 @@ public:
   void push_back( const Parser::UserByte& s_userbyte ) { actions.push_back( UserEvent( s_userbyte ) ); }
   void push_back( const Parser::Resize& s_resize ) { actions.push_back( UserEvent( s_resize ) ); }
 
-  bool empty( void ) const { return actions.empty(); }
-  size_t size( void ) const { return actions.size(); }
+  bool empty() const { return actions.empty(); }
+  size_t size() const { return actions.size(); }
   const Parser::Action& get_action( unsigned int i ) const;
 
   /* interface for Network::Transport */
   void subtract( const UserStream* prefix );
   std::string diff_from( const UserStream& existing ) const;
-  std::string init_diff( void ) const { return diff_from( UserStream() ); };
+  std::string init_diff() const { return diff_from( UserStream() ); };
   void apply_string( const std::string& diff );
   bool operator==( const UserStream& x ) const { return actions == x.actions; }
 

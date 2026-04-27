@@ -93,7 +93,7 @@ string Complete::diff_from( const Complete& existing ) const
   return output.SerializeAsString();
 }
 
-string Complete::init_diff( void ) const
+string Complete::init_diff() const
 {
   return diff_from( Complete( get_fb().ds.get_width(), get_fb().ds.get_height() ) );
 }

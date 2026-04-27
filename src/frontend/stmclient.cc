@@ -64,7 +64,7 @@
 
 #include "src/network/networktransport-impl.h"
 
-void STMClient::resume( void )
+void STMClient::resume()
 {
   /* Restore termios state */
   if ( tcsetattr( STDIN_FILENO, TCSANOW, &raw_termios ) < 0 ) {
@@ -79,7 +79,7 @@ void STMClient::resume( void )
   repaint_requested = true;
 }
 
-void STMClient::init( void )
+void STMClient::init()
 {
   if ( !is_utf8_locale() ) {
     LocaleVar native_ctype = get_ctype();
@@ -201,7 +201,7 @@ void STMClient::init( void )
   connecting_notification = std::wstring( tmp );
 }
 
-void STMClient::shutdown( void )
+void STMClient::shutdown()
 {
   /* Restore screen state */
   overlays.get_notification_engine().set_notification_string( std::wstring( L"" ) );
@@ -233,7 +233,7 @@ void STMClient::shutdown( void )
   }
 }
 
-void STMClient::main_init( void )
+void STMClient::main_init()
 {
   Select& sel = Select::get_instance();
   sel.add_signal( SIGWINCH );
@@ -272,7 +272,7 @@ void STMClient::main_init( void )
   Select::set_verbose( verbose );
 }
 
-void STMClient::output_new_frame( void )
+void STMClient::output_new_frame()
 {
   if ( !network ) { /* clean shutdown even when not initialized */
     return;
@@ -293,7 +293,7 @@ void STMClient::output_new_frame( void )
   local_framebuffer = new_state;
 }
 
-void STMClient::process_network_input( void )
+void STMClient::process_network_input()
 {
   network->recv();
 
@@ -407,7 +407,7 @@ bool STMClient::process_user_input( int fd )
   return true;
 }
 
-bool STMClient::process_resize( void )
+bool STMClient::process_resize()
 {
   /* get new size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -430,7 +430,7 @@ bool STMClient::process_resize( void )
   return true;
 }
 
-bool STMClient::main( void )
+bool STMClient::main()
 {
   /* initialize signal handling and structures */
   main_init();

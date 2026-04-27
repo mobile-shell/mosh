@@ -63,7 +63,7 @@ public:
 
   Fragment( const std::string& x );
 
-  std::string tostring( void );
+  std::string tostring();
 
   bool operator==( const Fragment& x ) const;
 };
@@ -78,7 +78,7 @@ private:
 public:
   FragmentAssembly() : fragments(), current_id( -1 ), fragments_arrived( 0 ), fragments_total( -1 ) {}
   bool add_fragment( Fragment& inst );
-  Instruction get_assembly( void );
+  Instruction get_assembly();
 };
 
 class Fragmenter
@@ -95,7 +95,7 @@ public:
     last_instruction.set_new_num( -1 );
   }
   std::vector<Fragment> make_fragments( const Instruction& inst, size_t MTU );
-  uint64_t last_ack_sent( void ) const { return last_instruction.ack_num(); }
+  uint64_t last_ack_sent() const { return last_instruction.ack_num(); }
 };
 
 }

@@ -68,9 +68,9 @@ public:
   std::string act( const std::string& str );
   std::string act( const Parser::Action& act );
 
-  const Framebuffer& get_fb( void ) const { return terminal.get_fb(); }
-  void reset_input( void ) { parser.reset_input(); }
-  uint64_t get_echo_ack( void ) const { return echo_ack; }
+  const Framebuffer& get_fb() const { return terminal.get_fb(); }
+  void reset_input() { parser.reset_input(); }
+  uint64_t get_echo_ack() const { return echo_ack; }
   bool set_echo_ack( uint64_t now );
   void register_input_frame( uint64_t n, uint64_t now );
   int wait_time( uint64_t now ) const;
@@ -78,7 +78,7 @@ public:
   /* interface for Network::Transport */
   void subtract( const Complete* ) const {}
   std::string diff_from( const Complete& existing ) const;
-  std::string init_diff( void ) const;
+  std::string init_diff() const;
   void apply_string( const std::string& diff );
   bool operator==( const Complete& x ) const;
 

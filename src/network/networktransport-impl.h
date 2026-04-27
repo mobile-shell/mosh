@@ -65,7 +65,7 @@ Transport<MyState, RemoteState>::Transport( MyState& initial_state,
 }
 
 template<class MyState, class RemoteState>
-void Transport<MyState, RemoteState>::recv( void )
+void Transport<MyState, RemoteState>::recv()
 {
   std::string s( connection.recv() );
   Fragment frag( s );
@@ -192,7 +192,7 @@ void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwawa
 }
 
 template<class MyState, class RemoteState>
-std::string Transport<MyState, RemoteState>::get_remote_diff( void )
+std::string Transport<MyState, RemoteState>::get_remote_diff()
 {
   /* find diff between last receiver state and current remote state, then rationalize states */
 

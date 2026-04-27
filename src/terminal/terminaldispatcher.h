@@ -85,7 +85,7 @@ public:
   DispatchRegistry() : escape(), CSI(), control() {}
 };
 
-DispatchRegistry& get_global_dispatch_registry( void );
+DispatchRegistry& get_global_dispatch_registry();
 
 class Dispatcher
 {
@@ -97,7 +97,7 @@ private:
   std::string dispatch_chars;
   std::vector<wchar_t> OSC_string;
 
-  void parse_params( void );
+  void parse_params();
 
 public:
   static const int PARAM_MAX = 65535;
@@ -107,17 +107,17 @@ public:
 
   Dispatcher();
   int getparam( size_t N, int defaultval );
-  int param_count( void );
+  int param_count();
 
   void newparamchar( const Parser::Param* act );
   void collect( const Parser::Collect* act );
   void clear( const Parser::Clear* act );
 
-  std::string str( void );
+  std::string str();
 
   void dispatch( Function_Type type, const Parser::Action* act, Framebuffer* fb );
-  std::string get_dispatch_chars( void ) const { return dispatch_chars; }
-  std::vector<wchar_t> get_OSC_string( void ) const { return OSC_string; }
+  std::string get_dispatch_chars() const { return dispatch_chars; }
+  std::vector<wchar_t> get_OSC_string() const { return OSC_string; }
 
   void OSC_put( const Parser::OSC_Put* act );
   void OSC_start( const Parser::OSC_Start* act );

@@ -48,7 +48,7 @@ public:
   wchar_t ch;
   bool char_present;
 
-  virtual std::string name( void ) = 0;
+  virtual std::string name() = 0;
 
   virtual void act_on_terminal( Terminal::Emulator* ) const {};
 
@@ -64,82 +64,82 @@ using Actions = std::vector<ActionPointer>;
 class Ignore : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Ignore" ); }
+  std::string name() { return std::string( "Ignore" ); }
   bool ignore() const { return true; }
 };
 class Print : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Print" ); }
+  std::string name() { return std::string( "Print" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 class Execute : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Execute" ); }
+  std::string name() { return std::string( "Execute" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 class Clear : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Clear" ); }
+  std::string name() { return std::string( "Clear" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 class Collect : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Collect" ); }
+  std::string name() { return std::string( "Collect" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 class Param : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Param" ); }
+  std::string name() { return std::string( "Param" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 class Esc_Dispatch : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Esc_Dispatch" ); }
+  std::string name() { return std::string( "Esc_Dispatch" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 class CSI_Dispatch : public Action
 {
 public:
-  std::string name( void ) { return std::string( "CSI_Dispatch" ); }
+  std::string name() { return std::string( "CSI_Dispatch" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 class Hook : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Hook" ); }
+  std::string name() { return std::string( "Hook" ); }
 };
 class Put : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Put" ); }
+  std::string name() { return std::string( "Put" ); }
 };
 class Unhook : public Action
 {
 public:
-  std::string name( void ) { return std::string( "Unhook" ); }
+  std::string name() { return std::string( "Unhook" ); }
 };
 class OSC_Start : public Action
 {
 public:
-  std::string name( void ) { return std::string( "OSC_Start" ); }
+  std::string name() { return std::string( "OSC_Start" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 class OSC_Put : public Action
 {
 public:
-  std::string name( void ) { return std::string( "OSC_Put" ); }
+  std::string name() { return std::string( "OSC_Put" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 class OSC_End : public Action
 {
 public:
-  std::string name( void ) { return std::string( "OSC_End" ); }
+  std::string name() { return std::string( "OSC_End" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 };
 
@@ -149,7 +149,7 @@ class UserByte : public Action
 public:
   char c; /* The user-source byte. We don't try to interpret the charset */
 
-  std::string name( void ) { return std::string( "UserByte" ); }
+  std::string name() { return std::string( "UserByte" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 
   UserByte( int s_c ) : c( s_c ) {}
@@ -163,7 +163,7 @@ class Resize : public Action
 public:
   size_t width, height;
 
-  std::string name( void ) { return std::string( "Resize" ); }
+  std::string name() { return std::string( "Resize" ); }
   void act_on_terminal( Terminal::Emulator* emu ) const;
 
   Resize( size_t s_width, size_t s_height ) : width( s_width ), height( s_height ) {}

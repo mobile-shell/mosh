@@ -39,7 +39,7 @@ using namespace Terminal;
 
 /* Print a new "frame" to the terminal, using ANSI/ECMA-48 escape codes. */
 
-static const Renditions& initial_rendition( void )
+static const Renditions& initial_rendition()
 {
   const static Renditions blank = Renditions( 0 );
   return blank;

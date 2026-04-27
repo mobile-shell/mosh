@@ -61,7 +61,7 @@ public:
 
   void input( wchar_t ch, Actions& actions );
 
-  void reset_input( void ) { state = &family.s_Ground; }
+  void reset_input() { state = &family.s_Ground; }
 };
 
 static const size_t BUF_SIZE = 8;
@@ -79,7 +79,7 @@ public:
 
   void input( char c, Actions& actions );
 
-  void reset_input( void )
+  void reset_input()
   {
     parser.reset_input();
     buf[0] = '\0';

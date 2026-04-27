@@ -54,7 +54,7 @@
 
 bool verbose = false;
 
-static void test_base64( void )
+static void test_base64()
 {
   /* run through a test vector */
   char encoded[25];

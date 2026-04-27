@@ -53,7 +53,7 @@ static std::string network_order_string( uint64_t host_order )
   return std::string( (char*)&net_int, sizeof( net_int ) );
 }
 
-std::string Fragment::tostring( void )
+std::string Fragment::tostring()
 {
   assert( initialized );
 
@@ -126,7 +126,7 @@ bool FragmentAssembly::add_fragment( Fragment& frag )
   return fragments_arrived == fragments_total;
 }
 
-Instruction FragmentAssembly::get_assembly( void )
+Instruction FragmentAssembly::get_assembly()
 {
   assert( fragments_arrived == fragments_total );
 

@@ -40,13 +40,13 @@ class LocaleVar
 public:
   const std::string name, value;
   LocaleVar( const char* s_name, const char* s_value ) : name( s_name ), value( s_value ) {}
-  const std::string str( void ) const;
+  const std::string str() const;
 };
 
-const LocaleVar get_ctype( void );
-const char* locale_charset( void );
-bool is_utf8_locale( void );
-void set_native_locale( void );
-void clear_locale_variables( void );
+const LocaleVar get_ctype();
+const char* locale_charset();
+bool is_utf8_locale();
+void set_native_locale();
+void clear_locale_variables();
 
 #endif

@@ -58,11 +58,11 @@ class TransportSender
 {
 private:
   /* helper methods for tick() */
-  void update_assumed_receiver_state( void );
+  void update_assumed_receiver_state();
   void attempt_prospective_resend_optimization( std::string& proposed_diff );
-  void rationalize_states( void );
+  void rationalize_states();
   void send_to_receiver( const std::string& diff );
-  void send_empty_ack( void );
+  void send_empty_ack();
   void send_in_fragments( const std::string& diff, uint64_t new_num );
   void add_sent_state( uint64_t the_timestamp, uint64_t num, MyState& state );
 
@@ -86,7 +86,7 @@ private:
   uint64_t next_ack_time;
   uint64_t next_send_time;
 
-  void calculate_timers( void );
+  void calculate_timers();
 
   unsigned int verbose;
   bool shutdown_in_progress;
@@ -103,7 +103,7 @@ private:
 
   /* chaff to disguise instruction length */
   PRNG prng;
-  const std::string make_chaff( void );
+  const std::string make_chaff();
 
   uint64_t mindelay_clock; /* time of first pending change to current state */
 
@@ -112,10 +112,10 @@ public:
   TransportSender( Connection* s_connection, MyState& initial_state );
 
   /* Send data or an ack if necessary */
-  void tick( void );
+  void tick();
 
   /* Returns the number of ms to wait until next possible event. */
-  int wait_time( void );
+  int wait_time();
 
   /* Executed upon receipt of ack */
   void process_acknowledgment_through( uint64_t ack_num );
@@ -124,13 +124,13 @@ public:
   void set_ack_num( uint64_t s_ack_num );
 
   /* Accelerate reply ack */
-  void set_data_ack( void ) { pending_data_ack = true; }
+  void set_data_ack() { pending_data_ack = true; }
 
   /* Received something */
   void remote_heard( uint64_t ts ) { last_heard = ts; }
 
   /* Starts shutdown sequence */
-  void start_shutdown( void )
+  void start_shutdown()
   {
     if ( !shutdown_in_progress ) {
       shutdown_start = timestamp();
@@ -140,7 +140,7 @@ public:
 
   /* Misc. getters and setters */
   /* Cannot modify current_state while shutdown in progress */
-  MyState& get_current_state( void )
+  MyState& get_current_state()
   {
     assert( !shutdown_in_progress );
     return current_state;
@@ -153,18 +153,18 @@ public:
   }
   void set_verbose( unsigned int s_verbose ) { verbose = s_verbose; }
 
-  bool get_shutdown_in_progress( void ) const { return shutdown_in_progress; }
-  bool get_shutdown_acknowledged( void ) const { return sent_states.front().num == uint64_t( -1 ); }
-  bool get_counterparty_shutdown_acknowledged( void ) const { return fragmenter.last_ack_sent() == uint64_t( -1 ); }
-  uint64_t get_sent_state_acked_timestamp( void ) const { return sent_states.front().timestamp; }
-  uint64_t get_sent_state_acked( void ) const { return sent_states.front().num; }
-  uint64_t get_sent_state_last( void ) const { return sent_states.back().num; }
+  bool get_shutdown_in_progress() const { return shutdown_in_progress; }
+  bool get_shutdown_acknowledged() const { return sent_states.front().num == uint64_t( -1 ); }
+  bool get_counterparty_shutdown_acknowledged() const { return fragmenter.last_ack_sent() == uint64_t( -1 ); }
+  uint64_t get_sent_state_acked_timestamp() const { return sent_states.front().timestamp; }
+  uint64_t get_sent_state_acked() const { return sent_states.front().num; }
+  uint64_t get_sent_state_last() const { return sent_states.back().num; }
 
-  bool shutdown_ack_timed_out( void ) const;
+  bool shutdown_ack_timed_out() const;
 
   void set_send_delay( int new_delay ) { SEND_MINDELAY = new_delay; }
 
-  unsigned int send_interval( void ) const;
+  unsigned int send_interval() const;
 
   /* nonexistent methods to satisfy -Weffc++ */
   TransportSender( const TransportSender& x );

@@ -191,7 +191,7 @@ static void test_vector( const char* key_p,
 #define TEST_VECTOR( _key, _nonce, _assoc, _pt, _ct )                                                              \
   test_vector( _key, _nonce, sizeof( _assoc ) - 1, _assoc, sizeof( _pt ) - 1, _pt, sizeof( _ct ) - 1, _ct )
 
-static void test_all_vectors( void )
+static void test_all_vectors()
 {
   /* Test vectors from http://tools.ietf.org/html/draft-krovetz-ocb-03#appendix-A */
 
@@ -501,7 +501,7 @@ static void test_all_vectors( void )
 /* http://tools.ietf.org/html/draft-krovetz-ocb-03#appendix-A
    also specifies an iterative test algorithm, which we implement here. */
 
-static void test_iterative( void )
+static void test_iterative()
 {
   /* Key is always all zeros */
   AlignedBuffer key( KEY_LEN );

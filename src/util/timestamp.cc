@@ -60,7 +60,7 @@
 
 static uint64_t millis_cache = -1;
 
-uint64_t frozen_timestamp( void )
+uint64_t frozen_timestamp()
 {
   if ( millis_cache == uint64_t( -1 ) ) {
     freeze_timestamp();
@@ -69,7 +69,7 @@ uint64_t frozen_timestamp( void )
   return millis_cache;
 }
 
-void freeze_timestamp( void )
+void freeze_timestamp()
 {
   // Try all our clock sources till we get something.  This could
   // break if a source only sometimes works in a given process.
