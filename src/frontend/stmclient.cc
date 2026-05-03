@@ -121,10 +121,11 @@ void STMClient::init( void )
 
   /* Put terminal in application-cursor-key mode */
   swrite( STDOUT_FILENO, display.open().c_str() );
-
-  /* Add our name to window title */
+/* Add our name to window title */
   if ( !getenv( "MOSH_TITLE_NOPREFIX" ) ) {
-    overlays.set_title_prefix( std::wstring( L"[mosh] " ) );
+    std::wstring wide_ip( ip.begin(), ip.end() );
+    overlays.set_title_prefix( ( L"[mosh " + wide_ip + L"] " ).c_str() );
+    overlays.get_notification_engine().set_host_identifier( wide_ip );
   }
 
   /* Set terminal escape key. */
@@ -143,7 +144,7 @@ void STMClient::init( void )
         if ( escape_pass_key >= 'A' && escape_pass_key <= 'Z' ) {
           /* If escape pass is an upper case character, define optional version
              as lower case of the same. */
-          escape_pass_key2 = escape_pass_key + (int)'a' - (int)'A';
+          escape_pass_key2 = escape_key + (int)'a' - (int)'A';
         } else {
           escape_pass_key2 = escape_pass_key;
         }
@@ -165,6 +166,7 @@ void STMClient::init( void )
     escape_pass_key2 = '^';
   }
 
+  
   /* There are so many better ways to shoot oneself into leg than
      setting escape key to Ctrl-C, Ctrl-D, NewLine, Ctrl-L or CarriageReturn
      that we just won't allow that. */
