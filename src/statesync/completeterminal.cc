@@ -33,6 +33,7 @@
 #include <climits>
 
 #include "src/protobufs/hostinput.pb.h"
+#include "src/statesync/resize.h"
 #include "src/statesync/completeterminal.h"
 #include "src/util/fatal_assert.h"
 
@@ -108,8 +109,7 @@ void Complete::apply_string( const string& diff )
       string terminal_to_host = act( input.instruction( i ).GetExtension( hostbytes ).hoststring() );
       assert( terminal_to_host.empty() ); /* server never interrogates client terminal */
     } else if ( input.instruction( i ).HasExtension( resize ) ) {
-      act( Resize( input.instruction( i ).GetExtension( resize ).width(),
-                   input.instruction( i ).GetExtension( resize ).height() ) );
+      act( StateSync::checked_resize( input.instruction( i ).GetExtension( resize ) ) );
     } else if ( input.instruction( i ).HasExtension( echoack ) ) {
       uint64_t inst_echo_ack_num = input.instruction( i ).GetExtension( echoack ).echo_ack_num();
       assert( inst_echo_ack_num >= echo_ack );

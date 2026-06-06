@@ -53,6 +53,7 @@
 #endif
 
 #include "src/statesync/completeterminal.h"
+#include "src/statesync/resize.h"
 #include "src/statesync/user.h"
 #include "src/util/fatal_assert.h"
 #include "src/util/locale_utils.h"
@@ -248,6 +249,11 @@ void STMClient::main_init( void )
     perror( "ioctl TIOCGWINSZ" );
     return;
   }
+  if ( !StateSync::resize_dimensions_are_valid( window_size.ws_col, window_size.ws_row ) ) {
+    memset( &window_size, 0, sizeof( window_size ) );
+    window_size.ws_col = 80;
+    window_size.ws_row = 24;
+  }
 
   /* local state */
   local_framebuffer = Terminal::Framebuffer( window_size.ws_col, window_size.ws_row );
@@ -413,6 +419,9 @@ bool STMClient::process_resize( void )
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
     perror( "ioctl TIOCGWINSZ" );
     return false;
+  }
+  if ( !StateSync::resize_dimensions_are_valid( window_size.ws_col, window_size.ws_row ) ) {
+    return true;
   }
 
   /* tell remote emulator */

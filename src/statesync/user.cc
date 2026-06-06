@@ -34,6 +34,7 @@
 #include <typeinfo>
 
 #include "src/protobufs/userinput.pb.h"
+#include "src/statesync/resize.h"
 #include "src/statesync/user.h"
 #include "src/util/fatal_assert.h"
 
@@ -85,9 +86,10 @@ std::string UserStream::diff_from( const UserStream& existing ) const
         }
       } break;
       case ResizeType: {
+        dos_assert( StateSync::resize_dimensions_are_valid( my_it->resize.width, my_it->resize.height ) );
         Instruction* new_inst = output.add_instruction();
-        new_inst->MutableExtension( resize )->set_width( my_it->resize.width );
-        new_inst->MutableExtension( resize )->set_height( my_it->resize.height );
+        new_inst->MutableExtension( resize )->set_width( static_cast<int32_t>( my_it->resize.width ) );
+        new_inst->MutableExtension( resize )->set_height( static_cast<int32_t>( my_it->resize.height ) );
       } break;
       default:
         assert( !"unexpected event type" );
@@ -112,8 +114,7 @@ void UserStream::apply_string( const std::string& diff )
         actions.push_back( UserEvent( UserByte( the_bytes.at( loc ) ) ) );
       }
     } else if ( input.instruction( i ).HasExtension( resize ) ) {
-      actions.push_back( UserEvent( Resize( input.instruction( i ).GetExtension( resize ).width(),
-                                            input.instruction( i ).GetExtension( resize ).height() ) ) );
+      actions.push_back( UserEvent( StateSync::checked_resize( input.instruction( i ).GetExtension( resize ) ) ) );
     }
   }
 }
