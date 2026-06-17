@@ -31,7 +31,9 @@
 */
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <utility>
 #include <vector>
@@ -623,9 +625,87 @@ static void OSC_8( const std::string& OSC_string, Framebuffer* fb )
   fb->ds.set_hyperlink( Hyperlink( OSC_string.substr( 2, second_semicolon - 2 ), std::move( url ) ) );
 }
 
+static bool valid_default_color_component( const std::string& color, size_t start, size_t length )
+{
+  if ( length != 2 && length != 4 ) {
+    return false;
+  }
+
+  for ( size_t i = start; i < start + length; i++ ) {
+    if ( !std::isxdigit( static_cast<unsigned char>( color[i] ) ) ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool valid_default_color( const std::string& color )
+{
+  const size_t first_slash = color.find( '/' );
+  if ( first_slash == std::string::npos ) {
+    return false;
+  }
+
+  const size_t second_slash = color.find( '/', first_slash + 1 );
+  if ( second_slash == std::string::npos || color.find( '/', second_slash + 1 ) != std::string::npos ) {
+    return false;
+  }
+
+  return valid_default_color_component( color, 0, first_slash )
+         && valid_default_color_component( color, first_slash + 1, second_slash - first_slash - 1 )
+         && valid_default_color_component( color, second_slash + 1, color.size() - second_slash - 1 );
+}
+
+static bool OSC_string_matches( const std::vector<wchar_t>& OSC_string, const wchar_t* query )
+{
+  size_t i = 0;
+  while ( query[i] != L'\0' ) {
+    if ( i >= OSC_string.size() || OSC_string[i] != query[i] ) {
+      return false;
+    }
+    i++;
+  }
+
+  return i == OSC_string.size();
+}
+
+static bool answer_default_color_query( const std::vector<wchar_t>& OSC_string, Dispatcher* dispatch )
+{
+  struct DefaultColorQuery
+  {
+    const wchar_t* query;
+    const char* environment_variable;
+    const char* reply_prefix;
+  };
+
+  static const DefaultColorQuery queries[] = {
+    { L"10;?", "MOSH_DEFAULT_FG", "\033]10;rgb:" },
+    { L"11;?", "MOSH_DEFAULT_BG", "\033]11;rgb:" },
+  };
+
+  for ( const DefaultColorQuery& query : queries ) {
+    if ( OSC_string_matches( OSC_string, query.query ) ) {
+      const char* color = getenv( query.environment_variable );
+      if ( color != nullptr && valid_default_color( color ) ) {
+        dispatch->terminal_to_host.append( query.reply_prefix );
+        dispatch->terminal_to_host.append( color );
+        dispatch->terminal_to_host.append( "\033\\" );
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /* xterm uses an Operating System Command to set the window title */
 void Dispatcher::OSC_dispatch( const Parser::OSC_End* act __attribute( ( unused ) ), Framebuffer* fb )
 {
+  if ( answer_default_color_query( OSC_string, this ) ) {
+    return;
+  }
+
   /* handle osc copy clipboard sequence 52;c; */
   if ( OSC_string.size() >= 5 && OSC_string[0] == L'5' && OSC_string[1] == L'2' && OSC_string[2] == L';'
        && OSC_string[3] == L'c' && OSC_string[4] == L';' ) {

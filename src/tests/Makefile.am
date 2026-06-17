@@ -39,8 +39,8 @@ displaytests = \
 	unicode-later-combining.test \
 	window-resize.test
 
-check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty is-utf8-locale
-TESTS = ocb-aes encrypt-decrypt base64 nonce-incr local.test $(displaytests)
+check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty is-utf8-locale terminal-osc-default-colors
+TESTS = ocb-aes encrypt-decrypt base64 nonce-incr terminal-osc-default-colors local.test $(displaytests)
 XFAIL_TESTS = \
 	e2e-failure.test \
 	emulation-attributes-256color8.test
@@ -72,6 +72,10 @@ inpty_LDADD = ../util/libmoshutil.a
 is_utf8_locale_SOURCES = is-utf8-locale.cc
 is_utf8_locale_CPPFLAGS = -I$(srcdir)/../util
 is_utf8_locale_LDADD = ../util/libmoshutil.a $(LIBUTIL)
+
+terminal_osc_default_colors_SOURCES = terminal-osc-default-colors.cc
+terminal_osc_default_colors_CPPFLAGS = -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../protobufs $(protobuf_CFLAGS)
+terminal_osc_default_colors_LDADD = ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../protobufs/libmoshprotos.a ../util/libmoshutil.a $(protobuf_LIBS) $(TINFO_LIBS)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

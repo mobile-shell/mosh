@@ -39,7 +39,8 @@ use IO::Socket;
 use Text::ParseWords;
 use Socket qw(IPPROTO_TCP);
 use Errno qw(EINTR);
-use POSIX qw(_exit);
+use POSIX qw(_exit :termios_h);
+use Time::HiRes qw(time);
 
 BEGIN {
   my @gai_reqs = qw( getaddrinfo getnameinfo AI_CANONNAME AI_NUMERICHOST NI_NUMERICHOST );
@@ -327,6 +328,8 @@ if ( (not defined $colors)
   $colors = 0;
 }
 
+my %default_colors = query_terminal_default_colors();
+
 $ENV{ 'MOSH_CLIENT_PID' } = $$; # We don't support this, but it's useful for test and debug.
 
 # If we are using a locally-resolved address, we have to get it before we fork,
@@ -394,6 +397,8 @@ if ( $pid == 0 ) { # child
 
   if ( defined( $localhost )) {
     delete $ENV{ 'SSH_CONNECTION' };
+    local $ENV{ 'MOSH_DEFAULT_FG' } = $default_colors{ 'fg' } if defined $default_colors{ 'fg' };
+    local $ENV{ 'MOSH_DEFAULT_BG' } = $default_colors{ 'bg' } if defined $default_colors{ 'bg' };
     chdir; # $HOME
     print "MOSH IP ${userhost}\n";
     exec( "$server " . shell_quote( @server ) );
@@ -406,7 +411,8 @@ if ( $pid == 0 ) { # child
     my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
     push @sshopts, ( '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p" );
   }
-  my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . "$server " . shell_quote( @server ) );
+  my $server_environment = shell_quote_environment( %default_colors );
+  my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . $server_environment . "$server " . shell_quote( @server ) );
   exec @exec_argv;
   die "Cannot exec ssh: $!\n";
 } else { # parent
@@ -466,6 +472,72 @@ if ( $pid == 0 ) { # child
 }
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }
+
+sub shell_quote_environment {
+  my ( %colors ) = @_;
+  my @assignments;
+
+  push @assignments, "MOSH_DEFAULT_FG=" . shell_quote( $colors{ 'fg' } ) if defined $colors{ 'fg' };
+  push @assignments, "MOSH_DEFAULT_BG=" . shell_quote( $colors{ 'bg' } ) if defined $colors{ 'bg' };
+
+  return @assignments ? join( ' ', @assignments ) . ' ' : '';
+}
+
+sub query_terminal_default_colors {
+  open my $tty, '+<', '/dev/tty' or return;
+  binmode $tty;
+
+  my $fd = fileno( $tty );
+  return if not defined $fd;
+
+  my $saved_termios = POSIX::Termios->new();
+  $saved_termios->getattr( $fd ) or return;
+
+  my $raw_termios = POSIX::Termios->new();
+  $raw_termios->getattr( $fd ) or return;
+  $raw_termios->setlflag( $raw_termios->getlflag() & ~( ECHO | ICANON ) );
+  $raw_termios->setcc( VMIN, 0 );
+  $raw_termios->setcc( VTIME, 1 );
+  $raw_termios->setattr( $fd, TCSANOW ) or return;
+
+  my $response = '';
+  eval {
+    syswrite( $tty, "\033]10;?\033\\\033]11;?\033\\" );
+
+    my $deadline = time() + 0.1;
+    while ( time() < $deadline ) {
+      my $read_fds = '';
+      vec( $read_fds, $fd, 1 ) = 1;
+      my $timeout = $deadline - time();
+      last if $timeout <= 0;
+      last if select( $read_fds, undef, undef, $timeout ) <= 0;
+
+      my $chunk = '';
+      my $bytes_read = sysread( $tty, $chunk, 4096 );
+      last if not defined $bytes_read or $bytes_read <= 0;
+      $response .= $chunk;
+    }
+  };
+
+  $saved_termios->setattr( $fd, TCSANOW );
+
+  return parse_terminal_default_colors( $response );
+}
+
+sub parse_terminal_default_colors {
+  my ( $response ) = @_;
+  my %colors;
+
+  while ( $response =~ m{\033\](1[01]);rgb:([0-9A-Fa-f]{2,4}/[0-9A-Fa-f]{2,4}/[0-9A-Fa-f]{2,4})(?:\033\\|\007)}g ) {
+    if ( $1 eq '10' ) {
+      $colors{ 'fg' } = $2;
+    } elsif ( $1 eq '11' ) {
+      $colors{ 'bg' } = $2;
+    }
+  }
+
+  return %colors;
+}
 
 sub locale_vars {
   my @names = qw[LANG LANGUAGE LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT LC_IDENTIFICATION LC_ALL];
