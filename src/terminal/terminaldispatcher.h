@@ -97,6 +97,10 @@ private:
   std::string dispatch_chars;
   std::vector<wchar_t> OSC_string;
 
+  /* Terminal default colors, used to answer OSC 10/11 queries (server-side). */
+  std::string default_fg;
+  std::string default_bg;
+
   void parse_params( void );
 
 public:
@@ -105,8 +109,11 @@ public:
 
   std::string terminal_to_host; /* this is the reply string */
 
-  Dispatcher();
+  Dispatcher( const std::string& s_default_fg = std::string(), const std::string& s_default_bg = std::string() );
   int getparam( size_t N, int defaultval );
+
+  const std::string& get_default_fg( void ) const { return default_fg; }
+  const std::string& get_default_bg( void ) const { return default_bg; }
   int param_count( void );
 
   void newparamchar( const Parser::Param* act );

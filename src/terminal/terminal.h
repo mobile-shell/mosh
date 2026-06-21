@@ -36,6 +36,7 @@
 #include <cstdio>
 #include <cwchar>
 #include <deque>
+#include <string>
 #include <vector>
 
 #include "src/terminal/parseraction.h"
@@ -75,7 +76,10 @@ private:
   void resize( size_t s_width, size_t s_height );
 
 public:
-  Emulator( size_t s_width, size_t s_height );
+  Emulator( size_t s_width,
+            size_t s_height,
+            const std::string& default_fg = std::string(),
+            const std::string& default_bg = std::string() );
 
   std::string read_octets_to_host( void );
 

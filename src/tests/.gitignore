@@ -5,6 +5,7 @@
 /nonce-incr
 /inpty
 /is-utf8-locale
+/terminal-osc-default-colors
 /*.d/
 *.log
 *.trs
