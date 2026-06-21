@@ -37,29 +37,37 @@
 
 #include "src/statesync/completeterminal.h"
 
-static bool expect_response( const std::string& input, const std::string& expected )
+static bool expect_response( const std::string& default_fg,
+                             const std::string& default_bg,
+                             const std::string& input,
+                             const std::string& expected )
 {
-  Terminal::Complete terminal( 80, 24 );
+  Terminal::Complete terminal( 80, 24, default_fg, default_bg );
   return terminal.act( input ) == expected;
 }
 
 int main()
 {
-  setenv( "MOSH_DEFAULT_FG", "eeee/eeee/eeee", 1 );
-  setenv( "MOSH_DEFAULT_BG", "1111/1111/1111", 1 );
-
-  if ( !expect_response( "\033]10;?\033\\\033]11;?\033\\",
+  /* Both default colors are answered. */
+  if ( !expect_response( "eeee/eeee/eeee",
+                         "1111/1111/1111",
+                         "\033]10;?\033\\\033]11;?\033\\",
                          "\033]10;rgb:eeee/eeee/eeee\033\\\033]11;rgb:1111/1111/1111\033\\" ) ) {
     return EXIT_FAILURE;
   }
 
-  unsetenv( "MOSH_DEFAULT_FG" );
-  if ( !expect_response( "\033]10;?\033\\", "" ) ) {
+  /* One-to-four digit XParseColor components are accepted. */
+  if ( !expect_response( "f/a/0", "", "\033]10;?\033\\", "\033]10;rgb:f/a/0\033\\" ) ) {
     return EXIT_FAILURE;
   }
 
-  setenv( "MOSH_DEFAULT_FG", "eeee/eeee/eeee\033]0;bad", 1 );
-  if ( !expect_response( "\033]10;?\033\\", "" ) ) {
+  /* An unset default color produces no reply. */
+  if ( !expect_response( "", "1111/1111/1111", "\033]10;?\033\\", "" ) ) {
+    return EXIT_FAILURE;
+  }
+
+  /* An invalid default color produces no reply. */
+  if ( !expect_response( "eeee/eeee/eeee\033]0;bad", "", "\033]10;?\033\\", "" ) ) {
     return EXIT_FAILURE;
   }
 

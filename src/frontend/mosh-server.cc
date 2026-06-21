@@ -109,6 +109,8 @@ static int run_server( const char* desired_ip,
                        const std::string& command_path,
                        char* command_argv[],
                        const int colors,
+                       const std::string& default_fg,
+                       const std::string& default_bg,
                        unsigned int verbose,
                        bool with_motd );
 
@@ -189,9 +191,13 @@ int main( int argc, char* argv[] )
   std::string command_path;
   char** command_argv = NULL;
   int colors = 0;
+  std::string default_fg;
+  std::string default_bg;
   unsigned int verbose = 0; /* don't close stdin/stdout/stderr */
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
   std::list<std::string> locale_vars;
+  const char default_fg_arg[] = "mosh-default-fg=";
+  const char default_bg_arg[] = "mosh-default-bg=";
 
   /* strip off command */
   for ( int i = 1; i < argc; i++ ) {
@@ -219,14 +225,20 @@ int main( int argc, char* argv[] )
     while ( ( opt = getopt( argc - 1, argv + 1, "@:i:p:c:svl:" ) ) != -1 ) {
       switch ( opt ) {
           /*
-           * This undocumented option does nothing but eat its argument.
-           * Useful in scripting where you prepend something to a
-           * mosh-server argv, and might end up with something like
+           * This undocumented option eats its argument so newer wrappers can
+           * pass internal options that older servers consume quietly.  It is
+           * also useful in scripting where you prepend something to a
+           * mosh-server argv and might end up with something like
            * "mosh-server new -v new -c 256", now you can say
            * "mosh-server new -v -@ new -c 256" to discard the second
            * "new".
            */
         case '@':
+          if ( strncmp( optarg, default_fg_arg, strlen( default_fg_arg ) ) == 0 ) {
+            default_fg = optarg + strlen( default_fg_arg );
+          } else if ( strncmp( optarg, default_bg_arg, strlen( default_bg_arg ) ) == 0 ) {
+            default_bg = optarg + strlen( default_bg_arg );
+          }
           break;
         case 'i':
           desired_ip = optarg;
@@ -372,7 +384,8 @@ int main( int argc, char* argv[] )
   }
 
   try {
-    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd );
+    return run_server(
+      desired_ip, desired_port, command_path, command_argv, colors, default_fg, default_bg, verbose, with_motd );
   } catch ( const Network::NetworkException& e ) {
     fprintf( stderr, "Network exception: %s\n", e.what() );
     return 1;
@@ -387,6 +400,8 @@ static int run_server( const char* desired_ip,
                        const std::string& command_path,
                        char* command_argv[],
                        const int colors,
+                       const std::string& default_fg,
+                       const std::string& default_bg,
                        unsigned int verbose,
                        bool with_motd )
 {
@@ -429,7 +444,7 @@ static int run_server( const char* desired_ip,
   }
 
   /* open parser and terminal */
-  Terminal::Complete terminal( window_size.ws_col, window_size.ws_row );
+  Terminal::Complete terminal( window_size.ws_col, window_size.ws_row, default_fg, default_bg );
 
   /* open network */
   Network::UserStream blank;

@@ -44,8 +44,9 @@ using namespace Terminal;
 
 static const size_t MAXIMUM_CLIPBOARD_SIZE = 16 * 1024;
 
-Dispatcher::Dispatcher()
-  : params(), parsed_params(), parsed( false ), dispatch_chars(), OSC_string(), terminal_to_host()
+Dispatcher::Dispatcher( const std::string& s_default_fg, const std::string& s_default_bg )
+  : params(), parsed_params(), parsed( false ), dispatch_chars(), OSC_string(), default_fg( s_default_fg ),
+    default_bg( s_default_bg ), terminal_to_host()
 {}
 
 void Dispatcher::newparamchar( const Parser::Param* act )
@@ -254,5 +255,6 @@ bool Dispatcher::operator==( const Dispatcher& x ) const
 {
   return ( params == x.params ) && ( parsed_params == x.parsed_params ) && ( parsed == x.parsed )
          && ( dispatch_chars == x.dispatch_chars ) && ( OSC_string == x.OSC_string )
+         && ( default_fg == x.default_fg ) && ( default_bg == x.default_bg )
          && ( terminal_to_host == x.terminal_to_host );
 }

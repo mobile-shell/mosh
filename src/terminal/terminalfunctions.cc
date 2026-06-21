@@ -33,7 +33,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
-#include <cstdlib>
 #include <string>
 #include <utility>
 #include <vector>
@@ -627,7 +626,7 @@ static void OSC_8( const std::string& OSC_string, Framebuffer* fb )
 
 static bool valid_default_color_component( const std::string& color, size_t start, size_t length )
 {
-  if ( length != 2 && length != 4 ) {
+  if ( length < 1 || length > 4 ) {
     return false;
   }
 
@@ -670,30 +669,24 @@ static bool OSC_string_matches( const std::vector<wchar_t>& OSC_string, const wc
   return i == OSC_string.size();
 }
 
+static void append_default_color_reply( Dispatcher* dispatch, const char* reply_prefix, const std::string& color )
+{
+  if ( !color.empty() && valid_default_color( color ) ) {
+    dispatch->terminal_to_host.append( reply_prefix );
+    dispatch->terminal_to_host.append( color );
+    dispatch->terminal_to_host.append( "\033\\" );
+  }
+}
+
 static bool answer_default_color_query( const std::vector<wchar_t>& OSC_string, Dispatcher* dispatch )
 {
-  struct DefaultColorQuery
-  {
-    const wchar_t* query;
-    const char* environment_variable;
-    const char* reply_prefix;
-  };
-
-  static const DefaultColorQuery queries[] = {
-    { L"10;?", "MOSH_DEFAULT_FG", "\033]10;rgb:" },
-    { L"11;?", "MOSH_DEFAULT_BG", "\033]11;rgb:" },
-  };
-
-  for ( const DefaultColorQuery& query : queries ) {
-    if ( OSC_string_matches( OSC_string, query.query ) ) {
-      const char* color = getenv( query.environment_variable );
-      if ( color != nullptr && valid_default_color( color ) ) {
-        dispatch->terminal_to_host.append( query.reply_prefix );
-        dispatch->terminal_to_host.append( color );
-        dispatch->terminal_to_host.append( "\033\\" );
-      }
-      return true;
-    }
+  if ( OSC_string_matches( OSC_string, L"10;?" ) ) {
+    append_default_color_reply( dispatch, "\033]10;rgb:", dispatch->get_default_fg() );
+    return true;
+  }
+  if ( OSC_string_matches( OSC_string, L"11;?" ) ) {
+    append_default_color_reply( dispatch, "\033]11;rgb:", dispatch->get_default_bg() );
+    return true;
   }
 
   return false;

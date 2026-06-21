@@ -35,6 +35,7 @@
 
 #include <cstdint>
 #include <list>
+#include <string>
 
 #include "src/terminal/parser.h"
 #include "src/terminal/terminal.h"
@@ -61,8 +62,12 @@ private:
   static const int ECHO_TIMEOUT = 50; /* for late ack */
 
 public:
-  Complete( size_t width, size_t height )
-    : parser(), terminal( width, height ), display( false ), actions(), input_history(), echo_ack( 0 )
+  Complete( size_t width,
+            size_t height,
+            const std::string& default_fg = std::string(),
+            const std::string& default_bg = std::string() )
+    : parser(), terminal( width, height, default_fg, default_bg ), display( false ), actions(), input_history(),
+      echo_ack( 0 )
   {}
 
   std::string act( const std::string& str );

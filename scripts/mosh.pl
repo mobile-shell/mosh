@@ -391,14 +391,17 @@ if ( $pid == 0 ) { # child
     push @server, ( '-l', $_ );
   }
 
+  # Pass the local terminal's default colors using -@ so older servers consume
+  # the arguments quietly.
+  push @server, ( '-@', 'mosh-default-fg=' . $default_colors{ 'fg' } ) if defined $default_colors{ 'fg' };
+  push @server, ( '-@', 'mosh-default-bg=' . $default_colors{ 'bg' } ) if defined $default_colors{ 'bg' };
+
   if ( scalar @command > 0 ) {
     push @server, '--', @command;
   }
 
   if ( defined( $localhost )) {
     delete $ENV{ 'SSH_CONNECTION' };
-    local $ENV{ 'MOSH_DEFAULT_FG' } = $default_colors{ 'fg' } if defined $default_colors{ 'fg' };
-    local $ENV{ 'MOSH_DEFAULT_BG' } = $default_colors{ 'bg' } if defined $default_colors{ 'bg' };
     chdir; # $HOME
     print "MOSH IP ${userhost}\n";
     exec( "$server " . shell_quote( @server ) );
@@ -411,8 +414,7 @@ if ( $pid == 0 ) { # child
     my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
     push @sshopts, ( '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p" );
   }
-  my $server_environment = shell_quote_environment( %default_colors );
-  my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . $server_environment . "$server " . shell_quote( @server ) );
+  my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . "$server " . shell_quote( @server ) );
   exec @exec_argv;
   die "Cannot exec ssh: $!\n";
 } else { # parent
@@ -473,16 +475,6 @@ if ( $pid == 0 ) { # child
 
 sub shell_quote { join ' ', map {(my $a = $_) =~ s/'/'\\''/g; "'$a'"} @_ }
 
-sub shell_quote_environment {
-  my ( %colors ) = @_;
-  my @assignments;
-
-  push @assignments, "MOSH_DEFAULT_FG=" . shell_quote( $colors{ 'fg' } ) if defined $colors{ 'fg' };
-  push @assignments, "MOSH_DEFAULT_BG=" . shell_quote( $colors{ 'bg' } ) if defined $colors{ 'bg' };
-
-  return @assignments ? join( ' ', @assignments ) . ' ' : '';
-}
-
 sub query_terminal_default_colors {
   open my $tty, '+<', '/dev/tty' or return;
   binmode $tty;
@@ -528,7 +520,7 @@ sub parse_terminal_default_colors {
   my ( $response ) = @_;
   my %colors;
 
-  while ( $response =~ m{\033\](1[01]);rgb:([0-9A-Fa-f]{2,4}/[0-9A-Fa-f]{2,4}/[0-9A-Fa-f]{2,4})(?:\033\\|\007)}g ) {
+  while ( $response =~ m{\033\](1[01]);rgb:([0-9A-Fa-f]{1,4}/[0-9A-Fa-f]{1,4}/[0-9A-Fa-f]{1,4})(?:\033\\|\007)}g ) {
     if ( $1 eq '10' ) {
       $colors{ 'fg' } = $2;
     } elsif ( $1 eq '11' ) {
