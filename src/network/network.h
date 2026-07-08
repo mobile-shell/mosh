@@ -220,6 +220,7 @@ public:
   Connection( const char* key_str, const char* ip, const char* port ); /* client */
 
   void send( const std::string& s );
+  bool send_datagram( const std::string& s );
   std::string recv( void );
   const std::vector<int> fds( void ) const;
   int get_MTU( void ) const { return MTU; }

@@ -1,0 +1,100 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.TH MOSH 1 "July 2026"
+.SH NAME
+mosh-ssh \- OpenSSH-compatible entrypoint backed by Mosh forwarding
+.SH SYNOPSIS
+.B mosh-ssh
+[\-T]
+[\-N]
+[\-D [\fIBIND_ADDRESS\fP:]\fIPORT\fP]
+[\-L [\fIBIND_ADDRESS\fP:]\fIPORT\fP:\fIHOST\fP:\fIHOSTPORT\fP]
+[\fIssh-options\fP]
+[user@]host
+[command...]
+.br
+.SH DESCRIPTION
+\fBmosh-ssh\fP is an SSH-compatible setup command for tools that expect
+to launch an \fBssh\fP executable, including VS Code Remote-SSH. It uses
+ordinary SSH only for authentication and to start
+.BR mosh-server (1)
+in stdio forwarding mode. After bootstrap, command stdio and local
+forwarding traffic run over an encrypted Mosh UDP forwarding sidecar.
+
+This command is intentionally a small OpenSSH subset. It is meant for
+non-interactive command stdio and local forwarding, not for replacing
+interactive
+.BR mosh (1).
+
+.SH OPTIONS
+.TP
+.B \-T
+Accepted for OpenSSH compatibility. \fBmosh-ssh\fP never requests a
+remote PTY.
+
+.TP
+.B \-N
+Do not run a remote command. This is useful for forwarding-only
+sessions.
+
+.TP
+.B \-D [\fIBIND_ADDRESS\fP:]\fIPORT\fP
+Listen on a local TCP port and run a SOCKS5 no-authentication CONNECT
+proxy over Mosh forwarding. Domain names are resolved on the server
+side. If \fIBIND_ADDRESS\fP is omitted, bind to 127.0.0.1.
+
+.TP
+.B \-L [\fIBIND_ADDRESS\fP:]\fIPORT\fP:\fIHOST\fP:\fIHOSTPORT\fP
+Listen on a local TCP port and forward accepted connections over Mosh
+forwarding to \fIHOST\fP:\fIHOSTPORT\fP from the server side. If
+\fIBIND_ADDRESS\fP is omitted, bind to 127.0.0.1.
+
+.TP
+.B \-p \fIPORT\fP
+Pass the SSH bootstrap port to \fBssh\fP.
+
+.TP
+.B \-l \fIUSER\fP
+Pass the SSH bootstrap user to \fBssh\fP.
+
+.TP
+.B \-F \fICONFIG\fP, \-i \fIIDENTITY_FILE\fP, \-J \fIJUMP\fP, \-o \fIKEY=VALUE\fP
+Pass common OpenSSH options through to the bootstrap \fBssh\fP command.
+
+.TP
+.B \-\-local
+Run \fBmosh-server\fP locally instead of using SSH. This is intended for
+testing.
+
+.SH VS CODE
+To use \fBmosh-ssh\fP with VS Code Remote-SSH, install compatible
+\fBmosh-ssh\fP and \fBmosh-client\fP locally and compatible
+\fBmosh-server\fP on the remote host, then set:
+
+.nf
+{
+  "remote.SSH.path": "/path/to/mosh-ssh",
+  "remote.SSH.enableDynamicForwarding": true,
+  "remote.SSH.remoteServerListenOnSocket": false
+}
+.fi
+
+The socket listen mode should be disabled for this milestone because
+\fBmosh-ssh\fP currently supports TCP forwarding, not Unix-domain socket
+forwarding.
+
+.SH ENVIRONMENT VARIABLES
+.TP
+.B MOSH_SERVER
+Path to the \fBmosh-server\fP executable to start during bootstrap.
+This is mostly useful for testing or staged installs.
+
+.SH LIMITATIONS
+\fBmosh-ssh\fP does not support remote forwarding (\fB\-R\fP), X11
+forwarding, SSH agent forwarding, ControlMaster, Unix-domain socket
+forwarding, or the full OpenSSH configuration language.
+
+.SH SEE ALSO
+.BR mosh (1),
+.BR mosh-client (1),
+.BR mosh-server (1),
+.BR ssh (1).

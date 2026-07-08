@@ -45,9 +45,11 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %doc README.md COPYING ChangeLog
 %{_bindir}/mosh
 %{_bindir}/mosh-client
+%{_bindir}/mosh-ssh
 %{_bindir}/mosh-server
 %{_mandir}/man1/mosh.1.gz
 %{_mandir}/man1/mosh-client.1.gz
+%{_mandir}/man1/mosh-ssh.1.gz
 %{_mandir}/man1/mosh-server.1.gz
 
 

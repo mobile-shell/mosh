@@ -33,8 +33,12 @@ It aims to support the typical interactive uses of SSH, plus:
      underlines its predictions while they are outstanding and removes
      the underline when they are confirmed by the server.
 
-Mosh does not support X forwarding or the non-interactive uses of SSH,
-including port forwarding.
+Mosh supports local TCP forwarding (`-L`) and local dynamic SOCKS5 CONNECT
+forwarding (`-D`) over a Mosh-native UDP sidecar session. The `mosh-ssh`
+entrypoint provides an OpenSSH-compatible subset for tools such as VS Code
+Remote-SSH that need non-interactive command stdio plus local forwarding. Mosh
+still does not support X forwarding, SSH agent forwarding, remote forwarding
+(`-R`), or Unix socket forwarding.
 
 Other features
 --------------
@@ -79,6 +83,29 @@ Usage
 
     $ mosh [user@]host
 
+  Local TCP forwarding can be requested with SSH-like options:
+
+    $ mosh -L 127.0.0.1:8080:localhost:80 [user@]host
+    $ mosh -D 127.0.0.1:1080 [user@]host
+
+  `-L` and `-D` bind to `127.0.0.1` by default when no bind address is given.
+  Dynamic forwarding implements SOCKS5 no-auth `CONNECT`; DNS names are sent to
+  the server side for resolution.
+
+  For VS Code Remote-SSH or other tools that expect an `ssh` binary, use
+  `mosh-ssh`:
+
+    $ mosh-ssh -T -D 127.0.0.1:1080 [user@]host sh
+
+  In VS Code settings, point `remote.SSH.path` at the `mosh-ssh` binary and
+  disable socket listen mode for this milestone:
+
+    {
+      "remote.SSH.path": "/path/to/mosh-ssh",
+      "remote.SSH.enableDynamicForwarding": true,
+      "remote.SSH.remoteServerListenOnSocket": false
+    }
+
   If the `mosh-client` or `mosh-server` binaries live outside the user's
   `$PATH`, `mosh` accepts the arguments `--client=PATH` and `--server=PATH` to
   select alternate locations. More options are documented in the mosh(1) manual
@@ -99,6 +126,12 @@ How it works
   and sends its port number and an AES-128 secret key back to the
   client over SSH. The SSH connection is then shut down and the
   terminal session begins over UDP.
+
+  When `-L` or `-D` forwarding is requested, `mosh-server` also starts a
+  second encrypted UDP sidecar session and prints a `MOSH FORWARD` startup
+  line. The forwarding sidecar carries independent reliable byte streams over
+  Mosh UDP, so the forwarding connection roams with the Mosh client instead of
+  depending on the bootstrap SSH connection.
 
   If the client changes IP addresses, the server will begin sending
   to the client on the new IP address within a few seconds.

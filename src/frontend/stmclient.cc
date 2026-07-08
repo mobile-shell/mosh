@@ -39,6 +39,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <exception>
+#include <vector>
 
 #include <err.h>
 #include <pwd.h>
@@ -270,6 +272,35 @@ void STMClient::main_init( void )
   /* be noisy as necessary */
   network->set_verbose( verbose );
   Select::set_verbose( verbose );
+
+  char* env_forward_port = getenv( "MOSH_FORWARD_PORT" );
+  char* env_forward_key = getenv( "MOSH_FORWARD_KEY" );
+  char* env_forward_specs = getenv( "MOSH_FORWARD_SPECS" );
+
+  if ( env_forward_port && env_forward_key && env_forward_specs ) {
+    forward_port = env_forward_port;
+    forward_key = env_forward_key;
+    forward_specs = env_forward_specs;
+
+    if ( unsetenv( "MOSH_FORWARD_PORT" ) < 0 || unsetenv( "MOSH_FORWARD_KEY" ) < 0
+         || unsetenv( "MOSH_FORWARD_SPECS" ) < 0 ) {
+      perror( "unsetenv" );
+      exit( 1 );
+    }
+
+    forward_manager.reset(
+      new Forward::ForwardManager( Forward::ForwardManager::CLIENT, forward_key.c_str(), ip.c_str(), forward_port.c_str() ) );
+
+    std::vector<Forward::ForwardManager::ForwardSpec> specs
+      = Forward::ForwardManager::parse_spec_list( forward_specs );
+    for ( std::vector<Forward::ForwardManager::ForwardSpec>::const_iterator it = specs.begin(); it != specs.end(); ++it ) {
+      if ( it->type == Forward::ForwardManager::LOCAL_DIRECT ) {
+        forward_manager->add_local_forward( it->bind_host, it->bind_port, it->target_host, it->target_port );
+      } else if ( it->type == Forward::ForwardManager::LOCAL_DYNAMIC ) {
+        forward_manager->add_dynamic_forward( it->bind_host, it->bind_port );
+      }
+    }
+  }
 }
 
 void STMClient::output_new_frame( void )
@@ -452,6 +483,9 @@ bool STMClient::main( void )
       output_new_frame();
 
       int wait_time = std::min( network->wait_time(), overlays.wait_time() );
+      if ( forward_manager ) {
+        wait_time = std::min( wait_time, forward_manager->wait_time() );
+      }
 
       /* Handle startup "Connecting..." message */
       if ( still_connecting() ) {
@@ -466,6 +500,18 @@ bool STMClient::main( void )
         sel.add_fd( *it );
       }
       sel.add_fd( STDIN_FILENO );
+      std::vector<int> forward_read_fds;
+      std::vector<int> forward_write_fds;
+      if ( forward_manager ) {
+        forward_read_fds = forward_manager->read_fds();
+        forward_write_fds = forward_manager->write_fds();
+        for ( std::vector<int>::const_iterator it = forward_read_fds.begin(); it != forward_read_fds.end(); ++it ) {
+          sel.add_read_fd( *it );
+        }
+        for ( std::vector<int>::const_iterator it = forward_write_fds.begin(); it != forward_write_fds.end(); ++it ) {
+          sel.add_write_fd( *it );
+        }
+      }
 
       int active_fds = sel.select( wait_time );
       if ( active_fds < 0 ) {
@@ -485,6 +531,19 @@ bool STMClient::main( void )
 
       if ( network_ready_to_read ) {
         process_network_input();
+      }
+
+      if ( forward_manager ) {
+        for ( std::vector<int>::const_iterator it = forward_read_fds.begin(); it != forward_read_fds.end(); ++it ) {
+          if ( sel.read( *it ) ) {
+            forward_manager->handle_readable( *it );
+          }
+        }
+        for ( std::vector<int>::const_iterator it = forward_write_fds.begin(); it != forward_write_fds.end(); ++it ) {
+          if ( sel.write( *it ) ) {
+            forward_manager->handle_writable( *it );
+          }
+        }
       }
 
       if ( sel.read( STDIN_FILENO )
@@ -551,6 +610,9 @@ bool STMClient::main( void )
       }
 
       network->tick();
+      if ( forward_manager ) {
+        forward_manager->tick();
+      }
 
       std::string& send_error = network->get_send_error();
       if ( !send_error.empty() ) {

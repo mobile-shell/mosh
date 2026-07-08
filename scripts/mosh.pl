@@ -74,6 +74,8 @@ my $use_remote_ip = 'proxy';
 
 my $family = 'prefer-inet';
 my $port_request = undef;
+my @local_forwards;
+my @dynamic_forwards;
 
 my @ssh = ('ssh');
 
@@ -111,6 +113,10 @@ qq{Usage: $0 [options] [--] [user@]host [command...]
 -p PORT[:PORT2]
         --port=PORT[:PORT2]  server-side UDP port or range
                                 (No effect on server-side SSH port)
+ -L [BIND_ADDRESS:]LOCAL_PORT:HOST:HOSTPORT
+        --local-forward=...   forward a local TCP port over the Mosh session
+ -D [BIND_ADDRESS:]LOCAL_PORT
+        --dynamic-forward=... run a loopback SOCKS5 CONNECT proxy over Mosh
         --bind-server={ssh|any|IP}  ask the server to reply from an IP address
                                        (default: "ssh")
 
@@ -157,6 +163,8 @@ GetOptions( 'client=s' => \$client,
 	    'predict=s' => \$predict,
 	    'predict-overwrite|o!' => \$overwrite,
 	    'port=s' => \$port_request,
+	    'local-forward|L=s@' => \@local_forwards,
+	    'dynamic-forward|D=s@' => \@dynamic_forwards,
 	    'a' => sub { $predict = 'always' },
 	    'n' => sub { $predict = 'never' },
 	    'family=s' => \$family,
@@ -232,6 +240,59 @@ if ( defined $port_request ) {
     die "$0: Server-side port or range ($port_request) is not valid.\n";
   }
 }
+
+sub parse_forward_port {
+  my ( $kind, $port ) = @_;
+  die "$0: ${kind} port is empty.\n" if !defined($port) || $port eq "";
+  die "$0: ${kind} port ($port) is not valid.\n" if $port !~ m{^\d+$};
+  die "$0: ${kind} port ($port) must be within valid range [0..65535].\n"
+    if $port < 0 || $port > 65535;
+  return $port;
+}
+
+sub parse_local_forward {
+  my ( $spec ) = @_;
+  my @parts = split /:/, $spec, -1;
+  my ( $bind, $local_port, $host, $host_port );
+
+  if ( @parts == 3 ) {
+    ( $local_port, $host, $host_port ) = @parts;
+    $bind = "127.0.0.1";
+  } elsif ( @parts == 4 ) {
+    ( $bind, $local_port, $host, $host_port ) = @parts;
+    $bind = "127.0.0.1" if $bind eq "";
+  } else {
+    die "$0: Local forward must be [bind_address:]local_port:host:hostport ($spec).\n";
+  }
+
+  parse_forward_port( "Local forward local", $local_port );
+  parse_forward_port( "Local forward target", $host_port );
+  die "$0: Local forward target host is empty ($spec).\n" if $host eq "";
+  return join "\t", "L", $bind, $local_port, $host, $host_port;
+}
+
+sub parse_dynamic_forward {
+  my ( $spec ) = @_;
+  my @parts = split /:/, $spec, -1;
+  my ( $bind, $port );
+
+  if ( @parts == 1 ) {
+    $bind = "127.0.0.1";
+    $port = $parts[0];
+  } elsif ( @parts == 2 ) {
+    ( $bind, $port ) = @parts;
+    $bind = "127.0.0.1" if $bind eq "";
+  } else {
+    die "$0: Dynamic forward must be [bind_address:]port ($spec).\n";
+  }
+
+  parse_forward_port( "Dynamic forward", $port );
+  return join "\t", "D", $bind, $port, "", "";
+}
+
+my @forward_specs;
+push @forward_specs, map { parse_local_forward( $_ ) } @local_forwards;
+push @forward_specs, map { parse_dynamic_forward( $_ ) } @dynamic_forwards;
 
 delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
 
@@ -383,6 +444,9 @@ if ( $pid == 0 ) { # child
   if ( defined $port_request ) {
     push @server, ( '-p', $port_request );
   }
+  if ( @forward_specs ) {
+    push @server, '--forward=streammux-v1';
+  }
 
   for ( &locale_vars ) {
     push @server, ( '-l', $_ );
@@ -410,7 +474,7 @@ if ( $pid == 0 ) { # child
   exec @exec_argv;
   die "Cannot exec ssh: $!\n";
 } else { # parent
-  my ( $sship, $port, $key );
+  my ( $sship, $port, $key, $forward_port, $forward_key );
   my $bad_udp_port_warning = 0;
   LINE: while ( <$pipe> ) {
     chomp;
@@ -431,6 +495,12 @@ if ( $pid == 0 ) { # child
 	last LINE;
       } else {
 	die "Bad MOSH CONNECT string: $_\n";
+      }
+    } elsif ( m{^MOSH FORWARD } ) {
+      if ( ( $forward_port, $forward_key ) = m{^MOSH FORWARD (\d+?) ([A-Za-z0-9/+]{22}) streammux-v1\s*$} ) {
+        # Parsed here and used after the terminal startup line arrives.
+      } else {
+        die "Bad MOSH FORWARD string: $_\n";
       }
     } else {
       if ( defined $port_request and $port_request =~ m{:} and m{Bad UDP port} ) {
@@ -457,9 +527,17 @@ if ( $pid == 0 ) { # child
     }
     die "$0: Did not find mosh server startup message. (Have you installed mosh on your server?)\n";
   }
+  if ( @forward_specs && ( not defined $forward_key or not defined $forward_port ) ) {
+    die "$0: Forwarding requested, but server did not print a MOSH FORWARD startup message.\n";
+  }
 
   # Now start real mosh client
   $ENV{ 'MOSH_KEY' } = $key;
+  if ( @forward_specs ) {
+    $ENV{ 'MOSH_FORWARD_KEY' } = $forward_key;
+    $ENV{ 'MOSH_FORWARD_PORT' } = $forward_port;
+    $ENV{ 'MOSH_FORWARD_SPECS' } = join "\n", @forward_specs;
+  }
   $ENV{ 'MOSH_PREDICTION_DISPLAY' } = $predict;
   $ENV{ 'MOSH_NO_TERM_INIT' } = '1' if !$term_init;
   exec {$client} ("$client", "-# @cmdline |", $ip, $port);

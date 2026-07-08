@@ -40,8 +40,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <memory>
 #include <sstream>
 #include <typeinfo>
+#include <vector>
 
 #include <err.h>
 #include <fcntl.h>
@@ -50,6 +52,7 @@
 #include <pwd.h>
 #include <strings.h>
 #include <sys/ioctl.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -81,6 +84,7 @@
 #endif
 
 #include "src/statesync/completeterminal.h"
+#include "src/forward/forwardmanager.h"
 #include "src/statesync/user.h"
 #include "src/util/fatal_assert.h"
 #include "src/util/locale_utils.h"
@@ -101,6 +105,7 @@ static void serve( int host_fd,
                    int pipe_fd,
                    Terminal::Complete& terminal,
                    ServerConnection& network,
+                   Forward::ForwardManager* forward_manager,
                    long network_timeout,
                    long network_signaled_timeout );
 
@@ -110,7 +115,15 @@ static int run_server( const char* desired_ip,
                        char* command_argv[],
                        const int colors,
                        unsigned int verbose,
-                       bool with_motd );
+                       bool with_motd,
+                       bool with_forward );
+static int run_stdio_server( const char* desired_ip,
+                             const char* desired_port,
+                             const std::string& command_path,
+                             char* command_argv[],
+                             unsigned int verbose );
+static int serve_stdio( Forward::ForwardManager& forward_manager, pid_t child );
+static bool fd_in_list( int fd, const std::vector<int>& fds );
 
 static void print_version( FILE* file )
 {
@@ -125,7 +138,7 @@ static void print_version( FILE* file )
 static void print_usage( FILE* stream, const char* argv0 )
 {
   fprintf( stream,
-           "Usage: %s new [-s] [-v] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n",
+           "Usage: %s new [-s] [-v] [--forward[=streammux-v1]] [--stdio-session] [-i LOCALADDR] [-p PORT[:PORT2]] [-c COLORS] [-l NAME=VALUE] [-- COMMAND...]\n",
            argv0 );
 }
 
@@ -190,6 +203,8 @@ int main( int argc, char* argv[] )
   char** command_argv = NULL;
   int colors = 0;
   unsigned int verbose = 0; /* don't close stdin/stdout/stderr */
+  bool with_forward = false;
+  bool stdio_session = false;
   /* Will cause mosh-server not to correctly detach on old versions of sshd. */
   std::list<std::string> locale_vars;
 
@@ -202,6 +217,25 @@ int main( int argc, char* argv[] )
     if ( 0 == strcmp( argv[i], "--version" ) ) {
       print_version( stdout );
       exit( 0 );
+    }
+    if ( 0 == strcmp( argv[i], "--forward" ) || 0 == strncmp( argv[i], "--forward=", strlen( "--forward=" ) ) ) {
+      with_forward = true;
+      for ( int j = i; j + 1 < argc; j++ ) {
+        argv[j] = argv[j + 1];
+      }
+      argc--;
+      i--;
+      continue;
+    }
+    if ( 0 == strcmp( argv[i], "--stdio-session" ) ) {
+      stdio_session = true;
+      with_forward = true;
+      for ( int j = i; j + 1 < argc; j++ ) {
+        argv[j] = argv[j + 1];
+      }
+      argc--;
+      i--;
+      continue;
     }
     if ( 0 == strcmp( argv[i], "--" ) ) { /* -- is mandatory */
       if ( i != argc - 1 ) {
@@ -372,7 +406,10 @@ int main( int argc, char* argv[] )
   }
 
   try {
-    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd );
+    if ( stdio_session ) {
+      return run_stdio_server( desired_ip, desired_port, command_path, command_argv, verbose );
+    }
+    return run_server( desired_ip, desired_port, command_path, command_argv, colors, verbose, with_motd, with_forward );
   } catch ( const Network::NetworkException& e ) {
     fprintf( stderr, "Network exception: %s\n", e.what() );
     return 1;
@@ -388,7 +425,8 @@ static int run_server( const char* desired_ip,
                        char* command_argv[],
                        const int colors,
                        unsigned int verbose,
-                       bool with_motd )
+                       bool with_motd,
+                       bool with_forward )
 {
   /* get network idle timeout */
   long network_timeout = 0;
@@ -435,6 +473,10 @@ static int run_server( const char* desired_ip,
   Network::UserStream blank;
   using NetworkPointer = std::shared_ptr<ServerConnection>;
   NetworkPointer network( new ServerConnection( terminal, blank, desired_ip, desired_port ) );
+  std::unique_ptr<Forward::ForwardManager> forward_manager;
+  if ( with_forward ) {
+    forward_manager.reset( new Forward::ForwardManager( Forward::ForwardManager::SERVER, desired_ip, NULL ) );
+  }
 
   network->set_verbose( verbose );
   Select::set_verbose( verbose );
@@ -446,6 +488,11 @@ static int run_server( const char* desired_ip,
    */
   if ( isatty( STDIN_FILENO ) ) {
     puts( "\r\n" );
+  }
+  if ( forward_manager ) {
+    printf( "MOSH FORWARD %s %s streammux-v1\n",
+            forward_manager->port().c_str(),
+            forward_manager->key().c_str() );
   }
   printf( "MOSH CONNECT %s %s\n", network->port().c_str(), network->get_key().c_str() );
 
@@ -551,6 +598,7 @@ static int run_server( const char* desired_ip,
 
     /* close server-related file descriptors */
     network.reset();
+    forward_manager.reset();
 
     /* set IUTF8 if available */
 #ifdef HAVE_IUTF8
@@ -653,7 +701,13 @@ static int run_server( const char* desired_ip,
 #endif
 
     try {
-      serve( master, pipes[1], terminal, *network, network_timeout, network_signaled_timeout );
+      serve( master,
+             pipes[1],
+             terminal,
+             *network,
+             forward_manager.get(),
+             network_timeout,
+             network_signaled_timeout );
     } catch ( const Network::NetworkException& e ) {
       fprintf( stderr, "Network exception: %s\n", e.what() );
     } catch ( const Crypto::CryptoException& e ) {
@@ -675,10 +729,194 @@ static int run_server( const char* desired_ip,
   return 0;
 }
 
+static int run_stdio_server( const char* desired_ip,
+                             const char* desired_port,
+                             const std::string& command_path,
+                             char* command_argv[],
+                             unsigned int verbose )
+{
+  std::unique_ptr<Forward::ForwardManager> forward_manager(
+    new Forward::ForwardManager( Forward::ForwardManager::SERVER, desired_ip, desired_port ) );
+
+  Select::set_verbose( verbose );
+
+  if ( isatty( STDIN_FILENO ) ) {
+    puts( "\r\n" );
+  }
+  printf( "MOSH FORWARD %s %s streammux-v1\n", forward_manager->port().c_str(), forward_manager->key().c_str() );
+
+  /* detach from the bootstrap SSH process */
+  fflush( NULL );
+  pid_t server_pid = fork();
+  if ( server_pid < 0 ) {
+    perror( "fork" );
+    return 1;
+  } else if ( server_pid > 0 ) {
+    exit( 0 );
+  }
+
+  int child_stdin[2];
+  int child_stdout[2];
+  int child_stderr[2];
+  if ( pipe( child_stdin ) < 0 || pipe( child_stdout ) < 0 || pipe( child_stderr ) < 0 ) {
+    perror( "pipe" );
+    return 1;
+  }
+
+  /* don't let signals kill us */
+  struct sigaction sa;
+  sa.sa_handler = SIG_IGN;
+  sa.sa_flags = 0;
+  fatal_assert( 0 == sigfillset( &sa.sa_mask ) );
+  fatal_assert( 0 == sigaction( SIGHUP, &sa, NULL ) );
+  fatal_assert( 0 == sigaction( SIGPIPE, &sa, NULL ) );
+
+  pid_t child = fork();
+  if ( child < 0 ) {
+    perror( "fork" );
+    return 1;
+  }
+
+  if ( child == 0 ) {
+    struct sigaction child_sa;
+    child_sa.sa_handler = SIG_DFL;
+    child_sa.sa_flags = 0;
+    fatal_assert( 0 == sigfillset( &child_sa.sa_mask ) );
+    fatal_assert( 0 == sigaction( SIGHUP, &child_sa, NULL ) );
+    fatal_assert( 0 == sigaction( SIGPIPE, &child_sa, NULL ) );
+
+#ifdef HAVE_SYSLOG
+    closelog();
+#endif
+
+    forward_manager.reset();
+
+    close( child_stdin[1] );
+    close( child_stdout[0] );
+    close( child_stderr[0] );
+
+    if ( dup2( child_stdin[0], STDIN_FILENO ) < 0 || dup2( child_stdout[1], STDOUT_FILENO ) < 0
+         || dup2( child_stderr[1], STDERR_FILENO ) < 0 ) {
+      perror( "dup2" );
+      _exit( 127 );
+    }
+
+    close( child_stdin[0] );
+    close( child_stdout[1] );
+    close( child_stderr[1] );
+
+    chdir_homedir();
+    Crypto::reenable_dumping_core();
+
+    if ( execvp( command_path.c_str(), command_argv ) < 0 ) {
+      warn( "execvp: %s", command_path.c_str() );
+      _exit( 127 );
+    }
+  }
+
+  close( child_stdin[0] );
+  close( child_stdout[1] );
+  close( child_stderr[1] );
+
+  if ( verbose == 0 ) {
+    int nullfd = open( "/dev/null", O_RDWR );
+    if ( nullfd >= 0 ) {
+      dup2( nullfd, STDIN_FILENO );
+      dup2( nullfd, STDOUT_FILENO );
+      dup2( nullfd, STDERR_FILENO );
+      close( nullfd );
+    }
+  }
+
+  forward_manager->accept_stdio_fds( child_stdout[0], child_stdin[1] );
+  forward_manager->accept_stderr_fd( child_stderr[0] );
+
+  return serve_stdio( *forward_manager, child );
+}
+
+static bool fd_in_list( int fd, const std::vector<int>& fds )
+{
+  return std::find( fds.begin(), fds.end(), fd ) != fds.end();
+}
+
+static int serve_stdio( Forward::ForwardManager& forward_manager, pid_t child )
+{
+  Select& sel = Select::get_instance();
+  sel.add_signal( SIGTERM );
+  sel.add_signal( SIGINT );
+
+  int child_status = 0;
+  bool child_exited = false;
+
+  while ( true ) {
+    std::vector<int> read_fds = forward_manager.read_fds();
+    std::vector<int> write_fds = forward_manager.write_fds();
+
+    sel.clear_fds();
+    for ( std::vector<int>::const_iterator it = read_fds.begin(); it != read_fds.end(); ++it ) {
+      sel.add_read_fd( *it );
+    }
+    for ( std::vector<int>::const_iterator it = write_fds.begin(); it != write_fds.end(); ++it ) {
+      sel.add_write_fd( *it );
+    }
+
+    int active_fds = sel.select( forward_manager.wait_time() );
+    if ( active_fds < 0 ) {
+      if ( errno == EINTR ) {
+        continue;
+      }
+      perror( "select" );
+      break;
+    }
+
+    for ( std::vector<int>::const_iterator it = read_fds.begin(); it != read_fds.end(); ++it ) {
+      if ( fd_in_list( *it, forward_manager.read_fds() ) && sel.read( *it ) ) {
+        forward_manager.handle_readable( *it );
+      }
+    }
+    for ( std::vector<int>::const_iterator it = write_fds.begin(); it != write_fds.end(); ++it ) {
+      if ( fd_in_list( *it, forward_manager.write_fds() ) && sel.write( *it ) ) {
+        forward_manager.handle_writable( *it );
+      }
+    }
+
+    forward_manager.tick();
+
+    if ( !child_exited ) {
+      pid_t ret = waitpid( child, &child_status, WNOHANG );
+      if ( ret == child ) {
+        child_exited = true;
+      } else if ( ret < 0 && errno != EINTR ) {
+        child_exited = true;
+      }
+    }
+
+    if ( sel.signal( SIGTERM ) || sel.signal( SIGINT ) ) {
+      if ( !child_exited ) {
+        kill( child, SIGTERM );
+      }
+      break;
+    }
+
+    if ( child_exited && forward_manager.all_streams_closed() ) {
+      break;
+    }
+  }
+
+  if ( child_exited && WIFEXITED( child_status ) ) {
+    return WEXITSTATUS( child_status );
+  }
+  if ( child_exited && WIFSIGNALED( child_status ) ) {
+    return 128 + WTERMSIG( child_status );
+  }
+  return 1;
+}
+
 static void serve( int host_fd,
                    int pipe_fd,
                    Terminal::Complete& terminal,
                    ServerConnection& network,
+                   Forward::ForwardManager* forward_manager,
                    long network_timeout,
                    long network_signaled_timeout )
 {
@@ -719,6 +957,9 @@ static void serve( int host_fd,
       uint64_t now = Network::timestamp();
 
       timeout = std::min( timeout, network.wait_time() );
+      if ( forward_manager ) {
+        timeout = std::min( timeout, forward_manager->wait_time() );
+      }
       timeout = std::min( timeout, terminal.wait_time( now ) );
       if ( ( !network.get_remote_state_num() ) || network.shutdown_in_progress() ) {
         timeout = std::min( timeout, 5000 );
@@ -746,6 +987,18 @@ static void serve( int host_fd,
       sel.add_fd( network_fd );
       if ( !network.shutdown_in_progress() ) {
         sel.add_fd( host_fd );
+      }
+      std::vector<int> forward_read_fds;
+      std::vector<int> forward_write_fds;
+      if ( forward_manager ) {
+        forward_read_fds = forward_manager->read_fds();
+        forward_write_fds = forward_manager->write_fds();
+        for ( std::vector<int>::const_iterator it = forward_read_fds.begin(); it != forward_read_fds.end(); ++it ) {
+          sel.add_read_fd( *it );
+        }
+        for ( std::vector<int>::const_iterator it = forward_write_fds.begin(); it != forward_write_fds.end(); ++it ) {
+          sel.add_write_fd( *it );
+        }
       }
 
       int active_fds = sel.select( timeout );
@@ -858,6 +1111,19 @@ static void serve( int host_fd,
         }
       }
 
+      if ( forward_manager ) {
+        for ( std::vector<int>::const_iterator it = forward_read_fds.begin(); it != forward_read_fds.end(); ++it ) {
+          if ( sel.read( *it ) ) {
+            forward_manager->handle_readable( *it );
+          }
+        }
+        for ( std::vector<int>::const_iterator it = forward_write_fds.begin(); it != forward_write_fds.end(); ++it ) {
+          if ( sel.write( *it ) ) {
+            forward_manager->handle_writable( *it );
+          }
+        }
+      }
+
       if ( ( !network.shutdown_in_progress() ) && sel.read( host_fd ) ) {
         /* input from the host needs to be fed to the terminal */
         const int buf_size = 16384;
@@ -948,6 +1214,9 @@ static void serve( int host_fd,
       }
 
       network.tick();
+      if ( forward_manager ) {
+        forward_manager->tick();
+      }
     } catch ( const Network::NetworkException& e ) {
       fprintf( stderr, "%s\n", e.what() );
       spin();

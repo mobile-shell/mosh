@@ -35,11 +35,13 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <sys/ioctl.h>
 #include <termios.h>
 
 #include "src/frontend/terminaloverlay.h"
+#include "src/forward/forwardmanager.h"
 #include "src/network/networktransport.h"
 #include "src/statesync/completeterminal.h"
 #include "src/statesync/user.h"
@@ -66,6 +68,10 @@ private:
   using NetworkType = Network::Transport<Network::UserStream, Terminal::Complete>;
   using NetworkPointer = std::shared_ptr<NetworkType>;
   NetworkPointer network;
+  std::unique_ptr<Forward::ForwardManager> forward_manager;
+  std::string forward_port;
+  std::string forward_key;
+  std::string forward_specs;
   Terminal::Display display;
 
   std::wstring connecting_notification;
@@ -98,9 +104,10 @@ public:
     : ip( s_ip ? s_ip : "" ), port( s_port ? s_port : "" ), key( s_key ? s_key : "" ), escape_key( 0x1E ),
       escape_pass_key( '^' ), escape_pass_key2( '^' ), escape_requires_lf( false ), escape_key_help( L"?" ),
       saved_termios(), raw_termios(), window_size(), local_framebuffer( 1, 1 ), new_state( 1, 1 ), overlays(),
-      network(), display( true ) /* use TERM environment var to initialize display */, connecting_notification(),
-      repaint_requested( false ), lf_entered( false ), quit_sequence_started( false ), clean_shutdown( false ),
-      verbose( s_verbose )
+      network(), forward_manager(), forward_port(), forward_key(), forward_specs(),
+      display( true ) /* use TERM environment var to initialize display */, connecting_notification(),
+      repaint_requested( false ), lf_entered( false ), quit_sequence_started( false ),
+      clean_shutdown( false ), verbose( s_verbose )
   {
     if ( predict_mode ) {
       if ( !strcmp( predict_mode, "always" ) ) {

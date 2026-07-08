@@ -22,6 +22,8 @@ mosh-server \- server-side helper for mosh
 new
 [\-s]
 [\-v]
+[\-\-forward[=streammux-v1]]
+[\-\-stdio-session]
 [\-i \fIIP\fP]
 [\-p \fIPORT\fP[:\fIPORT2\fP]]
 [\-c \fICOLORS\fP]
@@ -64,6 +66,25 @@ hosts)
 .B \-v
 Print some debugging information even after detaching.  More instances
 of this flag will result in more debugging information.
+
+.TP
+.B \-\-forward[=streammux-v1]
+Start an encrypted UDP sidecar session for Mosh-native TCP forwarding.
+When this option is present, \fBmosh-server\fP prints a
+\fBMOSH FORWARD\fP line containing the sidecar UDP port, sidecar key,
+and protocol name before the usual \fBMOSH CONNECT\fP line. This
+option is normally supplied by
+.BR mosh (1)
+when the user requests \fB\-L\fP or \fB\-D\fP forwarding.
+
+.TP
+.B \-\-stdio-session
+Run the requested command without a PTY and bridge its stdin/stdout
+and stderr over the forwarding sidecar. This mode is used by
+.BR mosh-ssh (1)
+for OpenSSH-compatible non-interactive clients such as VS Code
+Remote-SSH. It implies \fB\-\-forward=streammux-v1\fP and prints only
+the \fBMOSH FORWARD\fP startup line.
 
 .TP
 .B \-i \fIIP\fP
@@ -134,8 +155,16 @@ mosh-server (mosh 1.1)
 [mosh-server detached, pid = 20443]
 .fi
 
+With forwarding enabled, startup also includes a sidecar line:
+
+.nf
+MOSH FORWARD 60002 oNw64Wf0bQbT7RLb3p8gWw streammux-v1
+MOSH CONNECT 60001 UAkFedSsVJs2LfMeKyQB5g
+.fi
+
 .SH SEE ALSO
 .BR mosh (1),
+.BR mosh-ssh (1),
 .BR mosh-client (1).
 
 Project home page:

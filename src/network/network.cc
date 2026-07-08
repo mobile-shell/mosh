@@ -364,10 +364,10 @@ Connection::Connection( const char* key_str, const char* ip, const char* port ) 
   set_MTU( remote_addr.sa.sa_family );
 }
 
-void Connection::send( const std::string& s )
+bool Connection::send_datagram( const std::string& s )
 {
   if ( !has_remote_addr ) {
-    return;
+    return false;
   }
 
   Packet px = new_packet( s );
@@ -375,8 +375,9 @@ void Connection::send( const std::string& s )
   std::string p = session.encrypt( px.toMessage() );
 
   ssize_t bytes_sent = sendto( sock(), p.data(), p.size(), MSG_DONTWAIT, &remote_addr.sa, remote_addr_len );
+  bool success = bytes_sent == static_cast<ssize_t>( p.size() );
 
-  if ( bytes_sent != static_cast<ssize_t>( p.size() ) ) {
+  if ( !success ) {
     /* Make sendto() failure available to the frontend. */
     send_error = "sendto: ";
     send_error += strerror( errno );
@@ -397,6 +398,13 @@ void Connection::send( const std::string& s )
       hop_port();
     }
   }
+
+  return success;
+}
+
+void Connection::send( const std::string& s )
+{
+  send_datagram( s );
 }
 
 std::string Connection::recv( void )

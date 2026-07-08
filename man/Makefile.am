@@ -1,7 +1,7 @@
 dist_man_MANS =
 
 if BUILD_CLIENT
-  dist_man_MANS += mosh.1 mosh-client.1
+  dist_man_MANS += mosh.1 mosh-client.1 mosh-ssh.1
 endif
 
 if BUILD_SERVER

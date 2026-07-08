@@ -57,12 +57,16 @@ links, the predicted cells are underlined until confirmed by the
 server.) Occasional echo mistakes are corrected within a network
 round-trip and do not cause lasting effect.
 
-\fBmosh\fP does not support X forwarding or the non-interactive uses
-of SSH, including port forwarding or sshfs. \fBmosh\fP works through
-typical client-side network address translators but requires UDP to
-pass between client and server. By default, \fBmosh\fP uses the ports
-between 60000 and 61000, but allows the user to request a particular
-UDP port instead.
+\fBmosh\fP supports local TCP forwarding and local dynamic SOCKS5
+CONNECT forwarding over a Mosh-native UDP sidecar session. It does not
+support X forwarding, SSH agent forwarding, remote forwarding,
+or Unix-domain socket forwarding. For tools that require an
+OpenSSH-like executable with non-interactive command stdio, see
+.BR mosh-ssh (1).
+\fBmosh\fP works through typical client-side network address
+translators but requires UDP to pass between client and server. By
+default, \fBmosh\fP uses the ports between 60000 and 61000, but allows
+the user to request a particular UDP port instead.
 
 Currently, \fBmosh\fP has limited support for IPv6, dual-stack
 networks, and servers with multiple addresses.  At session start, it
@@ -207,6 +211,21 @@ available UDP port. Otherwise, \fBmosh\fP will choose a port between 60000 and
 port used by SSH.
 
 .TP
+.B \-L [\fIBIND_ADDRESS\fP:]\fILOCAL_PORT\fP:\fIHOST\fP:\fIHOSTPORT\fP, \-\-local\-forward=[\fIBIND_ADDRESS\fP:]\fILOCAL_PORT\fP:\fIHOST\fP:\fIHOSTPORT\fP
+Listen on a local TCP port and forward each accepted connection over
+the Mosh forwarding sidecar to \fIHOST\fP:\fIHOSTPORT\fP from the
+server side. If \fIBIND_ADDRESS\fP is omitted, \fBmosh\fP binds only to
+127.0.0.1.
+
+.TP
+.B \-D [\fIBIND_ADDRESS\fP:]\fILOCAL_PORT\fP, \-\-dynamic\-forward=[\fIBIND_ADDRESS\fP:]\fILOCAL_PORT\fP
+Listen on a local TCP port and run a SOCKS5 no-authentication CONNECT
+proxy over the Mosh forwarding sidecar. IPv4, IPv6, and domain-name
+CONNECT targets are supported. Domain names are resolved on the server
+side, matching OpenSSH dynamic forwarding behavior. If
+\fIBIND_ADDRESS\fP is omitted, \fBmosh\fP binds only to 127.0.0.1.
+
+.TP
 .B \-\-bind\-server={ssh|any|\fIIP\fP}
 Control the IP address that the \fBmosh-server\fP binds to.
 
@@ -316,6 +335,7 @@ When set, inhibits prepending "[mosh]" to window title.
 
 .SH SEE ALSO
 .BR mosh-client (1),
+.BR mosh-ssh (1),
 .BR mosh-server (1).
 
 Project home page:

@@ -585,6 +585,7 @@ AC_CONFIG_FILES([
   src/Makefile
   src/crypto/Makefile
   src/frontend/Makefile
+  src/forward/Makefile
   src/fuzz/Makefile
   src/include/Makefile
   src/network/Makefile

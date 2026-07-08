@@ -1,0 +1,68 @@
+syntax = "proto2";
+
+option optimize_for = LITE_RUNTIME;
+
+package ForwardBuffers;
+
+message ForwardPacket {
+  optional uint32 version = 1;
+  optional uint64 packet_id = 2;
+  repeated ForwardFrame frame = 3;
+}
+
+message ForwardFrame {
+  enum Type {
+    HELLO = 0;
+    HELLO_OK = 1;
+    OPEN = 2;
+    OPEN_RESULT = 3;
+    DATA = 4;
+    ACK = 5;
+    WINDOW_UPDATE = 6;
+    FIN = 7;
+    RST = 8;
+    LISTEN = 9;
+    LISTEN_RESULT = 10;
+    PING = 11;
+    PONG = 12;
+  }
+
+  optional Type type = 1;
+  optional uint64 stream_id = 2;
+  optional uint64 seq = 3;
+  optional uint64 ack = 4;
+  optional uint32 recv_window = 5;
+  optional bytes data = 6;
+  optional OpenRequest open = 7;
+  optional ListenRequest listen = 8;
+  optional uint32 error_code = 9;
+  optional string error_message = 10;
+}
+
+message OpenRequest {
+  enum Kind {
+    DIRECT_TCP = 1;
+    REMOTE_ACCEPTED_TCP = 2;
+    STDIO = 3;
+    STDERR = 4;
+  }
+
+  optional Kind kind = 1;
+  optional string host = 2;
+  optional uint32 port = 3;
+  optional string origin_host = 4;
+  optional uint32 origin_port = 5;
+}
+
+message ListenRequest {
+  enum Kind {
+    REMOTE_TCP = 1;
+  }
+
+  optional Kind kind = 1;
+  optional uint64 listener_id = 2;
+  optional string bind_host = 3;
+  optional uint32 bind_port = 4;
+  optional string connect_host = 5;
+  optional uint32 connect_port = 6;
+}
