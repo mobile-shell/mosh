@@ -379,6 +379,10 @@ int main( int argc, char* argv[] )
   } catch ( const Crypto::CryptoException& e ) {
     fprintf( stderr, "Crypto exception: %s\n", e.what() );
     return 1;
+  } catch ( const std::exception& e ) {
+    /* e.g. std::bad_alloc under a memory cgroup limit */
+    fprintf( stderr, "Exception: %s\n", e.what() );
+    return 1;
   }
 }
 
@@ -658,6 +662,10 @@ static int run_server( const char* desired_ip,
       fprintf( stderr, "Network exception: %s\n", e.what() );
     } catch ( const Crypto::CryptoException& e ) {
       fprintf( stderr, "Crypto exception: %s\n", e.what() );
+    } catch ( const std::exception& e ) {
+      /* Catch std::bad_alloc etc. here so the utempter/syslog cleanup below
+         still runs instead of std::terminate skipping it. */
+      fprintf( stderr, "Exception: %s\n", e.what() );
     }
 
 #ifdef HAVE_UTEMPTER
@@ -665,8 +673,10 @@ static int run_server( const char* desired_ip,
 #endif
 
     if ( close( master ) < 0 ) {
+      /* Non-fatal: the session is already over. Closing a pty master after the
+         slave has hung up can return EIO/EINTR on some platforms; don't turn a
+         clean teardown into an error exit. */
       perror( "close" );
-      exit( 1 );
     }
   }
 
@@ -848,10 +858,13 @@ static void serve( int host_fd,
           }
 #endif
 
-          /* Tell child to start login session. */
+          /* Tell child to start login session (by closing the pipe). */
           if ( !child_released ) {
             if ( close( pipe_fd ) < 0 ) {
-              err( 1, "child release" );
+              /* Non-fatal: the child is released whether or not close() reports
+                 an (ignorable) error, and killing the server here would drop
+                 the session exactly as the first client connects. */
+              perror( "close (child release)" );
             }
             child_released = true;
           }
