@@ -35,6 +35,7 @@
 #include "compressor.h"
 #include "src/crypto/byteorder.h"
 #include "src/protobufs/transportinstruction.pb.h"
+#include "src/util/dos_assert.h"
 #include "src/util/fatal_assert.h"
 #include "transportfragment.h"
 
@@ -76,7 +77,8 @@ std::string Fragment::tostring( void )
 Fragment::Fragment( const std::string& x )
   : id( -1 ), fragment_num( -1 ), final( false ), initialized( true ), contents()
 {
-  fatal_assert( x.size() >= frag_header_len );
+  /* Drop a short datagram instead of aborting; also guards the reads below. */
+  dos_assert( x.size() >= frag_header_len );
   contents = std::string( x.begin() + frag_header_len, x.end() );
 
   uint64_t data64;
@@ -101,8 +103,10 @@ bool FragmentAssembly::add_fragment( Fragment& frag )
   } else { /* not a new packet */
     /* see if we already have this fragment */
     if ( ( fragments.size() > frag.fragment_num ) && ( fragments.at( frag.fragment_num ).initialized ) ) {
-      /* make sure new version is same as what we already have */
-      assert( fragments.at( frag.fragment_num ) == frag );
+      /* make sure new version is same as what we already have; a
+         counterparty that sends conflicting duplicates of the same fragment
+         must not be able to abort us */
+      dos_assert( fragments.at( frag.fragment_num ) == frag );
     } else {
       if ( (int)fragments.size() < frag.fragment_num + 1 ) {
         fragments.resize( frag.fragment_num + 1 );
@@ -114,12 +118,14 @@ bool FragmentAssembly::add_fragment( Fragment& frag )
 
   if ( frag.final ) {
     fragments_total = frag.fragment_num + 1;
-    assert( (int)fragments.size() <= fragments_total );
+    /* a final fragment whose index is lower than one already received is
+       malformed; drop it rather than aborting */
+    dos_assert( (int)fragments.size() <= fragments_total );
     fragments.resize( fragments_total );
   }
 
   if ( fragments_total != -1 ) {
-    assert( fragments_arrived <= fragments_total );
+    dos_assert( fragments_arrived <= fragments_total );
   }
 
   /* see if we're done */
@@ -133,12 +139,14 @@ Instruction FragmentAssembly::get_assembly( void )
   std::string encoded;
 
   for ( int i = 0; i < fragments_total; i++ ) {
-    assert( fragments.at( i ).initialized );
+    dos_assert( fragments.at( i ).initialized );
     encoded += fragments.at( i ).contents;
   }
 
   Instruction ret;
-  fatal_assert( ret.ParseFromString( get_compressor().uncompress_str( encoded ) ) );
+  /* reassembled bytes from the counterparty may fail to decompress or parse;
+     treat that as a dropped packet, not a fatal abort */
+  dos_assert( ret.ParseFromString( get_compressor().uncompress_str( encoded ) ) );
 
   fragments.clear();
   fragments_arrived = 0;

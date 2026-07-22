@@ -34,6 +34,7 @@
 
 #include "src/protobufs/hostinput.pb.h"
 #include "src/statesync/completeterminal.h"
+#include "src/util/dos_assert.h"
 #include "src/util/fatal_assert.h"
 
 using namespace std;
@@ -101,19 +102,27 @@ string Complete::init_diff( void ) const
 void Complete::apply_string( const string& diff )
 {
   HostBuffers::HostMessage input;
-  fatal_assert( input.ParseFromString( diff ) );
+  /* a malicious counterparty can send bytes that fail to parse; drop the
+     packet gracefully instead of aborting */
+  dos_assert( input.ParseFromString( diff ) );
 
   for ( int i = 0; i < input.instruction_size(); i++ ) {
     if ( input.instruction( i ).HasExtension( hostbytes ) ) {
       string terminal_to_host = act( input.instruction( i ).GetExtension( hostbytes ).hoststring() );
-      assert( terminal_to_host.empty() ); /* server never interrogates client terminal */
+      /* An honest server never interrogates the client terminal. A malicious
+         one could send a query (e.g. ESC[6n) that makes the emulator reply;
+         there is no host on this side, so discard it rather than assert(). */
+      (void)terminal_to_host;
     } else if ( input.instruction( i ).HasExtension( resize ) ) {
       act( Resize( input.instruction( i ).GetExtension( resize ).width(),
                    input.instruction( i ).GetExtension( resize ).height() ) );
     } else if ( input.instruction( i ).HasExtension( echoack ) ) {
       uint64_t inst_echo_ack_num = input.instruction( i ).GetExtension( echoack ).echo_ack_num();
-      assert( inst_echo_ack_num >= echo_ack );
-      echo_ack = inst_echo_ack_num;
+      /* echo_ack must advance monotonically; ignore a non-monotonic value
+         from a malicious counterparty rather than aborting via assert() */
+      if ( inst_echo_ack_num >= echo_ack ) {
+        echo_ack = inst_echo_ack_num;
+      }
     }
   }
 }

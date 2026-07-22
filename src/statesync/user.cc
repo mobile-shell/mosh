@@ -35,6 +35,7 @@
 
 #include "src/protobufs/userinput.pb.h"
 #include "src/statesync/user.h"
+#include "src/util/dos_assert.h"
 #include "src/util/fatal_assert.h"
 
 using namespace Parser;
@@ -103,7 +104,9 @@ std::string UserStream::diff_from( const UserStream& existing ) const
 void UserStream::apply_string( const std::string& diff )
 {
   ClientBuffers::UserMessage input;
-  fatal_assert( input.ParseFromString( diff ) );
+  /* a malicious counterparty can send bytes that fail to parse; drop the
+     packet gracefully instead of aborting */
+  dos_assert( input.ParseFromString( diff ) );
 
   for ( int i = 0; i < input.instruction_size(); i++ ) {
     if ( input.instruction( i ).HasExtension( keystroke ) ) {
