@@ -157,7 +157,13 @@ Connection::Socket::Socket( int family ) : _fd( socket( family, SOCK_DGRAM, 0 ) 
 #ifdef HAVE_IP_MTU_DISCOVER
   int flag = IP_PMTUDISC_DONT;
   if ( setsockopt( _fd, IPPROTO_IP, IP_MTU_DISCOVER, &flag, sizeof flag ) < 0 ) {
-    throw NetworkException( "setsockopt", errno );
+    /* Close _fd before throwing: the destructor does not run for a throwing
+       constructor, so otherwise this leaks a descriptor -- and it is reached
+       repeatedly from hop_port() during roaming, compounding the fd exhaustion
+       that can cause such failures in the first place. */
+    int saved_errno = errno;
+    close( _fd );
+    throw NetworkException( "setsockopt", saved_errno );
   }
 #endif
 
