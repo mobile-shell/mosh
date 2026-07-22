@@ -108,6 +108,15 @@ void Transport<MyState, RemoteState>::recv( void )
       return; /* this is security-sensitive and part of how we enforce idempotency */
     }
 
+    /* Copy the reference state before pruning the queue below:
+       process_throwaway_until() can erase the node reference_state points at
+       (a peer may send throwaway_num > old_num, the two being independent
+       fields), which would make the later dereference a use-after-free.
+       new_state is an independent value, so the pruning does not affect it. */
+    TimestampedState<RemoteState> new_state = *reference_state;
+    new_state.timestamp = timestamp();
+    new_state.num = inst.new_num();
+
     /* Do not accept state if our queue is full */
     /* This is better than dropping states from the middle of the
        queue (as sender does), because we don't want to ACK a state
@@ -131,11 +140,7 @@ void Transport<MyState, RemoteState>::recv( void )
       }
     }
 
-    /* apply diff to reference state */
-    TimestampedState<RemoteState> new_state = *reference_state;
-    new_state.timestamp = timestamp();
-    new_state.num = inst.new_num();
-
+    /* apply diff to reference state (copied above, before the queue was pruned) */
     if ( !inst.diff().empty() ) {
       new_state.state.apply_string( inst.diff() );
     }
