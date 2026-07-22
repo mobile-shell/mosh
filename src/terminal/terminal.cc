@@ -128,7 +128,9 @@ void Emulator::print( const Parser::Print* act )
            base character [e.g. start of line], if the
            combining character has been cleared with
            a sequence like ED ("J") or EL ("K") */
-        assert( !combining_cell->get_wide() );
+        /* An empty cell should not be wide; if a pathological host byte stream
+           left it wide, clear the flag rather than aborting on the assert. */
+        combining_cell->set_wide( false );
         combining_cell->set_fallback( true );
         fb.ds.move_col( 1, true, true );
       }
@@ -139,7 +141,8 @@ void Emulator::print( const Parser::Print* act )
     case -1: /* unprintable character */
       break;
     default:
-      assert( !"unexpected character width from wcwidth()" );
+      /* wcwidth() returned a value outside {-1,0,1,2}; treat it as unprintable
+         rather than aborting on arbitrary host output. */
       break;
   }
 }

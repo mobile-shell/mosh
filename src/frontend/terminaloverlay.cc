@@ -281,7 +281,8 @@ void NotificationEngine::apply( Framebuffer& fb ) const
         }
 
         if ( combining_cell->empty() ) {
-          assert( !combining_cell->get_wide() );
+          /* Degrade rather than abort if an empty cell is unexpectedly wide. */
+          combining_cell->set_wide( false );
           combining_cell->set_fallback( true );
           overlay_col++;
         }
@@ -293,7 +294,9 @@ void NotificationEngine::apply( Framebuffer& fb ) const
       case -1: /* unprintable character */
         break;
       default:
-        assert( !"unexpected character width from wcwidth()" );
+        /* wcwidth() returned a value outside {-1,0,1,2}; ignore it rather than
+           aborting on arbitrary host output. */
+        break;
     }
   }
 }
