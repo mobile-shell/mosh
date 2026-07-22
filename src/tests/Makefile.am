@@ -39,8 +39,8 @@ displaytests = \
 	unicode-later-combining.test \
 	window-resize.test
 
-check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty is-utf8-locale fragment-robustness
-TESTS = ocb-aes encrypt-decrypt base64 nonce-incr fragment-robustness local.test $(displaytests)
+check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty is-utf8-locale fragment-robustness statesync-robustness
+TESTS = ocb-aes encrypt-decrypt base64 nonce-incr fragment-robustness statesync-robustness local.test $(displaytests)
 XFAIL_TESTS = \
 	e2e-failure.test \
 	emulation-attributes-256color8.test
@@ -76,6 +76,10 @@ is_utf8_locale_LDADD = ../util/libmoshutil.a $(LIBUTIL)
 fragment_robustness_SOURCES = fragment-robustness.cc
 fragment_robustness_CPPFLAGS = -I$(top_srcdir)/ $(protobuf_CFLAGS) $(CRYPTO_CFLAGS)
 fragment_robustness_LDADD = ../network/libmoshnetwork.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a ../util/libmoshutil.a $(protobuf_LIBS) $(CRYPTO_LIBS)
+
+statesync_robustness_SOURCES = statesync-robustness.cc
+statesync_robustness_CPPFLAGS = -I$(top_srcdir)/ $(protobuf_CFLAGS) $(CRYPTO_CFLAGS) $(TINFO_CFLAGS)
+statesync_robustness_LDADD = ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a ../util/libmoshutil.a $(TINFO_LIBS) $(protobuf_LIBS) $(CRYPTO_LIBS)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check
