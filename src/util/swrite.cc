@@ -30,6 +30,7 @@
     also delete it here.
 */
 
+#include <cerrno>
 #include <cstdio>
 #include <cstring>
 
@@ -43,6 +44,10 @@ int swrite( int fd, const char* str, ssize_t len )
   ssize_t bytes_to_write = ( len >= 0 ) ? len : (ssize_t)strlen( str );
   while ( total_bytes_written < bytes_to_write ) {
     ssize_t bytes_written = write( fd, str + total_bytes_written, bytes_to_write - total_bytes_written );
+    if ( bytes_written < 0 && errno == EINTR ) {
+      /* interrupted by a signal before any byte was written; just retry */
+      continue;
+    }
     if ( bytes_written <= 0 ) {
       perror( "write" );
       return -1;
