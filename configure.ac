@@ -105,6 +105,18 @@ AS_IF([test x"$asan" != x"no"], [
   [MISC_CXXFLAGS="$MISC_CXXFLAGS -fsanitize=address,leak"], [
   AC_MSG_ERROR([ASAN requested, but compiler support not present])], [-Werror])
 ])
+
+AC_ARG_ENABLE([ubsan],
+  [AS_HELP_STRING([--enable-ubsan],
+    [Enable compiler and linker options to enable UndefinedBehaviorSanitizer @<:@no@:>@])],
+  [ubsan="$enableval"],
+  [ubsan="no"])
+
+AS_IF([test x"$ubsan" != x"no"], [
+  AX_CHECK_COMPILE_FLAG([-fsanitize=undefined],
+  [MISC_CXXFLAGS="$MISC_CXXFLAGS -fsanitize=undefined"], [
+  AC_MSG_ERROR([UBSan requested, but compiler support not present])], [-Werror])
+])
 AC_SUBST([MISC_CXXFLAGS])
 
 # We want to check for compiler flag support, but there is no way to make
