@@ -67,9 +67,14 @@
 void STMClient::resume( void )
 {
   /* Restore termios state */
-  if ( tcsetattr( STDIN_FILENO, TCSANOW, &raw_termios ) < 0 ) {
+  while ( tcsetattr( STDIN_FILENO, TCSANOW, &raw_termios ) < 0 ) {
+    if ( errno == EINTR ) {
+      continue;
+    }
+    /* The controlling terminal may have hung up while we were backgrounded;
+       don't exit(1) and skip cleanup -- log and let the main loop notice. */
     perror( "tcsetattr" );
-    exit( 1 );
+    break;
   }
 
   /* Put terminal in application-cursor-key mode */
@@ -212,9 +217,14 @@ void STMClient::shutdown( void )
   /* Restore terminal and terminal-driver state */
   swrite( STDOUT_FILENO, display.close().c_str() );
 
-  if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
+  while ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
+    if ( errno == EINTR ) {
+      continue;
+    }
+    /* Already shutting down; a failed terminal restore isn't worth exit(1)
+       (which would skip the diagnostics below and return the wrong status). */
     perror( "tcsetattr" );
-    exit( 1 );
+    break;
   }
 
   if ( still_connecting() ) {
@@ -354,9 +364,13 @@ bool STMClient::process_user_input( int fd )
         /* Restore terminal and terminal-driver state */
         swrite( STDOUT_FILENO, display.close().c_str() );
 
-        if ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
+        while ( tcsetattr( STDIN_FILENO, TCSANOW, &saved_termios ) < 0 ) {
+          if ( errno == EINTR ) {
+            continue;
+          }
+          /* Suspending; don't kill the session if the terminal restore fails. */
           perror( "tcsetattr" );
-          exit( 1 );
+          break;
         }
 
         fputs( "\n\033[37;44m[mosh is suspended.]\033[m\n", stdout );
