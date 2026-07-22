@@ -62,10 +62,13 @@ private:
   Select()
     : max_fd( -1 ),
       /* These initializations are not used; they are just here to appease -Weffc++. */
-      all_fds( dummy_fd_set ), read_fds( dummy_fd_set ), empty_sigset( dummy_sigset ), consecutive_polls( 0 )
+      all_fds( dummy_fd_set ), read_fds( dummy_fd_set ), write_all_fds( dummy_fd_set ),
+      write_result_fds( dummy_fd_set ), empty_sigset( dummy_sigset ), consecutive_polls( 0 )
   {
     FD_ZERO( &all_fds );
     FD_ZERO( &read_fds );
+    FD_ZERO( &write_all_fds );
+    FD_ZERO( &write_result_fds );
 
     clear_got_signal();
     fatal_assert( 0 == sigemptyset( &empty_sigset ) );
@@ -92,7 +95,22 @@ public:
     FD_SET( fd, &all_fds );
   }
 
-  void clear_fds( void ) { FD_ZERO( &all_fds ); }
+  /* Add a descriptor to watch for writability. Only add one when there is
+     actually pending output for it, otherwise select() returns immediately
+     (a writable fd is almost always ready) and the loop spins. */
+  void add_write_fd( int fd )
+  {
+    if ( fd > max_fd ) {
+      max_fd = fd;
+    }
+    FD_SET( fd, &write_all_fds );
+  }
+
+  void clear_fds( void )
+  {
+    FD_ZERO( &all_fds );
+    FD_ZERO( &write_all_fds );
+  }
 
   static void add_signal( int signum )
   {
@@ -118,6 +136,7 @@ public:
   int select( int timeout )
   {
     memcpy( &read_fds, &all_fds, sizeof( read_fds ) );
+    memcpy( &write_result_fds, &write_all_fds, sizeof( write_result_fds ) );
     clear_got_signal();
 
     /* Rate-limit and warn about polls. */
@@ -146,7 +165,7 @@ public:
       tsp = &ts;
     }
 
-    int ret = ::pselect( max_fd + 1, &read_fds, NULL, NULL, tsp, &empty_sigset );
+    int ret = ::pselect( max_fd + 1, &read_fds, &write_result_fds, NULL, tsp, &empty_sigset );
 #else
     struct timeval tv;
     struct timeval* tvp = NULL;
@@ -160,7 +179,7 @@ public:
 
     int ret = sigprocmask( SIG_SETMASK, &empty_sigset, &old_sigset );
     if ( ret != -1 ) {
-      ret = ::select( max_fd + 1, &read_fds, NULL, NULL, tvp );
+      ret = ::select( max_fd + 1, &read_fds, &write_result_fds, NULL, tvp );
       sigprocmask( SIG_SETMASK, &old_sigset, NULL );
     }
 #endif
@@ -176,6 +195,7 @@ public:
       }
       /* The user should process events as usual. */
       FD_ZERO( &read_fds );
+      FD_ZERO( &write_result_fds );
       ret = 0;
     }
 
@@ -191,6 +211,15 @@ public:
   {
     assert( FD_ISSET( fd, &all_fds ) );
     return FD_ISSET( fd, &read_fds );
+  }
+
+  bool write( int fd )
+#if FD_ISSET_IS_CONST
+    const
+#endif
+  {
+    assert( FD_ISSET( fd, &write_all_fds ) );
+    return FD_ISSET( fd, &write_result_fds );
   }
 
   /* This method consumes a signal notification. */
@@ -233,7 +262,7 @@ private:
      concurrent signal handlers. */
   volatile sig_atomic_t got_signal[MAX_SIGNAL_NUMBER + 1];
 
-  fd_set all_fds, read_fds;
+  fd_set all_fds, read_fds, write_all_fds, write_result_fds;
 
   sigset_t empty_sigset;
 

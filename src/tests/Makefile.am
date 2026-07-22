@@ -39,8 +39,8 @@ displaytests = \
 	unicode-later-combining.test \
 	window-resize.test
 
-check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty is-utf8-locale
-TESTS = ocb-aes encrypt-decrypt base64 nonce-incr local.test $(displaytests)
+check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty is-utf8-locale pty-nonblock-write
+TESTS = ocb-aes encrypt-decrypt base64 nonce-incr pty-nonblock-write local.test $(displaytests)
 XFAIL_TESTS = \
 	e2e-failure.test \
 	emulation-attributes-256color8.test
@@ -72,6 +72,10 @@ inpty_LDADD = ../util/libmoshutil.a
 is_utf8_locale_SOURCES = is-utf8-locale.cc
 is_utf8_locale_CPPFLAGS = -I$(srcdir)/../util
 is_utf8_locale_LDADD = ../util/libmoshutil.a $(LIBUTIL)
+
+pty_nonblock_write_SOURCES = pty-nonblock-write.cc
+pty_nonblock_write_CPPFLAGS = -I$(top_srcdir)/ -I$(srcdir)/../util
+pty_nonblock_write_LDADD = ../util/libmoshutil.a $(LIBUTIL)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

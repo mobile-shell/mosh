@@ -712,6 +712,21 @@ static void serve( int host_fd,
 
   bool child_released = false;
 
+  /* Write to (and read from) the pty master without blocking, so that a slow
+     or stalled child -- e.g. a large paste into a program that has stopped
+     reading its stdin -- cannot deadlock the server in a blocking write()
+     (issue #1356). Output the pty can't accept yet is buffered here; when it
+     grows past the high-water mark we stop applying new client input until it
+     drains (backpressure). */
+  {
+    int flags = fcntl( host_fd, F_GETFL );
+    if ( flags < 0 || fcntl( host_fd, F_SETFL, flags | O_NONBLOCK ) < 0 ) {
+      perror( "fcntl( host_fd, O_NONBLOCK )" );
+    }
+  }
+  std::string host_write_buf;
+  static const size_t HOST_WRITE_HIGH_WATER = 256 * 1024;
+
   while ( true ) {
     try {
       static const uint64_t timeout_if_no_client = 60000;
@@ -746,6 +761,10 @@ static void serve( int host_fd,
       sel.add_fd( network_fd );
       if ( !network.shutdown_in_progress() ) {
         sel.add_fd( host_fd );
+        /* wake when the pty can accept more of the buffered output */
+        if ( !host_write_buf.empty() ) {
+          sel.add_write_fd( host_fd );
+        }
       }
 
       int active_fds = sel.select( timeout );
@@ -762,8 +781,12 @@ static void serve( int host_fd,
         /* packet received from the network */
         network.recv();
 
-        /* is new user input available for the terminal? */
-        if ( network.get_remote_state_num() != last_remote_num ) {
+        /* is new user input available for the terminal? Hold off while the pty
+           output buffer is backed up, so applying more input (which produces
+           more output) can't grow the buffer without bound. last_remote_num is
+           left unchanged, so the same input is applied once the buffer drains. */
+        if ( ( host_write_buf.size() < HOST_WRITE_HIGH_WATER )
+             && ( network.get_remote_state_num() != last_remote_num ) ) {
           last_remote_num = network.get_remote_state_num();
 
           Network::UserStream us;
@@ -866,9 +889,12 @@ static void serve( int host_fd,
         /* fill buffer if possible */
         ssize_t bytes_read = read( host_fd, buf, buf_size );
 
-        /* If the pty slave is closed, reading from the master can fail with
-           EIO (see #264).  So we treat errors on read() like EOF. */
-        if ( bytes_read <= 0 ) {
+        if ( bytes_read < 0 && ( errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR ) ) {
+          /* The master is non-blocking; nothing to read right now (or the read
+             was interrupted). Not an error. */
+        } else if ( bytes_read <= 0 ) {
+          /* If the pty slave is closed, reading from the master can fail with
+             EIO (see #264).  So we treat errors on read() like EOF. */
           network.start_shutdown();
         } else {
           terminal_to_host += terminal.act( std::string( buf, bytes_read ) );
@@ -878,9 +904,21 @@ static void serve( int host_fd,
         }
       }
 
-      /* write user input and terminal writeback to the host */
-      if ( swrite( host_fd, terminal_to_host.c_str(), terminal_to_host.length() ) < 0 ) {
-        network.start_shutdown();
+      /* Queue user input + terminal writeback and drain it to the pty master
+         without blocking (issue #1356). Whatever the master can't accept right
+         now stays buffered and is retried when it becomes writable. */
+      host_write_buf += terminal_to_host;
+      if ( !host_write_buf.empty() ) {
+        ssize_t bytes_written = write( host_fd, host_write_buf.data(), host_write_buf.size() );
+        if ( bytes_written < 0 ) {
+          if ( errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR ) {
+            perror( "write host" );
+            network.start_shutdown();
+          }
+          /* else: pty full or interrupted; keep the remainder for next time */
+        } else {
+          host_write_buf.erase( 0, static_cast<size_t>( bytes_written ) );
+        }
       }
 
       bool idle_shutdown = false;
