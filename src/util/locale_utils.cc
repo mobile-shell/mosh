@@ -72,6 +72,11 @@ const char* locale_charset( void )
 
   /* Produce more pleasant name of US-ASCII */
   const char* ret = nl_langinfo( CODESET );
+  if ( ret == NULL ) {
+    /* A non-conforming libc can return NULL (seen when setlocale failed);
+       don't hand it to strcmp(). */
+    ret = ASCII_name;
+  }
 
   if ( strcmp( ret, "ANSI_X3.4-1968" ) == 0 ) {
     ret = ASCII_name;

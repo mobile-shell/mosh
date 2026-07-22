@@ -703,11 +703,12 @@ static void serve( int host_fd,
 #endif
 
 #ifdef HAVE_SYSLOG
+  /* getpwuid() here only labels syslog lines; a NULL result (e.g. an NSS/LDAP
+     backend outage between sshd auth and now) must not stop the session from
+     starting. */
   struct passwd* pw = getpwuid( getuid() );
-  if ( pw == NULL ) {
-    throw NetworkException( std::string( "serve: getpwuid: " ) + strerror( errno ), 0 );
-  }
-  syslog( LOG_INFO, "user %s session begin", pw->pw_name );
+  const char* user_name = ( pw && pw->pw_name ) ? pw->pw_name : "unknown";
+  syslog( LOG_INFO, "user %s session begin", user_name );
 #endif
 
   bool child_released = false;
@@ -843,7 +844,7 @@ static void serve( int host_fd,
 #endif
 
 #ifdef HAVE_SYSLOG
-            syslog( LOG_INFO, "user %s connected from host: %s", pw->pw_name, host );
+            syslog( LOG_INFO, "user %s connected from host: %s", user_name, host );
 #endif
           }
 #endif
@@ -960,7 +961,7 @@ static void serve( int host_fd,
     }
   }
 #ifdef HAVE_SYSLOG
-  syslog( LOG_INFO, "user %s session end", pw->pw_name );
+  syslog( LOG_INFO, "user %s session end", user_name );
 #endif
 }
 
