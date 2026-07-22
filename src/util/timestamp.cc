@@ -60,6 +60,18 @@
 
 static uint64_t millis_cache = -1;
 
+/* Never let the frozen timestamp move backwards. Several transport-layer
+   invariants assert now >= an earlier-stamped time; a non-monotonic clock
+   source (gettimeofday of last resort, or CLOCK_MONOTONIC across suspend on
+   some systems -- see #1014) would otherwise abort a live session. Hold the
+   last value until real time catches up. (-1 is the uninitialized sentinel.) */
+static void update_millis_cache( uint64_t millis )
+{
+  if ( millis_cache == uint64_t( -1 ) || millis > millis_cache ) {
+    millis_cache = millis;
+  }
+}
+
 uint64_t frozen_timestamp( void )
 {
   if ( millis_cache == uint64_t( -1 ) ) {
@@ -87,7 +99,7 @@ void freeze_timestamp( void )
     uint64_t millis = tp.tv_nsec / 1000000;
     millis += uint64_t( tp.tv_sec ) * 1000;
 
-    millis_cache = millis;
+    update_millis_cache( millis );
     return;
   }
 #endif
@@ -107,7 +119,7 @@ void freeze_timestamp( void )
   // NB: mach_absolute_time() returns "absolute time units"
   // We need to apply a conversion to get milliseconds.
   if ( absolute_to_millis > 0.0 ) {
-    millis_cache = mach_absolute_time() * absolute_to_millis;
+    update_millis_cache( mach_absolute_time() * absolute_to_millis );
     return;
   }
 #endif
@@ -121,7 +133,7 @@ void freeze_timestamp( void )
     uint64_t millis = tv.tv_usec / 1000;
     millis += uint64_t( tv.tv_sec ) * 1000;
 
-    millis_cache = millis;
+    update_millis_cache( millis );
     return;
   }
 #else
