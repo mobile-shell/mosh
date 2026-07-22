@@ -403,10 +403,23 @@ void Framebuffer::soft_reset( void )
   ds.clear_saved_cursor();
 }
 
+/* Bound on total framebuffer cells. width/height can come from a ResizeMessage
+   whose int32 fields the counterparty controls; without a cap a peer could
+   force a huge allocation. 4,000,000 exceeds any real display. */
+static const int64_t DRAW_MAX_CELLS = 4000000;
+
 void Framebuffer::resize( int s_width, int s_height )
 {
-  assert( s_width > 0 );
-  assert( s_height > 0 );
+  /* Ignore invalid or oversized requests rather than aborting: a non-positive
+     size (e.g. a 0x0 tty from `script -q /dev/null`, or a negative int32 from
+     a peer) previously hit the assertions below (issue #1386), and an
+     oversized one would allocate without bound. Keep the current size. */
+  if ( s_width < 1 || s_height < 1 ) {
+    return;
+  }
+  if ( static_cast<int64_t>( s_width ) * static_cast<int64_t>( s_height ) > DRAW_MAX_CELLS ) {
+    return;
+  }
 
   int oldheight = ds.get_height();
   int oldwidth = ds.get_width();
