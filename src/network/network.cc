@@ -75,9 +75,13 @@ Packet::Packet( const Message& message )
 {
   dos_assert( message.text.size() >= 2 * sizeof( uint16_t ) );
 
-  const uint16_t* data = (uint16_t*)message.text.data();
-  timestamp = be16toh( data[0] );
-  timestamp_reply = be16toh( data[1] );
+  /* Copy out the two timestamps rather than reading through a uint16_t* aliased
+     onto the string's char storage: that cast is a strict-aliasing violation
+     and an unaligned load on strict-alignment architectures (ARM/SPARC). */
+  uint16_t ts_net[2];
+  memcpy( ts_net, message.text.data(), sizeof( ts_net ) );
+  timestamp = be16toh( ts_net[0] );
+  timestamp_reply = be16toh( ts_net[1] );
 
   payload = std::string( message.text.begin() + 2 * sizeof( uint16_t ), message.text.end() );
 }

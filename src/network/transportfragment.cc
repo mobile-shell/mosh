@@ -79,11 +79,17 @@ Fragment::Fragment( const std::string& x )
   fatal_assert( x.size() >= frag_header_len );
   contents = std::string( x.begin() + frag_header_len, x.end() );
 
+  /* Copy both fields out with memcpy rather than reading the 16-bit value
+     through a uint16_t* aliased onto the string's char storage: that cast is a
+     strict-aliasing violation and an unaligned load on strict-alignment
+     architectures. (The 64-bit id already used memcpy; this makes the 16-bit
+     read consistent.) */
   uint64_t data64;
-  uint16_t* data16 = (uint16_t*)x.data();
+  uint16_t frag_net;
   memcpy( &data64, x.data(), sizeof( data64 ) );
+  memcpy( &frag_net, x.data() + sizeof( data64 ), sizeof( frag_net ) );
   id = be64toh( data64 );
-  fragment_num = be16toh( data16[4] );
+  fragment_num = be16toh( frag_net );
   final = ( fragment_num & 0x8000 ) >> 15;
   fragment_num &= 0x7FFF;
 }
