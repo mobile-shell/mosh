@@ -602,7 +602,12 @@ uint64_t Connection::timeout( void ) const
 
 Connection::Socket::~Socket()
 {
-  fatal_assert( close( _fd ) == 0 );
+  /* Do not abort the session if close() fails: on Linux the fd is released
+     regardless, and errors such as EINTR or a deferred EIO are not
+     actionable (issue #1349). Log and continue. */
+  if ( close( _fd ) < 0 ) {
+    fprintf( stderr, "Error closing socket: %s\n", strerror( errno ) );
+  }
 }
 
 Connection::Socket::Socket( const Socket& other ) : _fd( dup( other._fd ) )
