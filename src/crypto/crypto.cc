@@ -244,35 +244,44 @@ const std::string Session::encrypt( const Message& plaintext )
 
 const Message Session::decrypt( const char* str, size_t len )
 {
+  /* A valid packet is an 8-byte nonce prefix, the ciphertext, and a 16-byte
+     OCB tag, so the smallest legal length is 8 + 16 = 24. */
   if ( len < 24 ) {
     throw CryptoException( "Ciphertext must contain nonce and tag." );
   }
 
-  int body_len = len - 8;
-  int pt_len = body_len - 16;
+  /* Compute the lengths in size_t: no signed narrowing, no overflow. len >= 24
+     gives body_len >= 16 and pt_len >= 0, so pt_len can never collide with
+     ae_decrypt()'s AE_INVALID (-1) return -- which is exactly what the
+     integrity check below relies on to tell success from a forged packet. */
+  const size_t body_len = len - 8;
+  const size_t pt_len = body_len - 16;
 
-  if ( pt_len < 0 ) { /* super-assertion that pt_len does not equal AE_INVALID */
-    fprintf( stderr, "BUG.\n" );
-    exit( 1 );
+  /* body_len bytes are copied into ciphertext_buffer and pt_len into
+     plaintext_buffer, so reject anything that would not fit -- decrypt() then
+     never overruns its fixed buffers regardless of the caller, and fails
+     closed with a catchable exception instead of the previous assert()/exit().
+     (The network layer already caps datagrams at RECEIVE_MTU; encrypt() can
+     produce up to RECEIVE_MTU + 8 bytes for a maximum-size message, which this
+     bound accepts.) */
+  if ( ( body_len > ciphertext_buffer.len() ) || ( pt_len > plaintext_buffer.len() ) ) {
+    throw CryptoException( "Ciphertext too long for receive buffer." );
   }
-
-  assert( (size_t)body_len <= ciphertext_buffer.len() );
-  assert( (size_t)pt_len <= plaintext_buffer.len() );
 
   Nonce nonce( str, 8 );
   memcpy( ciphertext_buffer.data(), str + 8, body_len );
   memcpy( nonce_buffer.data(), nonce.data(), Nonce::NONCE_LEN );
 
-  if ( pt_len
-       != ae_decrypt( ctx,                      /* ctx */
-                      nonce_buffer.data(),      /* nonce */
-                      ciphertext_buffer.data(), /* ct */
-                      body_len,                 /* ct_len */
-                      NULL,                     /* ad */
-                      0,                        /* ad_len */
-                      plaintext_buffer.data(),  /* pt */
-                      NULL,                     /* tag */
-                      AE_FINALIZE ) ) {         /* final */
+  if ( static_cast<int>( pt_len )
+       != ae_decrypt( ctx,                       /* ctx */
+                      nonce_buffer.data(),       /* nonce */
+                      ciphertext_buffer.data(),  /* ct */
+                      static_cast<int>( body_len ), /* ct_len */
+                      NULL,                      /* ad */
+                      0,                         /* ad_len */
+                      plaintext_buffer.data(),   /* pt */
+                      NULL,                      /* tag */
+                      AE_FINALIZE ) ) {          /* final */
     throw CryptoException( "Packet failed integrity check." );
   }
 
