@@ -244,9 +244,14 @@ void STMClient::main_init( void )
   sel.add_signal( SIGCONT );
 
   /* get initial window size */
-  if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
-    perror( "ioctl TIOCGWINSZ" );
-    return;
+  if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 || window_size.ws_col == 0
+       || window_size.ws_row == 0 ) {
+    /* Fall back to a sane default. Returning here would leave `network` a null
+       pointer that main() then dereferences (SIGSEGV), and a 0x0 winsize would
+       abort the Framebuffer constructor's assert. Mirrors mosh-server. */
+    memset( &window_size, 0, sizeof( window_size ) );
+    window_size.ws_col = 80;
+    window_size.ws_row = 24;
   }
 
   /* local state */
