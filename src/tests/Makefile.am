@@ -39,8 +39,8 @@ displaytests = \
 	unicode-later-combining.test \
 	window-resize.test
 
-check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty is-utf8-locale
-TESTS = ocb-aes encrypt-decrypt base64 nonce-incr local.test $(displaytests)
+check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty is-utf8-locale uaf-transport
+TESTS = ocb-aes encrypt-decrypt base64 nonce-incr uaf-transport local.test $(displaytests)
 XFAIL_TESTS = \
 	e2e-failure.test \
 	emulation-attributes-256color8.test
@@ -72,6 +72,12 @@ inpty_LDADD = ../util/libmoshutil.a
 is_utf8_locale_SOURCES = is-utf8-locale.cc
 is_utf8_locale_CPPFLAGS = -I$(srcdir)/../util
 is_utf8_locale_LDADD = ../util/libmoshutil.a $(LIBUTIL)
+
+# Detects the Transport::recv() use-after-free when built with --enable-asan;
+# a harmless smoke test otherwise.
+uaf_transport_SOURCES = uaf-transport.cc
+uaf_transport_CPPFLAGS = -I$(top_srcdir)/ $(protobuf_CFLAGS) $(CRYPTO_CFLAGS) $(TINFO_CFLAGS)
+uaf_transport_LDADD = ../crypto/libmoshcrypto.a ../network/libmoshnetwork.a ../statesync/libmoshstatesync.a ../terminal/libmoshterminal.a ../util/libmoshutil.a ../protobufs/libmoshprotos.a -lm $(TINFO_LIBS) $(protobuf_LIBS) $(CRYPTO_LIBS)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check
