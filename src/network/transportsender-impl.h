@@ -52,8 +52,8 @@ TransportSender<MyState>::TransportSender( Connection* s_connection, MyState& in
     sent_states( 1, TimestampedState<MyState>( timestamp(), 0, initial_state ) ),
     assumed_receiver_state( sent_states.begin() ), fragmenter(), next_ack_time( timestamp() ),
     next_send_time( timestamp() ), verbose( 0 ), shutdown_in_progress( false ), shutdown_tries( 0 ),
-    shutdown_start( -1 ), ack_num( 0 ), pending_data_ack( false ), SEND_MINDELAY( 8 ), last_heard( 0 ), prng(),
-    mindelay_clock( -1 )
+    shutdown_start( -1 ), ack_num( 0 ), pending_data_ack( false ), SEND_MINDELAY( 8 ), last_heard( 0 ),
+    last_ack_progress( timestamp() ), last_mtu_shrink( timestamp() ), prng(), mindelay_clock( -1 )
 {}
 
 /* Try to send roughly two frames per RTT, bounded by limits on frame rate */
@@ -180,6 +180,13 @@ void TransportSender<MyState>::tick( void )
       mindelay_clock = uint64_t( -1 );
     }
   } else if ( ( now >= next_send_time ) || ( now >= next_ack_time ) ) {
+    /* If our data hasn't been acknowledged for a while, the path MTU may have
+       shrunk on a link with no PMTUD (e.g. a VPN, #299); reduce it before
+       resending, unless MOSH_MTU has pinned it. */
+    if ( ( now - last_ack_progress > MTU_BLACKHOLE_TIMEOUT ) && ( now - last_mtu_shrink > MTU_BLACKHOLE_TIMEOUT )
+         && connection->shrink_MTU() ) {
+      last_mtu_shrink = now;
+    }
     /* Send diffs or ack */
     send_to_receiver( diff );
     mindelay_clock = uint64_t( -1 );
@@ -363,6 +370,7 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
       i_next++;
       if ( i->num < ack_num ) {
         sent_states.erase( i );
+        last_ack_progress = timestamp(); /* our data is getting through (#299) */
       }
       i = i_next;
     }

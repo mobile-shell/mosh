@@ -173,7 +173,8 @@ private:
 
   bool server;
 
-  int MTU; /* application datagram MTU */
+  int MTU;         /* application datagram MTU */
+  bool mtu_pinned; /* MTU fixed by MOSH_MTU; disables adaptive shrink */
 
   Base64Key key;
   Session session;
@@ -223,6 +224,11 @@ public:
   std::string recv( void );
   const std::vector<int> fds( void ) const;
   int get_MTU( void ) const { return MTU; }
+
+  /* Halve the datagram MTU toward the floor when the path appears to be
+     silently dropping oversize datagrams (no PMTUD, e.g. a VPN -- issue #299).
+     Returns true if the MTU was actually reduced. */
+  bool shrink_MTU( void );
 
   std::string port( void ) const;
   std::string get_key( void ) const { return key.printable_key(); }

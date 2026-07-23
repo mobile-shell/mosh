@@ -34,6 +34,7 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 
 #include <sys/socket.h>
@@ -195,16 +196,52 @@ const std::vector<int> Connection::fds( void ) const
 
 void Connection::set_MTU( int family )
 {
+  int base_mtu, header_len;
   switch ( family ) {
     case AF_INET:
-      MTU = DEFAULT_IPV4_MTU - IPV4_HEADER_LEN;
+      base_mtu = DEFAULT_IPV4_MTU;
+      header_len = IPV4_HEADER_LEN;
       break;
     case AF_INET6:
-      MTU = DEFAULT_IPV6_MTU - IPV6_HEADER_LEN;
+      base_mtu = DEFAULT_IPV6_MTU;
+      header_len = IPV6_HEADER_LEN;
       break;
     default:
       throw NetworkException( "Unknown address family", 0 );
   }
+
+  /* MOSH_MTU (the IP-layer MTU) pins the datagram size and disables the
+     adaptive shrink -- a static override / escape hatch for known constrained
+     paths where PMTU discovery is unavailable (issue #299). Each end reads it
+     from its own environment. Clamp to a sane range; otherwise keep the default. */
+  mtu_pinned = false;
+  const char* mtu_env = getenv( "MOSH_MTU" );
+  if ( mtu_env && *mtu_env ) {
+    char* end;
+    errno = 0;
+    long v = strtol( mtu_env, &end, 10 );
+    if ( ( errno == 0 ) && ( *end == '\0' ) && ( v >= 500 ) && ( v <= 9000 ) ) {
+      base_mtu = static_cast<int>( v );
+      mtu_pinned = true;
+    } else {
+      fprintf( stderr, "mosh: ignoring invalid MOSH_MTU=\"%s\" (want an integer in [500, 9000]).\n", mtu_env );
+    }
+  }
+
+  MTU = base_mtu - header_len;
+}
+
+bool Connection::shrink_MTU( void )
+{
+  if ( mtu_pinned || ( MTU <= DEFAULT_SEND_MTU ) ) {
+    return false;
+  }
+  int reduced = MTU / 2;
+  MTU = ( reduced < DEFAULT_SEND_MTU ) ? DEFAULT_SEND_MTU : reduced;
+  if ( server ) { /* client is in raw mode; only the server's stderr is safe to write */
+    fprintf( stderr, "Reduced MTU to %d after no acknowledgment (possible path-MTU blackhole).\n", MTU );
+  }
+  return true;
 }
 
 class AddrInfo
@@ -228,7 +265,7 @@ private:
 };
 
 Connection::Connection( const char* desired_ip, const char* desired_port ) /* server */
-  : socks(), has_remote_addr( false ), remote_addr(), remote_addr_len( 0 ), server( true ), MTU( DEFAULT_SEND_MTU ),
+  : socks(), has_remote_addr( false ), remote_addr(), remote_addr_len( 0 ), server( true ), MTU( DEFAULT_SEND_MTU ), mtu_pinned( false ),
     key(), session( key ), direction( TO_CLIENT ), saved_timestamp( -1 ), saved_timestamp_received_at( 0 ),
     expected_receiver_seq( 0 ), last_heard( -1 ), last_port_choice( -1 ), last_roundtrip_success( -1 ),
     RTT_hit( false ), SRTT( 1000 ), RTTVAR( 500 ), send_error()
@@ -340,7 +377,7 @@ bool Connection::try_bind( const char* addr, int port_low, int port_high )
 
 Connection::Connection( const char* key_str, const char* ip, const char* port ) /* client */
   : socks(), has_remote_addr( false ), remote_addr(), remote_addr_len( 0 ), server( false ),
-    MTU( DEFAULT_SEND_MTU ), key( key_str ), session( key ), direction( TO_SERVER ), saved_timestamp( -1 ),
+    MTU( DEFAULT_SEND_MTU ), mtu_pinned( false ), key( key_str ), session( key ), direction( TO_SERVER ), saved_timestamp( -1 ),
     saved_timestamp_received_at( 0 ), expected_receiver_seq( 0 ), last_heard( -1 ), last_port_choice( -1 ),
     last_roundtrip_success( -1 ), RTT_hit( false ), SRTT( 1000 ), RTTVAR( 500 ), send_error()
 {

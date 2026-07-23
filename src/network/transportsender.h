@@ -51,7 +51,8 @@ const int SEND_INTERVAL_MAX = 250;      /* ms between frames */
 const int ACK_INTERVAL = 3000;          /* ms between empty acks */
 const int ACK_DELAY = 100;              /* ms before delayed ack */
 const int SHUTDOWN_RETRIES = 16;        /* number of shutdown packets to send before giving up */
-const int ACTIVE_RETRY_TIMEOUT = 10000; /* attempt to resend at frame rate */
+const int ACTIVE_RETRY_TIMEOUT = 10000;  /* attempt to resend at frame rate */
+const int MTU_BLACKHOLE_TIMEOUT = 5000;  /* ms of no ack progress before shrinking the MTU (#299) */
 
 template<class MyState>
 class TransportSender
@@ -100,6 +101,9 @@ private:
   unsigned int SEND_MINDELAY; /* ms to collect all input */
 
   uint64_t last_heard; /* last time received new state */
+
+  uint64_t last_ack_progress; /* last time our sent data was acknowledged (#299) */
+  uint64_t last_mtu_shrink;   /* last adaptive MTU reduction, for cooldown (#299) */
 
   /* chaff to disguise instruction length */
   PRNG prng;
