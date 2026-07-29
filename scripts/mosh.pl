@@ -87,6 +87,8 @@ my $help = undef;
 my $version = undef;
 
 my @cmdline = @ARGV;
+# Kept whole so the no-pty retry below can start over with the same request.
+my @original_argv = @ARGV;
 
 my $usage =
 qq{Usage: $0 [options] [--] [user@]host [command...]
@@ -412,6 +414,7 @@ if ( $pid == 0 ) { # child
 } else { # parent
   my ( $sship, $port, $key );
   my $bad_udp_port_warning = 0;
+  my @deferred_output;
   LINE: while ( <$pipe> ) {
     chomp;
     if ( m{^MOSH IP } ) {
@@ -436,7 +439,7 @@ if ( $pid == 0 ) { # child
       if ( defined $port_request and $port_request =~ m{:} and m{Bad UDP port} ) {
 	$bad_udp_port_warning = 1;
       }
-      print "$_\n";
+      push @deferred_output, $_;
     }
   }
   close $pipe;
@@ -452,11 +455,43 @@ if ( $pid == 0 ) { # child
   }
 
   if ( not defined $key or not defined $port ) {
+    # Some servers do not answer when a pty is forced for a remote command.
+    # Windows OpenSSH is the case that prompted this: asking for a pty makes it
+    # run the command under a pseudoconsole, which renders a screen rather than
+    # forwarding bytes. Measured against OpenSSH_for_Windows_9.5p2, with the
+    # ssh client itself on a pty:
+    #
+    #   ssh -tt      the command runs, but its output arrives wrapped in the
+    #                escape sequences the renderer emits, so the anchored
+    #                MOSH CONNECT match above never fires
+    #   ssh -n -tt   the command does not run at all
+    #
+    # Either way the user is told the server has no mosh installed, which is
+    # not true and gives them nothing to act on. Retry once without the pty --
+    # re-running from the top rather than unpicking the failed attempt's state.
+    #
+    # This costs a second authentication, so say so before doing it, and carry
+    # the first attempt's output across in case the retry fails too.
+    if ( $ssh_pty and not $ENV{ 'MOSH_NO_PTY_RETRY' } ) {
+      warn "$0: no startup message; the server may not allow a pty for a remote\n"
+        . "$0: command. Retrying once with --no-ssh-pty (ssh will authenticate again).\n";
+      $ENV{ 'MOSH_NO_PTY_RETRY' } = 1;
+      $ENV{ 'MOSH_PTY_ATTEMPT_OUTPUT' } = join( "\n", @deferred_output );
+      exec { $0 } ( $0, '--no-ssh-pty', @original_argv );
+      die "$0: Cannot re-exec $0: $!\n";
+    }
+    if ( defined $ENV{ 'MOSH_PTY_ATTEMPT_OUTPUT' }
+         and length $ENV{ 'MOSH_PTY_ATTEMPT_OUTPUT' } ) {
+      warn "$0: the first attempt, with a pty, said:\n";
+      warn "$0:   $_\n" for split( /\n/, $ENV{ 'MOSH_PTY_ATTEMPT_OUTPUT' } );
+    }
+    print "$_\n" for @deferred_output;
     if ( $bad_udp_port_warning ) {
       die "$0: Server does not support UDP port range option.\n";
     }
     die "$0: Did not find mosh server startup message. (Have you installed mosh on your server?)\n";
   }
+  print "$_\n" for @deferred_output;
 
   # Now start real mosh client
   $ENV{ 'MOSH_KEY' } = $key;
