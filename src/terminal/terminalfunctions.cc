@@ -520,7 +520,7 @@ static Function func_CSI_DL( CSI, "M", CSI_DL );
 /* insert characters */
 static void CSI_ICH( Framebuffer* fb, Dispatcher* dispatch )
 {
-  int cells = dispatch->getparam( 0, 1 );
+  int cells = std::min( dispatch->getparam( 0, 1 ), fb->ds.get_width() - fb->ds.get_cursor_col() );
 
   for ( int i = 0; i < cells; i++ ) {
     fb->insert_cell( fb->ds.get_cursor_row(), fb->ds.get_cursor_col() );
@@ -532,7 +532,7 @@ static Function func_CSI_ICH( CSI, "@", CSI_ICH );
 /* delete character */
 static void CSI_DCH( Framebuffer* fb, Dispatcher* dispatch )
 {
-  int cells = dispatch->getparam( 0, 1 );
+  int cells = std::min( dispatch->getparam( 0, 1 ), fb->ds.get_width() - fb->ds.get_cursor_col() );
 
   for ( int i = 0; i < cells; i++ ) {
     fb->delete_cell( fb->ds.get_cursor_row(), fb->ds.get_cursor_col() );
