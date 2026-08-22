@@ -292,6 +292,18 @@ std::string Display::new_frame( bool initialized, const Framebuffer& last, const
         snprintf( tmp, sizeof( tmp ), "\033[?%dl", frame.last_frame.ds.mouse_reporting_mode );
         frame.append( tmp );
       }
+      /* Announce the lower tracking modes as well. Terminals need not
+         implement every mode, and the common behaviour is to ignore an
+         unsupported one and keep the mode already in effect. Applications
+         set these cumulatively, so mirror that; otherwise a terminal that
+         lacks the highest requested mode is left with mouse reporting
+         entirely off. */
+      if ( f.ds.mouse_reporting_mode >= DrawState::MOUSE_REPORTING_BTN_EVENT ) {
+        frame.append( "\033[?1000h" );
+      }
+      if ( f.ds.mouse_reporting_mode >= DrawState::MOUSE_REPORTING_ANY_EVENT ) {
+        frame.append( "\033[?1002h" );
+      }
       snprintf( tmp, sizeof( tmp ), "\033[?%dh", f.ds.mouse_reporting_mode );
       frame.append( tmp );
     }
