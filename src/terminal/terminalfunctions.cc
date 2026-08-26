@@ -139,7 +139,8 @@ static Function func_CSI_cursormove_f( CSI, "f", CSI_cursormove );
 /* device attributes */
 static void CSI_DA( Framebuffer* fb __attribute( ( unused ) ), Dispatcher* dispatch )
 {
-  dispatch->terminal_to_host.append( "\033[?62c" ); /* plain vt220 */
+  /* VT220 (62) with ANSI color (22); a bare CSI ? 62 c goes unrecognized */
+  dispatch->terminal_to_host.append( "\033[?62;22c" );
 }
 
 static Function func_CSI_DA( CSI, "c", CSI_DA );
