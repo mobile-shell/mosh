@@ -3,6 +3,7 @@
 /ocb-aes
 /encrypt-decrypt
 /nonce-incr
+/mouse-filter
 /inpty
 /is-utf8-locale
 /*.d/
