@@ -199,8 +199,6 @@ void NotificationEngine::apply( Framebuffer& fb ) const
   }
 
   /* write message */
-  wchar_t tmp[128];
-
   /* We want to prefer the "last contact" message if we simply haven't
      heard from the server in a while, but print the "last reply" message
      if the problem is uplink-only. */
@@ -225,39 +223,43 @@ void NotificationEngine::apply( Framebuffer& fb ) const
   if ( message.empty() && ( !time_expired ) ) {
     return;
   }
+  /* Built as UTF-8 and widened once at the end: there is no portable
+     swprintf for the code-point string type, and mixing %ls with %s was
+     never pleasant anyway. */
+  char tmp[128];
   if ( message.empty() && time_expired ) {
-    swprintf( tmp,
-              128,
-              L"mosh: Last %s %s ago.%s",
+    snprintf( tmp,
+              sizeof tmp,
+              "mosh: Last %s %s ago.%s",
               explanation,
               human_readable_duration( static_cast<int>( time_elapsed ), "seconds" ).c_str(),
               keystroke_str );
   } else if ( ( !message.empty() ) && ( !time_expired ) ) {
-    swprintf( tmp, 128, L"mosh: %ls%s", message.c_str(), keystroke_str );
+    snprintf( tmp, sizeof tmp, "mosh: %s%s", mosh_narrow( message ).c_str(), keystroke_str );
   } else {
-    swprintf( tmp,
-              128,
-              L"mosh: %ls (%s without %s.)%s",
-              message.c_str(),
+    snprintf( tmp,
+              sizeof tmp,
+              "mosh: %s (%s without %s.)%s",
+              mosh_narrow( message ).c_str(),
               human_readable_duration( static_cast<int>( time_elapsed ), "s" ).c_str(),
               explanation,
               keystroke_str );
   }
 
-  std::wstring string_to_draw( tmp );
+  mosh_wstring string_to_draw( mosh_widen( tmp ) );
 
   int overlay_col = 0;
 
   Cell* combining_cell = fb.get_mutable_cell( 0, 0 );
 
   /* We unfortunately duplicate the terminal's logic for how to render a Unicode sequence into graphemes */
-  for ( std::wstring::const_iterator i = string_to_draw.begin(); i != string_to_draw.end(); i++ ) {
+  for ( mosh_wstring::const_iterator i = string_to_draw.begin(); i != string_to_draw.end(); i++ ) {
     if ( overlay_col >= fb.ds.get_width() ) {
       break;
     }
 
-    wchar_t ch = *i;
-    int chwidth = ch == L'\0' ? -1 : wcwidth( ch );
+    mosh_wchar_t ch = *i;
+    int chwidth = ch == MOSH_L( '\0' ) ? -1 : mosh_wcwidth( ch );
     Cell* this_cell = 0;
 
     switch ( chwidth ) {
@@ -293,7 +295,7 @@ void NotificationEngine::apply( Framebuffer& fb ) const
       case -1: /* unprintable character */
         break;
       default:
-        assert( !"unexpected character width from wcwidth()" );
+        assert( !"unexpected character width from mosh_wcwidth()" );
     }
   }
 }
@@ -335,7 +337,7 @@ void OverlayManager::apply( Framebuffer& fb )
   title.apply( fb );
 }
 
-void TitleEngine::set_prefix( const std::wstring& s )
+void TitleEngine::set_prefix( const mosh_wstring& s )
 {
   prefix = Terminal::Framebuffer::title_type( s.begin(), s.end() );
 }
@@ -645,7 +647,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
 
     /*
     fprintf( stderr, "Action: %s (%lc)\n",
-             act->name().c_str(), act->char_present ? act->ch : L'_' );
+             act->name().c_str(), act->char_present ? act->ch : MOSH_L( '_' ) );
     */
 
     const std::type_info& type_act = typeid( act );
@@ -656,7 +658,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
 
       assert( act.char_present );
 
-      wchar_t ch = act.ch;
+      mosh_wchar_t ch = act.ch;
       /* XXX handle wide characters */
 
       if ( ch == 0x7f ) { /* backspace */
@@ -709,7 +711,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
             }
           }
         }
-      } else if ( ( ch < 0x20 ) || ( wcwidth( ch ) != 1 ) ) {
+      } else if ( ( ch < 0x20 ) || ( mosh_wcwidth( ch ) != 1 ) ) {
         /* unknown print */
         become_tentative();
         //	fprintf( stderr, "Unknown print 0x%x\n", ch );
@@ -806,13 +808,13 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
       //      fprintf( stderr, "Escape sequence\n" );
       become_tentative();
     } else if ( type_act == typeid( Parser::CSI_Dispatch ) ) {
-      if ( act.char_present && ( act.ch == L'C' ) ) { /* right arrow */
+      if ( act.char_present && ( act.ch == MOSH_L( 'C' ) ) ) { /* right arrow */
         init_cursor( fb );
         if ( cursor().col < fb.ds.get_width() - 1 ) {
           cursor().col++;
           cursor().expire( local_frame_sent + 1, now );
         }
-      } else if ( act.char_present && ( act.ch == L'D' ) ) { /* left arrow */
+      } else if ( act.char_present && ( act.ch == MOSH_L( 'D' ) ) ) { /* left arrow */
         init_cursor( fb );
 
         if ( cursor().col > 0 ) {

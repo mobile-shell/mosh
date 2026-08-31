@@ -33,6 +33,8 @@
 #ifndef TERMINAL_OVERLAY_HPP
 #define TERMINAL_OVERLAY_HPP
 
+#include "src/util/unicode.h"
+
 #include "src/network/network.h"
 #include "src/network/transportsender.h"
 #include "src/terminal/parser.h"
@@ -151,7 +153,7 @@ private:
   uint64_t last_word_from_server;
   uint64_t last_acked_state;
   std::string escape_key_string;
-  std::wstring message;
+  mosh_wstring message;
   bool message_is_network_error;
   uint64_t message_expiration;
   bool show_quit_keystroke;
@@ -163,12 +165,12 @@ private:
 public:
   void adjust_message( void );
   void apply( Framebuffer& fb ) const;
-  const std::wstring& get_notification_string( void ) const { return message; }
+  const mosh_wstring& get_notification_string( void ) const { return message; }
   void server_heard( uint64_t s_last_word ) { last_word_from_server = s_last_word; }
   void server_acked( uint64_t s_last_acked ) { last_acked_state = s_last_acked; }
   int wait_time( void ) const;
 
-  void set_notification_string( const std::wstring& s_message,
+  void set_notification_string( const mosh_wstring& s_message,
                                 bool permanent = false,
                                 bool s_show_quit_keystroke = true )
   {
@@ -191,10 +193,7 @@ public:
 
   void set_network_error( const std::string& s )
   {
-    wchar_t tmp[128];
-    swprintf( tmp, 128, L"%s", s.c_str() );
-
-    message = tmp;
+    message = mosh_widen( s );
     message_is_network_error = true;
     message_expiration = timestamp() + Network::ACK_INTERVAL + 100;
   }
@@ -320,7 +319,7 @@ private:
 public:
   void apply( Framebuffer& fb ) const { fb.prefix_window_title( prefix ); }
   TitleEngine() : prefix() {}
-  void set_prefix( const std::wstring& s );
+  void set_prefix( const mosh_wstring& s );
 };
 
 /* the overlay manager */
@@ -337,7 +336,7 @@ public:
   NotificationEngine& get_notification_engine( void ) { return notifications; }
   PredictionEngine& get_prediction_engine( void ) { return predictions; }
 
-  void set_title_prefix( const std::wstring& s ) { title.set_prefix( s ); }
+  void set_title_prefix( const mosh_wstring& s ) { title.set_prefix( s ); }
 
   OverlayManager() : notifications(), predictions(), title() {}
 

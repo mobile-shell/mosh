@@ -33,6 +33,8 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
+#include "src/util/unicode.h"
+
 /* Based on Paul Williams's parser,
    http://www.vt100.net/emu/dec_ansi_parser */
 
@@ -59,7 +61,7 @@ public:
   Parser& operator=( const Parser& );
   ~Parser() {}
 
-  void input( wchar_t ch, Actions& actions );
+  void input( mosh_wchar_t ch, Actions& actions );
 
   void reset_input( void ) { state = &family.s_Ground; }
 };

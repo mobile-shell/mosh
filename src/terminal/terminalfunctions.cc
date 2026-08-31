@@ -590,10 +590,10 @@ static void CSI_DECSTR( Framebuffer* fb, Dispatcher* dispatch __attribute( ( unu
 
 static Function func_CSI_DECSTR( CSI, "!p", CSI_DECSTR );
 
-static bool Parse_OSC_8( const std::vector<wchar_t>& osc8_vector, std::string& osc8_str )
+static bool Parse_OSC_8( const std::vector<mosh_wchar_t>& osc8_vector, std::string& osc8_str )
 {
   osc8_str.reserve( osc8_vector.size() );
-  for ( wchar_t wide_char : osc8_vector ) {
+  for ( mosh_wchar_t wide_char : osc8_vector ) {
     // Valid char range is 32-126, per
     // https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda#encodings
     if ( wide_char < 32 || wide_char > 126 ) {
@@ -627,24 +627,24 @@ static void OSC_8( const std::string& OSC_string, Framebuffer* fb )
 void Dispatcher::OSC_dispatch( const Parser::OSC_End* act __attribute( ( unused ) ), Framebuffer* fb )
 {
   /* handle osc copy clipboard sequence 52;c; */
-  if ( OSC_string.size() >= 5 && OSC_string[0] == L'5' && OSC_string[1] == L'2' && OSC_string[2] == L';'
-       && OSC_string[3] == L'c' && OSC_string[4] == L';' ) {
+  if ( OSC_string.size() >= 5 && OSC_string[0] == MOSH_L( '5' ) && OSC_string[1] == MOSH_L( '2' )
+       && OSC_string[2] == MOSH_L( ';' ) && OSC_string[3] == MOSH_L( 'c' ) && OSC_string[4] == MOSH_L( ';' ) ) {
     Terminal::Framebuffer::title_type clipboard( OSC_string.begin() + 5, OSC_string.end() );
     fb->set_clipboard( clipboard );
     /* handle osc terminal title sequence */
   } else if ( OSC_string.size() >= 1 ) {
     long cmd_num = -1;
     int offset = 0;
-    if ( OSC_string[0] == L';' ) {
+    if ( OSC_string[0] == MOSH_L( ';' ) ) {
       /* OSC of the form "\033];<title>\007" */
       cmd_num = 0; /* treat it as as a zero */
       offset = 1;
-    } else if ( ( OSC_string.size() >= 2 ) && ( OSC_string[1] == L';' ) ) {
+    } else if ( ( OSC_string.size() >= 2 ) && ( OSC_string[1] == MOSH_L( ';' ) ) ) {
       /* OSC of the form "\033]X;<title>\007" where X can be:
        * 0: set icon name and window title
        * 1: set icon name
        * 2: set window title */
-      cmd_num = OSC_string[0] - L'0';
+      cmd_num = OSC_string[0] - MOSH_L( '0' );
       offset = 2;
     }
     if ( cmd_num == 8 ) {

@@ -33,6 +33,8 @@
 #ifndef TERMINALDISPATCHER_HPP
 #define TERMINALDISPATCHER_HPP
 
+#include "src/util/unicode.h"
+
 #include <map>
 #include <string>
 #include <vector>
@@ -95,7 +97,7 @@ private:
   bool parsed;
 
   std::string dispatch_chars;
-  std::vector<wchar_t> OSC_string;
+  std::vector<mosh_wchar_t> OSC_string;
 
   void parse_params( void );
 
@@ -117,7 +119,7 @@ public:
 
   void dispatch( Function_Type type, const Parser::Action* act, Framebuffer* fb );
   std::string get_dispatch_chars( void ) const { return dispatch_chars; }
-  std::vector<wchar_t> get_OSC_string( void ) const { return OSC_string; }
+  std::vector<mosh_wchar_t> get_OSC_string( void ) const { return OSC_string; }
 
   void OSC_put( const Parser::OSC_Put* act );
   void OSC_start( const Parser::OSC_Start* act );
