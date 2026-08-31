@@ -49,7 +49,7 @@ static void append_or_delete( Parser::ActionPointer act, Parser::Actions& vec )
   }
 }
 
-void Parser::Parser::input( wchar_t ch, Actions& ret )
+void Parser::Parser::input( mosh_wchar_t ch, Actions& ret )
 {
   Transition tx = state->input( ch );
 
@@ -77,14 +77,14 @@ void Parser::UTF8Parser::input( char c, Actions& ret )
 
   /* 1-byte UTF-8 character, aka ASCII?  Cheat. */
   if ( buf_len == 0 && static_cast<unsigned char>( c ) <= 0x7f ) {
-    parser.input( static_cast<wchar_t>( c ), ret );
+    parser.input( static_cast<mosh_wchar_t>( c ), ret );
     return;
   }
 
   buf[buf_len++] = c;
 
   /* This function will only work in a UTF-8 locale. */
-  wchar_t pwc;
+  mosh_wchar_t pwc;
   mbstate_t ps = mbstate_t();
 
   size_t total_bytes_parsed = 0;
@@ -96,7 +96,7 @@ void Parser::UTF8Parser::input( char c, Actions& ret )
   while ( total_bytes_parsed != orig_buf_len ) {
     assert( total_bytes_parsed < orig_buf_len );
     assert( buf_len > 0 );
-    size_t bytes_parsed = mbrtowc( &pwc, buf, buf_len, &ps );
+    size_t bytes_parsed = mosh_mbrtowc( &pwc, buf, buf_len, &ps );
 
     /* this returns 0 when n = 0! */
 
@@ -104,7 +104,7 @@ void Parser::UTF8Parser::input( char c, Actions& ret )
       /* character was NUL, accept and clear buffer */
       assert( buf_len == 1 );
       buf_len = 0;
-      pwc = L'\0';
+      pwc = MOSH_L( '\0' );
       bytes_parsed = 1;
     } else if ( bytes_parsed == (size_t)-1 ) {
       /* invalid sequence, use replacement character and try again with last char */
@@ -117,7 +117,7 @@ void Parser::UTF8Parser::input( char c, Actions& ret )
         buf_len = 0;
         bytes_parsed = 1;
       }
-      pwc = (wchar_t)0xFFFD;
+      pwc = (mosh_wchar_t)0xFFFD;
     } else if ( bytes_parsed == (size_t)-2 ) {
       /* can't parse incomplete multibyte character */
       total_bytes_parsed += buf_len;
@@ -130,12 +130,12 @@ void Parser::UTF8Parser::input( char c, Actions& ret )
     }
 
     /* Cast to unsigned for checks, because some
-       platforms (e.g. ARM) use uint32_t as wchar_t,
+       platforms (e.g. ARM) use uint32_t as mosh_wchar_t,
        causing compiler warning on "pwc > 0" check. */
     const uint32_t pwcheck = pwc;
 
     if ( pwcheck > 0x10FFFF ) { /* outside Unicode range */
-      pwc = (wchar_t)0xFFFD;
+      pwc = (mosh_wchar_t)0xFFFD;
     }
 
     if ( ( pwcheck >= 0xD800 ) && ( pwcheck <= 0xDFFF ) ) { /* surrogate code point */
@@ -144,7 +144,7 @@ void Parser::UTF8Parser::input( char c, Actions& ret )
         they are ill-formed UTF-8 and we shouldn't repeat them to the
         user's terminal.
       */
-      pwc = (wchar_t)0xFFFD;
+      pwc = (mosh_wchar_t)0xFFFD;
     }
 
     parser.input( pwc, ret );

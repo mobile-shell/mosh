@@ -33,6 +33,8 @@
 #ifndef TERMINALDISPLAY_HPP
 #define TERMINALDISPLAY_HPP
 
+#include "src/util/unicode.h"
+
 #include "src/terminal/terminalframebuffer.h"
 
 namespace Terminal {
@@ -53,7 +55,7 @@ public:
 
   void append( char c ) { str.append( 1, c ); }
   void append( size_t s, char c ) { str.append( s, c ); }
-  void append( wchar_t wc ) { Cell::append_to_str( str, wc ); }
+  void append( mosh_wchar_t wc ) { Cell::append_to_str( str, wc ); }
   void append( const char* s ) { str.append( s ); }
   void append_string( const std::string& append ) { str.append( append ); }
 

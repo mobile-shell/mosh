@@ -124,7 +124,7 @@ void STMClient::init( void )
 
   /* Add our name to window title */
   if ( !getenv( "MOSH_TITLE_NOPREFIX" ) ) {
-    overlays.set_title_prefix( std::wstring( L"[mosh] " ) );
+    overlays.set_title_prefix( mosh_wstring( MOSH_L( "[mosh] " ) ) );
   }
 
   /* Set terminal escape key. */
@@ -189,24 +189,24 @@ void STMClient::init( void )
     }
     std::string tmp;
     tmp = std::string( escape_pass_name_buf );
-    std::wstring escape_pass_name = std::wstring( tmp.begin(), tmp.end() );
+    mosh_wstring escape_pass_name = mosh_wstring( tmp.begin(), tmp.end() );
     tmp = std::string( escape_key_name_buf );
-    std::wstring escape_key_name = std::wstring( tmp.begin(), tmp.end() );
-    escape_key_help
-      = L"Commands: Ctrl-Z suspends, \".\" quits, " + escape_pass_name + L" gives literal " + escape_key_name;
+    mosh_wstring escape_key_name = mosh_wstring( tmp.begin(), tmp.end() );
+    escape_key_help = MOSH_L( "Commands: Ctrl-Z suspends, \".\" quits, " ) + escape_pass_name
+                      + MOSH_L( " gives literal " ) + escape_key_name;
     overlays.get_notification_engine().set_escape_key_string( tmp );
   }
-  wchar_t tmp[128];
-  swprintf( tmp, 128, L"Nothing received from server on UDP port %s.", port.c_str() );
-  connecting_notification = std::wstring( tmp );
+  char tmp[128];
+  snprintf( tmp, sizeof tmp, "Nothing received from server on UDP port %s.", port.c_str() );
+  connecting_notification = mosh_widen( tmp );
 }
 
 void STMClient::shutdown( void )
 {
   /* Restore screen state */
-  overlays.get_notification_engine().set_notification_string( std::wstring( L"" ) );
+  overlays.get_notification_engine().set_notification_string( mosh_wstring( MOSH_L( "" ) ) );
   overlays.get_notification_engine().server_heard( timestamp() );
-  overlays.set_title_prefix( std::wstring( L"" ) );
+  overlays.set_title_prefix( mosh_wstring( MOSH_L( "" ) ) );
   output_new_frame();
 
   /* Restore terminal and terminal-driver state */
@@ -344,8 +344,8 @@ bool STMClient::process_user_input( int fd )
     if ( quit_sequence_started ) {
       if ( the_byte == '.' ) { /* Quit sequence is Ctrl-^ . */
         if ( net.has_remote_addr() && ( !net.shutdown_in_progress() ) ) {
-          overlays.get_notification_engine().set_notification_string( std::wstring( L"Exiting on user request..." ),
-                                                                      true );
+          overlays.get_notification_engine().set_notification_string(
+            mosh_wstring( MOSH_L( "Exiting on user request..." ) ), true );
           net.start_shutdown();
           return true;
         }
@@ -380,7 +380,7 @@ bool STMClient::process_user_input( int fd )
       quit_sequence_started = false;
 
       if ( overlays.get_notification_engine().get_notification_string() == escape_key_help ) {
-        overlays.get_notification_engine().set_notification_string( L"" );
+        overlays.get_notification_engine().set_notification_string( MOSH_L( "" ) );
       }
 
       continue;
@@ -492,7 +492,8 @@ bool STMClient::main( void )
         if ( !network->has_remote_addr() ) {
           break;
         } else if ( !network->shutdown_in_progress() ) {
-          overlays.get_notification_engine().set_notification_string( std::wstring( L"Exiting..." ), true );
+          overlays.get_notification_engine().set_notification_string( mosh_wstring( MOSH_L( "Exiting..." ) ),
+                                                                      true );
           network->start_shutdown();
         }
       }
@@ -511,7 +512,7 @@ bool STMClient::main( void )
           break;
         } else if ( !network->shutdown_in_progress() ) {
           overlays.get_notification_engine().set_notification_string(
-            std::wstring( L"Signal received, shutting down..." ), true );
+            mosh_wstring( MOSH_L( "Signal received, shutting down..." ) ), true );
           network->start_shutdown();
         }
       }
@@ -539,7 +540,7 @@ bool STMClient::main( void )
         if ( timestamp() - network->get_latest_remote_state().timestamp > 15000 ) {
           if ( !network->shutdown_in_progress() ) {
             overlays.get_notification_engine().set_notification_string(
-              std::wstring( L"Timed out waiting for server..." ), true );
+              mosh_wstring( MOSH_L( "Timed out waiting for server..." ) ), true );
             network->start_shutdown();
           }
         } else {
@@ -547,7 +548,7 @@ bool STMClient::main( void )
         }
       } else if ( ( network->get_remote_state_num() != 0 )
                   && ( overlays.get_notification_engine().get_notification_string() == connecting_notification ) ) {
-        overlays.get_notification_engine().set_notification_string( L"" );
+        overlays.get_notification_engine().set_notification_string( MOSH_L( "" ) );
       }
 
       network->tick();
@@ -573,9 +574,9 @@ bool STMClient::main( void )
       if ( e.fatal ) {
         throw;
       } else {
-        wchar_t tmp[128];
-        swprintf( tmp, 128, L"Crypto exception: %s", e.what() );
-        overlays.get_notification_engine().set_notification_string( std::wstring( tmp ) );
+        char tmp[128];
+        snprintf( tmp, sizeof tmp, "Crypto exception: %s", e.what() );
+        overlays.get_notification_engine().set_notification_string( mosh_widen( tmp ) );
       }
     }
   }

@@ -33,6 +33,8 @@
 #ifndef PARSERACTION_HPP
 #define PARSERACTION_HPP
 
+#include "src/util/unicode.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -45,7 +47,7 @@ namespace Parser {
 class Action
 {
 public:
-  wchar_t ch;
+  mosh_wchar_t ch;
   bool char_present;
 
   virtual std::string name( void ) = 0;
