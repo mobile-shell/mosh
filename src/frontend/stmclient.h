@@ -33,12 +33,14 @@
 #ifndef STM_CLIENT_HPP
 #define STM_CLIENT_HPP
 
+#include <cstdlib>
 #include <memory>
 #include <string>
 
 #include <sys/ioctl.h>
 #include <termios.h>
 
+#include "src/frontend/mousefilter.h"
 #include "src/frontend/terminaloverlay.h"
 #include "src/network/networktransport.h"
 #include "src/statesync/completeterminal.h"
@@ -73,6 +75,14 @@ private:
   bool clean_shutdown;
   unsigned int verbose;
 
+  /* MOSH_GRAB_MOUSE: hold the terminal's mouse reporting ourselves so it stops
+     turning the wheel into cursor keys, and drop the reports nobody wants. */
+  bool grab_mouse;
+  bool mouse_grabbed;
+  MouseFilter::Filter mouse_filter;
+
+  void update_mouse_grab( bool frame_reset );
+
   void main_init( void );
   void process_network_input( void );
   bool process_user_input( int fd );
@@ -100,7 +110,8 @@ public:
       saved_termios(), raw_termios(), window_size(), local_framebuffer( 1, 1 ), new_state( 1, 1 ), overlays(),
       network(), display( true ) /* use TERM environment var to initialize display */, connecting_notification(),
       repaint_requested( false ), lf_entered( false ), quit_sequence_started( false ), clean_shutdown( false ),
-      verbose( s_verbose )
+      verbose( s_verbose ), grab_mouse( getenv( "MOSH_GRAB_MOUSE" ) != NULL ), mouse_grabbed( false ),
+      mouse_filter()
   {
     if ( predict_mode ) {
       if ( !strcmp( predict_mode, "always" ) ) {

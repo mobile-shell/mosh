@@ -82,6 +82,27 @@ Controls local echo insert/overwrite as described in
 See
 .BR mosh (1).
 
+.TP
+.B MOSH_GRAB_MOUSE
+If set, mosh-client asks the terminal for mouse reporting on its own behalf.
+Terminals substitute Up and Down cursor keys for the wheel while the
+alternate screen is in use ("alternate scroll"), and mosh cannot distinguish
+those from real keystrokes, so scrolling injects input into the remote
+application.  Requesting mouse reporting stops the substitution: the wheel is
+then delivered as a mouse event.
+.IP
+Mouse events are discarded while mosh-client is the one holding the mouse, so
+the wheel does nothing instead of typing, and a click is not delivered to an
+application that never asked for one.  If the remote application requests
+mouse reporting itself, it is left in charge and receives the events as usual,
+which is what lets
+.BR tmux (1)
+scroll its own history.
+.IP
+Note that a terminal reporting the mouse will not perform its own text
+selection, which is why this is not enabled by default.  A terminal that does
+not support SGR reporting (DECSET 1006) is not helped by this.
+
 
 .SH SEE ALSO
 .BR mosh (1),

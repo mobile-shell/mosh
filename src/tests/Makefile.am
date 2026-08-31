@@ -39,8 +39,8 @@ displaytests = \
 	unicode-later-combining.test \
 	window-resize.test
 
-check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr inpty is-utf8-locale
-TESTS = ocb-aes encrypt-decrypt base64 nonce-incr local.test $(displaytests)
+check_PROGRAMS = ocb-aes encrypt-decrypt base64 nonce-incr mouse-filter inpty is-utf8-locale
+TESTS = ocb-aes encrypt-decrypt base64 nonce-incr mouse-filter local.test $(displaytests)
 XFAIL_TESTS = \
 	e2e-failure.test \
 	emulation-attributes-256color8.test
@@ -60,6 +60,9 @@ encrypt_decrypt_LDADD = ../crypto/libmoshcrypto.a ../util/libmoshutil.a $(CRYPTO
 base64_SOURCES = base64.cc base64_vector.cc base64_vector.h genbase64.pl
 base64_CPPFLAGS = $(ocb_aes_CPPFLAGS)
 base64_LDADD = $(ocb_aes_LDADD)
+
+mouse_filter_SOURCES = mouse-filter.cc
+mouse_filter_CPPFLAGS = -I$(top_srcdir)/
 
 nonce_incr_SOURCES = nonce-incr.cc
 nonce_incr_CPPFLAGS = -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../util $(CRYPTO_CFLAGS)

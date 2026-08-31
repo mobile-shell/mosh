@@ -288,9 +288,49 @@ void STMClient::output_new_frame( void )
   const std::string diff( display.new_frame( !repaint_requested, local_framebuffer, new_state ) );
   swrite( STDOUT_FILENO, diff.data(), diff.size() );
 
+  /* new_frame() redraws from scratch on a resize too, whether or not we asked
+     for a repaint, and that emits the mouse-mode resets. */
+  const bool resized = ( local_framebuffer.ds.get_width() != new_state.ds.get_width() )
+                       || ( local_framebuffer.ds.get_height() != new_state.ds.get_height() );
+  const bool frame_reset_modes = repaint_requested || resized;
   repaint_requested = false;
 
   local_framebuffer = new_state;
+
+  update_mouse_grab( frame_reset_modes );
+}
+
+/* Keep the terminal in mouse-reporting mode so it stops substituting cursor
+   keys for the wheel.  The remote application wins if it wants the mouse
+   itself: new_frame() has already set whatever modes it asked for. */
+void STMClient::update_mouse_grab( bool frame_reset )
+{
+  if ( !grab_mouse ) {
+    return;
+  }
+
+  if ( new_state.ds.mouse_reporting_mode != Terminal::DrawState::MOUSE_REPORTING_NONE ) {
+    if ( mouse_grabbed ) {
+      mouse_grabbed = false;
+      mouse_filter.reset();
+      /* new_frame() emits an encoding change only when the server's own
+         encoding changed, so it knows nothing of the 1006 we set; left alone
+         it would hand the application SGR reports it never asked for. */
+      if ( new_state.ds.mouse_encoding_mode != Terminal::DrawState::MOUSE_ENCODING_SGR ) {
+        swrite( STDOUT_FILENO, "\033[?1006l" );
+      }
+    }
+    return;
+  }
+
+  /* A repaint, or the application dropping its own mouse modes, makes
+     new_frame() emit the reset sequences -- so ask again. */
+  if ( mouse_grabbed && !frame_reset ) {
+    return;
+  }
+
+  swrite( STDOUT_FILENO, "\033[?1000h\033[?1006h" );
+  mouse_grabbed = true;
 }
 
 void STMClient::process_network_input( void )
@@ -326,16 +366,34 @@ bool STMClient::process_user_input( int fd )
   if ( net.shutdown_in_progress() ) {
     return true;
   }
+
+  /* Drop mouse reports before anything else looks at them -- but only while
+     we are the ones holding the mouse.  If the remote application asked for
+     the mouse, the events are its business: tmux scrolls its own history with
+     the wheel, and a full-screen application may want the clicks. */
+  const char* input = buf;
+  size_t input_len = bytes_read;
+  std::string filtered;
+  if ( grab_mouse && mouse_grabbed ) {
+    filtered = mouse_filter.filter( buf, bytes_read );
+    input = filtered.data();
+    input_len = filtered.size();
+  }
+
   overlays.get_prediction_engine().set_local_frame_sent( net.get_sent_state_last() );
 
+  if ( input_len == 0 ) {
+    return true;
+  }
+
   /* Don't predict for bulk data. */
-  bool paste = bytes_read > 100;
+  bool paste = input_len > 100;
   if ( paste ) {
     overlays.get_prediction_engine().reset();
   }
 
-  for ( int i = 0; i < bytes_read; i++ ) {
-    char the_byte = buf[i];
+  for ( size_t i = 0; i < input_len; i++ ) {
+    char the_byte = input[i];
 
     if ( !paste ) {
       overlays.get_prediction_engine().new_user_byte( the_byte, local_framebuffer );
