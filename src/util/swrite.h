@@ -33,6 +33,9 @@
 #ifndef SWRITE_HPP
 #define SWRITE_HPP
 
+/* This header names ssize_t, so it has to be the one to introduce it. */
+#include <sys/types.h>
+
 int swrite( int fd, const char* str, ssize_t len = -1 );
 
 #endif
