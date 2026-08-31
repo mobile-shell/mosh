@@ -151,7 +151,11 @@
 #endif
 
 #if _MSC_VER
-	static inline unsigned ntz(unsigned x) {_BitScanForward(&x,x);return x;}
+	static inline unsigned ntz(unsigned x) {
+		unsigned long index;
+		_BitScanForward(&index, (unsigned long)x);
+		return (unsigned)index;
+	}
 #elif HAVE_DECL___BUILTIN_CTZ
 	#define ntz(x)     __builtin_ctz((unsigned)(x))   /* GCC 3.4+ */
 #elif HAVE_DECL_FFS
