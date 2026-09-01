@@ -29,6 +29,7 @@ displaytests = \
 	emulation-wrap-across-frames.test \
 	network-no-diff.test \
 	prediction-unicode.test \
+	prediction-wide.test \
 	pty-deadlock.test \
 	repeat.test \
 	repeat-with-input.test \

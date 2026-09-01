@@ -1,0 +1,106 @@
+#!/bin/sh
+
+#
+# This tests predictive local echo of wide (two-column) characters,
+# e.g. CJK.  The server is stopped with SIGSTOP while a mixed
+# ASCII/CJK string is typed, so anything that appears on the client
+# screen during that window can only have come from the prediction
+# engine.  The narrow characters serve as a control: they have always
+# been predicted, so if they are missing, the harness (rather than
+# wide-character prediction) is broken.  After the server is resumed,
+# the final capture must contain the full line, confirming that the
+# predictions were validated rather than repaired.
+#
+# A priming string is typed and echoed before the server is stopped:
+# predictions stay tentative, and are not displayed, until one of them
+# has been confirmed by the server.  The priming string must not end
+# with a carriage return, which starts a new tentative epoch.
+#
+
+# shellcheck source=e2e-test-subrs
+. "$(dirname "$0")/e2e-test-subrs"
+PATH=$PATH:.:$srcdir
+# Top-level wrapper.
+if [ $# -eq 0 ]; then
+    if ! command -v pkill > /dev/null 2>&1; then
+	skip "pkill unavailable\n"
+    fi
+    e2e-test "$0" tmux baseline mosh-args post
+    exit
+fi
+
+tmux_commands()
+{
+    capture_dir="$PWD/$(basename "$0").d"
+    # Let mosh and the baseline action start up.
+    sleep 2
+    # Prime the prediction engine out of its tentative state.
+    printf "send-keys 'prime'\n"
+    sleep 1
+    pkill -STOP -f "frontend/mosh-server[ ]new"
+    sleepf
+    printf "send-keys 'AB一汉字宽字符CD'\n"
+    for x in $(seq 1 5); do
+	sleepf
+    done
+    printf "capture-pane\n"
+    printf "save-buffer '%s/stopped.capture'\n" "$capture_dir"
+    sleepf
+    pkill -CONT -f "frontend/mosh-server[ ]new"
+    sleep 1
+    printf "send-keys 0x0d\n"
+    sleep 1
+    printf "send-keys 0x04\n"
+    # Unreliable on Cygwin under load, it seems.
+    sleep 1
+    printf "send-keys 0x04\n"
+    # This will get killed by SIGPIPE.
+    while printf "show-options\n" && sleep 1; do
+	:
+    done
+}
+
+tmux_stdin()
+{
+    tmux_commands | "$@"
+    exit
+}
+
+baseline()
+{
+    # Just receive and toss input in canonical mode.
+    cat > /dev/null
+}
+
+post()
+{
+    dir="$(basename "$0").d"
+    if ! grep -q "AB" "$dir/stopped.capture"; then
+	# Narrow characters were not predicted either; the test setup
+	# is broken, so no conclusion about wide characters.
+	fail "no predictions at all in stopped-server capture\n"
+    fi
+    if ! grep -q "一汉字宽字符" "$dir/stopped.capture"; then
+	printf "wide characters were not predicted\n" >&2
+	return 1
+    fi
+    if ! grep -q "AB一汉字宽字符CD" "$dir/baseline.capture"; then
+	printf "typed line corrupted after server resumed\n" >&2
+	return 1
+    fi
+    return 0
+}
+
+case $1 in
+    tmux)
+	shift;
+	tmux_stdin "$@";;
+    baseline)
+	baseline;;
+    mosh-args)
+	printf "%s\n" "--predict=always";;
+    post)
+	post;;
+    *)
+	fail "unknown test argument %s\n" "$1";;
+esac
