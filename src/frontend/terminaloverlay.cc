@@ -618,6 +618,17 @@ ConditionalOverlayRow& PredictionEngine::get_or_make_row( int row_num, int num_c
   return overlays.back();
 }
 
+/* Whether the cell is occupied by a wide character, preferring an
+   active prediction over the framebuffer contents. */
+bool PredictionEngine::is_wide_cell( const Framebuffer& fb, int row, int col )
+{
+  const ConditionalOverlayCell& prediction = get_or_make_row( row, fb.ds.get_width() ).overlay_cells[col];
+  if ( prediction.active && !prediction.unknown ) {
+    return prediction.replacement.get_wide();
+  }
+  return fb.get_cell( row, col )->get_wide();
+}
+
 void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
 {
   if ( display_preference == Never ) {
@@ -657,13 +668,21 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
       assert( act.char_present );
 
       wchar_t ch = act.ch;
-      /* XXX handle wide characters */
+      /* must match the character width computed by Emulator::print() */
+      const int chwidth = ch == L'\0' ? -1 : ( Cell::isprint_iso8859_1( ch ) ? 1 : wcwidth( ch ) );
 
       if ( ch == 0x7f ) { /* backspace */
         //	fprintf( stderr, "Backspace.\n" );
         ConditionalOverlayRow& the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
 
-        if ( cursor().col > 0 ) {
+        /* a backspace over a wide character erases two columns */
+        int erase_width = 1;
+        if ( ( cursor().col >= 2 ) && is_wide_cell( fb, cursor().row, cursor().col - 2 ) ) {
+          erase_width = 2;
+        }
+
+        while ( ( erase_width > 0 ) && ( cursor().col > 0 ) ) {
+          erase_width--;
           cursor().col--;
           cursor().expire( local_frame_sent + 1, now );
 
@@ -709,10 +728,13 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
             }
           }
         }
-      } else if ( ( ch < 0x20 ) || ( wcwidth( ch ) != 1 ) ) {
+      } else if ( ( ch < 0x20 ) || ( chwidth < 1 ) || ( chwidth > 2 ) ) {
         /* unknown print */
         become_tentative();
         //	fprintf( stderr, "Unknown print 0x%x\n", ch );
+      } else if ( ( chwidth == 2 ) && ( cursor().col + 2 >= fb.ds.get_width() ) ) {
+        /* terminals disagree on how a wide character wraps at the right edge */
+        become_tentative();
       } else {
         assert( cursor().row >= 0 );
         assert( cursor().col >= 0 );
@@ -727,9 +749,9 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
           become_tentative();
         }
 
-        /* do the insert */
+        /* do the insert; a wide character shifts the tail of the row by two columns */
         int rightmost_column = predict_overwrite ? cursor().col : fb.ds.get_width() - 1;
-        for ( int i = rightmost_column; i > cursor().col; i-- ) {
+        for ( int i = rightmost_column; i >= cursor().col + chwidth; i-- ) {
           ConditionalOverlayCell& cell = the_row.overlay_cells[i];
           cell.reset_with_orig();
           cell.active = true;
@@ -737,10 +759,10 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
           cell.expire( local_frame_sent + 1, now );
           cell.original_contents.push_back( *fb.get_cell( cursor().row, i ) );
 
-          ConditionalOverlayCell& prev_cell = the_row.overlay_cells[i - 1];
-          const Cell* prev_cell_actual = fb.get_cell( cursor().row, i - 1 );
+          ConditionalOverlayCell& prev_cell = the_row.overlay_cells[i - chwidth];
+          const Cell* prev_cell_actual = fb.get_cell( cursor().row, i - chwidth );
 
-          if ( i == fb.ds.get_width() - 1 ) {
+          if ( i >= fb.ds.get_width() - chwidth ) {
             cell.unknown = true;
           } else if ( prev_cell.active ) {
             if ( prev_cell.unknown ) {
@@ -775,7 +797,21 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
 
         cell.replacement.clear();
         cell.replacement.append( ch );
+        cell.replacement.set_wide( chwidth == 2 );
         cell.original_contents.push_back( *fb.get_cell( cursor().row, cursor().col ) );
+
+        if ( chwidth == 2 ) {
+          /* predict the overlapped cell blank, the way the emulator will draw it */
+          ConditionalOverlayCell& overlapped_cell = the_row.overlay_cells[cursor().col + 1];
+          overlapped_cell.reset_with_orig();
+          overlapped_cell.active = true;
+          overlapped_cell.tentative_until_epoch = prediction_epoch;
+          overlapped_cell.expire( local_frame_sent + 1, now );
+          overlapped_cell.original_contents.push_back( *fb.get_cell( cursor().row, cursor().col + 1 ) );
+          overlapped_cell.replacement.get_renditions() = cell.replacement.get_renditions();
+          overlapped_cell.replacement.clear();
+          overlapped_cell.replacement.set_wide( false );
+        }
 
         /*
         fprintf( stderr, "[%d=>%d] Predicting %lc in row %d, col %d [tue: %lu]\n",
@@ -787,8 +823,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
         cursor().expire( local_frame_sent + 1, now );
 
         /* do we need to wrap? */
-        if ( cursor().col < fb.ds.get_width() - 1 ) {
-          cursor().col++;
+        if ( cursor().col + chwidth < fb.ds.get_width() ) {
+          cursor().col += chwidth;
         } else {
           become_tentative();
           newline_carriage_return( fb );
@@ -808,15 +844,20 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
     } else if ( type_act == typeid( Parser::CSI_Dispatch ) ) {
       if ( act.char_present && ( act.ch == L'C' ) ) { /* right arrow */
         init_cursor( fb );
-        if ( cursor().col < fb.ds.get_width() - 1 ) {
-          cursor().col++;
+        int step = is_wide_cell( fb, cursor().row, cursor().col ) ? 2 : 1;
+        if ( cursor().col + step < fb.ds.get_width() ) {
+          cursor().col += step;
           cursor().expire( local_frame_sent + 1, now );
         }
       } else if ( act.char_present && ( act.ch == L'D' ) ) { /* left arrow */
         init_cursor( fb );
 
-        if ( cursor().col > 0 ) {
-          cursor().col--;
+        int step = 1;
+        if ( ( cursor().col >= 2 ) && is_wide_cell( fb, cursor().row, cursor().col - 2 ) ) {
+          step = 2;
+        }
+        if ( cursor().col >= step ) {
+          cursor().col -= step;
           cursor().expire( local_frame_sent + 1, now );
         }
       } else {

@@ -239,6 +239,8 @@ private:
 
   ConditionalOverlayRow& get_or_make_row( int row_num, int num_cols );
 
+  bool is_wide_cell( const Framebuffer& fb, int row, int col );
+
   uint64_t prediction_epoch;
   uint64_t confirmed_epoch;
 
