@@ -37,3 +37,9 @@ jobs:
 
     - name: "test"
       run: make V=1 check
+
+    - name: "test macOS runtime packaging"
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        python3 macosx/test-bundle-runtime.py
+        python3 macosx/bundle-runtime.py . "$RUNNER_TEMP/mosh-runtime"

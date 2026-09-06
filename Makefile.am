@@ -8,7 +8,8 @@ include $(top_srcdir)/aminclude_static.am
 
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = scripts src man conf
-EXTRA_DIST = autogen.sh ocb-license.html README.md COPYING.iOS
+EXTRA_DIST = autogen.sh ocb-license.html README.md COPYING.iOS \
+	macosx/bundle-runtime.py macosx/test-bundle-runtime.py macosx/README-bundle.md
 BUILT_SOURCES = VERSION.stamp
 AM_DISTCHECK_CONFIGURE_FLAGS += --enable-compile-warnings=distcheck --enable-examples --enable-syslog
 
