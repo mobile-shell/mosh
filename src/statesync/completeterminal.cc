@@ -76,6 +76,13 @@ string Complete::diff_from( const Complete& existing ) const
     new_echo->MutableExtension( echoack )->set_echo_ack_num( get_echo_ack() );
   }
 
+  if ( existing.get_fb().get_foreground_query_count() != get_fb().get_foreground_query_count()
+       || existing.get_fb().get_background_query_count() != get_fb().get_background_query_count() ) {
+    ColorQueryMessage* query = output.add_instruction()->MutableExtension( colorquery );
+    query->set_foreground_query_count( get_fb().get_foreground_query_count() );
+    query->set_background_query_count( get_fb().get_background_query_count() );
+  }
+
   if ( !( existing.get_fb() == get_fb() ) ) {
     if ( ( existing.get_fb().ds.get_width() != terminal.get_fb().ds.get_width() )
          || ( existing.get_fb().ds.get_height() != terminal.get_fb().ds.get_height() ) ) {
@@ -110,6 +117,13 @@ void Complete::apply_string( const string& diff )
     } else if ( input.instruction( i ).HasExtension( resize ) ) {
       act( Resize( input.instruction( i ).GetExtension( resize ).width(),
                    input.instruction( i ).GetExtension( resize ).height() ) );
+    } else if ( input.instruction( i ).HasExtension( colorquery ) ) {
+      const ColorQueryMessage& query = input.instruction( i ).GetExtension( colorquery );
+      terminal.set_color_query_counts(
+        query.has_foreground_query_count() ? query.foreground_query_count()
+                                           : get_fb().get_foreground_query_count(),
+        query.has_background_query_count() ? query.background_query_count()
+                                           : get_fb().get_background_query_count() );
     } else if ( input.instruction( i ).HasExtension( echoack ) ) {
       uint64_t inst_echo_ack_num = input.instruction( i ).GetExtension( echoack ).echo_ack_num();
       assert( inst_echo_ack_num >= echo_ack );

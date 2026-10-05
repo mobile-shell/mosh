@@ -64,6 +64,15 @@ std::string Display::new_frame( bool initialized, const Framebuffer& last, const
 
   char tmp[64];
 
+  if ( relay_color_queries ) {
+    if ( f.get_foreground_query_count() != last.get_foreground_query_count() ) {
+      frame.append( "\033]10;?\033\\" );
+    }
+    if ( f.get_background_query_count() != last.get_background_query_count() ) {
+      frame.append( "\033]11;?\033\\" );
+    }
+  }
+
   /* has bell been rung? */
   if ( f.get_bell_count() != frame.last_frame.get_bell_count() ) {
     frame.append( '\007' );

@@ -81,7 +81,7 @@ static const char* ti_str( const char* capname )
 }
 
 Display::Display( bool use_environment )
-  : has_ech( true ), has_bce( true ), has_title( true ), smcup( NULL ), rmcup( NULL )
+  : has_ech( true ), has_bce( true ), relay_color_queries( use_environment ), has_title( true ), smcup( NULL ), rmcup( NULL )
 {
   if ( use_environment ) {
     int errret = -2;

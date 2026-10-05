@@ -626,6 +626,15 @@ static void OSC_8( const std::string& OSC_string, Framebuffer* fb )
 /* xterm uses an Operating System Command to set the window title */
 void Dispatcher::OSC_dispatch( const Parser::OSC_End* act __attribute( ( unused ) ), Framebuffer* fb )
 {
+  if ( OSC_string == Framebuffer::title_type{ L'1', L'0', L';', L'?' } ) {
+    fb->query_foreground_color();
+    return;
+  }
+  if ( OSC_string == Framebuffer::title_type{ L'1', L'1', L';', L'?' } ) {
+    fb->query_background_color();
+    return;
+  }
+
   /* handle osc copy clipboard sequence 52;c; */
   if ( OSC_string.size() >= 5 && OSC_string[0] == L'5' && OSC_string[1] == L'2' && OSC_string[2] == L';'
        && OSC_string[3] == L'c' && OSC_string[4] == L';' ) {

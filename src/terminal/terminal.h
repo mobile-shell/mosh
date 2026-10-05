@@ -80,6 +80,10 @@ public:
   std::string read_octets_to_host( void );
 
   const Framebuffer& get_fb( void ) const { return fb; }
+  void set_color_query_counts( uint64_t foreground, uint64_t background )
+  {
+    fb.set_color_query_counts( foreground, background );
+  }
 
   bool operator==( Emulator const& x ) const;
 };

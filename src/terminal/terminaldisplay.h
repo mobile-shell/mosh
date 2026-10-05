@@ -72,6 +72,8 @@ private:
 
   bool has_bce; /* erases result in cell filled with background color */
 
+  bool relay_color_queries;
+
   bool has_title; /* supports window title and icon name */
 
   const char *smcup, *rmcup; /* enter and exit alternate screen mode */

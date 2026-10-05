@@ -25,8 +25,14 @@ message EchoAck {
   optional uint64 echo_ack_num = 8;
 }
 
+message ColorQueryMessage {
+  optional uint64 foreground_query_count = 1;
+  optional uint64 background_query_count = 2;
+}
+
 extend Instruction {
   optional HostBytes hostbytes = 2;
   optional ResizeMessage resize = 3;
   optional EchoAck echoack = 7;
+  optional ColorQueryMessage colorquery = 9;
 }

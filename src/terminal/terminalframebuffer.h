@@ -418,6 +418,8 @@ private:
   title_type window_title;
   title_type clipboard;
   unsigned int bell_count;
+  uint64_t foreground_query_count;
+  uint64_t background_query_count;
   bool title_initialized; /* true if the window title has been set via an OSC */
 
   row_pointer newrow( void )
@@ -512,10 +514,21 @@ public:
   void ring_bell( void ) { bell_count++; }
   unsigned int get_bell_count( void ) const { return bell_count; }
 
+  void query_foreground_color( void ) { foreground_query_count++; }
+  void query_background_color( void ) { background_query_count++; }
+  uint64_t get_foreground_query_count( void ) const { return foreground_query_count; }
+  uint64_t get_background_query_count( void ) const { return background_query_count; }
+  void set_color_query_counts( uint64_t foreground, uint64_t background )
+  {
+    foreground_query_count = foreground;
+    background_query_count = background;
+  }
+
   bool operator==( const Framebuffer& x ) const
   {
     return ( rows == x.rows ) && ( window_title == x.window_title ) && ( clipboard == x.clipboard )
-           && ( bell_count == x.bell_count ) && ( ds == x.ds );
+           && ( bell_count == x.bell_count ) && ( foreground_query_count == x.foreground_query_count )
+           && ( background_query_count == x.background_query_count ) && ( ds == x.ds );
   }
 };
 }
