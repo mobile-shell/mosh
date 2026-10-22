@@ -36,7 +36,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-static void fatal_error( const char* expression, const char* file, int line, const char* function )
+static inline void fatal_error( const char* expression, const char* file, int line, const char* function )
 {
   fprintf( stderr,
            "Fatal assertion failure in function %s at %s:%d\nFailed test: %s\n",
