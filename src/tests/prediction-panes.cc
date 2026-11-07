@@ -404,6 +404,15 @@ void test_enter_on_the_bottom_row_blanks_only_the_pane( void )
   EXPECT_CELL( s, 5, 192, "r" );
 }
 
+struct TestCase
+{
+  TestCase( const char* s_name, void ( *s_run )( void ) ) : name( s_name ), run( s_run ) {}
+  const char* name;
+  void ( *run )( void );
+};
+
+#define TEST( name ) TestCase( #name, name )
+
 } // namespace
 
 int main( void )
@@ -417,12 +426,7 @@ int main( void )
     return 77;
   }
 
-#define TEST( name ) { #name, name }
-  const struct
-  {
-    const char* name;
-    void ( *run )( void );
-  } tests[] = {
+  const TestCase tests[] = {
     TEST( test_borders_stay_put_while_keys_are_in_flight ),
     TEST( test_echo_continues_after_a_confirmed_key ),
     TEST( test_backspace_stays_inside_the_pane ),
@@ -439,7 +443,6 @@ int main( void )
     TEST( test_enter_on_the_bottom_row_blanks_only_the_pane ),
     TEST( test_switched_off_the_rest_of_the_row_moves ),
   };
-#undef TEST
 
   for ( const auto& test : tests ) {
     current_test = test.name;
