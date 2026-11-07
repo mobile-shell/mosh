@@ -311,6 +311,17 @@ Controls local echo as described above.  The command-line flag
 overrides this variable.
 
 .TP
+.B MOSH_PREDICTION_PANES
+When the screen is split into side-by-side panes, as
+.BR tmux (1),
+.BR vim (1)
+and
+.BR emacs (1)
+draw them, speculative local echo stays inside the pane that holds the
+cursor: the borders and the other panes do not move as you type.  Set
+this variable to `no' to let local echo span the whole row instead.
+
+.TP
 .B MOSH_TITLE_NOPREFIX
 When set, inhibits prepending "[mosh]" to window title.
 

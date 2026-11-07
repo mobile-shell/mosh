@@ -246,6 +246,15 @@ private:
 
   void newline_carriage_return( const Framebuffer& fb );
 
+  /* First and last column of the pane that holds a position: the whole row,
+     or the part between two vertical borders when the screen is split into
+     side-by-side panes (tmux, vim, emacs). */
+  struct Pane
+  {
+    int left, right;
+  };
+  Pane pane_at( const Framebuffer& fb, int row, int col ) const;
+
   bool flagging;               /* whether we are underlining predictions */
   bool srtt_trigger;           /* show predictions because of slow round trip time */
   unsigned int glitch_trigger; /* show predictions temporarily because of long-pending prediction */
@@ -277,6 +286,7 @@ public:
 private:
   DisplayPreference display_preference;
   bool predict_overwrite;
+  bool predict_panes; /* keep predictions inside side-by-side panes */
 
   bool active( void ) const;
 
@@ -289,6 +299,7 @@ private:
 public:
   void set_display_preference( DisplayPreference s_pref ) { display_preference = s_pref; }
   void set_predict_overwrite( bool overwrite ) { predict_overwrite = overwrite; }
+  void set_predict_panes( bool panes ) { predict_panes = panes; }
 
   void apply( Framebuffer& fb ) const;
   void new_user_byte( char the_byte, const Framebuffer& fb );
@@ -308,7 +319,8 @@ public:
     : last_byte( 0 ), parser(), overlays(), cursors(), local_frame_sent( 0 ), local_frame_acked( 0 ),
       local_frame_late_acked( 0 ), prediction_epoch( 1 ), confirmed_epoch( 0 ), flagging( false ),
       srtt_trigger( false ), glitch_trigger( 0 ), last_quick_confirmation( 0 ), send_interval( 250 ),
-      last_height( 0 ), last_width( 0 ), display_preference( Adaptive ), predict_overwrite( false )
+      last_height( 0 ), last_width( 0 ), display_preference( Adaptive ), predict_overwrite( false ),
+      predict_panes( true )
   {}
 };
 

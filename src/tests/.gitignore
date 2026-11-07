@@ -5,6 +5,7 @@
 /nonce-incr
 /inpty
 /is-utf8-locale
+/prediction-panes
 /*.d/
 *.log
 *.trs

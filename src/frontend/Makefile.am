@@ -5,6 +5,10 @@ LDADD = ../crypto/libmoshcrypto.a ../network/libmoshnetwork.a ../statesync/libmo
 
 mosh_server_LDADD = $(LDADD)
 
+# The prediction engine lives in a library so that src/tests can link it.
+noinst_LIBRARIES = libmoshoverlay.a
+libmoshoverlay_a_SOURCES = terminaloverlay.cc terminaloverlay.h
+
 bin_PROGRAMS =
 
 if BUILD_CLIENT
@@ -15,5 +19,6 @@ if BUILD_SERVER
   bin_PROGRAMS += mosh-server
 endif
 
-mosh_client_SOURCES = mosh-client.cc stmclient.cc stmclient.h terminaloverlay.cc terminaloverlay.h
+mosh_client_SOURCES = mosh-client.cc stmclient.cc stmclient.h
+mosh_client_LDADD = libmoshoverlay.a $(LDADD)
 mosh_server_SOURCES = mosh-server.cc

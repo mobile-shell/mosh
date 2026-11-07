@@ -618,6 +618,58 @@ ConditionalOverlayRow& PredictionEngine::get_or_make_row( int row_num, int num_c
   return overlays.back();
 }
 
+/* Does the cell hold a vertical line, the way tmux (single, heavy or double
+   lines), vim and emacs draw the border between side-by-side panes? */
+static bool is_vertical_line( const Cell& cell )
+{
+  std::string s;
+  cell.print_grapheme( s );
+  return s == "\xE2\x94\x82"    /* U+2502 light vertical */
+         || s == "\xE2\x94\x83" /* U+2503 heavy vertical */
+         || s == "\xE2\x95\x91" /* U+2551 double vertical */
+         || s == "|";
+}
+
+/* Is there a pane border at this column of the row?  The row must hold a
+   vertical line there, and so must the row above or the row below: a lone
+   '|' on a command line is text, not a border. */
+static bool is_pane_border( const Framebuffer& fb, int row, int col )
+{
+  if ( !is_vertical_line( *fb.get_cell( row, col ) ) ) {
+    return false;
+  }
+  return ( row > 0 && is_vertical_line( *fb.get_cell( row - 1, col ) ) )
+         || ( row + 1 < fb.ds.get_height() && is_vertical_line( *fb.get_cell( row + 1, col ) ) );
+}
+
+/* Typing only changes the pane that holds the cursor, so on a screen split
+   into side-by-side panes the predictions must stay between the borders on
+   either side of it.  fb is the screen as displayed, predictions included;
+   that is safe because predictions never move a border. */
+PredictionEngine::Pane PredictionEngine::pane_at( const Framebuffer& fb, int row, int col ) const
+{
+  Pane pane = { 0, fb.ds.get_width() - 1 };
+  if ( !predict_panes ) {
+    return pane;
+  }
+
+  for ( int c = col + 1; c < fb.ds.get_width(); c++ ) {
+    if ( is_pane_border( fb, row, c ) ) {
+      pane.right = c - 1;
+      break;
+    }
+  }
+
+  for ( int c = col - 1; c >= 0; c-- ) {
+    if ( is_pane_border( fb, row, c ) ) {
+      pane.left = c + 1;
+      break;
+    }
+  }
+
+  return pane;
+}
+
 void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
 {
   if ( display_preference == Never ) {
@@ -659,11 +711,16 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
       wchar_t ch = act.ch;
       /* XXX handle wide characters */
 
+      /* The edit stays inside the cursor's pane.  `end` is one past its last
+         column: the screen width unless there are side-by-side panes. */
+      const Pane pane = pane_at( fb, cursor().row, cursor().col );
+      const int end = pane.right + 1;
+
       if ( ch == 0x7f ) { /* backspace */
         //	fprintf( stderr, "Backspace.\n" );
         ConditionalOverlayRow& the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
 
-        if ( cursor().col > 0 ) {
+        if ( cursor().col > pane.left ) {
           cursor().col--;
           cursor().expire( local_frame_sent + 1, now );
 
@@ -679,7 +736,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
             cell.replacement.clear();
             cell.replacement.append( ' ' );
           } else {
-            for ( int i = cursor().col; i < fb.ds.get_width(); i++ ) {
+            for ( int i = cursor().col; i < end; i++ ) {
               ConditionalOverlayCell& cell = the_row.overlay_cells[i];
 
               cell.reset_with_orig();
@@ -688,7 +745,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
               cell.expire( local_frame_sent + 1, now );
               cell.original_contents.push_back( *fb.get_cell( cursor().row, i ) );
 
-              if ( i + 2 < fb.ds.get_width() ) {
+              if ( i + 2 < end ) {
                 ConditionalOverlayCell& next_cell = the_row.overlay_cells[i + 1];
                 const Cell* next_cell_actual = fb.get_cell( cursor().row, i + 1 );
 
@@ -721,14 +778,14 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
 
         ConditionalOverlayRow& the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
 
-        if ( cursor().col + 1 >= fb.ds.get_width() ) {
+        if ( cursor().col + 1 >= end ) {
           /* prediction in the last column is tricky */
           /* e.g., emacs will show wrap character, shell will just put the character there */
           become_tentative();
         }
 
         /* do the insert */
-        int rightmost_column = predict_overwrite ? cursor().col : fb.ds.get_width() - 1;
+        int rightmost_column = predict_overwrite ? cursor().col : end - 1;
         for ( int i = rightmost_column; i > cursor().col; i-- ) {
           ConditionalOverlayCell& cell = the_row.overlay_cells[i];
           cell.reset_with_orig();
@@ -740,7 +797,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
           ConditionalOverlayCell& prev_cell = the_row.overlay_cells[i - 1];
           const Cell* prev_cell_actual = fb.get_cell( cursor().row, i - 1 );
 
-          if ( i == fb.ds.get_width() - 1 ) {
+          if ( i == end - 1 ) {
             cell.unknown = true;
           } else if ( prev_cell.active ) {
             if ( prev_cell.unknown ) {
@@ -762,8 +819,8 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
         cell.expire( local_frame_sent + 1, now );
         cell.replacement.get_renditions() = fb.ds.get_renditions();
 
-        /* heuristic: match renditions of character to the left */
-        if ( cursor().col > 0 ) {
+        /* heuristic: match renditions of character to the left, unless that is the pane's border */
+        if ( cursor().col > pane.left ) {
           ConditionalOverlayCell& prev_cell = the_row.overlay_cells[cursor().col - 1];
           const Cell* prev_cell_actual = fb.get_cell( cursor().row, cursor().col - 1 );
           if ( prev_cell.active && ( !prev_cell.unknown ) ) {
@@ -787,7 +844,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
         cursor().expire( local_frame_sent + 1, now );
 
         /* do we need to wrap? */
-        if ( cursor().col < fb.ds.get_width() - 1 ) {
+        if ( cursor().col < end - 1 ) {
           cursor().col++;
         } else {
           become_tentative();
@@ -808,14 +865,14 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer& fb )
     } else if ( type_act == typeid( Parser::CSI_Dispatch ) ) {
       if ( act.char_present && ( act.ch == L'C' ) ) { /* right arrow */
         init_cursor( fb );
-        if ( cursor().col < fb.ds.get_width() - 1 ) {
+        if ( cursor().col < pane_at( fb, cursor().row, cursor().col ).right ) {
           cursor().col++;
           cursor().expire( local_frame_sent + 1, now );
         }
       } else if ( act.char_present && ( act.ch == L'D' ) ) { /* left arrow */
         init_cursor( fb );
 
-        if ( cursor().col > 0 ) {
+        if ( cursor().col > pane_at( fb, cursor().row, cursor().col ).left ) {
           cursor().col--;
           cursor().expire( local_frame_sent + 1, now );
         }
@@ -831,7 +888,9 @@ void PredictionEngine::newline_carriage_return( const Framebuffer& fb )
 {
   uint64_t now = timestamp();
   init_cursor( fb );
-  cursor().col = 0;
+  /* the next line starts at the left edge of the cursor's pane */
+  const Pane pane = pane_at( fb, cursor().row, cursor().col );
+  cursor().col = pane.left;
   if ( cursor().row == fb.ds.get_height() - 1 ) {
     /* Don't try to predict scroll until we have versioned cell predictions */
     /*
@@ -849,13 +908,14 @@ void PredictionEngine::newline_carriage_return( const Framebuffer& fb )
     }
     */
 
-    /* make blank prediction for last row */
+    /* make blank prediction for the pane's part of the last row */
     ConditionalOverlayRow& the_row = get_or_make_row( cursor().row, fb.ds.get_width() );
-    for ( overlay_cells_type::iterator j = the_row.overlay_cells.begin(); j != the_row.overlay_cells.end(); j++ ) {
-      j->active = true;
-      j->tentative_until_epoch = prediction_epoch;
-      j->expire( local_frame_sent + 1, now );
-      j->replacement.clear();
+    for ( int i = pane.left; i <= pane.right; i++ ) {
+      ConditionalOverlayCell& cell = the_row.overlay_cells[i];
+      cell.active = true;
+      cell.tentative_until_epoch = prediction_epoch;
+      cell.expire( local_frame_sent + 1, now );
+      cell.replacement.clear();
     }
   } else {
     cursor().row++;

@@ -178,6 +178,10 @@ int main( int argc, char* argv[] )
   char* predict_overwrite = getenv( "MOSH_PREDICTION_OVERWRITE" );
   /* can be NULL */
 
+  /* Read whether predictions stay inside side-by-side panes */
+  char* predict_panes = getenv( "MOSH_PREDICTION_PANES" );
+  /* can be NULL */
+
   std::string key( env_key );
 
   if ( unsetenv( "MOSH_KEY" ) < 0 ) {
@@ -190,7 +194,7 @@ int main( int argc, char* argv[] )
 
   bool success = false;
   try {
-    STMClient client( ip, desired_port, key.c_str(), predict_mode, verbose, predict_overwrite );
+    STMClient client( ip, desired_port, key.c_str(), predict_mode, verbose, predict_overwrite, predict_panes );
     client.init();
 
     try {
