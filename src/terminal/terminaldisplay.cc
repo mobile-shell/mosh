@@ -53,6 +53,7 @@ std::string Display::open() const
 std::string Display::close() const
 {
   return std::string( "\033[?1l\033[0m\033[?25h"
+                      "\033]8;;\033\\"
                       "\033[?1003l\033[?1002l\033[?1001l\033[?1000l"
                       "\033[?1015l\033[?1006l\033[?1005l" )
          + std::string( rmcup ? rmcup : "" );
@@ -124,6 +125,9 @@ std::string Display::new_frame( bool initialized, const Framebuffer& last, const
        || ( f.ds.get_height() != frame.last_frame.ds.get_height() ) ) {
     /* reset scrolling region */
     frame.append( "\033[r" );
+
+    /* close any open hyperlink; SGR 0 does not end it */
+    frame.append( "\033]8;;\033\\" );
 
     /* clear screen */
     frame.append( "\033[0m\033[H\033[2J" );
