@@ -147,17 +147,28 @@ void Connection::prune_sockets( void )
   }
 }
 
-Connection::Socket::Socket( int family ) : _fd( socket( family, SOCK_DGRAM, 0 ) )
+Connection::Socket::Socket( int family, bool dual_stack ) : _fd( socket( family, SOCK_DGRAM, 0 ) )
 {
   if ( _fd < 0 ) {
     throw NetworkException( "socket", errno );
   }
 
+  /* Accept IPv4 on this IPv6 socket too. This must come before the IPPROTO_IP
+     options below, which Winsock (used by Cygwin) rejects on IPv6-only sockets. */
+  if ( dual_stack ) {
+    const int off = 0;
+    if ( setsockopt( _fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof( off ) ) ) {
+      perror( "setsockopt( IPV6_V6ONLY, off )" );
+    }
+  }
+
   /* Disable path MTU discovery */
 #ifdef HAVE_IP_MTU_DISCOVER
   int flag = IP_PMTUDISC_DONT;
-  if ( setsockopt( _fd, IPPROTO_IP, IP_MTU_DISCOVER, &flag, sizeof flag ) < 0 ) {
-    throw NetworkException( "setsockopt", errno );
+  /* Not fatal on IPv6 sockets: Winsock rejects this option on IPv6-only ones (its
+     default unless dual_stack is set), which carry no IPv4 traffic anyway. */
+  if ( setsockopt( _fd, IPPROTO_IP, IP_MTU_DISCOVER, &flag, sizeof flag ) < 0 && family == AF_INET ) {
+    throw NetworkException( "setsockopt( IP_MTU_DISCOVER )", errno );
   }
 #endif
 
@@ -295,7 +306,11 @@ bool Connection::try_bind( const char* addr, int port_low, int port_high )
     search_high = port_high;
   }
 
-  socks.push_back( Socket( local_addr.sa.sa_family ) );
+  /* We treat the IPv6 any address as "all local addresses", IPv4 included, so make
+     the socket dual-stack even where IPV6_V6ONLY defaults to on (Windows, the BSDs). */
+  bool dual_stack = local_addr.sa.sa_family == AF_INET6
+                    && memcmp( &local_addr.sin6.sin6_addr, &in6addr_any, sizeof( in6addr_any ) ) == 0;
+  socks.push_back( Socket( local_addr.sa.sa_family, dual_stack ) );
   for ( int i = search_low; i <= search_high; i++ ) {
     switch ( local_addr.sa.sa_family ) {
       case AF_INET:
@@ -306,14 +321,6 @@ bool Connection::try_bind( const char* addr, int port_low, int port_high )
         break;
       default:
         throw NetworkException( "Unknown address family", 0 );
-    }
-
-    if ( local_addr.sa.sa_family == AF_INET6
-         && memcmp( &local_addr.sin6.sin6_addr, &in6addr_any, sizeof( in6addr_any ) ) == 0 ) {
-      const int off = 0;
-      if ( setsockopt( sock(), IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof( off ) ) ) {
-        perror( "setsockopt( IPV6_V6ONLY, off )" );
-      }
     }
 
     if ( ::bind( sock(), &local_addr.sa, local_addr_len ) == 0 ) {

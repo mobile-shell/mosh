@@ -159,7 +159,7 @@ private:
 
   public:
     int fd( void ) const { return _fd; }
-    Socket( int family );
+    Socket( int family, bool dual_stack = false );
     ~Socket();
 
     Socket( const Socket& other );
