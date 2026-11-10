@@ -1,7 +1,7 @@
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS) $(FUZZING_CFLAGS)
 
 if ENABLE_FUZZING
-  noinst_PROGRAMS = terminal_parser_fuzzer terminal_fuzzer
+  noinst_PROGRAMS = terminal_parser_fuzzer terminal_fuzzer hostbytes_fuzzer
 endif
 
 terminal_parser_fuzzer_CPPFLAGS = -I$(top_srcdir)/
@@ -11,3 +11,7 @@ terminal_parser_fuzzer_SOURCES = terminal_parser_fuzzer.cc
 terminal_fuzzer_CPPFLAGS = -I$(top_srcdir)/
 terminal_fuzzer_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a ../statesync/libmoshstatesync.a ../protobufs/libmoshprotos.a $(TINFO_LIBS) $(protobuf_LIBS)
 terminal_fuzzer_SOURCES = terminal_fuzzer.cc
+
+hostbytes_fuzzer_CPPFLAGS = -I$(top_srcdir)/
+hostbytes_fuzzer_LDADD = ../terminal/libmoshterminal.a ../util/libmoshutil.a ../statesync/libmoshstatesync.a ../protobufs/libmoshprotos.a $(TINFO_LIBS) $(protobuf_LIBS)
+hostbytes_fuzzer_SOURCES = hostbytes_fuzzer.cc
