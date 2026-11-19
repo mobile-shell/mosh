@@ -192,7 +192,11 @@ public:
   void set_network_error( const std::string& s )
   {
     wchar_t tmp[128];
-    swprintf( tmp, 128, L"%s", s.c_str() );
+    /* swprintf() returns a negative value and does not NUL-terminate tmp when
+       s does not fit; the counterparty can make it that long. */
+    if ( swprintf( tmp, 128, L"%s", s.c_str() ) < 0 ) {
+      tmp[0] = L'\0';
+    }
 
     message = tmp;
     message_is_network_error = true;
