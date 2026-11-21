@@ -197,7 +197,9 @@ void STMClient::init( void )
     overlays.get_notification_engine().set_escape_key_string( tmp );
   }
   wchar_t tmp[128];
-  swprintf( tmp, 128, L"Nothing received from server on UDP port %s.", port.c_str() );
+  if ( swprintf( tmp, 128, L"Nothing received from server on UDP port %s.", port.c_str() ) < 0 ) {
+    tmp[0] = L'\0';
+  }
   connecting_notification = std::wstring( tmp );
 }
 
@@ -574,7 +576,12 @@ bool STMClient::main( void )
         throw;
       } else {
         wchar_t tmp[128];
-        swprintf( tmp, 128, L"Crypto exception: %s", e.what() );
+        /* swprintf() returns a negative value and does not NUL-terminate tmp
+           when the message does not fit; a dos_assert() on counterparty input
+           produces one that long. */
+        if ( swprintf( tmp, 128, L"Crypto exception: %s", e.what() ) < 0 ) {
+          tmp[0] = L'\0';
+        }
         overlays.get_notification_engine().set_notification_string( std::wstring( tmp ) );
       }
     }
